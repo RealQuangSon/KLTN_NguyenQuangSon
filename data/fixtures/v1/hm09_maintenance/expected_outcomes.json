@@ -1,0 +1,35 @@
+{
+  "pack": "hm09-maintenance",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Expected outcomes HM-09: transitions, quyền, cost/debt. Validator kiểm từ tickets.json/cost_events.json/invoices.json.",
+  "lifecycle_expectations": [
+    "tkt-001: submitted→triaged→scheduled→in_progress→resolved (có completion evidence)→renter_confirmed→closed.",
+    "tkt-002: resolved→reopened (có reason) về triaged→scheduled lại→resolved→confirmed→closed; lịch sử sửa chữa giữ nguyên.",
+    "tkt-003: cancelled có lý do; media med-deleted-002 đã xóa → không đọc được (negtkt-003).",
+    "tkt-004: urgent hiển thị kênh người phụ trách + giờ phục vụ; không hứa SLA chưa vận hành.",
+    "Requested appointment khác confirmed;APT phải có proposed/confirmed riêng."
+  ],
+  "cost_invariants": [
+    "cst-001 quote 1,200,000 chỉ là báo giá (superseded) — không charge.",
+    "cst-002 confirmed 900,000 payer=owner: charge đúng một lần qua inv-005 line lin-005-8 (idempotency_key cost-event-cst-002; replay không nhân dòng).",
+    "cst-003 disputed 400,000: KHÔNG là nợ, không được xuất hiện trên invoice nào.",
+    "cst-004 confirmed 200,000 payer=renter chỉ sau payer_accepted_at 2026-08-19; chưa invoice → chưa là khoản phải thu.",
+    "cst-005 confirmed 500,000 payer=owner: chưa invoice; không tự sinh billing.",
+    "Không tự billing từ chat; owner duyệt kỹ thuật không đủ thu renter khi payer=renter thiếu acceptance."
+  ],
+  "access_expectations": [
+    "negtkt-001: usr-lan tạo ticket trên ten-001 phải deny.",
+    "negtkt-002: usr-ana đọc ticket ten-003 phải deny (cross-tenancy).",
+    "Ảnh ticket private: chỉ các bên được giao đọc (media access_class=private)."
+  ],
+  "expected_counts": {
+    "tickets": 4,
+    "ticket_events": 27,
+    "appointments": 4,
+    "cost_events": 5,
+    "confirmed_cost_events": 3,
+    "charged_cost_events": 1,
+    "disputed_cost_events": 1
+  }
+}

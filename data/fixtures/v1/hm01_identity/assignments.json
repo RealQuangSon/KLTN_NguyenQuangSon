@@ -1,0 +1,82 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Assignment của manager gắn tài nguyên cụ thể; reassignment/kết thúc assignment phải thay đổi quyền đúng thời điểm.",
+  "assignments": [
+    {
+      "id": "asg-001",
+      "user_id": "usr-chi",
+      "organization_id": "org-alpha",
+      "resource_type": "property",
+      "resource_id": "prop-alpha-1",
+      "status": "active",
+      "assigned_at": "2026-01-15T09:00:00+07:00",
+      "ended_at": null,
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-15T09:00:00+07:00", "actor_id": "usr-bao", "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "asg-002",
+      "user_id": "usr-chi",
+      "organization_id": "org-alpha",
+      "resource_type": "property",
+      "resource_id": "prop-alpha-2",
+      "status": "ended",
+      "assigned_at": "2026-02-01T09:00:00+07:00",
+      "ended_at": "2026-08-31T18:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-02-01T09:00:00+07:00", "actor_id": "usr-bao", "reason": null},
+        {"status": "ended", "effective_from": "2026-08-31T18:00:00+07:00", "actor_id": "usr-bao", "reason": "chuyen_giao_cho_duc"}
+      ],
+      "note": "Reassignment: sau 2026-08-31 usr-chi mất quyền kiểm duyệt prop-alpha-2.",
+      "synthetic": true
+    },
+    {
+      "id": "asg-003",
+      "user_id": "usr-ha",
+      "organization_id": "org-beta",
+      "resource_type": "property",
+      "resource_id": "prop-beta-1",
+      "status": "active",
+      "assigned_at": "2026-01-20T09:00:00+07:00",
+      "ended_at": null,
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-20T09:00:00+07:00", "actor_id": "usr-bao", "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "asg-004",
+      "user_id": "usr-duc",
+      "organization_id": "org-alpha",
+      "resource_type": "property",
+      "resource_id": "prop-alpha-2",
+      "status": "active",
+      "assigned_at": "2026-09-01T09:00:00+07:00",
+      "ended_at": null,
+      "status_history": [
+        {"status": "active", "effective_from": "2026-09-01T09:00:00+07:00", "actor_id": "usr-bao", "reason": "nhan_chuyen_giao_tu_chi"}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "asg-005",
+      "user_id": "usr-duc",
+      "organization_id": "org-alpha",
+      "resource_type": "property",
+      "resource_id": "prop-beta-1",
+      "status": "proposed",
+      "assigned_at": null,
+      "ended_at": null,
+      "proposed_at": "2026-10-01T09:00:00+07:00",
+      "status_history": [
+        {"status": "proposed", "effective_from": "2026-10-01T09:00:00+07:00", "actor_id": "usr-bao", "reason": "de_xuat_chua_chap_nhan"}
+      ],
+      "note": "Assignment đề xuất chưa được chấp nhận/org khác — chưa cấp quyền.",
+      "synthetic": true
+    }
+  ]
+}

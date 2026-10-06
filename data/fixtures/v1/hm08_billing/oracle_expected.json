@@ -1,0 +1,317 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "oracle": "hm08-billing-independent",
+  "independence": "Expected constants soạn tay độc lập (authored arithmetic, không import backend). Validator data/validate_fixtures.py tính lại bằng Decimal/ROUND_HALF_UP riêng và so khớp. Người kiểm tra chéo đối chiếu calculation_note.",
+  "formulas": {
+    "usage_delta": "usage = reading_end.value − reading_start.value (cùng meter, cùng dạng tích lũy)",
+    "replacement_usage": "usage = old_last − old_start + new_end − new_first; đoạn nào unknown (null) thì chặn issue",
+    "rate_at_period_start": "rate = unit_price của tariff có effective_from ≤ period.start muộn nhất; tariff đổi giữa kỳ áp từ kỳ có start sau effective_from, TRỪ khi amendment accepted + boundary measured reading chia đoạn",
+    "line_amount": "amount = ROUND_HALF_UP(Decimal(unit_price) × Decimal(quantity), 0) nguyên VND; prorate quantity dạng 'days/month_days'",
+    "invoice_total": "Σ amount của mọi line biết giá; line unknown để null và chặn issue (draft-only)",
+    "known_subtotal": "Σ amount các line đã biết; không tuyên bố full total khi còn missing"
+  },
+  "cases": [
+    {
+      "case_id": "BILL-01",
+      "type": "actual_invoice",
+      "invoice_id": "inv-001",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-03-01T00:00:00+07:00", "end": "2026-04-01T00:00:00+07:00"},
+      "electricity": {"start_reading_id": "rdg-el-101-0301", "end_reading_id": "rdg-el-101-0401", "tariff_id": "trf-el-001"},
+      "water": {"start_reading_id": "rdg-wt-101-0301", "end_reading_id": "rdg-wt-101-0401", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "quantity": "262", "amount_vnd": 786000},
+          {"name": "water", "quantity": "3", "amount_vnd": 60000}
+        ],
+        "total_vnd": 3696000
+      },
+      "calculation_note": "262=10712-10450; 786000=262*3000; 3=361-358; 60000=3*20000; 2500000+100000+50000+100000+100000+786000+60000=3696000",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-02",
+      "type": "actual_invoice",
+      "invoice_id": "inv-002",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-04-01T00:00:00+07:00", "end": "2026-05-01T00:00:00+07:00"},
+      "policy": "rate_at_period_start",
+      "policy_note": "trf-el-002 (3500) effective 2026-04-15 giữa kỳ nhưng KHÔNG có amendment accepted cho kỳ này → cả kỳ áp rate đầu kỳ 3000; tariff mới áp từ kỳ bắt đầu sau 2026-04-15.",
+      "electricity": {"start_reading_id": "rdg-el-101-0401", "end_reading_id": "rdg-el-101-0501", "tariff_id": "trf-el-001"},
+      "water": {"start_reading_id": "rdg-wt-101-0401", "end_reading_id": "rdg-wt-101-0501", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "quantity": "328", "amount_vnd": 984000},
+          {"name": "water", "quantity": "5", "amount_vnd": 100000}
+        ],
+        "total_vnd": 3934000
+      },
+      "calculation_note": "328=11040-10712; 984000=328*3000 (không phải 3500); 5=366-361; 2500000+100000+50000+100000+100000+984000+100000=3934000",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-03",
+      "type": "scenario_variant",
+      "invoice_id": null,
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-04-01T00:00:00+07:00", "end": "2026-05-01T00:00:00+07:00"},
+      "policy": "amendment_boundary_split",
+      "policy_note": "Cùng kỳ BILL-02 nhưng giả định amendment áp trf-el-002 được chấp thuận bởi hai bên + boundary reading measured 2026-04-15 → chia đoạn.",
+      "amendment": {"accepted": true, "accepted_by": ["usr-ana", "usr-bao"], "boundary_reading_id": "rdg-el-101-0415"},
+      "electricity_segments": [
+        {"start_reading_id": "rdg-el-101-0401", "end_reading_id": "rdg-el-101-0415", "tariff_id": "trf-el-001"},
+        {"start_reading_id": "rdg-el-101-0415", "end_reading_id": "rdg-el-101-0501", "tariff_id": "trf-el-002"}
+      ],
+      "water": {"start_reading_id": "rdg-wt-101-0401", "end_reading_id": "rdg-wt-101-0501", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity_segment_1", "quantity": "188", "amount_vnd": 564000},
+          {"name": "electricity_segment_2", "quantity": "140", "amount_vnd": 490000},
+          {"name": "water", "quantity": "5", "amount_vnd": 100000}
+        ],
+        "electricity_total_vnd": 1054000,
+        "total_vnd": 4004000
+      },
+      "calculation_note": "188=10900-10712 → 564000=188*3000; 140=11040-10900 → 490000=140*3500; điện=1054000; 2850000+1054000+100000=4004000",
+      "expected_outcome": "scenario_variant_not_issued",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-04",
+      "type": "actual_invoice",
+      "invoice_id": "inv-003",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-05-01T00:00:00+07:00", "end": "2026-06-01T00:00:00+07:00"},
+      "policy": "rate_at_period_start",
+      "electricity": {"start_reading_id": "rdg-el-101-0501", "end_reading_id": "rdg-el-101-0601", "tariff_id": "trf-el-002"},
+      "water": {"start_reading_id": "rdg-wt-101-0501", "end_reading_id": "rdg-wt-101-0601", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "quantity": "368", "amount_vnd": 1288000},
+          {"name": "water", "quantity": "5", "amount_vnd": 100000}
+        ],
+        "total_vnd": 4238000
+      },
+      "calculation_note": "368=11408-11040; 1288000=368*3500; 2850000+1288000+100000=4238000",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-05",
+      "type": "actual_invoice",
+      "invoice_id": "inv-004",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-06-01T00:00:00+07:00", "end": "2026-07-01T00:00:00+07:00"},
+      "policy": "meter_replacement",
+      "electricity": {
+        "old_meter_id": "mtr-el-101",
+        "old_start_reading_id": "rdg-el-101-0601",
+        "old_last_reading_id": "rdg-el-101-0615-last",
+        "new_meter_id": "mtr-el-101b",
+        "new_first_reading_id": "rdg-el-101b-0615-first",
+        "new_end_reading_id": "rdg-el-101b-0701",
+        "tariff_id": "trf-el-002"
+      },
+      "water": {"start_reading_id": "rdg-wt-101-0601", "end_reading_id": "rdg-wt-101-0701", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "old_segment_quantity": "192", "new_segment_quantity": "200", "quantity": "392", "amount_vnd": 1372000},
+          {"name": "water", "quantity": "3", "amount_vnd": 60000}
+        ],
+        "total_vnd": 4282000
+      },
+      "calculation_note": "192=11600-11408; 200=212-12; 392=192+200; 1372000=392*3500; 60=374-371 → 60000; 2850000+1372000+60000=4282000",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-05N",
+      "type": "negative_variant",
+      "invoice_id": null,
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-06-01T00:00:00+07:00", "end": "2026-07-01T00:00:00+07:00"},
+      "policy": "meter_replacement",
+      "electricity": {
+        "old_meter_id": "mtr-el-101",
+        "old_start_reading_id": "rdg-el-101-0601",
+        "old_last_reading_id": "rdg-el-101-0615-last",
+        "new_meter_id": "mtr-el-101b",
+        "new_first_reading_id": null,
+        "new_end_reading_id": "rdg-el-101b-0701",
+        "tariff_id": "trf-el-002"
+      },
+      "expected": {
+        "outcome": "blocked_unknown_segment",
+        "unknown_segment": "new_first_reading_id=null → usage đoạn mới không xác định → chặn actual issue",
+        "full_total_vnd": null
+      },
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-06",
+      "type": "actual_invoice",
+      "invoice_id": "inv-005",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-07-01T00:00:00+07:00", "end": "2026-08-01T00:00:00+07:00"},
+      "policy": "rate_change_at_period_boundary",
+      "electricity": {"start_reading_id": "rdg-el-101b-0701", "end_reading_id": "rdg-el-101b-0801", "tariff_id": "trf-el-003"},
+      "water": {"start_reading_id": "rdg-wt-101-0701", "end_reading_id": "rdg-wt-101-0801", "tariff_id": "trf-wt-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "cost_event_lines": [
+        {"name": "maintenance", "cost_event_id": "cst-002", "unit_price": "900000", "quantity": "1", "payer": "owner", "note": "Charge-by-reference; idempotent theo cost_event_id."}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 2500000},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 50000},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "quantity": "100", "amount_vnd": 380000},
+          {"name": "water", "quantity": "5", "amount_vnd": 100000},
+          {"name": "maintenance", "amount_vnd": 900000}
+        ],
+        "total_vnd": 4230000
+      },
+      "calculation_note": "100=312-212; 380000=100*3800 (rate 3,800 effective 2026-07-01 đúng đầu kỳ); 5=379-374; 2850000+380000+100000+900000=4230000",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-07",
+      "type": "negative_actual",
+      "invoice_id": "inv-006",
+      "tenancy_id": "ten-001",
+      "period": {"start": "2026-08-01T00:00:00+07:00", "end": "2026-09-01T00:00:00+07:00"},
+      "electricity": {"start_reading_id": "rdg-el-101b-0801", "end_reading_id": "rdg-el-101b-0901", "tariff_id": "trf-el-003"},
+      "expected": {
+        "outcome": "blocked_reading_regression",
+        "reason": "298 < 312 (end < start) không có sự kiện reset/thay công tơ → từ chối chốt; hóa đơn không issue",
+        "full_total_vnd": null
+      },
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-08",
+      "type": "actual_invoice",
+      "invoice_id": "inv-008",
+      "tenancy_id": "ten-003",
+      "period": {"start": "2026-03-22T00:00:00+07:00", "end": "2026-04-01T00:00:00+07:00"},
+      "policy": "prorate_first_period",
+      "prorate_note": "Kỳ đầu 10 ngày lịch trong tháng 3 (31 ngày): [2026-03-22, 2026-04-01). rent + service prorate; internet/parking/occupancy flat theo ctrv-007-1.",
+      "electricity": {"start_reading_id": "rdg-el-b201-0322", "end_reading_id": "rdg-el-b201-0401", "tariff_id": "trf-el-beta-201"},
+      "water": {"start_reading_id": "rdg-wt-b201-0322", "end_reading_id": "rdg-wt-b201-0401", "tariff_id": "trf-wt-beta-001"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "10/31", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "10/31", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "lines": [
+          {"name": "rent", "amount_vnd": 806452},
+          {"name": "internet", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 16129},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "occupancy", "amount_vnd": 100000},
+          {"name": "electricity", "quantity": "120", "amount_vnd": 360000},
+          {"name": "water", "quantity": "2", "amount_vnd": 36000}
+        ],
+        "total_vnd": 1518581
+      },
+      "calculation_note": "2500000*10/31=806451.6129→806452 (HALF_UP per line); 50000*10/31=16129.032→16129; 120=5120-5000 → 360000; 2=102-100 → 36000; tổng=806452+100000+16129+100000+100000+360000+36000=1518581",
+      "synthetic": true
+    },
+    {
+      "case_id": "BILL-09",
+      "type": "negative_actual",
+      "invoice_id": "inv-009",
+      "tenancy_id": "ten-003",
+      "period": {"start": "2026-09-01T00:00:00+07:00", "end": "2026-10-01T00:00:00+07:00"},
+      "electricity": {"start_reading_id": "rdg-el-b201-0901", "end_reading_id": "rdg-el-b201-1001", "tariff_id": "trf-el-beta-201"},
+      "water": {"start_reading_id": "rdg-wt-b201-0901", "end_reading_id": "rdg-wt-b201-1001", "tariff_id": null, "tariff_note": "trf-wt-beta-001 superseded 2026-09-01 và không có tariff kế nhiệm → missing"},
+      "flat_lines": [
+        {"name": "rent", "quantity": "1", "unit_price": "2500000"},
+        {"name": "internet", "quantity": "1", "unit_price": "100000"},
+        {"name": "service", "quantity": "1", "unit_price": "50000"},
+        {"name": "parking", "quantity": "1", "unit_price": "100000"},
+        {"name": "occupancy", "quantity": "2", "unit_price": "50000"}
+      ],
+      "expected": {
+        "outcome": "draft_only_blocked_issue",
+        "known_subtotal_vnd": 3600000,
+        "full_total_vnd": null,
+        "missing": ["water"],
+        "water_usage_m3": 4
+      },
+      "calculation_note": "điện: 250=7250-7000 → 750000; known=2500000+100000+50000+100000+100000+750000=3600000; nước usage=4 nhưng không có tariff → line unknown, full total null",
+      "synthetic": true
+    }
+  ]
+}

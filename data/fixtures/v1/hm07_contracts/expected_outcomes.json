@@ -1,0 +1,54 @@
+{
+  "pack": "hm07-contracts",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Expected outcomes HM-07: activation gate, overlap, expiry, settlement hold — validator tính lại từ dữ liệu, backend dùng làm kỳ vọng.",
+  "activation_gate": [
+    {"contract_id": "ctr-001", "expected": "activated_2026-02-26", "because": "ctrv-001-1 có acceptance renter (acc-001) + owner (acc-002), không chồng kỳ"},
+    {"contract_id": "ctr-002", "expected": "blocked_version_mismatch", "because": "renter accepted ctrv-002-1, owner accepted ctrv-002-2; không có version đủ hai bên"},
+    {"contract_id": "ctr-003", "expected": "blocked_overlapping_allocation", "because": "[2026-06-01, 2026-12-01) giao active ctr-001 [2026-03-01, 2027-03-01) cùng room-alpha-1-101"},
+    {"contract_id": "ctr-004", "expected": "activated_2026-10-05", "because": "ctrv-004-1 đủ hai bên (acc-007, acc-008); planned allocation [2026-10-15, 2027-04-15) không giao allocation nào"},
+    {"contract_id": "ctr-005", "expected": "blocked_planned_allocation_overlap", "because": "[2026-12-01, 2027-06-01) giao planned ctr-004 cùng room-alpha-2-201"},
+    {"contract_id": "ctr-006", "expected": "activated_2026-04-22", "because": "ctrv-006-1 đủ renter (acc-009) + manager được ủy quyền (acc-010 delegated_by owner)"},
+    {"contract_id": "ctr-007", "expected": "activated_2026-03-17", "because": "ctrv-007-1 đủ hai bên"},
+    {"contract_id": "ctr-008", "expected": "expired_2026-09-30", "because": "hết kỳ; không có move-out"},
+    {"contract_id": "ctr-009", "expected": "blocked_occupied_no_recorded_moveout", "because": "ten-005 chưa move-out; room-alpha-1-103 vẫn occupied"}
+  ],
+  "acceptance_invariants": [
+    "acc-003 invalidated khi ctrv-001-3 tạo; activation dựa trên acceptance cũ phải blocked_stale_acceptance (negctr-001).",
+    "Chấp thuận một bên không đủ; manager chỉ chấp thuận khi được ủy quyền (acc-010 delegated_by).",
+    "Mọi acceptance có legal_note: không quảng bá thành e-sign pháp lý."
+  ],
+  "reservation_expectations": [
+    "rsv-001 converted 2026-02-26 đóng reserve + tạo lease allocation atomic.",
+    "rsv-002 expired 2026-02-20 → availability released trong transaction.",
+    "rsv-003-attempt giao rsv-002 active → reject_reservation_overlap, không tạo record.",
+    "rsv-004-attempt không có agreement → reject_no_agreement."
+  ],
+  "allocation_intervals_by_physical_room": {
+    "room-alpha-1-101": [
+      {"source": "ctr-001", "start": "2026-03-01T00:00:00+07:00", "end": "2027-03-01T00:00:00+07:00", "kind": "lease"}
+    ],
+    "room-alpha-1-102": [
+      {"source": "rsv-002", "start": "2026-02-10T00:00:00+07:00", "end": "2026-02-20T00:00:00+07:00", "kind": "reservation_expired"},
+      {"source": "ctr-006", "start": "2026-05-01T00:00:00+07:00", "end": "2026-11-01T00:00:00+07:00", "kind": "lease"}
+    ],
+    "room-alpha-2-201": [
+      {"source": "ctr-004", "start": "2026-10-15T00:00:00+07:00", "end": "2027-04-15T00:00:00+07:00", "kind": "planned_lease"}
+    ],
+    "room-beta-1-301": [
+      {"source": "ctr-007", "start": "2026-03-22T00:00:00+07:00", "end": "2027-03-22T00:00:00+07:00", "kind": "lease"}
+    ],
+    "room-alpha-1-103": [
+      {"source": "ctr-008", "start": "2025-10-01T00:00:00+07:00", "end": "2026-09-30T00:00:00+07:00", "kind": "lease_expired_occupied"}
+    ],
+    "room-beta-1-302": []
+  },
+  "tenancy_expectations": [
+    "ten-001 ending, close blocked: final readings pending + hóa đơn cuối chưa issue (hnd-002).",
+    "ten-004 planned: không tự occupied trước move-in; listing availability vẫn available.",
+    "ten-005: contract expired không tự release occupied; không tự closed.",
+    "closed chỉ sau move-out handover + settlement; settlement disputed/pending không tự settled."
+  ],
+  "deposit_expectations_ref": "deposit_ledger.json#expected_balances"
+}

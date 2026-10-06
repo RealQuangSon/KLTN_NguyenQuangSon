@@ -1,0 +1,35 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Estimate tách khỏi actual: scenario estimate không được thành reading, không được issue thành hóa đơn actual, không vào receivables.",
+  "estimates": [
+    {
+      "id": "est-001",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "period": {"start": "2026-04-01T00:00:00+07:00", "end": "2026-05-01T00:00:00+07:00"},
+      "estimate_basis": "confirmed_scenario",
+      "scenario_usage": {"electricity_kwh": 300, "water_m3": 5},
+      "tariff_refs": {"electricity": "trf-el-001", "water": "trf-wt-001"},
+      "expected_lines": [
+        {"name": "rent", "amount_vnd": 2500000},
+        {"name": "internet", "amount_vnd": 100000},
+        {"name": "service", "amount_vnd": 50000},
+        {"name": "parking", "amount_vnd": 100000},
+        {"name": "occupancy", "amount_vnd": 100000},
+        {"name": "electricity", "amount_vnd": 900000},
+        {"name": "water", "amount_vnd": 100000}
+      ],
+      "expected_estimate_total_vnd": 3850000,
+      "calculation_note": "300*3000=900000; 5*20000=100000; 2500000+100000+50000+100000+100000+900000+100000=3850000",
+      "expected_outcome": "estimate_only_never_invoice_never_reading",
+      "synthetic": true
+    }
+  ],
+  "separation_invariants": [
+    "estimate không được tham chiếu làm source của invoice actual nào.",
+    "estimate usage (300 kwh) không được dùng thay reading measured (328 kwh) khi chốt hóa đơn.",
+    "actual invoice (inv-002) dùng reading delta 328 kwh, không dùng estimate."
+  ]
+}

@@ -1,0 +1,39 @@
+# Local-only draft: Docker was unavailable on the implementation machine.
+# Test `docker compose -f infra/compose.yaml config` and `up --build` first.
+services:
+  db:
+    image: pgvector/pgvector:0.8.6-pg17-trixie
+    environment:
+      POSTGRES_DB: homematch
+      POSTGRES_USER: homematch
+      POSTGRES_PASSWORD: local-compose-password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U homematch -d homematch']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      HOMEMATCH_DATABASE_URL: postgresql://homematch:local-compose-password@db:5432/homematch
+      HOMEMATCH_AUTH_MODE: seed
+      HOMEMATCH_PUBLIC: 'false'
+      HOMEMATCH_LLM_MODE: demo
+      HOMEMATCH_MATCHING_METHOD: B1
+      HOMEMATCH_CATALOG_PATH: data/catalog/rooms.json
+    ports: ['127.0.0.1:8000:8000']
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.frontend
+    ports: ['127.0.0.1:5173:80']
+    depends_on: [api]
+volumes:
+  pgdata:

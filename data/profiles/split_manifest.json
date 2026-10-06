@@ -1,0 +1,61 @@
+{
+  "counts": {
+    "dev": 15,
+    "test": 30
+  },
+  "fallback": false,
+  "grouping": "profile_id; all paraphrases share split",
+  "profile_ids": {
+    "dev": [
+      "profile-001",
+      "profile-002",
+      "profile-003",
+      "profile-004",
+      "profile-005",
+      "profile-006",
+      "profile-007",
+      "profile-008",
+      "profile-009",
+      "profile-010",
+      "profile-031",
+      "profile-032",
+      "profile-035",
+      "profile-036",
+      "profile-040"
+    ],
+    "test": [
+      "profile-011",
+      "profile-012",
+      "profile-013",
+      "profile-014",
+      "profile-015",
+      "profile-016",
+      "profile-017",
+      "profile-018",
+      "profile-019",
+      "profile-020",
+      "profile-021",
+      "profile-022",
+      "profile-023",
+      "profile-024",
+      "profile-025",
+      "profile-026",
+      "profile-027",
+      "profile-028",
+      "profile-029",
+      "profile-030",
+      "profile-033",
+      "profile-034",
+      "profile-037",
+      "profile-038",
+      "profile-039",
+      "profile-041",
+      "profile-042",
+      "profile-043",
+      "profile-044",
+      "profile-045"
+    ]
+  },
+  "scope": "small synthetic prototype; not representative",
+  "seed": 20261001
+}

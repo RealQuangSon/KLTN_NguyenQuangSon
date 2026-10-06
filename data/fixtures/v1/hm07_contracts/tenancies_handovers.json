@@ -1,0 +1,197 @@
+{
+  "pack": "hm07-contracts",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Tenancy planned → active sau move-in handover → ending → closed sau bàn giao ra; closed không tự quyết toán tài chính; occupied không tự giải phóng khi contract expired mà chưa có move-out.",
+  "tenancies": [
+    {
+      "id": "ten-001",
+      "organization_id": "org-alpha",
+      "contract_id": "ctr-001",
+      "physical_room_id": "room-alpha-1-101",
+      "renter_id": "usr-ana",
+      "occupants": [
+        {"user_id": "usr-ana", "role": "renter", "from": "2026-03-01T00:00:00+07:00", "to": null}
+      ],
+      "status": "ending",
+      "status_history": [
+        {"status": "planned", "effective_from": "2026-02-26T10:00:00+07:00"},
+        {"status": "active", "effective_from": "2026-03-01T09:00:00+07:00"},
+        {"status": "ending", "effective_from": "2026-10-05T14:00:00+07:00"}
+      ],
+      "move_in_at": "2026-03-01T09:00:00+07:00",
+      "move_out_at": "2026-10-05T14:00:00+07:00",
+      "closed_at": null,
+      "settlement_status": "pending",
+      "expected_outcome": "close_blocked_outstanding_final_invoice",
+      "note": "Move-out đã ghi nhưng final readings chốt chưa xong nên hóa đơn cuối chưa issue; không được close, availability vẫn occupied.",
+      "synthetic": true
+    },
+    {
+      "id": "ten-002",
+      "organization_id": "org-alpha",
+      "contract_id": "ctr-006",
+      "physical_room_id": "room-alpha-1-102",
+      "renter_id": "usr-lan",
+      "occupants": [
+        {"user_id": "usr-lan", "role": "renter", "from": "2026-05-01T00:00:00+07:00", "to": null}
+      ],
+      "status": "active",
+      "status_history": [
+        {"status": "planned", "effective_from": "2026-04-22T10:00:00+07:00"},
+        {"status": "active", "effective_from": "2026-05-01T09:00:00+07:00"}
+      ],
+      "move_in_at": "2026-05-01T09:00:00+07:00",
+      "move_out_at": null,
+      "closed_at": null,
+      "settlement_status": "pending",
+      "synthetic": true
+    },
+    {
+      "id": "ten-003",
+      "organization_id": "org-beta",
+      "contract_id": "ctr-007",
+      "physical_room_id": "room-beta-1-301",
+      "renter_id": "usr-tien",
+      "occupants": [
+        {"user_id": "usr-tien", "role": "renter", "from": "2026-03-22T00:00:00+07:00", "to": null}
+      ],
+      "status": "active",
+      "status_history": [
+        {"status": "planned", "effective_from": "2026-03-17T10:00:00+07:00"},
+        {"status": "active", "effective_from": "2026-03-22T09:00:00+07:00"}
+      ],
+      "move_in_at": "2026-03-22T09:00:00+07:00",
+      "move_out_at": null,
+      "closed_at": null,
+      "settlement_status": "pending",
+      "synthetic": true
+    },
+    {
+      "id": "ten-004",
+      "organization_id": "org-alpha",
+      "contract_id": "ctr-004",
+      "physical_room_id": "room-alpha-2-201",
+      "renter_id": "usr-lan",
+      "occupants": [
+        {"user_id": "usr-lan", "role": "renter", "from": "2026-10-15T00:00:00+07:00", "to": null}
+      ],
+      "status": "planned",
+      "status_history": [
+        {"status": "planned", "effective_from": "2026-10-05T09:00:00+07:00"}
+      ],
+      "move_in_at": null,
+      "move_out_at": null,
+      "closed_at": null,
+      "settlement_status": "pending",
+      "expected_outcome": "planned_not_occupied_before_movein",
+      "synthetic": true
+    },
+    {
+      "id": "ten-005",
+      "organization_id": "org-alpha",
+      "contract_id": "ctr-008",
+      "physical_room_id": "room-alpha-1-103",
+      "renter_id": "usr-tien",
+      "occupants": [
+        {"user_id": "usr-tien", "role": "renter", "from": "2025-10-01T00:00:00+07:00", "to": null}
+      ],
+      "status": "active",
+      "status_history": [
+        {"status": "planned", "effective_from": "2025-09-22T10:00:00+07:00"},
+        {"status": "active", "effective_from": "2025-10-01T09:00:00+07:00"}
+      ],
+      "move_in_at": "2025-10-01T09:00:00+07:00",
+      "move_out_at": null,
+      "closed_at": null,
+      "settlement_status": "blocked_moveout_missing",
+      "expected_outcome": "contract_expired_but_occupied_until_recorded_moveout",
+      "note": "Contract expired 2026-09-30; không tự release availability, không tự closed.",
+      "synthetic": true
+    }
+  ],
+  "handovers": [
+    {
+      "id": "hnd-001",
+      "tenancy_id": "ten-001",
+      "kind": "move_in",
+      "status": "completed",
+      "at": "2026-03-01T09:00:00+07:00",
+      "checklist": [
+        {"item": "condition_photos", "status": "done", "media_ids": ["med-hnd-001-cond-1", "med-hnd-001-cond-2"]},
+        {"item": "electricity_start_reading", "status": "done", "meter_id": "mtr-el-101", "reading_value": 10450, "reading_id": "rdg-el-101-0301"},
+        {"item": "water_start_reading", "status": "done", "meter_id": "mtr-wt-101", "reading_value": 358, "reading_id": "rdg-wt-101-0301"},
+        {"item": "keys", "status": "done", "quantity": 2},
+        {"item": "deposit_receipt", "status": "done", "deposit_ledger_id": "dep-001", "amount_vnd": 2500000}
+      ],
+      "recorded_by": "usr-chi",
+      "confirmed_by_renter": "usr-ana",
+      "synthetic": true
+    },
+    {
+      "id": "hnd-002",
+      "tenancy_id": "ten-001",
+      "kind": "move_out",
+      "status": "in_progress",
+      "at": "2026-10-05T14:00:00+07:00",
+      "checklist": [
+        {"item": "condition_photos", "status": "done", "media_ids": ["med-hnd-002-final-1"]},
+        {"item": "keys_returned", "status": "done", "quantity": 2},
+        {"item": "final_meter_readings", "status": "pending", "meter_ids": ["mtr-el-101", "mtr-wt-101"], "note": "Chưa chốt số → hóa đơn cuối chưa issue được."},
+        {"item": "deposit_settlement", "status": "in_progress", "note": "Deduction accepted (dep-003); refund issued (dep-004); chờ hóa đơn cuối đối trừ trước khi settled."},
+        {"item": "final_settlement", "status": "pending", "note": "Hóa đơn cuối chưa issue; close bị chặn."}
+      ],
+      "recorded_by": "usr-chi",
+      "confirmed_by_renter": "usr-ana",
+      "expected_outcome": "close_blocked_until_final_readings_and_final_invoice_settled",
+      "synthetic": true
+    },
+    {
+      "id": "hnd-003",
+      "tenancy_id": "ten-002",
+      "kind": "move_in",
+      "status": "completed",
+      "at": "2026-05-01T09:00:00+07:00",
+      "checklist": [
+        {"item": "condition_photos", "status": "done", "media_ids": ["med-hnd-003-cond-1"]},
+        {"item": "electricity_start_reading", "status": "done", "meter_id": "mtr-el-102", "reading_value": 5200, "reading_id": "rdg-el-102-0501"},
+        {"item": "water_start_reading", "status": "done", "meter_id": "mtr-wt-102", "reading_value": 200, "reading_id": "rdg-wt-102-0501"},
+        {"item": "keys", "status": "done", "quantity": 1},
+        {"item": "deposit_receipt", "status": "done", "deposit_ledger_id": "dep-005", "amount_vnd": 2200000}
+      ],
+      "recorded_by": "usr-chi",
+      "confirmed_by_renter": "usr-lan",
+      "synthetic": true
+    },
+    {
+      "id": "hnd-004",
+      "tenancy_id": "ten-003",
+      "kind": "move_in",
+      "status": "completed",
+      "at": "2026-03-22T09:00:00+07:00",
+      "checklist": [
+        {"item": "electricity_start_reading", "status": "done", "meter_id": "mtr-el-beta-201", "reading_value": 5000, "reading_id": "rdg-el-b201-0322"},
+        {"item": "water_start_reading", "status": "done", "meter_id": "mtr-wt-beta-201", "reading_value": 100, "reading_id": "rdg-wt-b201-0322"},
+        {"item": "keys", "status": "done", "quantity": 1},
+        {"item": "deposit_receipt", "status": "done", "deposit_ledger_id": "dep-008", "amount_vnd": 3000000}
+      ],
+      "recorded_by": "usr-ha",
+      "confirmed_by_renter": "usr-tien",
+      "synthetic": true
+    },
+    {
+      "id": "hnd-005",
+      "tenancy_id": "ten-005",
+      "kind": "move_in",
+      "status": "completed",
+      "at": "2025-10-01T09:00:00+07:00",
+      "checklist": [
+        {"item": "keys", "status": "done", "quantity": 1},
+        {"item": "deposit_receipt", "status": "done", "deposit_ledger_id": "dep-009", "amount_vnd": 2400000}
+      ],
+      "recorded_by": "usr-chi",
+      "confirmed_by_renter": "usr-tien",
+      "synthetic": true
+    }
+  ]
+}

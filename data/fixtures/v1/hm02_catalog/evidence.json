@@ -1,0 +1,53 @@
+{
+  "pack": "hm02-catalog",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Bằng chứng theo field/source/observed_at/revision; mâu thuẫn không tự chọn giá thấp nhất.",
+  "evidence_records": [
+    {
+      "id": "evd-101a-rent-r1",
+      "listing_version_id": "lstver-101a-1",
+      "field": "rent_vnd",
+      "value": 2500000,
+      "source_type": "owner_declaration",
+      "source_ref": "synthetic://fixtures/hm02/evidence/101a-r1/rent",
+      "observed_at": "2026-01-12T08:30:00+07:00",
+      "recorded_by": "usr-bao",
+      "synthetic": true
+    },
+    {
+      "id": "evd-101a-rent-r2",
+      "listing_version_id": "lstver-101a-2",
+      "field": "rent_vnd",
+      "value": 2600000,
+      "source_type": "owner_declaration",
+      "source_ref": "synthetic://fixtures/hm02/evidence/101a-r2/rent",
+      "observed_at": "2026-02-01T08:30:00+07:00",
+      "recorded_by": "usr-bao",
+      "synthetic": true
+    },
+    {
+      "id": "evd-102a-water-r2",
+      "listing_version_id": "lstver-102a-2",
+      "field": "fees.water.amount_vnd",
+      "value": "25000",
+      "source_type": "site_check",
+      "source_ref": "synthetic://fixtures/hm02/evidence/102a-r2/water",
+      "observed_at": "2026-02-14T15:00:00+07:00",
+      "recorded_by": "usr-chi",
+      "synthetic": true
+    },
+    {
+      "id": "evd-contradiction-el-101a",
+      "case": "contradiction",
+      "field": "fees.electricity.amount_vnd",
+      "statements": [
+        {"evidence_id": "evd-contradiction-el-101a-a", "value": "3000", "source_type": "owner_declaration", "observed_at": "2026-02-01T08:30:00+07:00", "recorded_by": "usr-bao"},
+        {"evidence_id": "evd-contradiction-el-101a-b", "value": "3500", "source_type": "prior_listing_copy", "observed_at": "2026-01-20T08:30:00+07:00", "recorded_by": "usr-phan"}
+      ],
+      "resolution_rule": "Giữ giá trị của revision đang published (3000) cho đến khi revision mới được duyệt với bằng chứng đàng hoàng; KHÔNG tự chọn giá thấp nhất.",
+      "expected_outcome": "published_revision_value_stands_until_new_approved_revision",
+      "synthetic": true
+    }
+  ]
+}

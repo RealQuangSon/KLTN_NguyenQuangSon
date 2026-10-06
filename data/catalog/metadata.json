@@ -1,0 +1,1762 @@
+{
+  "synthetic-room-001": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-01",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-002": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-02",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-003": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-03",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+    "synthetic": true
+  },
+  "synthetic-room-004": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-04",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-005": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-05",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-006": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-06",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-007": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-07",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-008": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-08",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-009": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-09",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-010": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-10",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-011": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-11",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-012": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "backend/data/demo_rooms.json#demo-12",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt.",
+    "synthetic": true
+  },
+  "synthetic-room-013": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-014": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-015": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-016": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-017": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-018": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-019": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+    "synthetic": true
+  },
+  "synthetic-room-020": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-021": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-022": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-023": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-024": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-025": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-026": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-027": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-028": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng.",
+    "synthetic": true
+  },
+  "synthetic-room-029": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-030": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-031": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-032": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-033": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-034": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-035": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-036": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-037": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng.",
+    "synthetic": true
+  },
+  "synthetic-room-038": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng.",
+    "synthetic": true
+  },
+  "synthetic-room-039": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-040": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-041": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-042": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-043": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-044": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-045": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-046": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-047": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-048": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-049": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-050": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-051": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-052": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+    "synthetic": true
+  },
+  "synthetic-room-053": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-054": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-055": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-056": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-057": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-058": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-059": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-060": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng.",
+    "synthetic": true
+  },
+  "synthetic-room-061": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-062": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-063": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-064": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+    "synthetic": true
+  },
+  "synthetic-room-065": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-066": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng.",
+    "synthetic": true
+  },
+  "synthetic-room-067": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-068": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+    "synthetic": true
+  },
+  "synthetic-room-069": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-070": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-071": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-072": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-073": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-074": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+    "synthetic": true
+  },
+  "synthetic-room-075": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-2:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-076": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-3:seed-20261001",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-077": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-4:seed-20261001",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-078": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-5:seed-20261001",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-079": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-0:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+    "synthetic": true
+  },
+  "synthetic-room-080": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template:style-1:seed-20261001",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+    "synthetic": true
+  },
+  "synthetic-room-081": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-082": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-083": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Gần chợ và siêu thị. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-084": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-085": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-086": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-087": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-088": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có nội thất cơ bản, dọn vào ở được ngay. Tòa nhà có thang máy và bảo vệ. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-089": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-090": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-091": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-092": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Tòa nhà có thang máy và bảo vệ. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-093": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-094": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-095": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần công viên, tiện đi bộ. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-096": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần công viên, tiện đi bộ. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-097": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-098": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-099": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-100": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-101": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-102": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ. Gần công viên, tiện đi bộ. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-103": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-104": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Tòa nhà có thang máy và bảo vệ. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-105": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-106": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-107": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-108": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-109": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-110": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-111": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-112": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần công viên, tiện đi bộ. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-113": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Tòa nhà có thang máy và bảo vệ. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-114": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-115": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-116": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-117": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-118": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-119": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-120": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-121": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-122": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-123": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Nhiều ánh sáng tự nhiên buổi sáng. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-124": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-125": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-126": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-127": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-128": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-129": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Hẻm yên tĩnh, ít xe qua lại. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-130": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-131": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần công viên, tiện đi bộ. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-132": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-133": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ. Tòa nhà có thang máy và bảo vệ. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-134": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Gần chợ và siêu thị. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-135": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần công viên, tiện đi bộ. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-136": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Tòa nhà có thang máy và bảo vệ. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-137": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-138": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-139": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-140": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-141": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-142": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Hẻm yên tĩnh, ít xe qua lại. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-143": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-144": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-145": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-146": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-147": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-148": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-149": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-150": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Hẻm yên tĩnh, ít xe qua lại. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-151": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-152": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Gần công viên, tiện đi bộ. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-153": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-154": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-155": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-156": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Tòa nhà có thang máy và bảo vệ. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-157": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Gần công viên, tiện đi bộ. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-158": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Gần trạm xe buýt. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-159": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần công viên, tiện đi bộ. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-160": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-161": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-162": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Tòa nhà có thang máy và bảo vệ. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-163": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Hẻm yên tĩnh, ít xe qua lại. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-164": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-165": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-166": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-167": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-168": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-169": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-170": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Gần chợ và siêu thị. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-171": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-172": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-173": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Hẻm yên tĩnh, ít xe qua lại. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-174": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Gần trạm xe buýt. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-175": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-176": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-177": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-178": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-179": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-180": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. View thành phố từ tầng cao. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-181": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-182": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Nhìn ra hồ, thoáng gió. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-183": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-184": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. View thành phố từ tầng cao. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-185": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-186": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-187": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-188": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-189": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-190": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Nhiều ánh sáng tự nhiên buổi sáng. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-191": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Gần chợ và siêu thị. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-192": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-193": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-194": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-195": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-196": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-197": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần chợ và siêu thị. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-198": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-199": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. View thành phố từ tầng cao. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-200": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần trạm xe buýt. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-201": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhiều ánh sáng tự nhiên buổi sáng. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-202": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-203": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ. Gần công viên, tiện đi bộ. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-204": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần chợ và siêu thị. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-205": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Nhiều ánh sáng tự nhiên buổi sáng. Tòa nhà có thang máy và bảo vệ.",
+    "synthetic": true
+  },
+  "synthetic-room-206": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhiều ánh sáng tự nhiên buổi sáng. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-207": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Nhìn ra hồ, thoáng gió. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-208": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-209": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-210": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-211": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Nhiều ánh sáng tự nhiên buổi sáng. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-212": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Hẻm yên tĩnh, ít xe qua lại. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-213": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. View thành phố từ tầng cao. Nhìn ra hồ, thoáng gió.",
+    "synthetic": true
+  },
+  "synthetic-room-214": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:room:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Gần trạm xe buýt. Nhiều ánh sáng tự nhiên buổi sáng.",
+    "synthetic": true
+  },
+  "synthetic-room-215": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ. View thành phố từ tầng cao. Gần công viên, tiện đi bộ.",
+    "synthetic": true
+  },
+  "synthetic-room-216": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:studio:seed-20261005",
+    "semantic_text": "Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Tòa nhà có thang máy và bảo vệ. View thành phố từ tầng cao.",
+    "synthetic": true
+  },
+  "synthetic-room-217": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Tòa nhà có thang máy và bảo vệ. Gần chợ và siêu thị.",
+    "synthetic": true
+  },
+  "synthetic-room-218": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Hẻm yên tĩnh, ít xe qua lại. Gần trạm xe buýt.",
+    "synthetic": true
+  },
+  "synthetic-room-219": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-1:seed-20261005",
+    "semantic_text": "Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Nhìn ra hồ, thoáng gió. Hẻm yên tĩnh, ít xe qua lại.",
+    "synthetic": true
+  },
+  "synthetic-room-220": {
+    "location_notice": "Tọa độ giả lập, không định danh địa chỉ thật.",
+    "location_source": "synthetic://coordinate-fixture",
+    "observed_at": "2026-10-01T00:00:00+07:00",
+    "origin": "template-v2:apartment-2:seed-20261005",
+    "semantic_text": "Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ. Gần công viên, tiện đi bộ. Gần chợ và siêu thị.",
+    "synthetic": true
+  }
+}

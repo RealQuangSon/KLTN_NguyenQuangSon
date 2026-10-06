@@ -1,0 +1,16 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Đơn giá Decimal string; hiệu lực [effective_from, superseded_at). Mặc định áp rate hiệu lực đầu kỳ; đổi giữa kỳ chỉ chia đoạn khi có amendment được chấp thuận + boundary reading (xem oracle BILL-03).",
+  "tariffs": [
+    {"id": "trf-el-001", "organization_id": "org-alpha", "meter_id": "mtr-el-101", "utility": "electricity", "unit": "kwh", "unit_price": "3000", "effective_from": "2026-01-01T00:00:00+07:00", "superseded_at": "2026-04-15T00:00:00+07:00", "superseded_by": "trf-el-002", "synthetic": true},
+    {"id": "trf-el-002", "organization_id": "org-alpha", "meter_id": "mtr-el-101", "utility": "electricity", "unit": "kwh", "unit_price": "3500", "effective_from": "2026-04-15T00:00:00+07:00", "superseded_at": "2026-07-01T00:00:00+07:00", "superseded_by": "trf-el-003", "note": "Đổi giữa kỳ April 2026; mặc định áp từ kỳ [2026-05-01,...).", "synthetic": true},
+    {"id": "trf-el-003", "organization_id": "org-alpha", "meter_id": "mtr-el-101", "utility": "electricity", "unit": "kwh", "unit_price": "3800", "effective_from": "2026-07-01T00:00:00+07:00", "superseded_at": null, "superseded_by": null, "synthetic": true},
+    {"id": "trf-wt-001", "organization_id": "org-alpha", "meter_id": "mtr-wt-101", "utility": "water", "unit": "m3", "unit_price": "20000", "effective_from": "2026-01-01T00:00:00+07:00", "superseded_at": null, "superseded_by": null, "synthetic": true},
+    {"id": "trf-el-102", "organization_id": "org-alpha", "meter_id": "mtr-el-102", "utility": "electricity", "unit": "kwh", "unit_price": "3500", "effective_from": "2026-05-01T00:00:00+07:00", "superseded_at": null, "superseded_by": null, "synthetic": true},
+    {"id": "trf-wt-102", "organization_id": "org-alpha", "meter_id": "mtr-wt-102", "utility": "water", "unit": "m3", "unit_price": "25000", "effective_from": "2026-05-01T00:00:00+07:00", "superseded_at": null, "superseded_by": null, "synthetic": true},
+    {"id": "trf-el-beta-201", "organization_id": "org-beta", "meter_id": "mtr-el-beta-201", "utility": "electricity", "unit": "kwh", "unit_price": "3000", "effective_from": "2026-01-01T00:00:00+07:00", "superseded_at": null, "superseded_by": null, "synthetic": true},
+    {"id": "trf-wt-beta-001", "organization_id": "org-beta", "meter_id": "mtr-wt-beta-201", "utility": "water", "unit": "m3", "unit_price": "18000", "effective_from": "2026-01-01T00:00:00+07:00", "superseded_at": "2026-09-01T00:00:00+07:00", "superseded_by": null, "note": "Không có tariff kế nhiệm từ 2026-09-01 → kỳ September 2026 thiếu giá nước (case BILL-09 blocked issue).", "synthetic": true}
+  ]
+}

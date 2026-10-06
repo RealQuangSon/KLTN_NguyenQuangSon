@@ -1,0 +1,134 @@
+{
+  "pack": "hm09-maintenance",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Ticket lifecycle: submitted → triaged → scheduled → in_progress → resolved → closed; reopen về triaged; cancelled có lý do. Ảnh private; cost chưa confirmed không thành nợ.",
+  "tickets": [
+    {
+      "id": "tkt-001",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "created_by": "usr-ana",
+      "title": "Máy lạnh nhỏ nước (giả lập)",
+      "description": "Máy lạnh phòng nhỏ nước xuống tường, cần kiểm tra.",
+      "urgency": "high",
+      "status": "closed",
+      "media_ids": ["med-tkt-001-photo-1", "med-tkt-001-photo-2"],
+      "events": [
+        {"id": "tke-001", "action": "submitted", "at": "2026-07-05T09:00:00+07:00", "actor_id": "usr-ana"},
+        {"id": "tke-002", "action": "triaged", "at": "2026-07-05T11:00:00+07:00", "actor_id": "usr-chi", "assignee_id": "usr-chi", "note": "Phân công kỹ thuật; đề xuất lịch thợ."},
+        {"id": "tke-003", "action": "scheduled", "at": "2026-07-07T10:00:00+07:00", "actor_id": "usr-chi", "appointment_id": "apt-001"},
+        {"id": "tke-004", "action": "in_progress", "at": "2026-07-08T09:10:00+07:00", "actor_id": "usr-chi"},
+        {"id": "tke-005", "action": "resolved", "at": "2026-07-08T15:00:00+07:00", "actor_id": "usr-chi", "completion_evidence_media_ids": ["med-tkt-001-done-1"], "work_summary": "Vệ sinh block lạnh và siết ống thoát nước."},
+        {"id": "tke-006", "action": "renter_confirmed", "at": "2026-07-09T08:30:00+07:00", "actor_id": "usr-ana"},
+        {"id": "tke-007", "action": "closed", "at": "2026-07-09T09:00:00+07:00", "actor_id": "usr-chi"}
+      ],
+      "appointments": [
+        {"id": "apt-001", "proposed_at": "2026-07-06T10:00:00+07:00", "proposed_by": "usr-chi", "confirmed_at": "2026-07-07T10:00:00+07:00", "confirmed_by": "usr-ana", "slot": {"start": "2026-07-08T09:00:00+07:00", "end": "2026-07-08T11:00:00+07:00"}, "status": "confirmed"}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "tkt-002",
+      "tenancy_id": "ten-003",
+      "organization_id": "org-beta",
+      "created_by": "usr-tien",
+      "title": "Ống nước bếp rỉ (giả lập)",
+      "description": "Ống nước dưới bếp rỉ nhẹ, đề nghị kiểm tra.",
+      "urgency": "normal",
+      "status": "closed",
+      "media_ids": ["med-tkt-002-photo-1"],
+      "events": [
+        {"id": "tke-010", "action": "submitted", "at": "2026-08-10T09:00:00+07:00", "actor_id": "usr-tien"},
+        {"id": "tke-011", "action": "triaged", "at": "2026-08-10T14:00:00+07:00", "actor_id": "usr-ha", "assignee_id": "usr-ha"},
+        {"id": "tke-012", "action": "scheduled", "at": "2026-08-11T09:00:00+07:00", "actor_id": "usr-ha", "appointment_id": "apt-002"},
+        {"id": "tke-013", "action": "in_progress", "at": "2026-08-12T09:00:00+07:00", "actor_id": "usr-ha"},
+        {"id": "tke-014", "action": "resolved", "at": "2026-08-12T12:00:00+07:00", "actor_id": "usr-ha", "completion_evidence_media_ids": ["med-tkt-002-done-1"], "work_summary": "Thay vòng nối ống bếp."},
+        {"id": "tke-015", "action": "reopened", "at": "2026-08-15T09:00:00+07:00", "actor_id": "usr-tien", "reason": "Vẫn rỉ nước sau mưa lớn; quay lại triaged."},
+        {"id": "tke-016", "action": "scheduled", "at": "2026-08-16T10:00:00+07:00", "actor_id": "usr-ha", "appointment_id": "apt-003"},
+        {"id": "tke-017", "action": "in_progress", "at": "2026-08-18T09:00:00+07:00", "actor_id": "usr-ha"},
+        {"id": "tke-018", "action": "resolved", "at": "2026-08-18T14:00:00+07:00", "actor_id": "usr-ha", "completion_evidence_media_ids": ["med-tkt-002-done-1"], "work_summary": "Thay đoạn ống; thử áp lực đạt."},
+        {"id": "tke-019", "action": "renter_confirmed", "at": "2026-08-19T08:00:00+07:00", "actor_id": "usr-tien"},
+        {"id": "tke-020", "action": "closed", "at": "2026-08-19T09:00:00+07:00", "actor_id": "usr-ha"}
+      ],
+      "appointments": [
+        {"id": "apt-002", "proposed_at": "2026-08-10T15:00:00+07:00", "proposed_by": "usr-ha", "confirmed_at": "2026-08-11T09:00:00+07:00", "confirmed_by": "usr-tien", "slot": {"start": "2026-08-12T09:00:00+07:00", "end": "2026-08-12T10:00:00+07:00"}, "status": "completed"},
+        {"id": "apt-003", "proposed_at": "2026-08-16T10:00:00+07:00", "proposed_by": "usr-ha", "confirmed_at": "2026-08-16T15:00:00+07:00", "confirmed_by": "usr-tien", "slot": {"start": "2026-08-18T09:00:00+07:00", "end": "2026-08-18T11:00:00+07:00"}, "status": "completed"}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "tkt-003",
+      "tenancy_id": "ten-002",
+      "organization_id": "org-alpha",
+      "created_by": "usr-lan",
+      "title": "Báo trùng sự cố vòi nước (giả lập)",
+      "description": "Gửi trùng với ticket tại quầy.",
+      "urgency": "normal",
+      "status": "cancelled",
+      "media_ids": ["med-deleted-002"],
+      "events": [
+        {"id": "tke-030", "action": "submitted", "at": "2026-09-05T09:00:00+07:00", "actor_id": "usr-lan"},
+        {"id": "tke-031", "action": "cancelled", "at": "2026-09-05T10:00:00+07:00", "actor_id": "usr-chi", "reason": "Trùng ticket tại quầy; media đã xóa theo yêu cầu người gửi."}
+      ],
+      "appointments": [],
+      "synthetic": true
+    },
+    {
+      "id": "tkt-004",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "created_by": "usr-ana",
+      "title": "Ngập cục bộ do tắc cống (giả lập)",
+      "description": "Cống nghẹt nước tràn, cần xử lý ngay.",
+      "urgency": "urgent",
+      "status": "closed",
+      "media_ids": [],
+      "events": [
+        {"id": "tke-040", "action": "submitted", "at": "2026-09-20T07:30:00+07:00", "actor_id": "usr-ana"},
+        {"id": "tke-041", "action": "triaged", "at": "2026-09-20T08:00:00+07:00", "actor_id": "usr-chi", "assignee_id": "usr-chi", "note": "Urgent: hiển thị kênh liên hệ phụ trách + giờ phục vụ; không hứa SLA chưa vận hành."},
+        {"id": "tke-042", "action": "scheduled", "at": "2026-09-20T08:30:00+07:00", "actor_id": "usr-chi", "appointment_id": "apt-004"},
+        {"id": "tke-043", "action": "in_progress", "at": "2026-09-20T10:00:00+07:00", "actor_id": "usr-chi"},
+        {"id": "tke-044", "action": "resolved", "at": "2026-09-20T13:00:00+07:00", "actor_id": "usr-chi", "completion_evidence_media_ids": ["med-tkt-004-done-1"], "work_summary": "Thông cống và vệ sinh."},
+        {"id": "tke-045", "action": "renter_confirmed", "at": "2026-09-21T08:00:00+07:00", "actor_id": "usr-ana"},
+        {"id": "tke-046", "action": "closed", "at": "2026-09-21T09:00:00+07:00", "actor_id": "usr-chi"}
+      ],
+      "appointments": [
+        {"id": "apt-004", "proposed_at": "2026-09-20T08:20:00+07:00", "proposed_by": "usr-chi", "confirmed_at": "2026-09-20T08:30:00+07:00", "confirmed_by": "usr-ana", "slot": {"start": "2026-09-20T10:00:00+07:00", "end": "2026-09-20T12:00:00+07:00"}, "status": "completed"}
+      ],
+      "synthetic": true
+    }
+  ],
+  "access_negative_cases": [
+    {
+      "id": "negtkt-001",
+      "case": "renter_guesses_tenancy",
+      "actor_id": "usr-lan",
+      "action": "create_ticket",
+      "resource": {"type": "tenancy", "id": "ten-001", "organization_id": "org-alpha"},
+      "attempted_at": "2026-10-01T10:00:00+07:00",
+      "expected_outcome": "deny_not_own_tenancy",
+      "synthetic": true
+    },
+    {
+      "id": "negtkt-002",
+      "case": "cross_tenancy_read",
+      "actor_id": "usr-ana",
+      "action": "read_ticket",
+      "resource": {"type": "ticket", "id": "tkt-002", "organization_id": "org-beta"},
+      "attempted_at": "2026-08-13T10:00:00+07:00",
+      "expected_outcome": "deny_cross_tenancy",
+      "synthetic": true
+    },
+    {
+      "id": "negtkt-003",
+      "case": "deleted_media_inaccessible",
+      "actor_id": "usr-lan",
+      "action": "read_media",
+      "resource": {"type": "media", "id": "med-deleted-002", "organization_id": "org-alpha"},
+      "attempted_at": "2026-09-06T10:00:00+07:00",
+      "expected_outcome": "deny_media_deleted",
+      "synthetic": true
+    }
+  ]
+}

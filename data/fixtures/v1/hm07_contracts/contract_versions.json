@@ -1,0 +1,1079 @@
+{
+  "pack": "hm07-contracts",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Hợp đồng theo version: terms là snapshot; sửa terms cần chấp thuận lại. Chấp thuận ứng dụng không phải chữ ký điện tử pháp lý. document_hash = sha256(canonical JSON của terms).",
+  "contracts": [
+    {
+      "id": "ctr-001",
+      "agreement_id": "agr-001",
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-1-101",
+      "renter_id": "usr-ana",
+      "status": "ended",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-02-20T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2026-02-24T09:00:00+07:00"
+        },
+        {
+          "status": "active",
+          "effective_from": "2026-02-26T10:00:00+07:00"
+        },
+        {
+          "status": "termination_pending",
+          "effective_from": "2026-09-15T09:00:00+07:00"
+        },
+        {
+          "status": "ended",
+          "effective_from": "2026-10-05T14:00:00+07:00"
+        }
+      ],
+      "activated_at": "2026-02-26T10:00:00+07:00",
+      "active_version_id": "ctrv-001-1",
+      "tenancy_id": "ten-001",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-002",
+      "agreement_id": "agr-007",
+      "organization_id": "org-beta",
+      "physical_room_id": "room-beta-1-302",
+      "renter_id": "usr-tien",
+      "status": "pending_acceptance",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-09-18T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2026-09-20T09:00:00+07:00"
+        }
+      ],
+      "activated_at": null,
+      "active_version_id": null,
+      "tenancy_id": null,
+      "expected_outcome": "blocked_version_mismatch_acceptance",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-003",
+      "agreement_id": null,
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-1-101",
+      "renter_id": "usr-lan",
+      "status": "draft",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-05-20T09:00:00+07:00"
+        }
+      ],
+      "activated_at": null,
+      "active_version_id": null,
+      "tenancy_id": null,
+      "expected_outcome": "blocked_overlapping_allocation",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-004",
+      "agreement_id": "agr-004",
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-2-201",
+      "renter_id": "usr-lan",
+      "status": "active",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-09-25T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2026-09-28T09:00:00+07:00"
+        },
+        {
+          "status": "active",
+          "effective_from": "2026-10-05T09:00:00+07:00"
+        }
+      ],
+      "activated_at": "2026-10-05T09:00:00+07:00",
+      "active_version_id": "ctrv-004-1",
+      "tenancy_id": "ten-004",
+      "note": "Contract active tạo planned allocation; tenancy vẫn planned đến move-in.",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-005",
+      "agreement_id": null,
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-2-201",
+      "renter_id": "usr-tien",
+      "status": "draft",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-10-04T09:00:00+07:00"
+        }
+      ],
+      "activated_at": null,
+      "active_version_id": null,
+      "tenancy_id": null,
+      "expected_outcome": "blocked_planned_allocation_overlap",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-006",
+      "agreement_id": "agr-003",
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-1-102",
+      "renter_id": "usr-lan",
+      "status": "active",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-04-15T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2026-04-18T09:00:00+07:00"
+        },
+        {
+          "status": "active",
+          "effective_from": "2026-04-22T10:00:00+07:00"
+        }
+      ],
+      "activated_at": "2026-04-22T10:00:00+07:00",
+      "active_version_id": "ctrv-006-1",
+      "tenancy_id": "ten-002",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-007",
+      "agreement_id": "agr-005",
+      "organization_id": "org-beta",
+      "physical_room_id": "room-beta-1-301",
+      "renter_id": "usr-tien",
+      "status": "active",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-03-10T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2026-03-14T09:00:00+07:00"
+        },
+        {
+          "status": "active",
+          "effective_from": "2026-03-17T10:00:00+07:00"
+        }
+      ],
+      "activated_at": "2026-03-17T10:00:00+07:00",
+      "active_version_id": "ctrv-007-1",
+      "tenancy_id": "ten-003",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-008",
+      "agreement_id": "agr-006",
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-1-103",
+      "renter_id": "usr-tien",
+      "status": "expired",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2025-09-10T09:00:00+07:00"
+        },
+        {
+          "status": "pending_acceptance",
+          "effective_from": "2025-09-18T09:00:00+07:00"
+        },
+        {
+          "status": "active",
+          "effective_from": "2025-09-22T10:00:00+07:00"
+        },
+        {
+          "status": "expired",
+          "effective_from": "2026-09-30T00:00:00+07:00"
+        }
+      ],
+      "activated_at": "2025-09-22T10:00:00+07:00",
+      "active_version_id": "ctrv-008-1",
+      "tenancy_id": "ten-005",
+      "expected_outcome": "expired_contract_does_not_auto_release_occupied",
+      "synthetic": true
+    },
+    {
+      "id": "ctr-009",
+      "agreement_id": null,
+      "organization_id": "org-alpha",
+      "physical_room_id": "room-alpha-1-103",
+      "renter_id": "usr-lan",
+      "status": "draft",
+      "status_history": [
+        {
+          "status": "draft",
+          "effective_from": "2026-10-04T10:00:00+07:00"
+        }
+      ],
+      "activated_at": null,
+      "active_version_id": null,
+      "tenancy_id": null,
+      "expected_outcome": "blocked_occupied_no_recorded_moveout",
+      "synthetic": true
+    }
+  ],
+  "contract_versions": [
+    {
+      "id": "ctrv-001-1",
+      "contract_id": "ctr-001",
+      "version": 1,
+      "status": "superseded",
+      "created_by": "usr-bao",
+      "created_at": "2026-02-24T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-001",
+        "acc-002"
+      ],
+      "document_hash": "d6d654a4cccdbfb3fbf0a3eff9aae3446e91b603a134c8c26950c4bb54a8376c",
+      "terms": {
+        "period": {
+          "start": "2026-03-01T00:00:00+07:00",
+          "end": "2027-03-01T00:00:00+07:00"
+        },
+        "rent_vnd": 2500000,
+        "rent_due_day": 10,
+        "deposit_vnd": 2500000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "50000",
+            "included_in_rent": false
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_va_service_prorate_theo_ngay_lich_cua_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "internet",
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent",
+            "service"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND",
+          "tariff_note": "dien/nuoc theo cong to; rate hieu luc dau ky; doi giua ky chi chia doan voi amendment duoc chap nhan + boundary reading"
+        },
+        "deposit_rules": "khau tru phai proposed+accepted hoac can cu terms da xac minh; disputed hold khong tu khau tru",
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-001-2",
+      "contract_id": "ctr-001",
+      "version": 2,
+      "status": "superseded",
+      "created_by": "usr-bao",
+      "created_at": "2026-08-15T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-003"
+      ],
+      "document_hash": "0884fb95281d8d3da51ed251f28ae9955a17a5757844843a137b18bfc67a5392",
+      "change_note": "De xuan gia han: rent 2,600,000 cho ky 2027-03-01..2027-09-01.",
+      "terms": {
+        "period": {
+          "start": "2027-03-01T00:00:00+07:00",
+          "end": "2027-09-01T00:00:00+07:00"
+        },
+        "rent_vnd": 2600000,
+        "rent_due_day": 10,
+        "deposit_vnd": 2600000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "50000",
+            "included_in_rent": false
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_va_service_prorate_theo_ngay_lich_cua_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "internet",
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent",
+            "service"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "deposit_rules": "khau tru phai proposed+accepted hoac can cu terms da xac minh; disputed hold khong tu khau tru",
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-001-3",
+      "contract_id": "ctr-001",
+      "version": 3,
+      "status": "pending_acceptance",
+      "created_by": "usr-bao",
+      "created_at": "2026-09-10T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-004"
+      ],
+      "document_hash": "5fe38f62da22ef2300113e7f8c44183408f93e3237fc97421375ca187242c009",
+      "change_note": "Sua lai gia han: rent 2,650,000. Acceptance cua v2 het hieu luc khi v3 tao.",
+      "terms": {
+        "period": {
+          "start": "2027-03-01T00:00:00+07:00",
+          "end": "2027-09-01T00:00:00+07:00"
+        },
+        "rent_vnd": 2650000,
+        "rent_due_day": 10,
+        "deposit_vnd": 2650000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "50000",
+            "included_in_rent": false
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_va_service_prorate_theo_ngay_lich_cua_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "internet",
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent",
+            "service"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "deposit_rules": "khau tru phai proposed+accepted hoac can cu terms da xac minh; disputed hold khong tu khau tru",
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-002-1",
+      "contract_id": "ctr-002",
+      "version": 1,
+      "status": "superseded",
+      "created_by": "usr-bao",
+      "created_at": "2026-09-18T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-005"
+      ],
+      "document_hash": "641c827716bf09f0128cd927399e627f989b935b6d2bf4e51865f929a38a0bf7",
+      "terms": {
+        "period": {
+          "start": "2026-10-01T00:00:00+07:00",
+          "end": "2027-04-01T00:00:00+07:00"
+        },
+        "rent_vnd": 1600000,
+        "rent_due_day": 5,
+        "deposit_vnd": 1600000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "30000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_prorate_theo_ngay_lich_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "service"
+          ],
+          "prorated_fees": [
+            "rent"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-002-2",
+      "contract_id": "ctr-002",
+      "version": 2,
+      "status": "pending_acceptance",
+      "created_by": "usr-bao",
+      "created_at": "2026-09-24T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-006"
+      ],
+      "document_hash": "5fcce0de6e481bcd727d67df5ab352209bcd7961ccee5286ffc365d12e4a43e0",
+      "change_note": "Sua phi service 30,000 -> 40,000; acceptance v1 cua renter khong con dung cho v2.",
+      "terms": {
+        "period": {
+          "start": "2026-10-01T00:00:00+07:00",
+          "end": "2027-04-01T00:00:00+07:00"
+        },
+        "rent_vnd": 1600000,
+        "rent_due_day": 5,
+        "deposit_vnd": 1600000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "40000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_prorate_theo_ngay_lich_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "service"
+          ],
+          "prorated_fees": [
+            "rent"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-003-1",
+      "contract_id": "ctr-003",
+      "version": 1,
+      "status": "draft",
+      "created_by": "usr-lan",
+      "created_at": "2026-05-20T09:00:00+07:00",
+      "acceptance_ids": [],
+      "document_hash": "f0a76d2dc63e398a7b34ee9280170d4b3fb0447f9e340df1f997ec596e4eb70a",
+      "terms": {
+        "period": {
+          "start": "2026-06-01T00:00:00+07:00",
+          "end": "2026-12-01T00:00:00+07:00"
+        },
+        "rent_vnd": 2500000,
+        "rent_due_day": 10,
+        "deposit_vnd": 2500000,
+        "advance_months": 1,
+        "fees": [],
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-004-1",
+      "contract_id": "ctr-004",
+      "version": 1,
+      "status": "active",
+      "created_by": "usr-bao",
+      "created_at": "2026-09-28T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-007",
+        "acc-008"
+      ],
+      "document_hash": "e45c40910295490c41d282168ce8c944e0197b3d03ee2b832173502f51794877",
+      "terms": {
+        "period": {
+          "start": "2026-10-15T00:00:00+07:00",
+          "end": "2027-04-15T00:00:00+07:00"
+        },
+        "rent_vnd": 4200000,
+        "rent_due_day": 10,
+        "deposit_vnd": 4200000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "0",
+            "included_in_rent": true
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "150000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_prorate_theo_ngay_lich_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "tariff_refs": {
+          "electricity": "trf-el-00x-smb",
+          "water": "trf-wt-00x-smb",
+          "note": "tariff SMB khai trong hm08 neu co billing; khong bat buoc cho planned"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-005-1",
+      "contract_id": "ctr-005",
+      "version": 1,
+      "status": "draft",
+      "created_by": "usr-bao",
+      "created_at": "2026-10-04T09:00:00+07:00",
+      "acceptance_ids": [],
+      "document_hash": "2f174320272ecdee52a8d83b9e4c3943f9e6b7e23c882dabe872db7bc59b1f96",
+      "terms": {
+        "period": {
+          "start": "2026-12-01T00:00:00+07:00",
+          "end": "2027-06-01T00:00:00+07:00"
+        },
+        "rent_vnd": 4000000,
+        "rent_due_day": 10,
+        "deposit_vnd": 4000000,
+        "advance_months": 1,
+        "fees": [],
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-006-1",
+      "contract_id": "ctr-006",
+      "version": 1,
+      "status": "active",
+      "created_by": "usr-bao",
+      "created_at": "2026-04-18T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-009",
+        "acc-010"
+      ],
+      "document_hash": "6fe9032540dbb2bcbb18e4b4e824b840d69e77175f2a38a65531c3c83b12392f",
+      "terms": {
+        "period": {
+          "start": "2026-05-01T00:00:00+07:00",
+          "end": "2026-11-01T00:00:00+07:00"
+        },
+        "rent_vnd": 2400000,
+        "rent_due_day": 10,
+        "deposit_vnd": 2200000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "0",
+            "included_in_rent": true
+          },
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "40000",
+            "included_in_rent": false
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_prorate_theo_ngay_lich_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "service",
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "tariff_refs": {
+          "electricity": "trf-el-102",
+          "water": "trf-wt-102"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-007-1",
+      "contract_id": "ctr-007",
+      "version": 1,
+      "status": "active",
+      "created_by": "usr-bao",
+      "created_at": "2026-03-14T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-011",
+        "acc-012"
+      ],
+      "document_hash": "56faaefecdd071b3a3cb58a1b468b61059b99d6a28a7da43798223ea62c58363",
+      "terms": {
+        "period": {
+          "start": "2026-03-22T00:00:00+07:00",
+          "end": "2027-03-22T00:00:00+07:00"
+        },
+        "rent_vnd": 2500000,
+        "rent_due_day": 10,
+        "deposit_vnd": 3000000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "internet",
+            "mode": "fixed",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "service",
+            "mode": "fixed",
+            "unit_price": "50000",
+            "included_in_rent": false
+          },
+          {
+            "name": "parking",
+            "mode": "vehicle",
+            "unit_price": "100000",
+            "included_in_rent": false
+          },
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "50000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_va_service_prorate_theo_ngay_lich_cua_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "internet",
+            "parking",
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent",
+            "service"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "tariff_refs": {
+          "electricity": "trf-el-beta-201",
+          "water": "trf-wt-beta-201"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-008-1",
+      "contract_id": "ctr-008",
+      "version": 1,
+      "status": "expired",
+      "created_by": "usr-bao",
+      "created_at": "2025-09-18T09:00:00+07:00",
+      "acceptance_ids": [
+        "acc-013",
+        "acc-014"
+      ],
+      "document_hash": "af5b6779616a20c3c6b370532bf9767ae65d587357be364b0ed63e55e7323a36",
+      "terms": {
+        "period": {
+          "start": "2025-10-01T00:00:00+07:00",
+          "end": "2026-09-30T00:00:00+07:00"
+        },
+        "rent_vnd": 1800000,
+        "rent_due_day": 5,
+        "deposit_vnd": 2400000,
+        "advance_months": 1,
+        "notice_period_days": 30,
+        "fees": [
+          {
+            "name": "occupancy",
+            "mode": "person",
+            "unit_price": "40000",
+            "included_in_rent": false
+          }
+        ],
+        "billing_rules": {
+          "prorate_rule": "rent_prorate_theo_ngay_lich_ky_dau_tien_va_ky_cuoi",
+          "flat_monthly_fees": [
+            "occupancy"
+          ],
+          "prorated_fees": [
+            "rent"
+          ],
+          "rounding": "HALF_UP_per_line_to_VND"
+        },
+        "synthetic": true
+      },
+      "synthetic": true
+    },
+    {
+      "id": "ctrv-009-1",
+      "contract_id": "ctr-009",
+      "version": 1,
+      "status": "draft",
+      "created_by": "usr-bao",
+      "created_at": "2026-10-04T10:00:00+07:00",
+      "acceptance_ids": [],
+      "document_hash": "1a6981ddf7d98a0d30393e6c4fb40c70d1ebb42a246176329b974c97c973ee3a",
+      "terms": {
+        "period": {
+          "start": "2026-10-01T00:00:00+07:00",
+          "end": "2027-04-01T00:00:00+07:00"
+        },
+        "rent_vnd": 1900000,
+        "rent_due_day": 5,
+        "deposit_vnd": 1900000,
+        "advance_months": 1,
+        "fees": [],
+        "synthetic": true
+      },
+      "synthetic": true
+    }
+  ],
+  "acceptances": [
+    {
+      "id": "acc-001",
+      "contract_version_id": "ctrv-001-1",
+      "actor_id": "usr-ana",
+      "actor_role": "renter",
+      "accepted_at": "2026-02-25T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung; khong pha chu ky dien tu phap ly.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-002",
+      "contract_version_id": "ctrv-001-1",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2026-02-25T11:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung; khong pha chu ky dien tu phap ly.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-003",
+      "contract_version_id": "ctrv-001-2",
+      "actor_id": "usr-ana",
+      "actor_role": "renter",
+      "accepted_at": "2026-08-20T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "invalidated",
+      "invalidated_by": "ctrv-001-3",
+      "invalidation_reason": "superseded_by_new_version",
+      "legal_note": "Sua terms huy chap thuan cu; phai chap thuan lai dung ban.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-004",
+      "contract_version_id": "ctrv-001-3",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2026-09-12T09:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-005",
+      "contract_version_id": "ctrv-002-1",
+      "actor_id": "usr-tien",
+      "actor_role": "renter",
+      "accepted_at": "2026-09-20T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-006",
+      "contract_version_id": "ctrv-002-2",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2026-09-25T09:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-007",
+      "contract_version_id": "ctrv-004-1",
+      "actor_id": "usr-lan",
+      "actor_role": "renter",
+      "accepted_at": "2026-10-01T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-008",
+      "contract_version_id": "ctrv-004-1",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2026-10-01T11:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-009",
+      "contract_version_id": "ctrv-006-1",
+      "actor_id": "usr-lan",
+      "actor_role": "renter",
+      "accepted_at": "2026-04-20T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-010",
+      "contract_version_id": "ctrv-006-1",
+      "actor_id": "usr-chi",
+      "actor_role": "manager",
+      "accepted_at": "2026-04-21T09:00:00+07:00",
+      "method": "in_app_consent",
+      "delegated_by": "usr-bao",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Manager duoc uy quyen chap thuan thay owner; uy quyen phai ghi trong audit.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-011",
+      "contract_version_id": "ctrv-007-1",
+      "actor_id": "usr-tien",
+      "actor_role": "renter",
+      "accepted_at": "2026-03-15T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-012",
+      "contract_version_id": "ctrv-007-1",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2026-03-16T09:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-013",
+      "contract_version_id": "ctrv-008-1",
+      "actor_id": "usr-tien",
+      "actor_role": "renter",
+      "accepted_at": "2025-09-20T10:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    },
+    {
+      "id": "acc-014",
+      "contract_version_id": "ctrv-008-1",
+      "actor_id": "usr-bao",
+      "actor_role": "owner",
+      "accepted_at": "2025-09-20T11:00:00+07:00",
+      "method": "in_app_consent",
+      "status": "active",
+      "invalidated_by": null,
+      "invalidation_reason": null,
+      "legal_note": "Ghi nhan chap thuan ung dung.",
+      "synthetic": true
+    }
+  ],
+  "negative_activation_attempts": [
+    {
+      "id": "negctr-001",
+      "case": "stale_acceptance_activation",
+      "contract_id": "ctr-001",
+      "attempted_version_id": "ctrv-001-2",
+      "attempted_at": "2026-09-15T10:00:00+07:00",
+      "reason": "Renter chi co acceptance v2 (da invalidated khi v3 tao); khong duoc activate dua tren acceptance cu.",
+      "expected_outcome": "blocked_stale_acceptance",
+      "synthetic": true
+    },
+    {
+      "id": "negctr-002",
+      "case": "version_mismatch_acceptance",
+      "contract_id": "ctr-002",
+      "attempted_version_id": "ctrv-002-1",
+      "attempted_at": "2026-09-26T09:00:00+07:00",
+      "reason": "Renter accepted v1, owner accepted v2; khong co version nao du chap thuan ca hai ben.",
+      "expected_outcome": "blocked_version_mismatch",
+      "synthetic": true
+    },
+    {
+      "id": "negctr-003",
+      "case": "overlap_active_contract",
+      "contract_id": "ctr-003",
+      "attempted_version_id": "ctrv-003-1",
+      "attempted_at": "2026-05-21T09:00:00+07:00",
+      "overlapping_contract_id": "ctr-001",
+      "overlap_interval": {
+        "start": "2026-06-01T00:00:00+07:00",
+        "end": "2026-09-01T00:00:00+07:00"
+      },
+      "reason": "ctr-001 active [2026-03-01, 2027-03-01) cung room-alpha-1-101; ky moi giao nhau.",
+      "expected_outcome": "blocked_overlapping_allocation",
+      "synthetic": true
+    },
+    {
+      "id": "negctr-004",
+      "case": "overlap_planned_allocation",
+      "contract_id": "ctr-005",
+      "attempted_version_id": "ctrv-005-1",
+      "attempted_at": "2026-10-04T09:30:00+07:00",
+      "overlapping_contract_id": "ctr-004",
+      "overlap_interval": {
+        "start": "2026-12-01T00:00:00+07:00",
+        "end": "2027-04-15T00:00:00+07:00"
+      },
+      "reason": "ctr-004 vua active tao planned allocation [2026-10-15, 2027-04-15) cung room-alpha-2-201.",
+      "expected_outcome": "blocked_planned_allocation_overlap",
+      "synthetic": true
+    },
+    {
+      "id": "negctr-005",
+      "case": "occupied_no_recorded_moveout",
+      "contract_id": "ctr-009",
+      "attempted_version_id": "ctrv-009-1",
+      "attempted_at": "2026-10-04T10:30:00+07:00",
+      "reason": "ctr-008 expired 2026-09-30 nhung ten-005 chua co move-out; phong van occupied, khong cho activate contract moi.",
+      "expected_outcome": "blocked_occupied_no_recorded_moveout",
+      "synthetic": true
+    }
+  ]
+}

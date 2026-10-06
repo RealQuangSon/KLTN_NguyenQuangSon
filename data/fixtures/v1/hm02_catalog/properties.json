@@ -1,0 +1,53 @@
+{
+  "pack": "hm02-catalog",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Property giả lập; tọa độ fixture gần đúng, không định danh địa chỉ thật; không phải tin HubHome.",
+  "properties": [
+    {
+      "id": "prop-alpha-1",
+      "organization_id": "org-alpha",
+      "building_code": "SMA",
+      "display_name": "Chung phòng Sao Mai A (giả lập)",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "latitude": 10.735,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100.0,
+      "owner_user_id": "usr-bao",
+      "created_at": "2026-01-10T09:00:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "prop-alpha-2",
+      "organization_id": "org-alpha",
+      "building_code": "SMB",
+      "display_name": "Chung phòng Sao Mai B (giả lập)",
+      "city": "TP.HCM",
+      "area": "Quận Bình Thạnh",
+      "latitude": 10.803,
+      "longitude": 106.711,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 200.0,
+      "owner_user_id": "usr-bao",
+      "created_at": "2026-01-10T09:30:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "prop-beta-1",
+      "organization_id": "org-beta",
+      "building_code": "BTX",
+      "display_name": "Chuỗi Beta X (giả lập)",
+      "city": "TP.HCM",
+      "area": "Quận 1",
+      "latitude": 10.775,
+      "longitude": 106.7,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 150.0,
+      "owner_user_id": "usr-bao",
+      "created_at": "2026-01-11T09:00:00+07:00",
+      "synthetic": true
+    }
+  ]
+}

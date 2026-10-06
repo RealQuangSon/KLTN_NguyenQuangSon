@@ -1,0 +1,147 @@
+{
+  "pack": "hm02-catalog",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Phòng thực (physical room) có ID ổn định; unique(organization, building_code, room_code). Tiện ích dùng từ điển 9 mã; phòng này thuộc namespace fixture riêng, không ánh xạ canonical synthetic-room-NNN.",
+  "amenity_codes": ["window", "quiet", "parking", "private_bathroom", "air_conditioning", "washing_machine", "balcony", "furniture", "pets_allowed"],
+  "physical_rooms": [
+    {
+      "id": "room-alpha-1-101",
+      "organization_id": "org-alpha",
+      "property_id": "prop-alpha-1",
+      "building_code": "SMA",
+      "room_code": "101",
+      "room_type": "room",
+      "area_m2": 22.0,
+      "capacity": 2,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false,
+        "washing_machine": false,
+        "balcony": false,
+        "furniture": true,
+        "pets_allowed": false
+      },
+      "created_at": "2026-01-10T10:00:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "room-alpha-1-102",
+      "organization_id": "org-alpha",
+      "property_id": "prop-alpha-1",
+      "building_code": "SMA",
+      "room_code": "102",
+      "room_type": "room",
+      "area_m2": 18.0,
+      "capacity": 2,
+      "amenities": {
+        "window": true,
+        "quiet": false,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": true,
+        "washing_machine": false,
+        "balcony": false,
+        "furniture": true,
+        "pets_allowed": false
+      },
+      "created_at": "2026-01-10T10:05:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "room-alpha-1-103",
+      "organization_id": "org-alpha",
+      "property_id": "prop-alpha-1",
+      "building_code": "SMA",
+      "room_code": "103",
+      "room_type": "room",
+      "area_m2": 20.0,
+      "capacity": 1,
+      "amenities": {
+        "window": false,
+        "quiet": true,
+        "parking": false,
+        "private_bathroom": true,
+        "air_conditioning": false,
+        "washing_machine": true,
+        "balcony": false,
+        "furniture": false,
+        "pets_allowed": false
+      },
+      "created_at": "2026-01-10T10:10:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "room-alpha-2-201",
+      "organization_id": "org-alpha",
+      "property_id": "prop-alpha-2",
+      "building_code": "SMB",
+      "room_code": "201",
+      "room_type": "studio",
+      "area_m2": 26.0,
+      "capacity": 2,
+      "amenities": {
+        "window": true,
+        "quiet": false,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": true,
+        "washing_machine": true,
+        "balcony": true,
+        "furniture": true,
+        "pets_allowed": true
+      },
+      "created_at": "2026-01-12T10:00:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "room-beta-1-301",
+      "organization_id": "org-beta",
+      "property_id": "prop-beta-1",
+      "building_code": "BTX",
+      "room_code": "301",
+      "room_type": "room",
+      "area_m2": 24.0,
+      "capacity": 2,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": true,
+        "washing_machine": false,
+        "balcony": true,
+        "furniture": true,
+        "pets_allowed": false
+      },
+      "created_at": "2026-01-13T10:00:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "room-beta-1-302",
+      "organization_id": "org-beta",
+      "property_id": "prop-beta-1",
+      "building_code": "BTX",
+      "room_code": "302",
+      "room_type": "room",
+      "area_m2": 16.0,
+      "capacity": 1,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": false,
+        "private_bathroom": false,
+        "air_conditioning": false,
+        "washing_machine": false,
+        "balcony": false,
+        "furniture": false,
+        "pets_allowed": false
+      },
+      "created_at": "2026-01-13T10:05:00+07:00",
+      "synthetic": true
+    }
+  ]
+}

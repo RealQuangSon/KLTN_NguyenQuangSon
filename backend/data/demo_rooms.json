@@ -1,0 +1,737 @@
+{
+  "notice": "Dữ liệu hoàn toàn giả lập, không phải tin HubHome hoặc phòng có thật.",
+  "rooms": [
+    {
+      "id": "demo-01",
+      "revision": 1,
+      "title": "Phòng giả lập 01",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 21,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7351,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2500000,
+        "deposit_vnd": 2500000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/01",
+      "synthetic": true
+    },
+    {
+      "id": "demo-02",
+      "revision": 1,
+      "title": "Phòng giả lập 02",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 22,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": false,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.735199999999999,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2200000,
+        "deposit_vnd": 2200000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/02",
+      "synthetic": true
+    },
+    {
+      "id": "demo-03",
+      "revision": 1,
+      "title": "Phòng giả lập 03",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 23,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": true
+      },
+      "latitude": 10.735299999999999,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2700000,
+        "deposit_vnd": 2700000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/03",
+      "synthetic": true
+    },
+    {
+      "id": "demo-04",
+      "revision": 1,
+      "title": "Phòng giả lập 04",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 24,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": false,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7354,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2600000,
+        "deposit_vnd": 2600000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/04",
+      "synthetic": true
+    },
+    {
+      "id": "demo-05",
+      "revision": 1,
+      "title": "Phòng giả lập 05",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 25,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7355,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2400000,
+        "deposit_vnd": 2400000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/05",
+      "synthetic": true
+    },
+    {
+      "id": "demo-06",
+      "revision": 1,
+      "title": "Phòng giả lập 06",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 26,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7356,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2800000,
+        "deposit_vnd": 2800000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 6000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/06",
+      "synthetic": true
+    },
+    {
+      "id": "demo-07",
+      "revision": 1,
+      "title": "Phòng giả lập 07",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 27,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7357,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2000000,
+        "deposit_vnd": 2000000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": null,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/07",
+      "synthetic": true
+    },
+    {
+      "id": "demo-08",
+      "revision": 1,
+      "title": "Phòng giả lập 08",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 28,
+      "published": true,
+      "available": false,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.7358,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2100000,
+        "deposit_vnd": 2100000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/08",
+      "synthetic": true
+    },
+    {
+      "id": "demo-09",
+      "revision": 1,
+      "title": "Phòng giả lập 09",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 29,
+      "published": false,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.735899999999999,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2300000,
+        "deposit_vnd": 2300000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/09",
+      "synthetic": true
+    },
+    {
+      "id": "demo-10",
+      "revision": 1,
+      "title": "Phòng giả lập 10",
+      "city": "Hà Nội",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 30,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.735999999999999,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2000000,
+        "deposit_vnd": 2000000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/10",
+      "synthetic": true
+    },
+    {
+      "id": "demo-11",
+      "revision": 1,
+      "title": "Phòng giả lập 11",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "studio",
+      "capacity": 2,
+      "area_m2": 31,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": true,
+        "air_conditioning": false
+      },
+      "latitude": 10.736099999999999,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2300000,
+        "deposit_vnd": 2300000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/11",
+      "synthetic": true
+    },
+    {
+      "id": "demo-12",
+      "revision": 1,
+      "title": "Phòng giả lập 12",
+      "city": "TP.HCM",
+      "area": "Quận 7",
+      "room_type": "room",
+      "capacity": 2,
+      "area_m2": 32,
+      "published": true,
+      "available": true,
+      "amenities": {
+        "window": true,
+        "quiet": true,
+        "parking": true,
+        "private_bathroom": null,
+        "air_conditioning": false
+      },
+      "latitude": 10.7362,
+      "longitude": 106.721,
+      "location_accuracy": "approximate",
+      "uncertainty_m": 100,
+      "quote": {
+        "rent_vnd": 2300000,
+        "deposit_vnd": 2300000,
+        "advance_months": 1,
+        "one_time_vnd": 0,
+        "fees": [
+          {
+            "name": "electricity",
+            "amount_vnd": 3000,
+            "mode": "kwh",
+            "source": "demo://electricity"
+          },
+          {
+            "name": "water",
+            "amount_vnd": 80000,
+            "mode": "person",
+            "source": "demo://water"
+          },
+          {
+            "name": "internet",
+            "amount_vnd": 100000,
+            "source": "demo://internet"
+          },
+          {
+            "name": "parking",
+            "amount_vnd": 100000,
+            "mode": "vehicle",
+            "source": "demo://parking"
+          },
+          {
+            "name": "service",
+            "amount_vnd": 50000,
+            "source": "demo://service"
+          }
+        ]
+      },
+      "source": "demo://rooms/12",
+      "synthetic": true
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "pack": "hm07-contracts",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Sổ cọc: nhận/khấu trừ/hoàn có evidence; cọc không mặc định thành doanh thu thuê. Balance = received − accepted_deductions − refunds; proposed/disputed chưa tính.",
+  "ledger_entries": [
+    {
+      "id": "dep-001",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "entry_type": "deposit_received",
+      "amount_vnd": 2500000,
+      "at": "2026-03-01T09:00:00+07:00",
+      "media_ids": ["med-dep-001"],
+      "recorded_by": "usr-chi",
+      "note": "Nhận cọc theo ctrv-001-1.",
+      "synthetic": true
+    },
+    {
+      "id": "dep-002",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "entry_type": "deduction_proposed",
+      "amount_vnd": 500000,
+      "at": "2026-09-28T10:00:00+07:00",
+      "media_ids": ["med-hnd-002-final-1"],
+      "recorded_by": "usr-bao",
+      "reason": "Cửa gõ hỏng do người thuê (giả lập).",
+      "synthetic": true
+    },
+    {
+      "id": "dep-003",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "entry_type": "deduction_accepted",
+      "amount_vnd": 500000,
+      "at": "2026-09-30T09:00:00+07:00",
+      "accepted_by": "usr-ana",
+      "proposed_entry_id": "dep-002",
+      "basis": "terms_snapshot:ctrv-001-1 deposit_rules",
+      "synthetic": true
+    },
+    {
+      "id": "dep-004",
+      "tenancy_id": "ten-001",
+      "organization_id": "org-alpha",
+      "entry_type": "refund_issued",
+      "amount_vnd": 2000000,
+      "at": "2026-10-02T10:00:00+07:00",
+      "transfer_ref": "synth-transfer-ref-0001",
+      "recorded_by": "usr-chi",
+      "note": "Hoàn cọc 2,500,000 − 500,000 khấu trừ accepted; hóa đơn cuối chưa chốt nên close vẫn blocked.",
+      "synthetic": true
+    },
+    {
+      "id": "dep-005",
+      "tenancy_id": "ten-002",
+      "organization_id": "org-alpha",
+      "entry_type": "deposit_received",
+      "amount_vnd": 2200000,
+      "at": "2026-05-01T09:00:00+07:00",
+      "recorded_by": "usr-chi",
+      "synthetic": true
+    },
+    {
+      "id": "dep-006",
+      "tenancy_id": "ten-002",
+      "organization_id": "org-alpha",
+      "entry_type": "deduction_proposed",
+      "amount_vnd": 800000,
+      "at": "2026-10-02T15:00:00+07:00",
+      "recorded_by": "usr-bao",
+      "reason": "Sơn lại tường (giả lập).",
+      "synthetic": true
+    },
+    {
+      "id": "dep-007",
+      "tenancy_id": "ten-002",
+      "organization_id": "org-alpha",
+      "entry_type": "deduction_disputed",
+      "amount_vnd": 800000,
+      "at": "2026-10-04T09:00:00+07:00",
+      "disputed_by": "usr-lan",
+      "proposed_entry_id": "dep-006",
+      "reason": "Người thuê cho rằng hao mòn tự nhiên.",
+      "expected_outcome": "dispute_hold_no_auto_deduction_no_refund",
+      "synthetic": true
+    },
+    {
+      "id": "dep-008",
+      "tenancy_id": "ten-003",
+      "organization_id": "org-beta",
+      "entry_type": "deposit_received",
+      "amount_vnd": 3000000,
+      "at": "2026-03-22T09:00:00+07:00",
+      "recorded_by": "usr-ha",
+      "synthetic": true
+    },
+    {
+      "id": "dep-009",
+      "tenancy_id": "ten-005",
+      "organization_id": "org-alpha",
+      "entry_type": "deposit_received",
+      "amount_vnd": 2400000,
+      "at": "2025-10-01T09:00:00+07:00",
+      "recorded_by": "usr-chi",
+      "synthetic": true
+    }
+  ],
+  "expected_balances": [
+    {
+      "tenancy_id": "ten-001",
+      "expected_received_vnd": 2500000,
+      "expected_accepted_deductions_vnd": 500000,
+      "expected_refunds_vnd": 2000000,
+      "expected_balance_vnd": 0,
+      "expected_settlement_status": "settled",
+      "calculation_note": "2500000-500000-2000000=0",
+      "synthetic": true
+    },
+    {
+      "tenancy_id": "ten-002",
+      "expected_received_vnd": 2200000,
+      "expected_accepted_deductions_vnd": 0,
+      "expected_refunds_vnd": 0,
+      "expected_balance_vnd": 2200000,
+      "expected_settlement_status": "disputed_hold",
+      "calculation_note": "deduction 800000 disputed → không trừ, không hoàn; balance giữ 2200000.",
+      "synthetic": true
+    },
+    {
+      "tenancy_id": "ten-003",
+      "expected_received_vnd": 3000000,
+      "expected_accepted_deductions_vnd": 0,
+      "expected_refunds_vnd": 0,
+      "expected_balance_vnd": 3000000,
+      "expected_settlement_status": "pending",
+      "calculation_note": "Chưa có khấu trừ/hoàn.",
+      "synthetic": true
+    },
+    {
+      "tenancy_id": "ten-004",
+      "expected_received_vnd": 0,
+      "expected_accepted_deductions_vnd": 0,
+      "expected_refunds_vnd": 0,
+      "expected_balance_vnd": 0,
+      "expected_settlement_status": "pending",
+      "calculation_note": "Planned; cọc thu khi move-in theo hnd checklist.",
+      "synthetic": true
+    },
+    {
+      "tenancy_id": "ten-005",
+      "expected_received_vnd": 2400000,
+      "expected_accepted_deductions_vnd": 0,
+      "expected_refunds_vnd": 0,
+      "expected_balance_vnd": 2400000,
+      "expected_settlement_status": "blocked_moveout_missing",
+      "calculation_note": "Không move-out thì không quyết toán cọc.",
+      "synthetic": true
+    }
+  ]
+}

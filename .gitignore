@@ -1,0 +1,15 @@
+.venv/
+.local/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+node_modules/
+dist/
+*.tsbuildinfo
+*.log

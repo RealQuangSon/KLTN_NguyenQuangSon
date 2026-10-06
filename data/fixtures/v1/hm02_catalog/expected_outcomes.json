@@ -1,0 +1,89 @@
+{
+  "pack": "hm02-catalog",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Expected public projection và ca số học phí; hằng số soạn độc lập kèm calculation_note.",
+  "public_catalog_snapshot": {
+    "as_of": "2026-10-05T00:00:00+07:00",
+    "expected_published_listing_ids": ["lst-alpha-101-a", "lst-alpha-101-b", "lst-alpha-102-a", "lst-alpha-2-201-a", "lst-beta-301-a"],
+    "expected_hidden_listing_ids": ["lst-alpha-103-a", "lst-beta-302-a"],
+    "hidden_reasons": {"lst-alpha-103-a": "suspended_then_archived", "lst-beta-302-a": "never_published_draft"},
+    "expected_listing_entry_count": 5,
+    "expected_distinct_physical_room_count": 4,
+    "alias_note": "lst-alpha-101-a và lst-alpha-101-b cùng room-alpha-1-101; đếm lựa chọn theo phòng thực nên alias không tăng số lựa chọn (4, không phải 5)."
+  },
+  "availability_snapshot": {
+    "as_of": "2026-10-05T00:00:00+07:00",
+    "room-alpha-1-101": {"expected_availability": "occupied", "reason": "ten-001 active (move-in 2026-03-01, move-out 2026-10-05, close blocked → vẫn occupied)"},
+    "room-alpha-1-102": {"expected_availability": "occupied", "reason": "ten-002 active từ 2026-05-01; rsv-002 đã expired/release từ 2026-02-20"},
+    "room-alpha-1-103": {"expected_availability": "unavailable", "reason": "listing archived + sửa chữa; availability false có nguồn"},
+    "room-alpha-2-201": {"expected_availability": "available", "reason": "ten-004 planned 2026-10-15 chưa move-in; planned allocation tồn tại nhưng không làm occupied"},
+    "room-beta-1-301": {"expected_availability": "occupied", "reason": "ten-003 active từ 2026-03-22"},
+    "room-beta-1-302": {"expected_availability": null, "reason": "draft listing chưa xác minh; unknown khác false"}
+  },
+  "monthly_total_cases": [
+    {
+      "case_id": "CAT-TOTAL-01",
+      "listing_version_id": "lstver-101a-2",
+      "scenario": {"people": 1, "vehicles": 1, "electricity_kwh": "140", "water_m3": "3"},
+      "expected": {
+        "rent_vnd": 2600000,
+        "lines": [
+          {"name": "electricity", "amount_vnd": 420000},
+          {"name": "water", "amount_vnd": 80000},
+          {"name": "internet", "amount_vnd": 0},
+          {"name": "parking", "amount_vnd": 0},
+          {"name": "service", "amount_vnd": 50000}
+        ],
+        "known_subtotal_vnd": 3150000,
+        "full_monthly_total_vnd": null,
+        "missing_fees": ["gas"]
+      },
+      "calculation_note": "2600000+140*3000+80000+0+0+50000=3150000; gas null → full total null (missing khác 0).",
+      "synthetic": true
+    },
+    {
+      "case_id": "CAT-TOTAL-02",
+      "listing_version_id": "lstver-102a-2",
+      "scenario": {"people": 1, "vehicles": 1, "electricity_kwh": "140", "water_m3": "3"},
+      "expected": {
+        "rent_vnd": 2400000,
+        "lines": [
+          {"name": "electricity", "amount_vnd": 490000},
+          {"name": "water", "amount_vnd": 75000},
+          {"name": "internet", "amount_vnd": 0},
+          {"name": "parking", "amount_vnd": 100000},
+          {"name": "service", "amount_vnd": 40000}
+        ],
+        "known_subtotal_vnd": 3105000,
+        "full_monthly_total_vnd": 3105000,
+        "missing_fees": []
+      },
+      "calculation_note": "2400000+140*3500+3*25000+0+100000+40000=3105000; không thiếu khoản → full total = known subtotal.",
+      "synthetic": true
+    }
+  ],
+  "lifecycle_expectations": [
+    "lstver-101a-1 superseded khi r2 published; public chỉ thấy revision 2.",
+    "lstver-102a-1 changes_requested không public (negmod-002); r2 được duyệt sau khi bổ sung bằng chứng.",
+    "lst-alpha-103-a suspended rút projection + invalidate AI runs (negmod-003); archived giữ history.",
+    "negmod-001: publish r1 sau khi r2 submitted phải reject_stale_revision (revision guard).",
+    "evd-contradiction-el-101a: mâu thuẫn bằng chứng không tự chọn giá thấp nhất."
+  ],
+  "quality_report_expectations": {
+    "as_of": "2026-10-05T00:00:00+07:00",
+    "properties": 3,
+    "physical_rooms": 6,
+    "listings": 7,
+    "published_listings": 5,
+    "distinct_published_physical_rooms": 4,
+    "missing_fee_versions": 3,
+    "missing_fee_ids": ["feev-101a-2-gas", "feev-102a-1-wa", "feev-302a-1-el"],
+    "needs_verification_count": 3,
+    "media_registry_total": 25,
+    "private_media_count": 16,
+    "deleted_media_count": 2,
+    "alias_listing_pairs": 1,
+    "stale_review_negative_cases": 1
+  }
+}

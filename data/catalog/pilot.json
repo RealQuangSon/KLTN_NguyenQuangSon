@@ -1,0 +1,1882 @@
+{
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "rooms": [
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 21.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-001",
+      "landlord_id": "owner-a",
+      "latitude": 10.7351,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-001/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-001/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-001/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-001/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-001/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-001",
+      "synthetic": true,
+      "title": "Phòng giả lập 001. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": false,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 22.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-002",
+      "landlord_id": "owner-b",
+      "latitude": 10.735199999999999,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2200000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-002/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-002/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-002/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-002/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-002/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2200000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-002",
+      "synthetic": true,
+      "title": "Phòng giả lập 002. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 23.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-003",
+      "landlord_id": "owner-a",
+      "latitude": 10.735299999999999,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2700000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-003/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-003/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-003/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-003/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-003/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2700000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-003",
+      "synthetic": true,
+      "title": "Phòng giả lập 003. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": false
+      },
+      "area": "Quận 7",
+      "area_m2": 24.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-004",
+      "landlord_id": "owner-b",
+      "latitude": 10.7354,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2600000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-004/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-004/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-004/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-004/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-004/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2600000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-004",
+      "synthetic": true,
+      "title": "Phòng giả lập 004. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 25.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-005",
+      "landlord_id": "owner-a",
+      "latitude": 10.7355,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2400000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-005/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-005/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-005/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-005/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-005/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2400000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-005",
+      "synthetic": true,
+      "title": "Phòng giả lập 005. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 26.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-006",
+      "landlord_id": "owner-b",
+      "latitude": 10.7356,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2800000,
+        "fees": [
+          {
+            "amount_vnd": "6000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-006/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-006/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-006/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-006/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-006/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2800000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-006",
+      "synthetic": true,
+      "title": "Phòng giả lập 006. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 27.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-007",
+      "landlord_id": "owner-a",
+      "latitude": 10.7357,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2000000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-007/fees/electricity"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-007/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-007/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-007/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-007/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2000000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-007",
+      "synthetic": true,
+      "title": "Phòng giả lập 007. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 28.0,
+      "available": false,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-008",
+      "landlord_id": "owner-b",
+      "latitude": 10.7358,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2100000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-008/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-008/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-008/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-008/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-008/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2100000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-008",
+      "synthetic": true,
+      "title": "Phòng giả lập 008. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 29.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-009",
+      "landlord_id": "owner-a",
+      "latitude": 10.735899999999999,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": false,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2300000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-009/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-009/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-009/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-009/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-009/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2300000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-009",
+      "synthetic": true,
+      "title": "Phòng giả lập 009. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 30.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-010",
+      "landlord_id": "owner-b",
+      "latitude": 10.735999999999999,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2000000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-010/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-010/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-010/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-010/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-010/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2000000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-010",
+      "synthetic": true,
+      "title": "Phòng giả lập 010. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 31.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-011",
+      "landlord_id": "owner-a",
+      "latitude": 10.736099999999999,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2300000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-011/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-011/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-011/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-011/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-011/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2300000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-011",
+      "synthetic": true,
+      "title": "Phòng giả lập 011. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "parking": true,
+        "private_bathroom": null,
+        "quiet": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 32.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-012",
+      "landlord_id": "owner-b",
+      "latitude": 10.7362,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2300000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-012/fees/electricity"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-012/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-012/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-012/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-012/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2300000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-012",
+      "synthetic": true,
+      "title": "Phòng giả lập 012. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": true,
+        "furniture": false,
+        "parking": true,
+        "pets_allowed": true,
+        "private_bathroom": true,
+        "quiet": false,
+        "washing_machine": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 16.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 1,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-013",
+      "landlord_id": "owner-a",
+      "latitude": 10.738164,
+      "location_accuracy": "approximate",
+      "longitude": 106.712671,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2800000,
+        "fees": [
+          {
+            "amount_vnd": "2500",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-013/fees/electricity"
+          },
+          {
+            "amount_vnd": "25000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-013/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-013/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-013/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-013/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2800000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-013",
+      "synthetic": true,
+      "title": "Phòng giả lập 013. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 50.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": false,
+        "parking": false,
+        "pets_allowed": true,
+        "private_bathroom": false,
+        "quiet": true,
+        "washing_machine": true,
+        "window": false
+      },
+      "area": "Quận 1",
+      "area_m2": 18.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 1,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-014",
+      "landlord_id": "owner-b",
+      "latitude": 10.780521,
+      "location_accuracy": "approximate",
+      "longitude": 106.695472,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 4500000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-014/fees/electricity"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-014/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-014/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-014/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-014/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 4500000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-014",
+      "synthetic": true,
+      "title": "Phòng giả lập 014. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": true,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": false,
+        "private_bathroom": false,
+        "quiet": false,
+        "washing_machine": true,
+        "window": false
+      },
+      "area": "Quận 3",
+      "area_m2": 16.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 1,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-015",
+      "landlord_id": "owner-a",
+      "latitude": 10.790922,
+      "location_accuracy": "approximate",
+      "longitude": 106.692464,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 4500000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-015/fees/electricity"
+          },
+          {
+            "amount_vnd": "20000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-015/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-015/fees/internet"
+          },
+          {
+            "amount_vnd": "150000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-015/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-015/fees/service"
+          }
+        ],
+        "one_time_vnd": 100000,
+        "rent_vnd": 4500000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-015",
+      "synthetic": true,
+      "title": "Phòng giả lập 015. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+      "uncertainty_m": 200.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": false,
+        "parking": false,
+        "pets_allowed": false,
+        "private_bathroom": true,
+        "quiet": true,
+        "washing_machine": true,
+        "window": false
+      },
+      "area": "Quận 10",
+      "area_m2": 30.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-016",
+      "landlord_id": "owner-b",
+      "latitude": 10.779686,
+      "location_accuracy": "approximate",
+      "longitude": 106.667134,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2400000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-016/fees/electricity"
+          },
+          {
+            "amount_vnd": "15000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-016/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-016/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-016/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-016/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2400000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-016",
+      "synthetic": true,
+      "title": "Phòng giả lập 016. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ.",
+      "uncertainty_m": 200.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": false,
+        "parking": false,
+        "pets_allowed": true,
+        "private_bathroom": false,
+        "quiet": false,
+        "washing_machine": false,
+        "window": true
+      },
+      "area": "Quận Bình Thạnh",
+      "area_m2": 22.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 1,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-017",
+      "landlord_id": "owner-a",
+      "latitude": 10.799702,
+      "location_accuracy": "approximate",
+      "longitude": 106.715825,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 2,
+        "deposit_vnd": 3100000,
+        "fees": [
+          {
+            "amount_vnd": "3500",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-017/fees/electricity"
+          },
+          {
+            "amount_vnd": "15000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-017/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-017/fees/internet"
+          },
+          {
+            "amount_vnd": "150000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-017/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-017/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 3100000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-017",
+      "synthetic": true,
+      "title": "Phòng giả lập 017. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 25.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "balcony": false,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": false,
+        "private_bathroom": true,
+        "quiet": false,
+        "washing_machine": true,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 22.0,
+      "available": false,
+      "bedrooms": null,
+      "capacity": 1,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-018",
+      "landlord_id": "owner-b",
+      "latitude": 10.734004,
+      "location_accuracy": "approximate",
+      "longitude": 106.71286,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2400000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-018/fees/electricity"
+          },
+          {
+            "amount_vnd": "20000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-018/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-018/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-018/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-018/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2400000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-018",
+      "synthetic": true,
+      "title": "Phòng giả lập 018. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+      "uncertainty_m": 50.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": false,
+        "parking": true,
+        "pets_allowed": false,
+        "private_bathroom": true,
+        "quiet": false,
+        "washing_machine": false,
+        "window": true
+      },
+      "area": "Quận 1",
+      "area_m2": 30.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 3,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-019",
+      "landlord_id": "owner-a",
+      "latitude": 10.778835,
+      "location_accuracy": "approximate",
+      "longitude": 106.694946,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2800000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-019/fees/electricity"
+          },
+          {
+            "amount_vnd": "15000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-019/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-019/fees/internet"
+          },
+          {
+            "amount_vnd": "150000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-019/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-019/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2800000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-019",
+      "synthetic": true,
+      "title": "Phòng giả lập 019. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc.",
+      "uncertainty_m": 50.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "balcony": true,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "washing_machine": true,
+        "window": false
+      },
+      "area": "Quận 3",
+      "area_m2": 22.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 3,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-020",
+      "landlord_id": "owner-b",
+      "latitude": 10.778912,
+      "location_accuracy": "approximate",
+      "longitude": 106.691739,
+      "occupancy": null,
+      "published": false,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 5500000,
+        "fees": [
+          {
+            "amount_vnd": "5000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-020/fees/electricity"
+          },
+          {
+            "amount_vnd": "15000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-020/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-020/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-020/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-020/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 5500000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-020",
+      "synthetic": true,
+      "title": "Phòng giả lập 020. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 200.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "balcony": true,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": true,
+        "private_bathroom": true,
+        "quiet": false,
+        "washing_machine": true,
+        "window": true
+      },
+      "area": "Quận 10",
+      "area_m2": 22.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-021",
+      "landlord_id": "owner-a",
+      "latitude": 10.778211,
+      "location_accuracy": "approximate",
+      "longitude": 106.67037,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2400000,
+        "fees": [
+          {
+            "amount_vnd": "3000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-021/fees/electricity"
+          },
+          {
+            "amount_vnd": "25000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-021/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-021/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-021/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-021/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2400000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-021",
+      "synthetic": true,
+      "title": "Phòng giả lập 021. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 50.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": false,
+        "balcony": false,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": true,
+        "private_bathroom": true,
+        "quiet": true,
+        "washing_machine": true,
+        "window": false
+      },
+      "area": "Quận Bình Thạnh",
+      "area_m2": 26.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 3,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-022",
+      "landlord_id": "owner-b",
+      "latitude": 10.811157,
+      "location_accuracy": "approximate",
+      "longitude": 106.716926,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2800000,
+        "fees": [
+          {
+            "amount_vnd": "5000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-022/fees/electricity"
+          },
+          {
+            "amount_vnd": "25000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-022/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-022/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-022/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-022/fees/service"
+          }
+        ],
+        "one_time_vnd": 100000,
+        "rent_vnd": 2800000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-022",
+      "synthetic": true,
+      "title": "Phòng giả lập 022. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có vệ sinh riêng, ưu tiên không gian sinh hoạt cá nhân. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 200.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": true,
+        "parking": false,
+        "pets_allowed": true,
+        "private_bathroom": null,
+        "quiet": true,
+        "washing_machine": false,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 18.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 3,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
+      "id": "synthetic-room-023",
+      "landlord_id": "owner-a",
+      "latitude": 10.73205,
+      "location_accuracy": "approximate",
+      "longitude": 106.729558,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2100000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-023/fees/electricity"
+          },
+          {
+            "amount_vnd": "15000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-023/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-023/fees/internet"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-023/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-023/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2100000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-023",
+      "synthetic": true,
+      "title": "Phòng giả lập 023. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay. Khu trọ cho phép nuôi thú cưng nhỏ.",
+      "uncertainty_m": 100.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": true,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": false,
+        "private_bathroom": false,
+        "quiet": true,
+        "washing_machine": true,
+        "window": true
+      },
+      "area": "Quận 1",
+      "area_m2": 30.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": null,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-024",
+      "landlord_id": "owner-b",
+      "latitude": 10.780273,
+      "location_accuracy": "approximate",
+      "longitude": 106.697707,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2800000,
+        "fees": [
+          {
+            "amount_vnd": "4000",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-024/fees/electricity"
+          },
+          {
+            "amount_vnd": "25000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-024/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-024/fees/internet"
+          },
+          {
+            "amount_vnd": "150000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-024/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-024/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2800000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-024",
+      "synthetic": true,
+      "title": "Phòng giả lập 024. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có máy giặt dùng chung hoặc riêng, tiện giặt đồ định kỳ. Phòng có ban công để phơi đồ và có không gian ngoài trời riêng. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+      "uncertainty_m": 50.0
+    },
+    {
+      "amenities": {
+        "air_conditioning": true,
+        "balcony": false,
+        "furniture": true,
+        "parking": true,
+        "pets_allowed": false,
+        "private_bathroom": false,
+        "quiet": true,
+        "washing_machine": false,
+        "window": true
+      },
+      "area": "Quận 7",
+      "area_m2": 18.0,
+      "available": true,
+      "bedrooms": null,
+      "capacity": 2,
+      "city": "TP.HCM",
+      "features_text": null,
+      "house_rules": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
+      "id": "synthetic-room-080",
+      "landlord_id": "owner-b",
+      "latitude": 10.744,
+      "location_accuracy": "approximate",
+      "longitude": 106.721,
+      "occupancy": null,
+      "published": true,
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 3900000,
+        "fees": [
+          {
+            "amount_vnd": "3500",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://rooms/synthetic-room-080/fees/electricity"
+          },
+          {
+            "amount_vnd": "25000",
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://rooms/synthetic-room-080/fees/water"
+          },
+          {
+            "amount_vnd": "100000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://rooms/synthetic-room-080/fees/internet"
+          },
+          {
+            "amount_vnd": "80000",
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://rooms/synthetic-room-080/fees/parking"
+          },
+          {
+            "amount_vnd": "50000",
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://rooms/synthetic-room-080/fees/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 3900000
+      },
+      "revision": 1,
+      "room_type": "room",
+      "source": "synthetic://rooms/synthetic-room-080",
+      "synthetic": true,
+      "title": "Phòng giả lập 080. Phòng có cửa sổ đón nắng, phù hợp người thích ánh sáng tự nhiên. Phòng yên tĩnh trong khu dân cư, thuận tiện đọc sách và học tại nhà. Phòng có chỗ gửi xe và lối vào riêng, thuận tiện sinh hoạt. Phòng có máy lạnh, phù hợp người cần không gian mát để làm việc. Phòng có nội thất cơ bản, dọn vào ở được ngay.",
+      "uncertainty_m": 250
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Session/reset token chỉ là chuỗi faux (không phải credential thật); expected outcomes mô tả policy một-lần/hết-hạn/thu-hồi.",
+  "sessions": [
+    {
+      "id": "sess-ana-01",
+      "user_id": "usr-ana",
+      "token_ref": "synth-token-faux-0001",
+      "status": "active",
+      "issued_at": "2026-09-20T08:00:00+07:00",
+      "expires_at": "2026-10-20T08:00:00+07:00",
+      "revoked_at": null,
+      "revoke_reason": null,
+      "expected_access": "allow",
+      "synthetic": true
+    },
+    {
+      "id": "sess-lan-01",
+      "user_id": "usr-lan",
+      "token_ref": "synth-token-faux-0002",
+      "status": "revoked",
+      "issued_at": "2026-09-18T08:00:00+07:00",
+      "expires_at": "2026-10-18T08:00:00+07:00",
+      "revoked_at": "2026-09-25T21:00:00+07:00",
+      "revoke_reason": "user_logout",
+      "expected_access": "deny_session_revoked",
+      "synthetic": true
+    },
+    {
+      "id": "sess-minh-01",
+      "user_id": "usr-minh",
+      "token_ref": "synth-token-faux-0003",
+      "status": "active",
+      "issued_at": "2026-09-28T08:00:00+07:00",
+      "expires_at": "2026-10-28T08:00:00+07:00",
+      "revoked_at": null,
+      "revoke_reason": null,
+      "expected_access": "deny_account_suspended",
+      "note": "Token còn hạn nhưng membership org-beta bị suspend 2026-10-02; quyền org theo policy, token không cứu quyền.",
+      "synthetic": true
+    },
+    {
+      "id": "sess-duc-01",
+      "user_id": "usr-duc",
+      "token_ref": "synth-token-faux-0004",
+      "status": "expired",
+      "issued_at": "2026-08-01T08:00:00+07:00",
+      "expires_at": "2026-08-31T08:00:00+07:00",
+      "revoked_at": null,
+      "revoke_reason": null,
+      "expected_access": "deny_session_expired",
+      "synthetic": true
+    }
+  ],
+  "password_recovery_cases": [
+    {
+      "id": "rec-ana-01",
+      "user_id": "usr-ana",
+      "token_ref": "synth-reset-token-faux-0001",
+      "requested_at": "2026-10-01T00:00:00+07:00",
+      "expires_at": "2026-10-01T01:00:00+07:00",
+      "status": "used",
+      "used_at": "2026-10-01T00:30:00+07:00",
+      "expected_outcome": "reset_success_single_use",
+      "note": "Token dùng một lần; sau used_at mọi lần dùng lại phải từ chối.",
+      "synthetic": true
+    },
+    {
+      "id": "rec-lan-01",
+      "user_id": "usr-lan",
+      "token_ref": "synth-reset-token-faux-0002",
+      "requested_at": "2026-09-20T00:00:00+07:00",
+      "expires_at": "2026-09-20T01:00:00+07:00",
+      "status": "expired",
+      "used_at": null,
+      "expected_outcome": "deny_token_expired",
+      "synthetic": true
+    },
+    {
+      "id": "rec-reuse-case",
+      "reuses_token_ref": "synth-reset-token-faux-0001",
+      "attempted_at": "2026-10-02T09:00:00+07:00",
+      "expected_outcome": "deny_token_already_used",
+      "note": "Case âm: dùng lại token đã used của rec-ana-01.",
+      "synthetic": true
+    },
+    {
+      "id": "rec-unknown-email-case",
+      "requested_email": "khong-ton-tai@faux.example.invalid",
+      "requested_at": "2026-10-03T09:00:00+07:00",
+      "expected_outcome": "generic_response_no_account_disclosure",
+      "note": "Phản hồi phải giống hệt case email tồn tại; không tiết lộ tài khoản tồn tại.",
+      "synthetic": true
+    }
+  ]
+}

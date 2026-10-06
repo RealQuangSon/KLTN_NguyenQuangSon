@@ -1,0 +1,15 @@
+# Direct dependencies verified for the local MVP, 2026-10-01.
+langgraph==1.2.10
+langgraph-checkpoint==4.1.1
+langgraph-checkpoint-sqlite==3.1.1
+aiosqlite==0.22.1
+sqlite-vec==0.1.9
+pydantic==2.13.4
+fastapi==0.141.1
+uvicorn==0.52.0
+openai==2.51.0
+httpx==0.28.1
+pytest==9.1.1
+psycopg[binary,pool]==3.3.6
+psycopg-pool==3.3.3
+langgraph-checkpoint-postgres==3.1.2

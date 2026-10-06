@@ -1,0 +1,43 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Công tơ tích lũy; usage là delta riêng. Reading có kỳ/đơn vị/bằng chứng (measured); estimated tách khỏi actual. Không phải chỉ số thật.",
+  "meters": [
+    {"id": "mtr-el-101", "organization_id": "org-alpha", "physical_room_id": "room-alpha-1-101", "tenancy_id": "ten-001", "utility": "electricity", "unit": "kwh", "status": "active", "installed_at": "2026-03-01T08:00:00+07:00", "synthetic": true},
+    {"id": "mtr-wt-101", "organization_id": "org-alpha", "physical_room_id": "room-alpha-1-101", "tenancy_id": "ten-001", "utility": "water", "unit": "m3", "status": "active", "installed_at": "2026-03-01T08:00:00+07:00", "synthetic": true},
+    {"id": "mtr-el-101b", "organization_id": "org-alpha", "physical_room_id": "room-alpha-1-101", "tenancy_id": "ten-001", "utility": "electricity", "unit": "kwh", "status": "active", "installed_at": "2026-06-15T08:00:00+07:00", "replaced_meter_id": "mtr-el-101", "synthetic": true},
+    {"id": "mtr-el-102", "organization_id": "org-alpha", "physical_room_id": "room-alpha-1-102", "tenancy_id": "ten-002", "utility": "electricity", "unit": "kwh", "status": "active", "installed_at": "2026-05-01T08:00:00+07:00", "synthetic": true},
+    {"id": "mtr-wt-102", "organization_id": "org-alpha", "physical_room_id": "room-alpha-1-102", "tenancy_id": "ten-002", "utility": "water", "unit": "m3", "status": "active", "installed_at": "2026-05-01T08:00:00+07:00", "synthetic": true},
+    {"id": "mtr-el-beta-201", "organization_id": "org-beta", "physical_room_id": "room-beta-1-301", "tenancy_id": "ten-003", "utility": "electricity", "unit": "kwh", "status": "active", "installed_at": "2026-03-22T08:00:00+07:00", "synthetic": true},
+    {"id": "mtr-wt-beta-201", "organization_id": "org-beta", "physical_room_id": "room-beta-1-301", "tenancy_id": "ten-003", "utility": "water", "unit": "m3", "status": "active", "installed_at": "2026-03-22T08:00:00+07:00", "synthetic": true}
+  ],
+  "readings": [
+    {"id": "rdg-el-101-0301", "meter_id": "mtr-el-101", "value": 10450, "kind": "measured", "at": "2026-03-01T08:00:00+07:00", "media_ids": ["med-rdg-el-101-0301"], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101-0401", "meter_id": "mtr-el-101", "value": 10712, "kind": "measured", "at": "2026-04-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101-0415", "meter_id": "mtr-el-101", "value": 10900, "kind": "measured", "at": "2026-04-15T08:00:00+07:00", "media_ids": ["med-rdg-el-101-0415"], "recorded_by": "usr-chi", "note": "Boundary reading cho amendment BILL-03; nếu không có amendment thì reading này không làm thay đổi cách chia kỳ.", "synthetic": true},
+    {"id": "rdg-el-101-0501", "meter_id": "mtr-el-101", "value": 11040, "kind": "measured", "at": "2026-05-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101-0601", "meter_id": "mtr-el-101", "value": 11408, "kind": "measured", "at": "2026-06-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101-0615-last", "meter_id": "mtr-el-101", "value": 11600, "kind": "measured", "at": "2026-06-15T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "note": "Old meter last reading khi thay công tơ.", "synthetic": true},
+    {"id": "rdg-el-101b-0615-first", "meter_id": "mtr-el-101b", "value": 12, "kind": "measured", "at": "2026-06-15T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "note": "New meter first reading khi thay công tơ.", "synthetic": true},
+    {"id": "rdg-el-101b-0701", "meter_id": "mtr-el-101b", "value": 212, "kind": "measured", "at": "2026-07-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101b-0801", "meter_id": "mtr-el-101b", "value": 312, "kind": "measured", "at": "2026-08-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-101b-0901", "meter_id": "mtr-el-101b", "value": 298, "kind": "measured", "at": "2026-09-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "note": "Thấp hơn reading trước (312) KHÔNG có sự kiện reset/thay công tơ → case âm BILL-07.", "synthetic": true},
+    {"id": "rdg-wt-101-0301", "meter_id": "mtr-wt-101", "value": 358, "kind": "measured", "at": "2026-03-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-101-0401", "meter_id": "mtr-wt-101", "value": 361, "kind": "measured", "at": "2026-04-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-101-0501", "meter_id": "mtr-wt-101", "value": 366, "kind": "measured", "at": "2026-05-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-101-0601", "meter_id": "mtr-wt-101", "value": 371, "kind": "measured", "at": "2026-06-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-101-0701", "meter_id": "mtr-wt-101", "value": 374, "kind": "measured", "at": "2026-07-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-101-0801", "meter_id": "mtr-wt-101", "value": 379, "kind": "measured", "at": "2026-08-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-102-0501", "meter_id": "mtr-el-102", "value": 5200, "kind": "measured", "at": "2026-05-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-wt-102-0501", "meter_id": "mtr-wt-102", "value": 200, "kind": "measured", "at": "2026-05-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-chi", "synthetic": true},
+    {"id": "rdg-el-b201-0322", "meter_id": "mtr-el-beta-201", "value": 5000, "kind": "measured", "at": "2026-03-22T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-el-b201-0401", "meter_id": "mtr-el-beta-201", "value": 5120, "kind": "measured", "at": "2026-04-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-el-b201-0901", "meter_id": "mtr-el-beta-201", "value": 7000, "kind": "measured", "at": "2026-09-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-el-b201-1001", "meter_id": "mtr-el-beta-201", "value": 7250, "kind": "measured", "at": "2026-10-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-wt-b201-0322", "meter_id": "mtr-wt-beta-201", "value": 100, "kind": "measured", "at": "2026-03-22T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-wt-b201-0401", "meter_id": "mtr-wt-beta-201", "value": 102, "kind": "measured", "at": "2026-04-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-wt-b201-0901", "meter_id": "mtr-wt-beta-201", "value": 150, "kind": "measured", "at": "2026-09-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true},
+    {"id": "rdg-wt-b201-1001", "meter_id": "mtr-wt-beta-201", "value": 154, "kind": "measured", "at": "2026-10-01T08:00:00+07:00", "media_ids": [], "recorded_by": "usr-ha", "synthetic": true}
+  ]
+}

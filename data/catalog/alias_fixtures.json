@@ -1,0 +1,19 @@
+{
+  "aliases": [
+    {
+      "canonical_room_id": "synthetic-room-001",
+      "listing_id": "alias-001-a",
+      "revision": 1
+    },
+    {
+      "canonical_room_id": "synthetic-room-001",
+      "listing_id": "alias-001-b",
+      "revision": 1
+    }
+  ],
+  "different_rooms_same_area_not_duplicates": [
+    "synthetic-room-001",
+    "synthetic-room-002"
+  ],
+  "notice": "Aliases are fixtures, never extra eligible rooms."
+}

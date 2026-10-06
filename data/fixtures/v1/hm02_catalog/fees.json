@@ -1,0 +1,51 @@
+{
+  "pack": "hm02-catalog",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Fee versions theo listing version: fixed/person/vehicle/kwh/m3; included tạo dòng 0 có nguồn; missing (null) ghi needs_verification, khác 0.",
+  "fee_versions": [
+    {"id": "feev-101a-1-el", "listing_version_id": "lstver-101a-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-1/electricity", "synthetic": true},
+    {"id": "feev-101a-1-wa", "listing_version_id": "lstver-101a-1", "name": "water", "mode": "person", "amount_vnd": "80000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-1/water", "synthetic": true},
+    {"id": "feev-101a-1-in", "listing_version_id": "lstver-101a-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-1/internet-included", "synthetic": true},
+    {"id": "feev-101a-1-pk", "listing_version_id": "lstver-101a-1", "name": "parking", "mode": "vehicle", "amount_vnd": "100000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-1/parking", "synthetic": true},
+    {"id": "feev-101a-1-sv", "listing_version_id": "lstver-101a-1", "name": "service", "mode": "fixed", "amount_vnd": "50000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-1/service", "synthetic": true},
+
+    {"id": "feev-101a-2-el", "listing_version_id": "lstver-101a-2", "name": "electricity", "mode": "kwh", "amount_vnd": "3000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-2/electricity", "synthetic": true},
+    {"id": "feev-101a-2-wa", "listing_version_id": "lstver-101a-2", "name": "water", "mode": "person", "amount_vnd": "80000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-2/water", "synthetic": true},
+    {"id": "feev-101a-2-in", "listing_version_id": "lstver-101a-2", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-2/internet-included", "synthetic": true},
+    {"id": "feev-101a-2-pk", "listing_version_id": "lstver-101a-2", "name": "parking", "mode": "vehicle", "amount_vnd": "0", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-2/parking-zero-owner-confirmed", "synthetic": true},
+    {"id": "feev-101a-2-sv", "listing_version_id": "lstver-101a-2", "name": "service", "mode": "fixed", "amount_vnd": "50000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101a-2/service", "synthetic": true},
+    {"id": "feev-101a-2-gas", "listing_version_id": "lstver-101a-2", "name": "gas", "mode": "fixed", "amount_vnd": null, "included_in_rent": false, "needs_verification": true, "source": "synthetic://fixtures/hm02/fees/101a-2/gas-unverified", "synthetic": true},
+
+    {"id": "feev-101b-1-el", "listing_version_id": "lstver-101b-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101b-1/electricity", "synthetic": true},
+    {"id": "feev-101b-1-wa", "listing_version_id": "lstver-101b-1", "name": "water", "mode": "person", "amount_vnd": "80000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101b-1/water", "synthetic": true},
+    {"id": "feev-101b-1-in", "listing_version_id": "lstver-101b-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101b-1/internet-included", "synthetic": true},
+    {"id": "feev-101b-1-sv", "listing_version_id": "lstver-101b-1", "name": "service", "mode": "fixed", "amount_vnd": "50000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/101b-1/service", "synthetic": true},
+
+    {"id": "feev-102a-1-el", "listing_version_id": "lstver-102a-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3500", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-1/electricity", "synthetic": true},
+    {"id": "feev-102a-1-wa", "listing_version_id": "lstver-102a-1", "name": "water", "mode": "m3", "amount_vnd": null, "included_in_rent": false, "needs_verification": true, "source": "synthetic://fixtures/hm02/fees/102a-1/water-unverified", "synthetic": true},
+    {"id": "feev-102a-1-in", "listing_version_id": "lstver-102a-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-1/internet-included", "synthetic": true},
+    {"id": "feev-102a-1-sv", "listing_version_id": "lstver-102a-1", "name": "service", "mode": "fixed", "amount_vnd": "40000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-1/service", "synthetic": true},
+
+    {"id": "feev-102a-2-el", "listing_version_id": "lstver-102a-2", "name": "electricity", "mode": "kwh", "amount_vnd": "3500", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-2/electricity", "synthetic": true},
+    {"id": "feev-102a-2-wa", "listing_version_id": "lstver-102a-2", "name": "water", "mode": "m3", "amount_vnd": "25000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-2/water-site-check", "synthetic": true},
+    {"id": "feev-102a-2-pk", "listing_version_id": "lstver-102a-2", "name": "parking", "mode": "vehicle", "amount_vnd": "100000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-2/parking", "synthetic": true},
+    {"id": "feev-102a-2-in", "listing_version_id": "lstver-102a-2", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-2/internet-included", "synthetic": true},
+    {"id": "feev-102a-2-sv", "listing_version_id": "lstver-102a-2", "name": "service", "mode": "fixed", "amount_vnd": "40000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/102a-2/service", "synthetic": true},
+
+    {"id": "feev-103a-1-el", "listing_version_id": "lstver-103a-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/103a-1/electricity", "synthetic": true},
+    {"id": "feev-103a-1-wa", "listing_version_id": "lstver-103a-1", "name": "water", "mode": "person", "amount_vnd": "80000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/103a-1/water", "synthetic": true},
+    {"id": "feev-103a-1-in", "listing_version_id": "lstver-103a-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/103a-1/internet-included", "synthetic": true},
+
+    {"id": "feev-201a-1-el", "listing_version_id": "lstver-201a-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3500", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/201a-1/electricity", "synthetic": true},
+    {"id": "feev-201a-1-wa", "listing_version_id": "lstver-201a-1", "name": "water", "mode": "m3", "amount_vnd": "20000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/201a-1/water", "synthetic": true},
+    {"id": "feev-201a-1-in", "listing_version_id": "lstver-201a-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/201a-1/internet-included", "synthetic": true},
+    {"id": "feev-201a-1-pk", "listing_version_id": "lstver-201a-1", "name": "parking", "mode": "vehicle", "amount_vnd": "150000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/201a-1/parking", "synthetic": true},
+
+    {"id": "feev-301a-1-el", "listing_version_id": "lstver-301a-1", "name": "electricity", "mode": "kwh", "amount_vnd": "3200", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/301a-1/electricity", "synthetic": true},
+    {"id": "feev-301a-1-wa", "listing_version_id": "lstver-301a-1", "name": "water", "mode": "m3", "amount_vnd": "20000", "included_in_rent": false, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/301a-1/water", "synthetic": true},
+    {"id": "feev-301a-1-in", "listing_version_id": "lstver-301a-1", "name": "internet", "mode": "fixed", "amount_vnd": "0", "included_in_rent": true, "needs_verification": false, "source": "synthetic://fixtures/hm02/fees/301a-1/internet-included", "synthetic": true},
+
+    {"id": "feev-302a-1-el", "listing_version_id": "lstver-302a-1", "name": "electricity", "mode": "kwh", "amount_vnd": null, "included_in_rent": false, "needs_verification": true, "source": "synthetic://fixtures/hm02/fees/302a-1/electricity-unverified", "synthetic": true}
+  ]
+}

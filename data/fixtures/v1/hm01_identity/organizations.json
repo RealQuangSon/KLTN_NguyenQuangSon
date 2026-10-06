@@ -1,0 +1,24 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Tổ chức giả lập cho fixture HM-01; không phải doanh nghiệp thật, không chứa dữ liệu thị trường.",
+  "organizations": [
+    {
+      "id": "org-alpha",
+      "display_name": "Nhà trọ Sao Mai (giả lập)",
+      "status": "active",
+      "city": "TP.HCM",
+      "created_at": "2026-01-05T09:00:00+07:00",
+      "synthetic": true
+    },
+    {
+      "id": "org-beta",
+      "display_name": "Chuỗi phòng Beta (giả lập)",
+      "status": "active",
+      "city": "TP.HCM",
+      "created_at": "2026-01-06T09:00:00+07:00",
+      "synthetic": true
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Expected outcomes tổng hợp cho HM-01; backend dùng làm kỳ vọng kiểm thử, không phải kết quả đã chạy.",
+  "invariants": [
+    "Mọi ca deny phải có expected_reason; không bao giờ leak sự tồn tại của resource ngoài phạm vi.",
+    "Role/membership/organization do server quyết định; payload client khai role không có tác dụng (acx-019).",
+    "Session active không cứu membership suspended/revoked (acx-018, acx-015).",
+    "Assignment proposed/ended quyết định quyền manager theo thời điểm as_of (acx-010/011/012/014).",
+    "Media/export/job/audit dùng cùng quy tắc quyền như API (acx-024..027).",
+    "Reset token một lần; hết hạn và đã-dùng đều từ chối; response không phân biệt email tồn tại."
+  ],
+  "case_summary": {
+    "allow": ["acx-001", "acx-003", "acx-004", "acx-008", "acx-009", "acx-011", "acx-012", "acx-020", "acx-022", "acx-024"],
+    "allow_audited": ["acx-020"],
+    "deny": ["acx-002", "acx-005", "acx-006", "acx-007", "acx-010", "acx-013", "acx-014", "acx-015", "acx-016", "acx-017", "acx-018", "acx-019", "acx-021", "acx-023", "acx-025", "acx-026", "acx-027", "acx-028"]
+  },
+  "lifecycle_expectations": {
+    "membership_status_at_as_of": {
+      "mbr-006": [
+        {"as_of": "2026-10-01T10:00:00+07:00", "expected_status": "active"},
+        {"as_of": "2026-10-03T10:00:00+07:00", "expected_status": "suspended"}
+      ],
+      "mbr-007": [
+        {"as_of": "2026-08-15T10:00:00+07:00", "expected_status": "active"},
+        {"as_of": "2026-09-15T10:00:00+07:00", "expected_status": "revoked"}
+      ],
+      "mbr-008": [
+        {"as_of": "2026-10-03T10:00:00+07:00", "expected_status": "invited"}
+      ]
+    },
+    "assignment_status_at_as_of": {
+      "asg-002": [
+        {"as_of": "2026-08-30T10:00:00+07:00", "expected_status": "active"},
+        {"as_of": "2026-09-05T10:00:00+07:00", "expected_status": "ended"}
+      ],
+      "asg-005": [
+        {"as_of": "2026-10-03T10:00:00+07:00", "expected_status": "proposed"}
+      ]
+    }
+  },
+  "privacy_expectations": [
+    "Không có password/secret thật trong pack; token_ref/reset token là chuỗi faux có tiền tố synth-.",
+    "Audit case chỉ truy với access_reason được ghi; lý do phải xuất hiện trong audit record khi backend triển khai.",
+    "Deny response không xác nhận tồn tại của resource (cross-account/cross-org)."
+  ]
+}

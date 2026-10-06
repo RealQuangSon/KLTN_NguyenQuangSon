@@ -1,0 +1,105 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Ca đối soát: partial/duplicate/dispute/adjustment/void/overdue. Expected là hằng số; validator tính lại từ payments/invoices.",
+  "reconciliation_cases": [
+    {
+      "id": "RECON-01",
+      "case": "declared_not_paid_then_partial_then_paid",
+      "invoice_id": "inv-001",
+      "steps": [
+        {"at": "2026-04-05T12:00:00+07:00", "event": "pev-001 declared 2,000,000", "expected_payment_status": "unpaid", "expected_balance_vnd": 3696000, "expected_overdue": false},
+        {"at": "2026-04-06T09:05:00+07:00", "event": "rcp-001 verified + alc-001", "expected_payment_status": "partially_paid", "expected_balance_vnd": 1696000, "expected_overdue": false},
+        {"at": "2026-04-09T15:05:00+07:00", "event": "rcp-002 verified + alc-002", "expected_payment_status": "paid", "expected_balance_vnd": 0, "expected_overdue": false}
+      ],
+      "expected_final": {"allocated_vnd": 3696000, "adjustments_vnd": 0, "balance_vnd": 0, "payment_status": "paid", "overdue": false},
+      "synthetic": true
+    },
+    {
+      "id": "RECON-02",
+      "case": "partial_and_overdue_and_dispute_and_adjustment",
+      "invoice_id": "inv-002",
+      "as_of": "2026-05-25T00:00:00+07:00",
+      "expected_final": {
+        "issued_total_vnd": 3934000,
+        "issued_total_unchanged_after_adjustment": true,
+        "adjustments_vnd": -10000,
+        "effective_total_vnd": 3924000,
+        "allocated_vnd": 1000000,
+        "balance_vnd": 2924000,
+        "payment_status": "partially_paid",
+        "overdue": true,
+        "overdue_reason": "balance>0 và as_of>due_at (2026-05-10); overdue không loại trừ partially_paid",
+        "dispute_note": "dsp-001 open; tranh chấp không xóa nợ"
+      },
+      "calculation_note": "3934000-10000=3924000; 3924000-1000000=2924000",
+      "synthetic": true
+    },
+    {
+      "id": "RECON-03",
+      "case": "overpayment_refund",
+      "invoice_id": "inv-003",
+      "expected_final": {
+        "effective_total_vnd": 4238000,
+        "allocated_vnd": 4238000,
+        "balance_vnd": 0,
+        "payment_status": "paid",
+        "receipt_overpayment_vnd": 262000,
+        "refunded_vnd": 262000,
+        "unallocated_after_refund_vnd": 0
+      },
+      "calculation_note": "rcp-004 4,500,000 = 4,238,000 allocated + 262,000 refunded",
+      "synthetic": true
+    },
+    {
+      "id": "RECON-04",
+      "case": "duplicate_evidence_not_double_counted",
+      "invoice_id": "inv-001",
+      "bank_ref": "VKB-20260408-882211",
+      "expected": {
+        "evidence_records_for_bank_ref": 2,
+        "verified_receipts_for_bank_ref": 1,
+        "total_allocated_from_bank_ref_vnd": 1696000,
+        "duplicate_evidence_id": "pev-003"
+      },
+      "synthetic": true
+    },
+    {
+      "id": "RECON-05",
+      "case": "void_excluded_from_receivables",
+      "invoice_id": "inv-007",
+      "expected": {"status": "void", "in_receivables": false, "balance_contribution_vnd": 0},
+      "synthetic": true
+    },
+    {
+      "id": "RECON-06",
+      "case": "blocked_draft_not_in_receivables",
+      "invoice_id": "inv-006",
+      "expected": {"status": "draft", "in_receivables": false, "balance_contribution_vnd": 0, "blocked_reason": "reading_regression"},
+      "synthetic": true
+    },
+    {
+      "id": "RECON-07",
+      "case": "missing_tariff_draft_blocked",
+      "invoice_id": "inv-009",
+      "expected": {
+        "status": "draft",
+        "in_receivables": false,
+        "known_subtotal_vnd": 3600000,
+        "full_total_vnd": null,
+        "blocked_reason": "tariff_missing_for_period"
+      },
+      "calculation_note": "2500000+100000+50000+100000+100000+750000=3600000; nước thiếu tariff → full total null",
+      "synthetic": true
+    },
+    {
+      "id": "RECON-08",
+      "case": "open_receivables_snapshot",
+      "as_of": "2026-05-25T00:00:00+07:00",
+      "expected_open_receivables_vnd": 2924000,
+      "calculation_note": "inv-001 0 + inv-002 2,924,000 + inv-003 0 + inv-004 0 + inv-005 0 + inv-008 0; draft/void không tính",
+      "synthetic": true
+    }
+  ]
+}

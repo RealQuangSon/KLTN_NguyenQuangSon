@@ -1,0 +1,10 @@
+{
+  "artifact_count": 9,
+  "evidence_index_path": "/Users/son/KLTN_NguyenQuangSon/eval/runs/development/evidence_index.csv",
+  "kind": "development_evidence_report",
+  "labels_status": "pending_human_judgments",
+  "notice": "Exploratory development evidence; research metrics require freeze, blind human labels and both B1/P available.",
+  "report_path": "/Users/son/KLTN_NguyenQuangSon/eval/runs/development/report.md",
+  "split": "dev",
+  "stage": "development"
+}

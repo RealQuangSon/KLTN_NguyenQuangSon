@@ -1,0 +1,23 @@
+{
+  "stage": "development_protocol_not_research_results",
+  "dataset": "homematch-synthetic-v1",
+  "splits": {"dev": 10, "test": 20, "unit": "original_profile_group"},
+  "ranking_k": 5,
+  "methods": {
+    "B1": "Deterministic structured score over the complete eligible set",
+    "P": {"formula": "(1-alpha)*B1+alpha*semantic_fit", "alpha": 0.3, "embedding_model": "text-embedding-3-small", "dimensions": 1536, "search": "pgvector_exact_full_eligible_set", "requires_real_vectors": true}
+  },
+  "relevance_scale": {"0": "hard violation or insufficient hard evidence", "1": "hard satisfied, few preferences satisfied", "2": "substantial preference fit with tradeoffs", "3": "strong preference fit based on evidence"},
+  "relevant_threshold": 2,
+  "judgment_pool": "canonical deduplicated union of B1/P top5, blinded and randomized",
+  "ndcg_scope": "pool_based_not_full_catalog",
+  "precision_at_5_denominator": 5,
+  "full_catalog_recall": "not_measured",
+  "paired_population": "same fully judged, metric-defined profile IDs for both methods; disclose all exclusions",
+  "bootstrap": {"unit": "original_profile", "seed": 20261001, "samples": 1000},
+  "freeze_order": "G4 acknowledgement -> input/code/config hashes -> method outputs -> blind human annotation -> label hash -> metrics",
+  "live_default": false,
+  "extraction_model": "gpt-4o-2024-08-06",
+  "api_budget_policy": "operator declaration, not an automatic monetary spend cap",
+  "usability_and_satisfaction": "not_measured"
+}

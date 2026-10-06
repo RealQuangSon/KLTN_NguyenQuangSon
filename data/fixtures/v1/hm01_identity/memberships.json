@@ -1,0 +1,111 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Membership lifecycle: invited/active/suspended/revoked; role do server cấp, không tin từ client.",
+  "memberships": [
+    {
+      "id": "mbr-001",
+      "user_id": "usr-bao",
+      "organization_id": "org-alpha",
+      "role": "owner",
+      "status": "active",
+      "joined_at": "2026-01-05T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-05T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "note": "Owner ở hai tổ chức (xem mbr-002) — case đa tổ chức.",
+      "synthetic": true
+    },
+    {
+      "id": "mbr-002",
+      "user_id": "usr-bao",
+      "organization_id": "org-beta",
+      "role": "owner",
+      "status": "active",
+      "joined_at": "2026-01-06T11:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-06T11:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "mbr-003",
+      "user_id": "usr-chi",
+      "organization_id": "org-alpha",
+      "role": "manager",
+      "status": "active",
+      "joined_at": "2026-01-07T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-07T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "mbr-004",
+      "user_id": "usr-duc",
+      "organization_id": "org-alpha",
+      "role": "manager",
+      "status": "active",
+      "joined_at": "2026-01-08T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-08T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "note": "Không có assignment tới 2026-09-01 (xem assignments.json) — deny case trước đó.",
+      "synthetic": true
+    },
+    {
+      "id": "mbr-005",
+      "user_id": "usr-ha",
+      "organization_id": "org-beta",
+      "role": "manager",
+      "status": "active",
+      "joined_at": "2026-01-06T12:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-06T12:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "mbr-006",
+      "user_id": "usr-minh",
+      "organization_id": "org-beta",
+      "role": "owner",
+      "status": "suspended",
+      "joined_at": "2026-01-06T11:30:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-06T11:30:00+07:00", "actor_id": null, "reason": null},
+        {"status": "suspended", "effective_from": "2026-10-02T09:00:00+07:00", "actor_id": "usr-khang", "reason": "vi_pham_noi_quy_gia_lap"}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "mbr-007",
+      "user_id": "usr-phan",
+      "organization_id": "org-alpha",
+      "role": "manager",
+      "status": "revoked",
+      "joined_at": "2026-01-09T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-09T10:00:00+07:00", "actor_id": null, "reason": null},
+        {"status": "revoked", "effective_from": "2026-09-01T09:00:00+07:00", "actor_id": "usr-khang", "reason": "nghi_viec_thu_hoi_quyen"}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "mbr-008",
+      "user_id": "usr-minh",
+      "organization_id": "org-alpha",
+      "role": "owner",
+      "status": "invited",
+      "joined_at": null,
+      "invited_at": "2026-10-01T09:00:00+07:00",
+      "invited_by": "usr-bao",
+      "status_history": [
+        {"status": "invited", "effective_from": "2026-10-01T09:00:00+07:00", "actor_id": "usr-bao", "reason": null}
+      ],
+      "note": "Lời mời chưa chấp nhận — chưa có quyền org-alpha; kèm case đoán ID phải bị chặn.",
+      "synthetic": true
+    }
+  ]
+}

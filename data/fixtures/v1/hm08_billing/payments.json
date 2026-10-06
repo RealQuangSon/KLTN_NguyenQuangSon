@@ -1,0 +1,56 @@
+{
+  "pack": "hm08-billing",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Khai chuyển (declared) khác received; chỉ receipt verified + allocation mới tính balance. Bank ref trùng phải dedup. Mọi transfer_ref/bank_ref là faux.",
+  "payment_evidence": [
+    {"id": "pev-001", "invoice_id": "inv-001", "declared_by": "usr-ana", "declared_amount_vnd": 2000000, "bank_ref": "VKB-20260405-771234", "declared_at": "2026-04-05T12:00:00+07:00", "media_ids": ["med-pev-001"], "status": "submitted", "synthetic": true},
+    {"id": "pev-002", "invoice_id": "inv-001", "declared_by": "usr-ana", "declared_amount_vnd": 1696000, "bank_ref": "VKB-20260408-882211", "declared_at": "2026-04-08T10:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true},
+    {"id": "pev-003", "invoice_id": "inv-001", "declared_by": "usr-ana", "declared_amount_vnd": 1696000, "bank_ref": "VKB-20260408-882211", "declared_at": "2026-04-09T09:00:00+07:00", "media_ids": [], "status": "flagged_duplicate", "duplicate_of": "pev-002", "expected_outcome": "no_second_verified_receipt_for_same_bank_ref", "synthetic": true},
+    {"id": "pev-004", "invoice_id": "inv-002", "declared_by": "usr-ana", "declared_amount_vnd": 1000000, "bank_ref": "VKB-20260502-554411", "declared_at": "2026-05-02T10:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true},
+    {"id": "pev-005", "invoice_id": "inv-003", "declared_by": "usr-ana", "declared_amount_vnd": 4500000, "bank_ref": "VKB-20260601-990001", "declared_at": "2026-06-01T10:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true},
+    {"id": "pev-006", "invoice_id": "inv-004", "declared_by": "usr-ana", "declared_amount_vnd": 4282000, "bank_ref": "VKB-20260628-110002", "declared_at": "2026-06-28T10:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true},
+    {"id": "pev-007", "invoice_id": "inv-005", "declared_by": "usr-ana", "declared_amount_vnd": 4230000, "bank_ref": "VKB-20260801-110003", "declared_at": "2026-08-01T10:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true},
+    {"id": "pev-008", "invoice_id": "inv-008", "declared_by": "usr-tien", "declared_amount_vnd": 1518581, "bank_ref": "VNB-20260405-220004", "declared_at": "2026-04-05T11:00:00+07:00", "media_ids": [], "status": "submitted", "synthetic": true}
+  ],
+  "receipts": [
+    {"id": "rcp-001", "invoice_id": "inv-001", "evidence_id": "pev-001", "verified_by": "usr-chi", "amount_vnd": 2000000, "verified_at": "2026-04-06T09:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-002", "invoice_id": "inv-001", "evidence_id": "pev-002", "verified_by": "usr-chi", "amount_vnd": 1696000, "verified_at": "2026-04-09T15:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-003", "invoice_id": "inv-002", "evidence_id": "pev-004", "verified_by": "usr-chi", "amount_vnd": 1000000, "verified_at": "2026-05-02T15:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-004", "invoice_id": "inv-003", "evidence_id": "pev-005", "verified_by": "usr-chi", "amount_vnd": 4500000, "verified_at": "2026-06-01T15:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-005", "invoice_id": "inv-004", "evidence_id": "pev-006", "verified_by": "usr-chi", "amount_vnd": 4282000, "verified_at": "2026-06-28T15:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-006", "invoice_id": "inv-005", "evidence_id": "pev-007", "verified_by": "usr-chi", "amount_vnd": 4230000, "verified_at": "2026-08-01T15:00:00+07:00", "status": "verified", "synthetic": true},
+    {"id": "rcp-007", "invoice_id": "inv-008", "evidence_id": "pev-008", "verified_by": "usr-ha", "amount_vnd": 1518581, "verified_at": "2026-04-05T16:00:00+07:00", "status": "verified", "synthetic": true}
+  ],
+  "allocations": [
+    {"id": "alc-001", "receipt_id": "rcp-001", "invoice_id": "inv-001", "amount_vnd": 2000000, "allocated_at": "2026-04-06T09:05:00+07:00", "synthetic": true},
+    {"id": "alc-002", "receipt_id": "rcp-002", "invoice_id": "inv-001", "amount_vnd": 1696000, "allocated_at": "2026-04-09T15:05:00+07:00", "synthetic": true},
+    {"id": "alc-003", "receipt_id": "rcp-003", "invoice_id": "inv-002", "amount_vnd": 1000000, "allocated_at": "2026-05-02T15:05:00+07:00", "synthetic": true},
+    {"id": "alc-004", "receipt_id": "rcp-004", "invoice_id": "inv-003", "amount_vnd": 4238000, "allocated_at": "2026-06-01T15:05:00+07:00", "synthetic": true},
+    {"id": "alc-005", "receipt_id": "rcp-005", "invoice_id": "inv-004", "amount_vnd": 4282000, "allocated_at": "2026-06-28T15:05:00+07:00", "synthetic": true},
+    {"id": "alc-006", "receipt_id": "rcp-006", "invoice_id": "inv-005", "amount_vnd": 4230000, "allocated_at": "2026-08-01T15:05:00+07:00", "synthetic": true},
+    {"id": "alc-007", "receipt_id": "rcp-007", "invoice_id": "inv-008", "amount_vnd": 1518581, "allocated_at": "2026-04-05T16:05:00+07:00", "synthetic": true}
+  ],
+  "refunds": [
+    {
+      "id": "rfnd-001",
+      "receipt_id": "rcp-004",
+      "amount_vnd": 262000,
+      "reason": "Chuyển thừa so với inv-003 (4,500,000 − 4,238,000); hoàn phần vượt.",
+      "at": "2026-06-03T10:00:00+07:00",
+      "transfer_ref": "synth-transfer-ref-0002",
+      "verified_by": "usr-chi",
+      "synthetic": true
+    }
+  ],
+  "receipt_identity_expected": {
+    "formula": "verified_receipt_amount = allocated + unallocated_remaining + refunded",
+    "rcp-001": {"verified_vnd": 2000000, "allocated_vnd": 2000000, "unallocated_vnd": 0, "refunded_vnd": 0},
+    "rcp-002": {"verified_vnd": 1696000, "allocated_vnd": 1696000, "unallocated_vnd": 0, "refunded_vnd": 0},
+    "rcp-003": {"verified_vnd": 1000000, "allocated_vnd": 1000000, "unallocated_vnd": 0, "refunded_vnd": 0},
+    "rcp-004": {"verified_vnd": 4500000, "allocated_vnd": 4238000, "unallocated_vnd": 0, "refunded_vnd": 262000},
+    "rcp-005": {"verified_vnd": 4282000, "allocated_vnd": 4282000, "unallocated_vnd": 0, "refunded_vnd": 0},
+    "rcp-006": {"verified_vnd": 4230000, "allocated_vnd": 4230000, "unallocated_vnd": 0, "refunded_vnd": 0},
+    "rcp-007": {"verified_vnd": 1518581, "allocated_vnd": 1518581, "unallocated_vnd": 0, "refunded_vnd": 0}
+  }
+}

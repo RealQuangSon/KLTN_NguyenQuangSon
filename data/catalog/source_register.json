@@ -1,0 +1,9 @@
+{
+  "external_inventory_imported": false,
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "permissions_notice": "No HubHome export/crawl or rights claimed. Share only authored synthetic artifacts after project review.",
+  "pii_exclusions": 0,
+  "seed_origin": "backend/data/demo_rooms.json (12 authored synthetic fixtures adapted to TP.HCM/room); v2 templates for Hà Nội and studios/apartments",
+  "synthetic_ratio": 1.0,
+  "template_seed": 20261001
+}

@@ -1,0 +1,19 @@
+{
+  "method_status_counts": {
+    "B1": {
+      "needs_verification": 0,
+      "no_match": 0,
+      "successful": 15,
+      "unavailable": 0
+    },
+    "P": {
+      "needs_verification": 0,
+      "no_match": 0,
+      "successful": 0,
+      "unavailable": 15
+    }
+  },
+  "notice": "Machine recommendations cannot substitute human relevance labels.",
+  "quality_metrics": null,
+  "status": "pending_human_judgments"
+}

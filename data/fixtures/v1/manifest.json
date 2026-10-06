@@ -1,0 +1,93 @@
+{
+  "files": {
+    "hm01_identity/access_cases.json": {
+      "records": 28
+    },
+    "hm01_identity/assignments.json": {
+      "records": 5
+    },
+    "hm01_identity/expected_outcomes.json": {
+      "records": 0
+    },
+    "hm01_identity/memberships.json": {
+      "records": 8
+    },
+    "hm01_identity/organizations.json": {
+      "records": 2
+    },
+    "hm01_identity/sessions_recovery.json": {
+      "records": 4
+    },
+    "hm01_identity/users.json": {
+      "records": 10
+    },
+    "hm02_catalog/evidence.json": {
+      "records": 4
+    },
+    "hm02_catalog/expected_outcomes.json": {
+      "records": 2
+    },
+    "hm02_catalog/fees.json": {
+      "records": 35
+    },
+    "hm02_catalog/listings.json": {
+      "records": 9
+    },
+    "hm02_catalog/media.json": {
+      "records": 25
+    },
+    "hm02_catalog/physical_rooms.json": {
+      "records": 6
+    },
+    "hm02_catalog/properties.json": {
+      "records": 3
+    },
+    "hm07_contracts/agreements_reservations.json": {
+      "records": 6
+    },
+    "hm07_contracts/contract_versions.json": {
+      "records": 14
+    },
+    "hm07_contracts/deposit_ledger.json": {
+      "records": 9
+    },
+    "hm07_contracts/expected_outcomes.json": {
+      "records": 9
+    },
+    "hm07_contracts/tenancies_handovers.json": {
+      "records": 5
+    },
+    "hm08_billing/estimate_vs_actual.json": {
+      "records": 1
+    },
+    "hm08_billing/invoices.json": {
+      "records": 9
+    },
+    "hm08_billing/meters_readings.json": {
+      "records": 26
+    },
+    "hm08_billing/oracle_expected.json": {
+      "records": 10
+    },
+    "hm08_billing/payments.json": {
+      "records": 8
+    },
+    "hm08_billing/reconciliation_cases.json": {
+      "records": 8
+    },
+    "hm08_billing/tariffs.json": {
+      "records": 8
+    },
+    "hm09_maintenance/cost_events.json": {
+      "records": 5
+    },
+    "hm09_maintenance/expected_outcomes.json": {
+      "records": 0
+    },
+    "hm09_maintenance/tickets.json": {
+      "records": 4
+    }
+  },
+  "synthetic": true,
+  "version": "v1"
+}

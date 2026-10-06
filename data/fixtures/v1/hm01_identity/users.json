@@ -1,0 +1,128 @@
+{
+  "pack": "hm01-identity",
+  "version": "v1",
+  "synthetic": true,
+  "notice": "Tài khoản giả lập; không có password, token hay secret thật. Mọi token/hash chỉ là chuỗi faux để kiểm quyền trong fixture.",
+  "users": [
+    {
+      "id": "usr-ana",
+      "display_name": "Nguyễn An (giả lập)",
+      "role_primary": "renter",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-10T09:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-10T09:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-bao",
+      "display_name": "Trần Bảo (giả lập)",
+      "role_primary": "owner",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-05T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-05T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-chi",
+      "display_name": "Lê Chí (giả lập)",
+      "role_primary": "manager",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-07T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-07T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-duc",
+      "display_name": "Phạm Đức (giả lập)",
+      "role_primary": "manager",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-08T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-08T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-ha",
+      "display_name": "Vũ Hà (giả lập)",
+      "role_primary": "manager",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-06T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-06T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-khang",
+      "display_name": "Đặng Khang (giả lập)",
+      "role_primary": "admin",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-01T08:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-01T08:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-lan",
+      "display_name": "Bùi Lan (giả lập)",
+      "role_primary": "renter",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-12T09:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-12T09:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-minh",
+      "display_name": "Hoàng Minh (giả lập)",
+      "role_primary": "owner",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-06T11:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-06T11:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-phan",
+      "display_name": "Ngô Phan (giả lập)",
+      "role_primary": "manager",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-01-09T10:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-01-09T10:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    },
+    {
+      "id": "usr-tien",
+      "display_name": "Lý Tiến (giả lập)",
+      "role_primary": "renter",
+      "status": "active",
+      "email_domain_note": "faux@example.invalid",
+      "created_at": "2026-02-01T09:00:00+07:00",
+      "status_history": [
+        {"status": "active", "effective_from": "2026-02-01T09:00:00+07:00", "actor_id": null, "reason": null}
+      ],
+      "synthetic": true
+    }
+  ]
+}
