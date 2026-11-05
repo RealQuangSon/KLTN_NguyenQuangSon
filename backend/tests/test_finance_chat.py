@@ -14,7 +14,7 @@ from types import SimpleNamespace
 import pytest
 
 from backend.app.interpreter import OpenAIInterpreter, fixed_intent, parse_loan_terms
-from backend.app.models import (DomainError, DraftProfile, LoanTerms, Profile, Review, Scenario,
+from backend.app.models import (DomainError, DraftProfile, LoanTerms, Profile, Scenario,
                                 SimulationRequest)
 from backend.app.schemas import MessageResult
 from backend.app.service import HomeMatchService
@@ -35,9 +35,7 @@ def chat_profile(**changes) -> Profile:
 def approved(service, renter, landlord, profile) -> str:
     """Published shortlist built like test_landlord.py/test_finance.py."""
     session_id = service.create_session(renter)["session_id"]
-    run_id = service.confirm(session_id, renter, profile, 0)["run_id"]
-    service.review(run_id, landlord, Review(decision="approve", expected_profile_version=1,
-                                            reason="Đã kiểm tra.", idempotency_key="k"))
+    service.confirm(session_id, renter, profile, 0)
     return session_id
 
 
@@ -82,13 +80,11 @@ def test_named_room_inside_the_shortlist_is_simulated(service, renter, landlord)
 
 def test_named_room_outside_the_shortlist_is_refused(service, renter, landlord):
     session_id = service.create_session(renter)["session_id"]
-    run_id = service.confirm(session_id, renter, chat_profile(), 0)["run_id"]
-    ids = [item["room_id"] for item in service.draft(run_id, landlord)["items"]]
-    service.review(run_id, landlord, Review(decision="approve", expected_profile_version=1, reason="Đã kiểm tra.",
-                                            idempotency_key="k", keep_room_ids=ids[:1],
-                                            override_reason="Chỉ duyệt một phòng cho ca kiểm tra."))
+    service.confirm(session_id, renter, chat_profile(), 0)
+    visible = {item["room_id"] for item in service.results(session_id, renter)["results"]}
+    hidden_id = next(room.id for room in service.catalog.rooms() if room.id not in visible)
     with pytest.raises(DomainError) as hidden:
-        service.message(session_id, renter, f"phòng {ids[-1]} nếu vay 12 tháng lãi 12% thì sao")
+        service.message(session_id, renter, f"phòng {hidden_id} nếu vay 12 tháng lãi 12% thì sao")
     assert hidden.value.code == "not_visible"
 
 
@@ -96,7 +92,7 @@ def test_without_an_approved_shortlist_the_agent_asks_for_results(service, rente
     session_id = service.create_session(renter)["session_id"]
     reply = service.message(session_id, renter, QUESTION)
     assert reply["intent"] == "simulate_finance" and reply["status"] == "needs_results"
-    assert reply["message"] == "Bạn cần có danh sách phòng đã được chủ nhà duyệt trước khi mô phỏng vay."
+    assert reply["message"] == "Bạn cần có danh sách phòng trong kết quả hiện tại trước khi mô phỏng vay."
     assert "simulation" not in reply
 
 

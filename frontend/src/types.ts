@@ -8,7 +8,7 @@ export const roleNames: Record<Role, string> = {
   admin: "Quản trị viên",
 };
 // Statuses where approved rooms are visible to the renter (some or all landlords approved).
-export const visibleStatuses = ["published", "partially_published"];
+export const visibleStatuses = ["published"];
 export interface Actor {
   id: string;
   role: Role;
@@ -241,26 +241,6 @@ export interface Results {
   // Các bước pipeline deterministic đã chạy thật của run.
   steps?: string[];
 }
-export interface Recommendation {
-  run_id: string;
-  session_id: string;
-  status: string;
-  profile_version: number;
-  catalog_version: string;
-  profile: Profile;
-  items: Candidate[];
-  diagnostics: {
-    rejected?: Record<string, number>;
-    verification?: Record<string, number>;
-  };
-  decision: {
-    keep_room_ids: string[];
-    agent_order?: string[] | null;
-    overridden?: boolean | null;
-    payload?: { reason: string; override_reason?: string | null };
-  } | null;
-  review_progress?: { landlords: number; decided: number } | null;
-}
 export interface Fee {
   name: string;
   amount_vnd: number | string | null;
@@ -439,7 +419,10 @@ export const verificationText = (code: string): string => {
     return `Đơn giá chưa rõ: ${fees[name] || name}`;
   }
   if (code.startsWith("fee_assumed:")) {
-    const names = code.slice("fee_assumed:".length).split(",").map((n) => fees[n.trim()] || n.trim());
+    const names = code
+      .slice("fee_assumed:".length)
+      .split(",")
+      .map((n) => fees[n.trim()] || n.trim());
     return `Phí theo giả định chuẩn: ${names.join(", ")} — xác minh lại khi xem`;
   }
   if (code === "capacity_unknown") {
@@ -467,17 +450,11 @@ export const statusLabels: Record<string, string> = {
   awaiting_confirmation: "Chờ xác nhận nhu cầu",
   needs_clarification: "Cần làm rõ nhu cầu",
   generating: "Đang tìm phòng",
-  pending_review: "Chờ chủ nhà duyệt",
-  partially_published: "Đã có chủ nhà duyệt một phần",
-  reviewed: "Đang hoàn tất quyết định",
-  published: "Đã duyệt",
+  published: "Đã xếp hạng",
   invalidated: "Gợi ý đã hết hiệu lực",
   no_match: "Chưa có phòng đáp ứng",
   needs_verification: "Cần xác minh thông tin",
-  rejected: "Danh sách chưa được chấp thuận",
-  needs_revision: "Cần điều chỉnh nhu cầu",
   generation_failed: "Tạo gợi ý chưa thành công",
-  generating_failed: "Tạo gợi ý chưa thành công",
   ai_unavailable: "Trợ lý tạm thời không khả dụng",
   requested: "Chờ xác nhận lịch",
   confirmed: "Lịch đã xác nhận",

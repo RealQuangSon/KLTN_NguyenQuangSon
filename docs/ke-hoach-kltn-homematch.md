@@ -4,7 +4,7 @@
 
 **Tên đề tài:** HomeMatch AI Agent – Trợ lý gợi ý căn hộ theo nhu cầu và năng lực tài chính.
 
-**Phạm vi áp dụng:** nền tảng **cho thuê** phòng trọ, studio, căn hộ tại **TP.HCM và Hà Nội**. AI Agent tư vấn cho người thuê; **chủ nhà** duyệt gợi ý và vận hành cho thuê; quản trị viên giám sát. Xem [quyết định điều chỉnh](#7-quyết-định-điều-chỉnh-so-với-đề-bài).
+**Phạm vi áp dụng:** nền tảng **cho thuê** phòng trọ, studio, căn hộ tại **TP.HCM và Hà Nội**. AI Agent tư vấn cho người thuê; **chủ nhà** vận hành cho thuê và nhận lead từ gợi ý (không còn duyệt gợi ý — D-10); quản trị viên giám sát. Xem [quyết định điều chỉnh](#7-quyết-định-điều-chỉnh-so-với-đề-bài).
 
 ## 1. Thực trạng
 
@@ -25,7 +25,7 @@ Xây dựng một AI Agent:
 
 | Ràng buộc | Cách đáp ứng |
 |---|---|
-| HITL: người bán duyệt danh sách gợi ý trước khi trình khách | **Mỗi chủ nhà duyệt phòng của mình** trong danh sách AI. Khách thấy dần các phòng đã được chủ duyệt. Danh sách gắn phiên bản hồ sơ và kho; hồ sơ hoặc kho đổi thì danh sách hết hiệu lực. |
+| HITL: người bán duyệt danh sách gợi ý trước khi trình khách | Áp dụng 05/10 rồi **bỏ 05/11 (D-10)**: nhiều chủ nhà, nhiều người thuê, duyệt từng căn không khả thi. Kết quả tới khách ngay sau xếp hạng; chủ nhà nhận lead khi căn lọt top 5. Danh sách vẫn gắn phiên bản hồ sơ và kho; hồ sơ hoặc kho đổi thì danh sách hết hiệu lực. |
 | Minh bạch lý do gợi ý | Lý do, đánh đổi, điểm thành phần truy về dữ liệu căn và dòng chi phí, được kiểm bằng `eval grounding`. |
 | Không thiên vị căn tồn | Xếp hạng không dùng hoa hồng hay thời gian tồn; có kiểm thử phản thực tế. Chủ nhà bỏ hoặc đổi thứ tự phòng phải ghi lý do, và chỉ đổi được trong phần phòng của mình. |
 | Bảo mật thông tin tài chính | Chủ nhà chỉ thấy băng khả năng chi trả, không thấy thu nhập hay tỷ lệ. Tiền và liên hệ được tách khỏi prompt LLM và embedding. Chat lưu có che số điện thoại, email, số tài khoản; giữ 90 ngày. |
@@ -33,7 +33,7 @@ Xây dựng một AI Agent:
 
 ## 4. Mục tiêu
 
-**Cơ bản (đề bài):** trợ lý hỏi nhu cầu, trả top căn kèm giải thích và ước tính tài chính; chủ nhà duyệt hoặc lọc trước khi khách thấy.
+**Cơ bản (đề bài):** trợ lý hỏi nhu cầu, trả top căn kèm giải thích và ước tính tài chính ngay cho khách; chủ nhà vận hành sau (D-10).
 
 **Nâng cao (đề bài):**
 - multi-agent (nhu cầu, tài chính, xếp hạng);
@@ -73,7 +73,7 @@ Xây dựng một AI Agent:
 |---|---|
 | LLM | GPT-4o structured output. Chế độ `demo` dùng luật offline để phát triển và kiểm thử. |
 | Matching semantic | Embedding OpenAI + PostgreSQL pgvector, kết hợp B1 thành phương pháp P |
-| Điều phối agent | LangGraph: supervisor và các agent; `interrupt()` chờ chủ nhà duyệt |
+| Điều phối agent | LangGraph: supervisor và các agent (graph khuyến nghị `rank → save_draft → publish`, không còn `interrupt()` — D-10) |
 | Engine tài chính | Python `Decimal`, làm tròn VND: chi phí thuê, khả năng chi trả, vay annuity, hóa đơn |
 | Backend | FastAPI; một worker có luồng job nền cho tự động hóa |
 | Frontend | React + TypeScript; Leaflet + OpenStreetMap cho bản đồ |
@@ -97,7 +97,8 @@ Xây dựng một AI Agent:
 | D-02 | Engine tính vay đơn giản | Vay ngắn hạn (annuity) cho phần tiền vào ở còn thiếu | Đã xác nhận 05/10 |
 | D-03 | Hai vai trò: sale và khách | **Khách** (`renter`) và **chủ nhà** (`owner`), cộng quản trị viên (`admin`). Vai trò `manager` cũ không còn quyền nghiệp vụ. | Đã xác nhận 05/10 |
 | D-04 | Không nêu khu vực | TP.HCM và Hà Nội; tên quận quen gọi, nhận diện tên gọi khác | Đã xác nhận 05/10 |
-| D-05 | Sale duyệt cả danh sách | **Mỗi chủ nhà duyệt phòng của mình**; khách thấy dần phòng đã duyệt | Người dùng chọn 05/10 |
+| D-05 | Sale duyệt cả danh sách | **Mỗi chủ nhà duyệt phòng của mình**; khách thấy dần phòng đã duyệt | Người dùng chọn 05/10; **bị thay bởi D-10** |
+| D-10 | Chủ nhà duyệt từng gợi ý trước khi khách thấy (HITL D-05) | **Bỏ bước duyệt**: kết quả công bố ngay sau xếp hạng; chủ nhà nhận lead `recommended` khi căn lọt top 5; bảng `hm_run_reviews` chỉ đọc; migration v16 chuyển run cũ sang `invalidated` | Người dùng chọn 05/11 |
 | D-06 | — | Chat AI được lưu có che PII, giữ 90 ngày; mỗi lần admin mở đều ghi audit | Người dùng chọn 05/10 |
 | D-07 | Tích hợp bên ngoài | Thay bằng phương án không cần tài khoản: bản đồ OSM; phòng họp Jitsi cho xem trực tuyến; email là stub ghi log; chia sẻ mạng xã hội bằng link và sao chép, không tự đăng; giọng nói bằng Web Speech API của trình duyệt; thanh toán đối soát thủ công, không qua cổng thanh toán | Thiết kế 05/10 |
 | D-08 | Hợp đồng điện tử | Chấp thuận theo phiên bản trong ứng dụng cùng văn bản in được; **không** phải chữ ký số có giá trị pháp lý | Thiết kế 05/10 |
@@ -113,8 +114,8 @@ Xây dựng một AI Agent:
    Mỗi agent chỉ dùng các tool được phép, tối đa 4 bước mỗi lượt.
 2. Khách xác nhận hồ sơ trên form. Tiền nêu trong chat chỉ là gợi ý. Memory (khi khách đồng ý) chỉ điền sẵn dạng "đã suy luận".
 3. Agent xếp hạng lọc cứng (khu vực, loại, phòng ngủ, sức chứa, tiện ích, bán kính, ngân sách, điều kiện vay), chấm B1/P, lấy top 5 kèm lý do.
-4. Danh sách dừng ở `interrupt()`. Từng chủ nhà duyệt phần phòng của mình. Khi mọi chủ nhà đã quyết định, graph chạy tiếp để chốt kết quả.
-5. Khách thấy phòng đã duyệt, so sánh có tư vấn, mô phỏng tài chính, chat với chủ nhà kèm ngữ cảnh, và đặt lịch xem.
+4. Kết quả công bố ngay sau khi xếp hạng (không còn `interrupt()` — D-10); người thuê nhận thông báo `rooms_ready`, chủ nhà nhận lead `recommended` cho căn top 5.
+5. Khách thấy kết quả ngay, so sánh có tư vấn, mô phỏng tài chính, chat với chủ nhà kèm ngữ cảnh, và đặt lịch xem.
 
 ## 9. Dữ liệu
 

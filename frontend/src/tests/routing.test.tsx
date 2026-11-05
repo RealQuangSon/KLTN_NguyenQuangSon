@@ -44,7 +44,7 @@ it("opens a renter deep link directly, navigates by links and returns via browse
     { timeout: 4000 },
   );
   expect(
-    screen.queryByRole("link", { name: "Duyệt gợi ý" }),
+    screen.queryByRole("link", { name: "Khách tiềm năng" }),
   ).not.toBeInTheDocument();
   const user = userEvent.setup();
   await user.click(screen.getByRole("link", { name: "Trợ lý AI" }));
@@ -108,7 +108,7 @@ it("opens the landlord portal on the landlord's own rooms with landlord-only nav
     { timeout: 4000 },
   );
   expect(calls.some((call) => call.url.endsWith("/landlord/rooms"))).toBe(true);
-  expect(screen.getByRole("link", { name: "Duyệt gợi ý" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Khách tiềm năng" })).toBeVisible();
   expect(
     screen.queryByRole("link", { name: "Tìm phòng" }),
   ).not.toBeInTheDocument();

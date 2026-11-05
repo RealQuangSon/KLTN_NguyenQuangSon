@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { CostBreakdown, PublishedResults } from "../components/Shared";
 import { cost, room } from "./fixtures";
 describe("Public recommendation projection", () => {
-  it.each(["pending_review", "reviewed", "invalidated", "generation_failed"])(
+  it.each(["generating", "invalidated", "no_match", "generation_failed"])(
     "never renders room data for %s even if a malformed DTO contains items",
     (status) => {
       render(

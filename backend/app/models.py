@@ -300,16 +300,6 @@ class Extraction(Model):
     soft_description: str | None = Field(default=None, max_length=1000)
 
 
-class Review(Model):
-    decision: Literal["approve", "reject", "needs_revision"]
-    expected_profile_version: int = Field(ge=1, strict=True)
-    keep_room_ids: list[str] | None = None
-    reason: str = Field(min_length=1, max_length=1000)
-    # Required when the kept set or order differs from the agent's ranking (no favouring stock).
-    override_reason: str | None = Field(default=None, min_length=1, max_length=1000)
-    idempotency_key: str = Field(min_length=1, max_length=100)
-
-
 class ConfirmRequest(Model):
     expected_draft_revision: int = Field(ge=0, strict=True)
     profile: Profile

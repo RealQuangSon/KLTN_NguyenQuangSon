@@ -5,7 +5,7 @@ import pytest
 
 from backend.app.database import Database
 from backend.app.migrations import MIGRATIONS, SCHEMA_VERSION
-from backend.app.models import DomainError, Review
+from backend.app.models import DomainError
 from backend.app.repository import Repository
 from backend.app.service import HomeMatchService
 
@@ -24,7 +24,7 @@ def test_confirmation_commits_before_graph_and_snapshots_survive_restart(storage
             return graph.invoke(state, config)
 
         service.recommendation_graph = SimpleNamespace(invoke=observe_then_generate)
-        assert service.confirm(sid, renter, profile, 0)["status"] == "pending_review"
+        assert service.confirm(sid, renter, profile, 0)["status"] == "published"
         service.recommendation_graph = graph
         changed = profile.model_copy(update={"max_monthly_cost_vnd": 4_000_000})
         service.confirm(sid, renter, changed, 1)
@@ -40,70 +40,47 @@ def test_confirmation_commits_before_graph_and_snapshots_survive_restart(storage
         second.close()
 
 
-def test_review_resume_failure_keeps_committed_event_for_restart(storage, renter, landlord, profile):
+def test_failed_run_is_rerunnable_by_its_renter_and_survives_restart(storage, renter, profile):
     first = HomeMatchService(storage)
-    observer = Database(storage)
-    request = Review(decision="approve", expected_profile_version=1, reason="Đã kiểm tra", idempotency_key="resume-1")
     try:
         sid = first.create_session(renter)["session_id"]
-        run_id = first.confirm(sid, renter, profile, 0)["run_id"]
         graph = first.recommendation_graph
 
-        def fail_after_observing_commit(*args):
-            row = observer.execute("SELECT status,decision_json FROM hm_runs WHERE id=?", (run_id,)).fetchone()
-            assert row["status"] == "reviewed" and row["decision_json"]
-            raise RuntimeError("private checkpoint failure")
+        def fail_midway(state, config):
+            raise RuntimeError("checkpoint unavailable mid-generation")
 
-        first.recommendation_graph = SimpleNamespace(get_state=graph.get_state, invoke=fail_after_observing_commit)
-        with pytest.raises(DomainError) as error:
-            first.review(run_id, landlord, request)
-        assert error.value.code == "review_resume_failed" and error.value.http_status == 503
-        event = first.repo.run(run_id)["decision"]
-        landlord_event = first.repo.reviews(run_id)[landlord.id]
-        assert first.results(sid, renter)["status"] == "reviewed"
-        assert first.results(sid, renter)["results"] == []
+        first.recommendation_graph = SimpleNamespace(invoke=fail_midway)
+        failed = first.confirm(sid, renter, profile, 0)
+        assert failed["status"] == "generation_failed" and failed["results"] == []
+        first.recommendation_graph = graph
+        # Người thuê tự chạy lại vòng tìm lỗi của phiên mình (AG-00).
+        rerun = first.rerun(sid, renter)
+        assert rerun["status"] == "published" and rerun["results"]
+        # Run cũ bị đánh dấu hết hiệu lực, run mới là active run.
+        assert first.repo.run(failed["run_id"])["status"] == "invalidated"
     finally:
-        observer.close()
         first.close()
     second = HomeMatchService(storage)
     try:
-        recovered = second.retry(run_id, landlord)
-        assert recovered["status"] == "published" and second.repo.run(run_id)["decision"] == event
-        # Replaying the same landlord decision returns the recorded event, never a second one.
-        assert recovered["decision"] == landlord_event
-        assert second.review(run_id, landlord, request)["decision"] == landlord_event
-        assert second.results(sid, renter)["results"]
+        assert second.results(sid, renter)["status"] == "published"
     finally:
         second.close()
 
 
-def test_generation_failure_after_saving_draft_is_retryable(service, renter, landlord, admin, profile):
+def test_generation_failure_before_saving_draft_is_retryable(service, renter, admin, profile):
     sid = service.create_session(renter)["session_id"]
-    graph = service.recommendation_graph
 
-    def fail_after_draft(state, config):
-        graph.invoke(state, config)
-        raise RuntimeError("checkpoint unavailable after draft persisted")
+    def fail_before_draft(run_id, items, diagnostics):
+        raise RuntimeError("checkpoint unavailable before draft persisted")
 
-    service.recommendation_graph = SimpleNamespace(invoke=fail_after_draft)
+    original = service.repo.set_draft
+    service.repo.set_draft = fail_before_draft
     failed = service.confirm(sid, renter, profile, 0)
     assert failed["status"] == "generation_failed" and failed["results"] == []
     assert service.repo.run(failed["run_id"])["items"] == []
-    service.recommendation_graph = graph
+    service.repo.set_draft = original
     retried = service.retry(failed["run_id"], admin)
-    assert retried["status"] == "pending_review" and retried["decision"] is None
-
-
-def test_missing_checkpoint_never_publishes_recorded_review(service, renter, landlord, profile):
-    sid = service.create_session(renter)["session_id"]
-    run_id = service.confirm(sid, renter, profile, 0)["run_id"]
-    request = Review(decision="approve", expected_profile_version=1, reason="Kiểm tra", idempotency_key="missing-1")
-    service.repo.review(run_id, landlord.id, request)
-    service.recommendation_graph = SimpleNamespace(get_state=lambda config: SimpleNamespace(next=()))
-    with pytest.raises(DomainError) as error:
-        service.retry(run_id, landlord)
-    assert error.value.code == "recovery_required"
-    assert service.results(sid, renter)["results"] == []
+    assert retried["status"] == "published" and retried["items"]
 
 
 def test_nested_transaction_rollback_does_not_commit_partial_import(service):
@@ -132,7 +109,8 @@ def test_legacy_schema_migration_preserves_profile_and_runs(storage, renter, pro
         repo = Repository(storage)
         try:
             assert repo.schema_version == SCHEMA_VERSION
-            assert repo.run("legacy-run")["status"] == "pending_review"
+            # Migration 16 (bỏ duyệt gợi ý): run cũ đang chờ duyệt chuyển hết hiệu lực.
+            assert repo.run("legacy-run")["status"] == "invalidated"
             rows = repo.db.execute("SELECT * FROM hm_profile_snapshots").fetchall()
             assert len(rows) == 1 and rows[0]["profile_json"] == profile.model_dump_json()
             assert repo.db.execute("SELECT COUNT(*) AS count FROM hm_schema_migrations").fetchone()["count"] == len(MIGRATIONS)

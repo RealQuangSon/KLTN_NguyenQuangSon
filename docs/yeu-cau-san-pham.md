@@ -27,12 +27,12 @@
 | FR-10 | B1: điểm chi phí, sở thích, vị trí; tất định | CB | Đã có | AC-05 |
 | FR-11 | P: B1 kết hợp semantic (pgvector) trên tập đủ điều kiện; quay về B1 khi thiếu vector, ghi rõ nhãn | CB | Một phần (chưa chạy với vector thật) | AC-06 |
 | FR-12 | Lý do, đánh đổi, cờ xác minh có bằng chứng | CB | Đã có | AC-07 |
-| FR-13 | Không thiên vị căn tồn; chủ nhà đổi thứ tự hoặc bỏ phòng phải ghi lý do | CB | Đã có | AC-08 |
+| FR-13 | Không thiên vị căn tồn (ranking không đọc hoa hồng/thời gian đăng); phần duyệt có lý do thay đổi đã bị bỏ theo D-10 | CB | Đã có (phần ghi lý do duyệt bỏ 05/11) | AC-08 |
 | FR-14 | Phân biệt `no_match` và `needs_verification`; gợi ý nới lỏng mềm | CB | Đã có | AC-05 |
-| FR-15 | **Mỗi chủ nhà chỉ thấy phòng của mình** trong danh sách; khách không thấy gì trước khi có chủ nhà duyệt | CB | Đã có | AC-09 |
-| FR-16 | Chủ nhà duyệt, từ chối hoặc yêu cầu sửa phần phòng của mình. Khách thấy dần (`partially_published`); chốt khi mọi chủ nhà đã quyết định. | CB | Đã có | AC-09 |
+| FR-15 | **Mỗi chủ nhà chỉ thấy phòng của mình** trong lead/CRM; kết quả tới khách ngay sau xếp hạng (D-10 bỏ bước duyệt 05/11) | CB | Đã có (đã đổi thiết kế 05/11) | AC-09 |
+| FR-16 | (Đã bỏ theo D-10, 05/11/2026) Chủ nhà duyệt từng phần phòng — thay bằng lead `recommended` top 5 và thông báo `rooms_ready` cho khách | CB | Bỏ | AC-09 |
 | FR-17 | Hồ sơ hoặc kho đổi thì kết quả cũ hết hiệu lực | CB | Đã có | AC-09 |
-| FR-18 | Khách xem top căn đã duyệt kèm giải thích, chi phí, băng tài chính, khoản vay | CB | Đã có | AC-10 |
+| FR-18 | Khách xem top căn kèm giải thích, chi phí, băng tài chính, khoản vay | CB | Đã có | AC-10 |
 | FR-19 | So sánh trực quan 2–3 căn: bảng, nhãn "Tốt nhất", biểu đồ chi phí | NC | Đã có | AC-10 |
 | FR-20 | Gửi yêu cầu xem căn; chủ nhà của căn xác nhận | CB | Đã có | AC-10 |
 | FR-21 | Multi-agent: supervisor và các agent nhu cầu, tài chính, xếp hạng, cẩm nang, hỗ trợ; danh sách tool riêng | NC | Đã có | AC-11 |

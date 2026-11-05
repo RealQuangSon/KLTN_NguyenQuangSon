@@ -2,12 +2,10 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from fastapi.testclient import TestClient
 
 from backend.app.catalog import DEFAULT_CATALOG
 from backend.app.main import create_app
-from backend.app.models import (Actor, CatalogStatus, DomainError, Profile, Review, RoomInput, RoomUpdate,
-                                Scenario)
+from backend.app.models import Actor, CatalogStatus, DomainError, Profile, RoomInput, RoomUpdate, Scenario
 from backend.app.service import HomeMatchService
 
 DEMO = json.loads(DEFAULT_CATALOG.read_text(encoding="utf-8"))["rooms"]
@@ -26,11 +24,6 @@ def two_landlords(tmp_path, monkeypatch):
     service.close()
 
 
-def approve(version=1, key="k", **changes):
-    return Review(decision="approve", expected_profile_version=version, reason="Đã kiểm tra.",
-                  idempotency_key=key, **changes)
-
-
 def shortlist(service, renter):
     profile = Profile(city="TP.HCM", area="Quận 7", max_monthly_cost_vnd=5_000_000, scenario=Scenario())
     sid = service.create_session(renter)["session_id"]
@@ -38,65 +31,16 @@ def shortlist(service, renter):
     return sid, run_id
 
 
-def test_each_landlord_sees_and_reviews_only_own_rooms(two_landlords, renter):
+def test_published_results_mix_both_landlords_in_agent_order(two_landlords, renter):
     sid, run_id = shortlist(two_landlords, renter)
     run = two_landlords.repo.run(run_id)
+    assert run["status"] == "published"
     assert {item["landlord_id"] for item in run["items"]} == {"owner-a", "owner-b"}
-    for landlord in (OWNER_A, OWNER_B):
-        view = two_landlords.draft(run_id, landlord)
-        assert view["items"] and all(item["landlord_id"] == landlord.id for item in view["items"])
-        assert view["review_progress"] == {"landlords": 2, "decided": 0}
-    with pytest.raises(DomainError):
-        two_landlords.draft(run_id, Actor(id="owner-c", role="owner"))
-    other = [item["room_id"] for item in run["items"] if item["landlord_id"] == "owner-b"]
-    with pytest.raises(DomainError) as foreign:
-        two_landlords.review(run_id, OWNER_A, approve(keep_room_ids=other[:1]))
-    assert foreign.value.code == "invalid_selection"
-
-
-def test_rooms_appear_as_each_landlord_approves_and_order_stays_in_own_slots(two_landlords, renter):
-    sid, run_id = shortlist(two_landlords, renter)
-    agent_order = [item["room_id"] for item in two_landlords.repo.run(run_id)["items"]]
-    a_rooms = [room for room in agent_order if two_landlords.catalog.room(room).landlord == "owner-a"]
-    b_rooms = [room for room in agent_order if room not in a_rooms]
-    first = two_landlords.review(run_id, OWNER_A, approve(keep_room_ids=a_rooms[::-1],
-                                                          override_reason="Khách thích căn rẻ hơn."))
-    assert first["status"] == "partially_published"
-    partial = two_landlords.results(sid, renter)
-    assert partial["status"] == "partially_published"
-    assert [item["room_id"] for item in partial["results"]] == a_rooms[::-1]
-    # owner-b removes one room: the remaining rooms keep owner-b's slots in the agent order.
-    final = two_landlords.review(run_id, OWNER_B, approve(keep_room_ids=b_rooms[1:],
-                                                          override_reason="Phòng đầu đang sửa."))
-    assert final["status"] == "published"
+    # Kết quả tới khách ngay, đúng thứ tự xếp hạng của trợ lý, không còn chờ duyệt.
     visible = [item["room_id"] for item in two_landlords.results(sid, renter)["results"]]
-    assert set(visible) == set(a_rooms) | set(b_rooms[1:])
-    a_positions = [index for index, room in enumerate(visible) if room in a_rooms]
-    assert [visible[i] for i in a_positions] == a_rooms[::-1]
-
-
-def test_partially_published_results_pass_the_http_response_model(two_landlords, renter):
-    sid, run_id = shortlist(two_landlords, renter)
-    a_rooms = [item["room_id"] for item in two_landlords.repo.run(run_id)["items"] if item["landlord_id"] == "owner-a"]
-    two_landlords.review(run_id, OWNER_A, approve(keep_room_ids=a_rooms))
-    with TestClient(create_app(lambda: two_landlords)) as client:
-        response = client.get(f"/sessions/{sid}/results", headers={"Authorization": f"Bearer demo-{renter.id}"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["status"] == "partially_published"
-    assert [item["room_id"] for item in body["results"]] == a_rooms
-
-
-def test_all_rejections_end_the_run_and_landlord_cannot_decide_twice(two_landlords, renter):
-    sid, run_id = shortlist(two_landlords, renter)
-    reject = Review(decision="reject", expected_profile_version=1, reason="Hết phòng.", idempotency_key="r")
-    two_landlords.review(run_id, OWNER_A, reject)
-    with pytest.raises(DomainError) as twice:
-        two_landlords.review(run_id, OWNER_A, approve())
-    assert twice.value.code == "review_conflict"
-    assert two_landlords.results(sid, renter)["results"] == []
-    two_landlords.review(run_id, OWNER_B, reject)
-    assert two_landlords.results(sid, renter)["status"] == "rejected"
+    assert visible == [item["room_id"] for item in run["items"]]
+    # Thu nhập không bao giờ xuất hiện trong dữ liệu phòng trả cho khách.
+    assert all("monthly_income_vnd" not in item for item in two_landlords.results(sid, renter)["results"])
 
 
 def test_landlord_creates_edits_and_sets_occupancy_of_own_rooms_only(two_landlords):
@@ -123,9 +67,7 @@ def test_landlord_creates_edits_and_sets_occupancy_of_own_rooms_only(two_landlor
 
 
 def test_online_viewing_goes_to_the_rooms_landlord_with_a_meeting_link(two_landlords, renter):
-    sid, run_id = shortlist(two_landlords, renter)
-    for landlord in (OWNER_A, OWNER_B):
-        two_landlords.review(run_id, landlord, approve())
+    sid, _ = shortlist(two_landlords, renter)
     room = two_landlords.results(sid, renter)["results"][0]
     when = datetime.now(timezone.utc) + timedelta(days=1)
     viewing = two_landlords.request_viewing(sid, renter, room["room_id"], when, "v1", mode="online")
@@ -136,3 +78,21 @@ def test_online_viewing_goes_to_the_rooms_landlord_with_a_meeting_link(two_landl
     owner = Actor(id=room["landlord_id"], role="owner")
     assert [item["id"] for item in two_landlords.viewings(owner)] == [viewing["id"]]
     assert two_landlords.respond_viewing(viewing["id"], owner, "confirmed")["status"] == "confirmed"
+
+
+def test_published_run_notifies_renter_and_touches_top5_landlord_leads(two_landlords, renter):
+    sid, run_id = shortlist(two_landlords, renter)
+    owner_id = renter.id
+    rows = two_landlords.repo.db.execute(
+        "SELECT kind,dedup_key FROM hm_notifications WHERE user_id=?", (owner_id,)).fetchall()
+    assert any(row["kind"] == "rooms_ready" and row["dedup_key"] == f"run:{run_id}:ready" for row in rows)
+    leads = two_landlords.repo.db.execute("SELECT landlord_id,renter_id,sources_json FROM hm_leads").fetchall()
+    top5_landlords = {(item.get("landlord_id") or "owner-a") for item in two_landlords.repo.run(run_id)["items"][:5]}
+    assert {lead["landlord_id"] for lead in leads} == top5_landlords
+    assert all(lead["renter_id"] == owner_id for lead in leads)
+    assert all("recommended" in json.loads(lead["sources_json"]) for lead in leads)
+    # Chạy lần 2 (run mới) không nhân đôi thông báo của run cũ: dedup theo run.
+    two_landlords.repo.mark_published(run_id)
+    rows = two_landlords.repo.db.execute(
+        "SELECT COUNT(*) AS n FROM hm_notifications WHERE dedup_key=?", (f"run:{run_id}:ready",)).fetchone()
+    assert rows["n"] == 1

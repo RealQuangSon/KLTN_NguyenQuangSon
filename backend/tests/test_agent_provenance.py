@@ -6,7 +6,7 @@ optional schema field owned by the backend agent.
 """
 import pytest
 
-from backend.app.models import CostRequest, Review, Scenario
+from backend.app.models import CostRequest, Scenario
 from backend.app.service import HomeMatchService
 
 
@@ -15,11 +15,6 @@ def own_service(tmp_path):
     agent = HomeMatchService(tmp_path / "provenance.sqlite")
     yield agent
     agent.close()
-
-
-def approval(version=1, **changes):
-    return Review(decision="approve", expected_profile_version=version,
-                  reason="Đã kiểm tra dữ liệu demo.", idempotency_key="review-1", **changes)
 
 
 def test_chat_turns_carry_provenance_per_node(own_service, renter):
@@ -48,25 +43,23 @@ def test_results_payload_has_engine_provenance(own_service, renter, landlord, pr
     assert trace["run_id"] == run_id
 
 
-def test_pending_recommendations_never_reach_renter_chat_or_results(own_service, renter, landlord, profile):
+def test_results_reach_renter_once_published_never_in_chat(own_service, renter, profile):
     sid = own_service.create_session(renter)["session_id"]
-    run_id = own_service.confirm(sid, renter, profile, 0)["run_id"]
-    # Pending: no items, no diagnostics, no results anywhere renter-visible.
-    pending = own_service.results(sid, renter)
-    assert pending["status"] == "pending_review" and pending["results"] == []
-    assert "items" not in pending and "diagnostics" not in pending
+    # Chưa có run: không kết quả nào hiển thị và chat không lộ gì.
+    early = own_service.results(sid, renter)
+    assert early["status"] == "awaiting_confirmation" and early["results"] == []
     reply = own_service.message(sid, renter, "Phòng nào phù hợp vậy?")
     assert "items" not in reply and "diagnostics" not in reply and "results" not in reply
-    assert own_service.agent_trace(sid, renter)["results"]["visible_room_ids"] == []
-    # Manager sees the draft; the renter still does not.
-    assert own_service.draft(run_id, landlord)["items"]
-    assert own_service.results(sid, renter)["results"] == []
-    # After approval, results appear only in the results payload, never in chat.
-    own_service.review(run_id, landlord, approval())
+    assert (own_service.agent_trace(sid, renter)["results"] or {}).get("visible_room_ids", []) == []
+    # Kết quả chỉ xuất hiện trong payload results, không bao giờ trong chat.
+    revision = own_service.session(sid, renter)["draft_revision"]
+    run_id = own_service.confirm(sid, renter, profile, revision)["run_id"]
     published = own_service.results(sid, renter)
     assert published["status"] == "published" and published["results"]
+    assert "items" not in published and "diagnostics" not in published
     reply = own_service.message(sid, renter, "Cho hỏi thêm")
     assert "items" not in reply and "diagnostics" not in reply and "results" not in reply
     trace = own_service.agent_trace(sid, renter)["results"]
     assert trace["provenance"]["run_status"] == "published"
-    assert set(trace["visible_room_ids"]) <= {item["room_id"] for item in published["results"]}
+    assert trace["run_id"] == run_id
+    assert set(trace["visible_room_ids"]) == {item["room_id"] for item in published["results"]}

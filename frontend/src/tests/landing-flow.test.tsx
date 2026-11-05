@@ -149,7 +149,7 @@ it("drops the pending landing need when a landlord signs in", async () => {
   await user.type(screen.getByLabelText(/Tên đăng nhập/), "owner-a");
   await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
-  await screen.findAllByText("Duyệt gợi ý");
+  await screen.findAllByText("Khách tiềm năng");
   expect(
     post.mock.calls.filter(([url]) => url.endsWith("/sessions")),
   ).toHaveLength(0);

@@ -21,7 +21,7 @@ def test_openapi_defines_success_and_safe_error_contracts(service):
                 assert success["content"]["application/json"]["schema"]
             assert responses["422"]["content"]["application/json"]["schema"]["$ref"].endswith("ErrorResult")
     with pytest.raises(ValueError, match="Unpublished"):
-        ResultsResult.model_validate({"session_id": "fixture", "status": "pending_review", "results": [
+        ResultsResult.model_validate({"session_id": "fixture", "status": "generating", "results": [
             {"room_id": "fixture", "room_revision": 1, "title": "Fixture", "city": "TP.HCM", "area": "Quận 7",
              "area_m2": 20, "cost": {"monthly_known_vnd": 0, "monthly_total_vnd": 0, "initial_known_vnd": 0,
                                    "initial_total_vnd": 0, "missing_monthly": [], "missing_initial": [], "lines": [], "assumptions": {}},

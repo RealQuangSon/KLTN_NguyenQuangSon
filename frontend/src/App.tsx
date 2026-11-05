@@ -48,7 +48,7 @@ type AppRoute =
       page: "dashboard" | "leases" | "billing" | "maintenance" | "leads";
       side: "landlord" | "renter";
     }
-  | { kind: "landlord"; tab: "review" | "catalog" | "viewings" }
+  | { kind: "landlord"; tab: "catalog" | "viewings" }
   | { kind: "admin"; section: AdminSection }
   | { kind: "account"; section: "ho-so" | "bao-mat" }
   | { kind: "not-found" };
@@ -126,7 +126,6 @@ const navByRole: Record<Role, { path: string; label: string; icon: string }[]> =
     ],
     owner: [
       { path: "/chu-nha/tong-quan", label: "Tổng quan", icon: "home" },
-      { path: "/chu-nha/duyet-goi-y", label: "Duyệt gợi ý", icon: "shield" },
       { path: "/chu-nha/phong", label: "Phòng & tin", icon: "grid" },
       { path: "/chu-nha/lich-xem", label: "Lịch xem", icon: "calendar" },
       { path: "/chu-nha/hop-thu", label: "Hộp thư", icon: "chat" },
@@ -193,8 +192,9 @@ function resolveRoute(rawPath: string): AppRoute {
       return { kind: "pms", page: "billing", side: "renter" };
     case "/nguoi-thue/sua-chua":
       return { kind: "pms", page: "maintenance", side: "renter" };
+    // Quyết định 05/11/2026: bỏ trang duyệt gợi ý — deep link cũ dẫn về Khách tiềm năng.
     case "/chu-nha/duyet-goi-y":
-      return { kind: "landlord", tab: "review" };
+      return { kind: "pms", page: "leads", side: "landlord" };
     case "/chu-nha/phong":
       return { kind: "landlord", tab: "catalog" };
     case "/chu-nha/lich-xem":
@@ -318,7 +318,8 @@ function AppShell() {
   };
   // Trang tin công khai (đích link chia sẻ) xem được dù đã hay chưa đăng nhập.
   if (route.kind === "public-listing")
-    return <PublicListing roomId={route.id} />;  if (boot)
+    return <PublicListing roomId={route.id} />;
+  if (boot)
     return (
       <div className="boot">
         <Brand />
@@ -608,7 +609,12 @@ function IconRail({
   };
   return (
     <aside className="icon-rail" aria-label="Điều hướng chính">
-      <a href="/" className="rail-brand" aria-label="Trang chủ HomeMatch" onClick={go("/")}>
+      <a
+        href="/"
+        className="rail-brand"
+        aria-label="Trang chủ HomeMatch"
+        onClick={go("/")}
+      >
         <Icon name="home" size={21} />
       </a>
       <nav aria-label="Điều hướng workspace">

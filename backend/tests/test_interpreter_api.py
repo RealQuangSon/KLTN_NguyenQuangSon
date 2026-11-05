@@ -103,21 +103,17 @@ def test_unknown_llm_api_value_is_rejected(monkeypatch):
         OpenAIInterpreter(client=SimpleNamespace())
 
 
-def test_api_authorization_and_hitl_end_to_end(tmp_path, profile):
+def test_api_authorization_end_to_end(tmp_path, profile):
     app = create_app(lambda: HomeMatchService(tmp_path / "api.sqlite"))
     renter_headers = {"Authorization": "Bearer demo-renter-a"}
-    manager_headers = {"Authorization": "Bearer demo-owner-a"}
     with TestClient(app) as client:
         assert client.post("/sessions").status_code == 401
         sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
         body = {"expected_draft_revision": 0, "profile": profile.model_dump(mode="json")}
-        pending = client.post(f"/sessions/{sid}/confirm", headers=renter_headers, json=body)
-        assert pending.status_code == 200
-        run_id = pending.json()["run_id"]
-        assert pending.json()["results"] == []
-        assert client.get("/landlord/recommendations", headers=renter_headers).status_code == 403
+        confirmed = client.post(f"/sessions/{sid}/confirm", headers=renter_headers, json=body)
+        assert confirmed.status_code == 200
+        assert confirmed.json()["status"] == "published" and confirmed.json()["results"]
+        # Endpoint duyệt gợi ý đã bị xóa: không còn đường duyệt nào cho mọi vai trò.
+        assert client.get("/landlord/recommendations", headers=renter_headers).status_code == 404
         assert client.get(f"/sessions/{sid}/results", headers={"Authorization":"Bearer demo-renter-b"}).status_code == 403
-        reviewed = client.post(f"/landlord/recommendations/{run_id}/review", headers=manager_headers,
-            json={"decision":"approve", "expected_profile_version":1,"reason":"Đã kiểm tra", "idempotency_key":"api-1"})
-        assert reviewed.status_code == 200
         assert client.get(f"/sessions/{sid}/results", headers=renter_headers).json()["results"]

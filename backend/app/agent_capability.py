@@ -44,11 +44,10 @@ CAPABILITIES: dict[str, frozenset[str]] = {
     "support:manage": frozenset({"admin"}),
     # Landlord account review (self-signup approval) is an admin decision.
     "account:review_landlord": frozenset({"admin"}),
-    # Landlords review only the rooms they own in a shortlist (per-landlord HITL).
-    "run:draft_list": frozenset({"owner"}),
-    "run:read": frozenset({"owner"}),
-    "run:review": frozenset({"owner"}),
-    "run:retry": frozenset({"owner", "admin"}),
+    # Quyết định 05/11/2026: không còn bước chủ nhà duyệt gợi ý — người thuê chạy
+    # lại vòng tìm lỗi của phiên mình; quản trị viên khôi phục run lỗi toàn hệ thống.
+    "results:rerun": frozenset({"renter"}),
+    "run:retry": frozenset({"admin"}),
     "catalog:read": frozenset({"owner", "admin"}),
     "catalog:write": frozenset({"owner", "admin"}),
 }

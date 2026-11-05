@@ -29,7 +29,6 @@ import { ViewingForm, ViewingList } from "../components/ViewingPanel";
 import { LoadingState } from "../components/LoadingState";
 import { AgentMascot } from "../components/AgentMascot";
 import { VoiceButton } from "../components/VoiceInput";
-import { useAutoPublish } from "../components/DemoExperience";
 import { Link } from "../router";
 type Message = {
   role: "user" | "assistant";
@@ -75,18 +74,14 @@ function SimulationMessage({ simulation }: { simulation: ChatSimulation }) {
 }
 // Khung đang xử lý kiểu workspace tham chiếu: bộ khung thẻ + mascot trạng thái
 // giữa khung preview, thay màn trắng chờ.
-function PreviewSkeleton({ label, autoPublish }: { label: string; autoPublish: boolean }) {
+function PreviewSkeleton({ label }: { label: string }) {
   return (
     <div className="agent-pending">
       <div className="agent-pending-ring">
         <AgentMascot size={46} />
       </div>
       <strong>{label}</strong>
-      <small>
-        {autoPublish
-          ? "Danh sách sẽ tự hiện ở khung này trong chốc lát (chế độ tự công bố)."
-          : "Danh sách sẽ hiện ở khung này sau khi chủ nhà duyệt."}
-      </small>
+      <small>Danh sách sẽ tự hiện ở khung này trong chốc lát.</small>
       <div className="preview-skeleton" aria-hidden="true">
         {Array.from({ length: 4 }).map((_, index) => (
           <div className="skel-card" key={index}>
@@ -112,11 +107,20 @@ function StepsDisclosure({ steps }: { steps: string[] }) {
       >
         <Icon name="sparkles" size={13} />
         Đã xử lý qua {steps.length} bước
-        <span className={`steps-caret${open ? " open" : ""}`} aria-hidden="true">
+        <span
+          className={`steps-caret${open ? " open" : ""}`}
+          aria-hidden="true"
+        >
           <Icon name="chevron" size={12} />
         </span>
       </button>
-      {open && <ol>{steps.map((step, index) => <li key={index}>{step}</li>)}</ol>}
+      {open && (
+        <ol>
+          {steps.map((step, index) => (
+            <li key={index}>{step}</li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
@@ -164,10 +168,14 @@ function noMatchAnnouncement(result: Results, profile: Profile | null): string {
       );
     const facts = [`Mình đã quét ${summary.scanned} tin trong kho.`];
     if (reasons.length)
-      facts.push(`Chưa có căn khớp đồng thời — bị loại chủ yếu vì ${reasons.join(", ")}.`);
+      facts.push(
+        `Chưa có căn khớp đồng thời — bị loại chủ yếu vì ${reasons.join(", ")}.`,
+      );
     else facts.push("Chưa có căn nào khớp đồng thời các điều kiện của bạn.");
     if (held)
-      facts.push(`Riêng ${held} tin bị giữ lại chờ xác minh số liệu (phí/vị trí) — chủ nhà cập nhật xong sẽ vào vòng sau.`);
+      facts.push(
+        `Riêng ${held} tin bị giữ lại chờ xác minh số liệu (phí/vị trí) — chủ nhà cập nhật xong sẽ vào vòng sau.`,
+      );
     lines.push(facts.join(" "));
   } else {
     lines.push("Kho hiện chưa có căn khớp đồng thời các điều kiện của bạn.");
@@ -190,7 +198,6 @@ export function RenterWorkspace({
   initialNeed?: string | null;
   onNeedHandled?: () => void;
 }) {
-  const autoPublish = useAutoPublish();
   const [session, setSession] = useState<Session | null>(null);
   const [result, setResult] = useState<Results | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -280,7 +287,10 @@ export function RenterWorkspace({
         const next = updater(currentMessages);
         try {
           if (current.current)
-            sessionStorage.setItem(msgKey(current.current), JSON.stringify(next));
+            sessionStorage.setItem(
+              msgKey(current.current),
+              JSON.stringify(next),
+            );
         } catch {
           /* vượt hạn mức sessionStorage thì bỏ qua, chat vẫn chạy */
         }
@@ -379,12 +389,7 @@ export function RenterWorkspace({
     void refresh();
   }, [session?.session_id, session?.active_run_id, refresh]);
   useEffect(() => {
-    if (
-      !["pending_review", "reviewed", "generating"].includes(
-        result?.status || "",
-      )
-    )
-      return;
+    if (result?.status === "generating") return;
     let ticks = 0;
     const timer = setInterval(() => {
       if (++ticks > 60) {
@@ -741,7 +746,8 @@ export function RenterWorkspace({
     setFeedback(next);
     if (!session) return;
     try {
-      if (next) localStorage.setItem(`homematch.fb.${session.session_id}`, next);
+      if (next)
+        localStorage.setItem(`homematch.fb.${session.session_id}`, next);
       else localStorage.removeItem(`homematch.fb.${session.session_id}`);
     } catch {
       /* trình duyệt chặn localStorage thì chỉ giữ trạng thái phiên */
@@ -844,7 +850,8 @@ export function RenterWorkspace({
                 !e.nativeEvent.isComposing
               ) {
                 e.preventDefault();
-                if (!busy && welcomeText.trim()) void createAndSend(welcomeText);
+                if (!busy && welcomeText.trim())
+                  void createAndSend(welcomeText);
               }
             }}
           />
@@ -904,7 +911,7 @@ export function RenterWorkspace({
           ))}
         </div>
         <p className="agent-welcome-foot">
-          Tin đã duyệt · Chi phí rõ trước khi xem · Đặt lịch xem nhanh
+          Tin đang công khai · Chi phí rõ trước khi xem · Đặt lịch xem nhanh
         </p>
       </main>
     );
@@ -919,8 +926,8 @@ export function RenterWorkspace({
             <div className="agent-chat-id">
               <strong>HomeMatch Agent</strong>
               <small>
-                <span className="dot-on" aria-hidden="true" /> Chỉ quét tin đã
-                duyệt trong kho HomeMatch
+                <span className="dot-on" aria-hidden="true" /> Chỉ quét tin đang
+                công khai trong kho HomeMatch
               </small>
             </div>
             <button
@@ -944,11 +951,7 @@ export function RenterWorkspace({
               <Icon name="refresh" size={16} />
             </button>
           </header>
-          <div
-            className="agent-chat-body"
-            aria-live="polite"
-            ref={messageList}
-          >
+          <div className="agent-chat-body" aria-live="polite" ref={messageList}>
             {messages.length === 0 ? (
               <p className="subtle">
                 Bạn có thể tiếp tục chia sẻ nhu cầu. Nội dung hội thoại không
@@ -987,28 +990,33 @@ export function RenterWorkspace({
                       Xem danh sách gợi ý <Icon name="arrow" size={14} />
                     </button>
                   )}
-                  {m.role === "assistant" && i === lastAssistantIdx && !busy && (
-                    <div className="chat-feedback" aria-label="Đánh giá câu trả lời">
-                      <button
-                        type="button"
-                        aria-label="Hữu ích"
-                        aria-pressed={feedback === "up"}
-                        title="Đánh giá chỉ lưu trên máy này"
-                        onClick={() => rate("up")}
+                  {m.role === "assistant" &&
+                    i === lastAssistantIdx &&
+                    !busy && (
+                      <div
+                        className="chat-feedback"
+                        aria-label="Đánh giá câu trả lời"
                       >
-                        <Icon name="thumbUp" size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Chưa hữu ích"
-                        aria-pressed={feedback === "down"}
-                        title="Đánh giá chỉ lưu trên máy này"
-                        onClick={() => rate("down")}
-                      >
-                        <Icon name="thumbDown" size={14} />
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          aria-label="Hữu ích"
+                          aria-pressed={feedback === "up"}
+                          title="Đánh giá chỉ lưu trên máy này"
+                          onClick={() => rate("up")}
+                        >
+                          <Icon name="thumbUp" size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Chưa hữu ích"
+                          aria-pressed={feedback === "down"}
+                          title="Đánh giá chỉ lưu trên máy này"
+                          onClick={() => rate("down")}
+                        >
+                          <Icon name="thumbDown" size={14} />
+                        </button>
+                      </div>
+                    )}
                 </div>
               ))
             )}
@@ -1158,7 +1166,6 @@ export function RenterWorkspace({
             ) : !resultVisible && (busy || loading) ? (
               <PreviewSkeleton
                 label={busy ? "Đang ghi nhớ nhu cầu…" : "Đang soạn danh sách…"}
-                autoPublish={autoPublish}
               />
             ) : !resultVisible && result ? (
               <div className="agent-status-panel">
@@ -1195,7 +1202,10 @@ export function RenterWorkspace({
                       aria-label="Sắp xếp danh sách"
                       onChange={(e) =>
                         setSort(
-                          e.target.value as "match" | "price_asc" | "price_desc",
+                          e.target.value as
+                            | "match"
+                            | "price_asc"
+                            | "price_desc",
                         )
                       }
                     >
@@ -1208,7 +1218,7 @@ export function RenterWorkspace({
                     {editing && resultVisible ? (
                       <p className="subtle">
                         Bạn đang điều chỉnh nhu cầu — xác nhận hồ sơ mới để tìm
-                        và duyệt lại. Gợi ý trước thuộc kịch bản đã xác nhận.
+                        lại. Gợi ý trước thuộc kịch bản đã xác nhận.
                       </p>
                     ) : (
                       <PublishedResults
@@ -1224,7 +1234,6 @@ export function RenterWorkspace({
                         }}
                         savedIds={savedIds}
                         onToggleSave={toggleSave}
-                        autoPublish={autoPublish}
                       />
                     )}
                     {!editing &&

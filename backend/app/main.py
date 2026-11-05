@@ -21,7 +21,7 @@ from .locations import AREA_ALIASES, CITY_ALIASES
 from .listings import ListingQuery
 from .models import (Actor, CatalogStatus, ConfirmRequest, CostRequest, CostResult, DomainError,
                      DraftPatch, LandlordRejectRequest, MediaOrderRequest, MeResult, MembershipGrant, Model,
-                     OrganizationCreate, ProfilePatch, PromotionInput, RegisterRequest, Review, RoomInput,
+                     OrganizationCreate, ProfilePatch, PromotionInput, RegisterRequest, RoomInput,
                      RoomUpdate, SimulationRequest, VerifyRequest, PasswordResetRequest, PasswordResetConfirm)
 from . import media, memory, organizations, pms
 from .auth import (SEED_USERS, DevDeliveryStub, SeedAuth, account_profile, confirm_password_reset,
@@ -34,7 +34,7 @@ from .schemas import (CatalogResult, CompareResult, DraftResult, ErrorResult, He
                       ForgetResult, ListingSearchResult, LocationsResult, LoginResult, MediaResult, MemoryResult,
                       LogoutResult, MembershipResult, MessageResult, MetricsResult,
                       OrganizationResult, PasswordResetConfirmResult, PasswordResetRequestResult,
-                      ProfileResult, PromotionResult, ReadyResult, RecommendationResult, RegisterResult,
+                      ProfileResult, PromotionResult, ReadyResult, RegisterResult,
                       ResultsResult, RoomResult, SessionEntry, SessionRevokeResult, SessionResult,
                       SimulationResult, SupportResult, SupportUpdate, VerifyResult, ViewingResult)
 
@@ -274,8 +274,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
             raise DomainError("storage_unavailable", "Kho dữ liệu tạm thời không khả dụng.", 503) from None
         return {"status": "ok", "prototype": True, "storage": "postgresql" if app.state.service.repo.db.postgres else "sqlite",
                 "auth_mode": app.state.auth_mode, "matching_method": app.state.service.matching_method, "workers": 1,
-                "public": bool(getattr(app.state, "public", False)),
-                "auto_publish": bool(getattr(app.state.service, "auto_publish", False))}
+                "public": bool(getattr(app.state, "public", False))}
 
     @app.get("/ready", response_model=ReadyResult)
     def ready():
@@ -337,6 +336,11 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.get("/sessions/{session_id}/results", response_model=ResultsResult, response_model_exclude_unset=True)
     def results(session_id: str, actor: ActorDep, agent: ServiceDep):
         return agent.results(session_id, actor)
+
+    @app.post("/sessions/{session_id}/rerun", response_model=ResultsResult, response_model_exclude_unset=True)
+    def rerun(session_id: str, actor: ActorDep, agent: ServiceDep):
+        """Chạy lại vòng tìm của phiên khi run hiện tại lỗi/gián đoạn (AG-00)."""
+        return agent.rerun(session_id, actor)
 
     @app.post("/sessions/{session_id}/compare", response_model=CompareResult)
     def compare(session_id: str, body: CompareRequest, actor: ActorDep, agent: ServiceDep):
@@ -415,23 +419,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def simulate(session_id: str, body: SimulationRequest, actor: ActorDep, agent: ServiceDep):
         return agent.simulate(session_id, actor, body)
 
-    # --- Landlord portal: per-landlord review of AI shortlists and own listings ---
-
-    @app.get("/landlord/recommendations", response_model=list[RecommendationResult])
-    def drafts(actor: ActorDep, agent: ServiceDep):
-        return agent.drafts(actor)
-
-    @app.get("/landlord/recommendations/{run_id}", response_model=RecommendationResult)
-    def draft(run_id: str, actor: ActorDep, agent: ServiceDep):
-        return agent.draft(run_id, actor)
-
-    @app.post("/landlord/recommendations/{run_id}/review", response_model=RecommendationResult)
-    def review(run_id: str, body: Review, actor: ActorDep, agent: ServiceDep):
-        return agent.review(run_id, actor, body)
-
-    @app.post("/landlord/recommendations/{run_id}/retry", response_model=RecommendationResult)
-    def retry(run_id: str, actor: ActorDep, agent: ServiceDep):
-        return agent.retry(run_id, actor)
+    # --- Landlord portal: own listings, viewings, PMS (bỏ duyệt gợi ý 05/11/2026) ---
 
     @app.get("/landlord/rooms", response_model=CatalogResult)
     def rooms(actor: ActorDep, agent: ServiceDep):
@@ -683,9 +671,13 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
         agent._role(actor, "admin")
         return agent.rooms(actor)
 
-    @app.get("/admin/failed-runs", response_model=list[RecommendationResult])
+    @app.get("/admin/failed-runs", response_model=list[dict])
     def failed_runs(actor: ActorDep, agent: ServiceDep):
         return agent.failed_runs(actor)
+
+    @app.post("/admin/failed-runs/{run_id}/retry", response_model=dict)
+    def retry_failed_run(run_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.retry(run_id, actor)
 
     # --- BE-03: landlord self-signup review ---
 

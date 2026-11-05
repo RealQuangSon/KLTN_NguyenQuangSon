@@ -7,17 +7,9 @@ import json
 from types import SimpleNamespace
 
 import pytest
-from langgraph.types import Command
-
 from backend.app.interpreter import OpenAIInterpreter
 from backend.app.models import CostRequest, DomainError, Extraction, Scenario
 from backend.app.service import HomeMatchService
-
-
-def approval(version=1, **changes):
-    from backend.app.models import Review
-    return Review(decision="approve", expected_profile_version=version,
-                  reason="Đã kiểm tra dữ liệu demo.", idempotency_key="review-1", **changes)
 
 
 class NoProvider:
@@ -102,7 +94,7 @@ def test_pii_never_reaches_reply_trace_or_checkpoints(tmp_path, renter, landlord
         assert "[TIEN_DA_TACH]" in trace["input_redacted"]
         # The persisted run/checkpoint payload contains no chat PII either.
         run_id = service.confirm(sid, renter, profile, reply["draft_revision"])["run_id"]
-        assert service.repo.run(run_id)["status"] == "pending_review"
+        assert service.repo.run(run_id)["status"] == "published"
         for path in (tmp_path / "pii.sqlite", tmp_path / "pii.sqlite.checkpoints.sqlite"):
             blob = path.read_bytes()
             assert b"0901234567" not in blob and b"son@example.com" not in blob
@@ -181,20 +173,16 @@ def test_provider_failure_does_not_retry_storm():
     assert calls["parse"] == 1  # one logical attempt; no silent retry storm
 
 
-def test_resume_payload_cannot_smuggle_privileges(tmp_path, renter, landlord, profile):
+def test_recommendation_graph_has_no_interrupt_waiting_for_review(tmp_path, renter, profile):
     service = HomeMatchService(tmp_path / "resume.sqlite")
     try:
         sid = service.create_session(renter)["session_id"]
         run_id = service.confirm(sid, renter, profile, 0)["run_id"]
-        # Crash window: the ledger event exists but the graph is still interrupted.
-        event = service.repo.review(run_id, landlord.id, approval())
-        assert service.repo.run(run_id)["status"] == "reviewed"
-        poisoned = Command(resume={"event_id": event["event_id"], "role": "manager", "approved": True})
-        with pytest.raises(DomainError) as error:
-            service.recommendation_graph.invoke(poisoned, service._config(run_id))
-        assert error.value.code == "untrusted_resume"
-        assert service.repo.run(run_id)["status"] == "reviewed"  # nothing published
-        assert service.results(sid, renter)["results"] == []
+        # Không còn điểm chờ duyệt nào trong graph: run chạy tới published một lượt.
+        snapshot = service.recommendation_graph.get_state(service._config(run_id))
+        assert snapshot.next == ()
+        assert service.repo.run(run_id)["status"] == "published"
+        assert service.results(sid, renter)["results"]
     finally:
         service.close()
 

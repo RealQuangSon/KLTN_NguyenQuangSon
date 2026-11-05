@@ -63,11 +63,8 @@ def test_advisor_explains_and_never_recommends_over_budget_or_unknown():
 
 
 def test_session_compare_returns_advice_within_confirmed_budget(service, renter, landlord, profile):
-    from backend.app.models import Review
     sid = service.create_session(renter)["session_id"]
-    run_id = service.confirm(sid, renter, profile, 0)["run_id"]
-    service.review(run_id, landlord, Review(decision="approve", expected_profile_version=1,
-                                            reason="ok", idempotency_key="k"))
+    service.confirm(sid, renter, profile, 0)
     ids = [item["room_id"] for item in service.results(sid, renter)["results"]][:2]
     compared = service.compare(sid, renter, ids)
     assert compared["advice"]["recommended_room_id"] in ids

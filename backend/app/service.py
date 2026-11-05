@@ -15,10 +15,9 @@ os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
-from langgraph.types import Command, interrupt
 
 from .agent_budget import SessionCallBudget
-from .agent_capability import Resource, assert_unprivileged, require, require_session_role
+from .agent_capability import Resource, require, require_session_role
 from .agent_guard import (PROVIDER_FALLBACK_CODES, provider_fallback_reply,
                           quarantine_reply, redact_tree, room_reference, screen_injection,
                           viewing_intent, viewing_prep_missing_room_reply)
@@ -30,7 +29,7 @@ from .costs import estimate_cost, estimate_with_affordability
 from .interpreter import DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, rent_budget_hint, fixed_intent, make_interpreter, redact
 from .locations import city_for_area
 from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, DomainError, DraftPatch, DraftProfile,
-                     Profile, Review, RoomInput, RoomUpdate, SimulationRequest)
+                     Profile, RoomInput, RoomUpdate, SimulationRequest)
 from .repository import Repository
 from .organizations import record_audit
 from .operations import Metrics
@@ -73,15 +72,13 @@ class RecommendationState(TypedDict, total=False):
     run_id: str
     items: list[dict]
     diagnostics: dict
-    event_id: str
 
 
 class HomeMatchService:
     """Single-process MVP. API permissions live here, outside the LLM and graph."""
 
     def __init__(self, db_path: str | Path = ".local/homematch.sqlite",
-                 catalog: Catalog | None = None, interpreter: Interpreter | None = None,
-                 auto_publish: bool | None = None):
+                 catalog: Catalog | None = None, interpreter: Interpreter | None = None):
         self.lock = RLock()
         self.metrics = Metrics()
         self.repo = None
@@ -89,13 +86,6 @@ class HomeMatchService:
         self.matching_method = os.getenv("HOMEMATCH_MATCHING_METHOD", "B1")
         if self.matching_method not in {"B1", "P"}:
             raise ValueError("HOMEMATCH_MATCHING_METHOD must be B1 or P")
-        # Auto-publish: phòng qua bộ lọc được công bố NGAY cho người thuê, không
-        # bắt ai ngồi duyệt; quyết định tự động vẫn ghi đủ vào sổ (lý do ghi rõ)
-        # để chủ nhà đối chiếu sau. Mặc định BẬT (quyết định 05/11/2026: chat xong
-        # nhu cầu là có kết quả); HOMEMATCH_AUTO_PUBLISH=false bật lại bước chủ nhà duyệt.
-        if auto_publish is None:
-            auto_publish = os.getenv("HOMEMATCH_AUTO_PUBLISH", "").strip().lower() not in {"0", "false", "no"}
-        self.auto_publish = bool(auto_publish)
         try:
             self._initialize(db_path, catalog, interpreter)
         except Exception:
@@ -286,9 +276,9 @@ class HomeMatchService:
                                                             outcome="missing_room_reference")
         result = self.results(session["id"], actor)
         if room_id not in {item["room_id"] for item in result["results"]}:
-            raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý đã duyệt hiện tại.", 403)
+            raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý hiện tại.", 403)
         reply = {"intent": "find_room", "status": "needs_clarification",
-                 "questions": [f"Phòng {room_id} đang trong bản gợi ý đã duyệt (phiên bản hồ sơ "
+                 "questions": [f"Phòng {room_id} đang trong bản gợi ý hiện tại (phiên bản hồ sơ "
                                f"{result['profile_version']}). Chọn thời gian xem có múi giờ trong tương lai "
                                "rồi gửi biểu mẫu yêu cầu lịch xem; chat không tự giữ phòng."],
                  "message": f"Đã kiểm tra phòng {room_id} đủ điều kiện đặt lịch; chưa tạo lịch xem."}
@@ -329,38 +319,10 @@ class HomeMatchService:
         except Exception:
             with self.repo.guard():
                 self.repo.fail_generation(run_id)
-        else:
-            if self.auto_publish:
-                # Không bắt người duyệt: công bố ngay; lỗi tự công bố chỉ giữ
-                # trạng thái chờ duyệt, chủ nhà vẫn duyệt tay được như cũ.
-                try:
-                    with self.repo.guard():
-                        self._auto_publish(run_id)
-                except Exception:
-                    pass
         finally:
             run = self.repo.run(run_id)
             self.metrics.generation(run["status"], run["diagnostics"].get("algorithm", "unavailable"),
                                     time.monotonic() - start)
-
-    def _auto_publish(self, run_id: str):
-        """Công bố ngay trong chế độ auto-publish: tái dùng đúng luồng duyệt hiện
-        có (sổ audit, graph, thông báo) nhưng quyết định do hệ thống ghi với lý
-        do ghi rõ là tự động — không bịa "chủ nhà đã duyệt tay"."""
-        run = self.repo.run(run_id)
-        if run["status"] != "pending_review":
-            return
-        for landlord in sorted({(item.get("landlord_id") or DEFAULT_LANDLORD) for item in run["items"]}):
-            own = [item["room_id"] for item in run["items"]
-                   if (item.get("landlord_id") or DEFAULT_LANDLORD) == landlord]
-            review = Review(decision="approve", expected_profile_version=run["profile_version"],
-                            keep_room_ids=own,
-                            reason="Tự công bố theo chế độ auto-publish: chủ nhà thẩm định sau, không chờ duyệt tay.",
-                            idempotency_key=f"auto-{run_id}-{landlord}"[:100])
-            try:
-                self.review(run_id, Actor(id=landlord, role="owner"), review, via_auto=True)
-            except DomainError:
-                continue  # chủ nhà đã tự duyệt tay trước đó: tôn trọng quyết định người
 
     def patch_draft(self, session_id: str, actor: Actor, patch: DraftPatch) -> dict:
         with self.lock, self.repo.guard():
@@ -418,10 +380,8 @@ class HomeMatchService:
             if draft.budget_hint_vnd:
                 notes.append("mức tiền nhắc được hiểu là trần TỔNG THÁNG, mặc định 1 người 1 xe")
             tail = ("; ".join(notes) + " — sai thì sửa trong \"Nhu cầu của tôi\"") if notes else "bạn có thể nhắn thêm tiện ích muốn ưu tiên"
-            outcome = ("Kết quả sẽ tự hiện ở khung bên phải trong chốc lát (chế độ tự công bố — chủ nhà vẫn được ghi nhận thẩm định sau)."
-                       if self.auto_publish else
-                       "Kết quả hiện ở khung bên phải sau khi chủ nhà duyệt.")
-            questions.append(f"Mình chạy tìm theo nhu cầu đã nắm ({tail}). {outcome}")
+            questions.append(f"Mình chạy tìm theo nhu cầu đã nắm ({tail}). "
+                             "Kết quả sẽ tự hiện ở khung bên phải trong chốc lát.")
         return questions[:2]
 
     def results(self, session_id: str, actor: Actor) -> dict:
@@ -433,11 +393,8 @@ class HomeMatchService:
             run = self.repo.run(session["active_run_id"])
             if not self._fresh(run):
                 run = self.repo.run(run["id"])
-            # Deliberately construct a small DTO: never return raw state/draft/interrupt.
-            visible = []
-            if run["status"] in ("published", "partially_published"):
-                # Rooms appear as soon as their own landlord approved them.
-                visible = self.repo.visible_items(run, self.repo.reviews(run["id"]))
+            # Deliberately construct a small DTO: never return raw state/draft.
+            visible = list(run["items"]) if run["status"] == "published" else []
             provenance = stamp("deterministic-engine", "rank", catalog_version=self.catalog.version,
                                matching_method=self.matching_method, run_status=run["status"])
             self._traces.setdefault(session_id, {})["results"] = {
@@ -454,28 +411,23 @@ class HomeMatchService:
     def _transparency(self, run: dict, visible: list) -> dict:
         """Số liệu tổng hợp và các bước pipeline đã chạy thật của run — minh bạch
         quy trình kiểu workspace tham chiếu. Chỉ aggregate: không lộ danh tính
-        phòng nào chưa được duyệt."""
+        phòng nào chưa được công bố."""
         diagnostics = run.get("diagnostics") or {}
         rejected = {key: value for key, value in (diagnostics.get("rejected") or {}).items() if value}
         verification = {key: value for key, value in (diagnostics.get("verification") or {}).items() if value}
-        kept = len(visible) if run["status"] in ("published", "partially_published") else len(run.get("items") or [])
+        kept = len(visible) if run["status"] == "published" else len(run.get("items") or [])
         scanned = kept + sum(rejected.values()) + sum(verification.values())
         summary = {"scanned": scanned, "kept": kept, "rejected": rejected, "verification": verification}
         filter_line = f"Lọc điều kiện cứng — loại {sum(rejected.values())} tin"
         if verification:
             filter_line += f"; giữ {sum(verification.values())} tin chờ xác minh số liệu"
         status_tail = {
-            "generating": "Đang soạn danh sách nháp",
-            "pending_review": "Chờ chủ nhà duyệt từng căn trước khi tới bạn",
-            "reviewed": "Chủ nhà đã duyệt; máy chủ đang hoàn tất công bố",
-            "published": "Công bố các căn đã được chủ nhà duyệt",
-            "partially_published": "Công bố dần theo từng chủ nhà duyệt",
+            "generating": "Đang xếp hạng theo nhu cầu đã xác nhận",
+            "published": "Đã xếp hạng xong và công bố kết quả cho bạn",
             "no_match": "Không còn căn nào khớp — bạn có thể nới một tiêu chí để tìm lại",
             "needs_verification": "Giữ danh sách vì còn dữ liệu chưa xác minh",
             "invalidated": "Danh sách hết hiệu lực — xác nhận hồ sơ để chạy vòng mới",
-            "needs_revision": "Chủ nhà đề nghị sửa nhu cầu — xác nhận lại hồ sơ",
             "generation_failed": "Tạo gợi ý bị gián đoạn — có thể chạy lại",
-            "generating_failed": "Tạo gợi ý bị gián đoạn — chủ nhà có thể khởi tạo lại",
         }.get(run["status"], "")
         steps = [f"Quét {scanned} tin đã công bố trong kho", filter_line,
                  f"Xếp hạng theo phương pháp {self.matching_method} của engine deterministic"]
@@ -507,123 +459,50 @@ class HomeMatchService:
             suggestions.append("Có phòng đang bị giữ lại chờ xác minh số liệu; quản lý có thể kiểm tra và cập nhật kho.")
         return suggestions[:4]
 
-    def drafts(self, actor: Actor) -> list[dict]:
-        with self.lock, self.repo.guard():
-            require("run:draft_list", actor)
-            return [self._landlord_projection(run, actor.id) for run in self.repo.pending_runs(actor.id)
-                    if self._fresh(run)]
-
-    def draft(self, run_id: str, actor: Actor) -> dict:
-        with self.lock, self.repo.guard():
-            require("run:read", actor)
-            run = self._run_for_landlord(run_id, actor)
-            if not self._fresh(run):
-                raise DomainError("stale_review", "Nhu cầu hoặc kho phòng đã đổi; cần tạo bản gợi ý mới.")
-            return self._landlord_projection(run, actor.id)
-
-    def _run_for_landlord(self, run_id: str, actor: Actor) -> dict:
-        run = self.repo.run(run_id)
-        if actor.role != "owner" or actor.id not in self.repo.landlords(run):
-            raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
-        return run
-
-    def _landlord_projection(self, run: dict, landlord_id: str) -> dict:
-        """A landlord sees only their own rooms in the shortlist and the affordability band:
-        never income, the exact ratio (which with the burden reveals income) or other landlords' rooms."""
-        profile = json.loads(run["profile_json"])
-        profile.pop("monthly_income_vnd", None)
-        items = []
-        for item in run["items"]:
-            if (item.get("landlord_id") or DEFAULT_LANDLORD) != landlord_id:
-                continue
-            affordability = (item.get("cost") or {}).get("affordability")
-            if affordability:
-                item = {**item, "cost": {**item["cost"], "affordability": {**affordability, "housing_ratio": None}}}
-            items.append(item)
-        reviews = self.repo.reviews(run["id"])
-        return {"run_id": run["id"], "session_id": run["session_id"], "status": run["status"],
-                "profile_version": run["profile_version"], "catalog_version": run["catalog_version"],
-                "profile": profile, "items": items, "diagnostics": run["diagnostics"],
-                "decision": reviews.get(landlord_id),
-                "review_progress": {"landlords": len(self.repo.landlords(run)), "decided": len(reviews)}}
-
-    # Admin/ops view of a whole run: every landlord's rooms, income still hidden.
-    def _admin_projection(self, run: dict) -> dict:
-        projection = self._landlord_projection(run, None)
-        projection["items"] = [
-            {**item, "cost": {**item["cost"], "affordability": {**item["cost"]["affordability"], "housing_ratio": None}}}
-            if (item.get("cost") or {}).get("affordability") else item for item in run["items"]]
-        return projection
-
-    def review(self, run_id: str, actor: Actor, review: Review, via_auto: bool = False) -> dict:
+    def rerun(self, session_id: str, actor: Actor) -> dict:
+        """Người thuê chạy lại vòng tìm của phiên mình khi run hiện tại bị gián
+        đoạn. Run mới không kế thừa gì từ run cũ ngoài hồ sơ đã xác nhận."""
         with self.lock:
             with self.repo.guard():
-                require("run:review", actor)
-                run = self._run_for_landlord(run_id, actor)
-                if not self._fresh(run):
-                    raise DomainError("stale_review", "Bản gợi ý đã cũ; không thể duyệt.")
-                event = self.repo.review(run_id, actor.id, review)
-                if event["payload"]["decision"] == "approve":
-                    session = self.repo.session(run["session_id"])
-                    if via_auto:
-                        notifications.notify(self.repo, session["owner_id"], "rooms_approved",
-                                             "Danh sách đã được công bố",
-                                             "Phòng đủ điều kiện đã hiển thị cho bạn ngay ở khung preview; quyết định tự động được ghi vào sổ duyệt để chủ nhà đối chiếu.",
-                                             f"run:{run_id}:landlord:{actor.id}", "/tro-ly-ai")
-                    else:
-                        notifications.notify(self.repo, session["owner_id"], "rooms_approved",
-                                             "Chủ nhà đã duyệt phòng cho bạn",
-                                             f"{len(event['keep_room_ids'])} phòng đã được chủ nhà duyệt và có thể xem ngay.",
-                                             f"run:{run_id}:landlord:{actor.id}", "/tro-ly-ai")
-            # The last landlord's decision moves the run to `reviewed`; resume the graph to finalize.
-            run = self.repo.run(run_id)
-            if run["status"] == "reviewed":
-                self._resume_review(run_id, run["decision"])
-            return self._landlord_projection(self.repo.run(run_id), actor.id)
-
-    def _resume_review(self, run_id: str, event: dict):
-        try:
-            snapshot = self.recommendation_graph.get_state(self._config(run_id))
-            if not snapshot.next:
-                raise DomainError("recovery_required", "Checkpoint không còn điểm chờ; cần tạo và duyệt bản mới.")
-            self.recommendation_graph.invoke(Command(resume={"event_id": event["event_id"]}), self._config(run_id))
-        except DomainError:
-            raise
-        except Exception:
-            raise DomainError("review_resume_failed", "Quyết định đã lưu; có thể thử lại để hoàn tất.", 503) from None
+                session = self._session_for(session_id, actor, "renter")
+                require("results:rerun", actor, Resource.for_session(session))
+                if session["active_run_id"] is None:
+                    raise DomainError("no_run", "Chưa có vòng tìm nào; hãy xác nhận hồ sơ trước.", 409)
+                run = self.repo.run(session["active_run_id"])
+                if run["status"] not in {"generating", "generation_failed"}:
+                    raise DomainError("retry_conflict", "Chỉ chạy lại vòng tìm đang lỗi hoặc bị treo.", 409)
+                if session["profile_version"] != run["profile_version"]:
+                    raise DomainError("stale_profile", "Hãy xác nhận nhu cầu mới trước khi chạy lại.")
+                self.repo.invalidate(run["id"])
+                new = self.repo.create_run(session, self.catalog.version)
+            self._generate(new["id"])
+            return self.results(session_id, actor)
 
     def retry(self, run_id: str, actor: Actor) -> dict:
-        """Resume a recorded final decision (landlord of the run or admin), or regenerate a
-        failed run (admin): the new run never inherits approvals."""
+        """Admin-only recovery: regenerate the current failed run of a session."""
         with self.lock:
             with self.repo.guard():
                 require("run:retry", actor)
+                self._role(actor, "admin")
                 run = self.repo.run(run_id)
-                if actor.role == "owner":
-                    self._run_for_landlord(run_id, actor)
                 session = self.repo.session(run["session_id"])
-                if run["status"] == "reviewed":
-                    if not self._fresh(run):
-                        raise DomainError("stale_review", "Bản này đã cũ; cần xác nhận/gợi ý mới.")
-                    if not run["decision"]:
-                        raise DomainError("recovery_required", "Chưa có quyết định được ghi; cần tạo và duyệt bản mới.")
-                else:
-                    if actor.role != "admin":
-                        raise DomainError("forbidden", "Chỉ quản trị viên được tạo lại bản gợi ý lỗi.", 403)
-                    if run["status"] not in {"generating", "generation_failed"} or session["active_run_id"] != run_id:
-                        raise DomainError("retry_conflict", "Chỉ tạo lại bản hiện tại đang lỗi generation.")
-                    if session["profile_version"] != run["profile_version"]:
-                        raise DomainError("stale_profile", "Hãy xác nhận nhu cầu mới trước khi tạo lại.")
-                    self.repo.invalidate(run_id)
-                    new = self.repo.create_run(session, self.catalog.version)
-            if run["status"] == "reviewed":
-                self._resume_review(run_id, run["decision"])
-                return self._retry_projection(self.repo.run(run_id), actor)
+                if run["status"] not in {"generating", "generation_failed"} or session["active_run_id"] != run_id:
+                    raise DomainError("retry_conflict", "Chỉ tạo lại bản hiện tại đang lỗi generation.")
+                if session["profile_version"] != run["profile_version"]:
+                    raise DomainError("stale_profile", "Hãy xác nhận nhu cầu mới trước khi tạo lại.")
+                self.repo.invalidate(run_id)
+                new = self.repo.create_run(session, self.catalog.version)
             self._generate(new["id"])
-            return self._retry_projection(self.repo.run(new["id"]), actor)
+            return self._admin_projection(self.repo.run(new["id"]))
 
-    def _retry_projection(self, run: dict, actor: Actor) -> dict:
-        return self._landlord_projection(run, actor.id) if actor.role == "owner" else self._admin_projection(run)
+    def _admin_projection(self, run: dict) -> dict:
+        """Admin/ops view of a whole run: income and the exact affordability ratio stay hidden."""
+        items = [
+            {**item, "cost": {**item["cost"], "affordability": {**item["cost"]["affordability"], "housing_ratio": None}}}
+            if (item.get("cost") or {}).get("affordability") else item for item in run["items"]]
+        return {"run_id": run["id"], "session_id": run["session_id"], "status": run["status"],
+                "profile_version": run["profile_version"], "catalog_version": run["catalog_version"],
+                "items": items, "diagnostics": run["diagnostics"]}
 
     def failed_runs(self, actor: Actor) -> list[dict]:
         with self.lock, self.repo.guard():
@@ -766,7 +645,7 @@ class HomeMatchService:
             visible = self.results(session_id, actor)
             by_id = {item["room_id"]: item for item in visible["results"]}
             if not set(room_ids).issubset(by_id):
-                raise DomainError("not_visible", "Chỉ so sánh các phòng đã được duyệt trong bản hiện tại.", 403)
+                raise DomainError("not_visible", "Chỉ so sánh các phòng trong kết quả hiện tại.", 403)
             items = [by_id[key] for key in room_ids]
             profile = Profile.model_validate_json(self.repo.session(session_id)["profile_json"])
             amenities = {room.id: room.amenities for room in self.catalog.rooms() if room.id in room_ids}
@@ -899,7 +778,7 @@ class HomeMatchService:
             require("compare:run", actor)
             visible = self.results(session_id, actor)
             if request.room_id not in {item["room_id"] for item in visible["results"]}:
-                raise DomainError("not_visible", "Chỉ mô phỏng phòng đã được duyệt trong bản hiện tại.", 403)
+                raise DomainError("not_visible", "Chỉ mô phỏng phòng trong kết quả hiện tại.", 403)
             session = self.repo.session(session_id)
             profile = Profile.model_validate_json(session["profile_json"])
             room = next(room for room in self.catalog.rooms() if room.id == request.room_id)
@@ -928,7 +807,7 @@ class HomeMatchService:
             result = self.results(session_id, actor)
             visible = {item["room_id"]: item for item in result["results"]}
             if room_id not in visible:
-                raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý đã duyệt hiện tại.", 403)
+                raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý hiện tại.", 403)
             landlord = visible[room_id].get("landlord_id") or DEFAULT_LANDLORD
             viewing = self.repo.create_viewing(session, result["run_id"], room_id,
                                                requested_at.astimezone(timezone.utc).isoformat(), idempotency_key,
@@ -1584,7 +1463,7 @@ class HomeMatchService:
 
             if not visible["results"]:
                 return reply(status="needs_results",
-                             message="Bạn cần có danh sách phòng đã được chủ nhà duyệt trước khi mô phỏng vay.")
+                             message="Bạn cần có danh sách phòng trong kết quả hiện tại trước khi mô phỏng vay.")
             parsed = parse_loan_terms(state["text"])
             profile = Profile.model_validate_json(session["profile_json"])
             if parsed["term_months"] is not None and parsed["term_months"] > 36:
@@ -1604,7 +1483,7 @@ class HomeMatchService:
             visible_by_id = {item["room_id"]: item for item in visible["results"]}
             mentioned = finance_room_reference(state["text"])
             if mentioned is not None and mentioned not in visible_by_id:
-                raise DomainError("not_visible", "Chỉ mô phỏng phòng đã được duyệt trong bản hiện tại.", 403)
+                raise DomainError("not_visible", "Chỉ mô phỏng phòng trong kết quả hiện tại.", 403)
             item = visible_by_id.get(mentioned) or visible["results"][0]
             room = next(room for room in self.catalog.rooms() if room.id == item["room_id"])
             cost = state["toolbox"].call("finance", "simulate_scenarios", self._simulate_item, room, profile,
@@ -1723,34 +1602,31 @@ class HomeMatchService:
                     self.repo.set_draft(run["id"], state["items"], state["diagnostics"])
             return {}
 
-        def wait_for_review(state: RecommendationState):
-            # No write side effects before interrupt: LangGraph reruns this node on resume.
-            resumed = interrupt({"run_id": state["run_id"], "required_role": "landlord"})
-            # A resume payload may only carry the ledger event id; anything that
-            # tries to smuggle role/approval semantics is rejected, never obeyed.
-            assert_unprivileged(resumed)
-            run = self.repo.run(state["run_id"])
-            event = run["decision"]
-            if not event or resumed.get("event_id") != event["event_id"]:
-                raise DomainError("untrusted_resume", "Không có sự kiện duyệt hợp lệ trong sổ nghiệp vụ.", 403)
-            return {"event_id": event["event_id"]}
-
         def publish(state: RecommendationState):
+            # Quyết định 05/11/2026: kết quả tới khách ngay khi xếp hạng xong.
+            # Chủ nhà vẫn được báo nhu cầu qua lead khi căn của họ lọt top 5
+            # (source="recommended"), không thu nhập nào đi kèm lead.
             with self.repo.guard():
                 run = self.repo.run(state["run_id"])
-                if self._fresh(run):
-                    self.repo.finish_review(run["id"])
+                if not self._fresh(run) or run["status"] != "published":
+                    return {}
+                self.repo.mark_published(run["id"])
+                session = self.repo.session(run["session_id"])
+                notifications.notify(self.repo, session["owner_id"], "rooms_ready",
+                                     "Danh sách phòng phù hợp đã sẵn sàng",
+                                     f"{len(run['items'])} căn khớp nhu cầu đã hiện trong trợ lý AI của bạn.",
+                                     f"run:{run['id']}:ready", "/tro-ly-ai")
+                for item in run["items"][:5]:
+                    pms.touch_lead(self.repo, item.get("landlord_id") or DEFAULT_LANDLORD,
+                                   session["owner_id"], item["room_id"], "recommended")
             return {}
 
         graph = StateGraph(RecommendationState)
         graph.add_node("rank", rank)
         graph.add_node("save_draft", save_draft)
-        graph.add_node("wait_for_review", wait_for_review)
         graph.add_node("publish", publish)
         graph.add_edge(START, "rank")
         graph.add_edge("rank", "save_draft")
-        graph.add_conditional_edges("save_draft", lambda state: self.repo.run(state["run_id"])["status"],
-            {"pending_review": "wait_for_review", "no_match": END, "needs_verification": END, "invalidated": END})
-        graph.add_edge("wait_for_review", "publish")
+        graph.add_edge("save_draft", "publish")
         graph.add_edge("publish", END)
         return graph.compile(checkpointer=self.checkpointer)

@@ -1,6 +1,6 @@
 # API contract HomeMatch 0.4.0 (đang chạy)
 
-Vai trò: `renter` là **khách**, `owner` là **chủ nhà** (duyệt phòng của mình trong danh sách AI, vận hành PMS và CRM), `admin` là quản trị viên. `manager` cũ không còn quyền nghiệp vụ. Phần còn chưa làm nằm ở [API đích](api-san-pham-v1.md).
+Vai trò: `renter` là **khách**, `owner` là **chủ nhà** (vận hành PMS và CRM; nhận lead khi căn của họ lọt top 5 gợi ý), `admin` là quản trị viên. `manager` cũ không còn quyền nghiệp vụ. Phần còn chưa làm nằm ở [API đích](api-san-pham-v1.md).
 
 API version `0.4.0`; source: `backend/app/main.py`, `models.py`, response contracts trong `schemas.py` và projections trong `service.py`. [OpenAPI snapshot](openapi.json) mô tả cả request/response/error schema; [dictionary](status-dictionary.md) khóa trạng thái và phản ứng với lỗi. FE gọi `/api` qua Vite proxy, backend route không có prefix `/api`.
 
@@ -107,10 +107,10 @@ Lỗi provider AI không còn làm hỏng lượt chat: service trả fallback b
 Results DTO:
 
 ```json
-{"session_id":"…","run_id":"…","status":"pending_review","profile_version":1,"results":[]}
+{"session_id":"…","run_id":"…","status":"published","profile_version":1,"results":["…Candidate…"]}
 ```
 
-Chưa có run thì status `awaiting_confirmation`, không có run_id. Published results chứa Candidate: ID/revision/title/location, CostResult, score/components, reasons/tradeoffs, source, synthetic, algorithm và `verification` (cờ dữ liệu chưa rõ: `amenity_unknown:*`, `fee_rate_unknown:*`, `location_approximate`/`area_only`, `location_uncertainty_{n}m`). Khi status là `no_match`/`needs_verification`, results DTO kèm `suggestions`: các bước nới lỏng mềm do người thuê tự quyết (mở rộng khu vực, hạ tiện ích bắt buộc xuống ưu tiên, bán kính, xem lại trần đã xác nhận); hệ thống không tự nới điều kiện cứng. Không trả raw graph/review event hoặc candidate pending. `null` full cost là thiếu dữ liệu; `*_known_vnd` là subtotal. P unavailable có thể fallback B1 trong app, nhãn algorithm/diagnostics nói rõ; eval không dùng fallback làm P.
+Chưa có run thì status `awaiting_confirmation`, không có run_id. Published results chứa Candidate: ID/revision/title/location, CostResult, score/components, reasons/tradeoffs, source, synthetic, algorithm và `verification` (cờ dữ liệu chưa rõ: `amenity_unknown:*`, `fee_rate_unknown:*`, `location_approximate`/`area_only`, `location_uncertainty_{n}m`). Khi status là `no_match`/`needs_verification`, results DTO kèm `suggestions`: các bước nới lỏng mềm do người thuê tự quyết (mở rộng khu vực, hạ tiện ích bắt buộc xuống ưu tiên, bán kính, xem lại trần đã xác nhận); hệ thống không tự nới điều kiện cứng. Không trả raw graph state hoặc candidate ngoài run đã công bố. `null` full cost là thiếu dữ liệu; `*_known_vnd` là subtotal. P unavailable có thể fallback B1 trong app, nhãn algorithm/diagnostics nói rõ; eval không dùng fallback làm P.
 
 Public projection (module `backend/app/projection.py`) là allowlist: chỉ phòng `published=true` vào danh sách công khai, tọa độ exact bị hạ xuống `approximate`, trường ngoài allowlist không thể lộ; item AI chỉ public khi run `published`. Đường public API catalog sẽ đến ở HM-03/W-06; module này là nguồn projection cho đường đó.
 
@@ -129,7 +129,7 @@ Public projection (module `backend/app/projection.py`) là allowlist: chỉ phò
 
 `/admin/metrics` có thêm `cost` (BE-05, 08/10/2026): `{estimated_cost_vnd, price_effective_date, missing: [str], basis: {...}}` hoặc `null` khi chưa cấu hình bảng giá. Tính bằng `Decimal` từ `provider_usage.by_model` (token input/output và embedding tách riêng, làm tròn VND `ROUND_HALF_UP`); thiếu bất kỳ giá hay tỷ giá nào cần dùng → `estimated_cost_vnd: null` kèm `missing` liệt kê khóa còn thiếu, không ước đoán. Bảng giá đặt qua `HOMEMATCH_PROVIDER_PRICES_PATH` (mẫu `infra/provider-prices.example.json`, không chứa giá thật; người dùng tự điền từ trang giá chính thức).
 
-Chat có thêm ý định `simulate_finance` (AG-02, 08/10/2026): `MessageResult` nhận thêm `status: "simulation" | "needs_results"` và `simulation: {room_id, room_title, scenario: {annual_rate, term_months, principal_vnd}, result} | null` với `result` giống một phần tử của `POST /sessions/{id}/simulate`. Số trả góp do tool tất định tính (không qua LLM); chưa có danh sách duyệt → `needs_results`.
+Chat có thêm ý định `simulate_finance` (AG-02, 08/10/2026): `MessageResult` nhận thêm `status: "simulation" | "needs_results"` và `simulation: {room_id, room_title, scenario: {annual_rate, term_months, principal_vnd}, result} | null` với `result` giống một phần tử của `POST /sessions/{id}/simulate`. Số trả góp do tool tất định tính (không qua LLM); chưa có kết quả hiện tại → `needs_results`.
 
 **`CostResult.affordability`** là `null` khi không có dữ liệu tài chính. Khi có:
 
@@ -155,32 +155,17 @@ Chat có thêm ý định `simulate_finance` (AG-02, 08/10/2026): `MessageResult
 | `DELETE /me/memory`, `DELETE /me/memory/{field}` | Xóa toàn bộ hoặc một trường (trường lạ → 422 `invalid_memory_field`). `PATCH /me/profile` với `consents.remember_sessions=false` cũng xóa memory. |
 | `GET /locations` | Không cần đăng nhập. `{cities: [{name, aliases, areas: [{name, aliases}]}]}` từ `locations.py`. |
 
-## Chủ nhà duyệt gợi ý (mỗi chủ duyệt phòng của mình)
+## Kết quả gợi ý — công bố ngay, không duyệt (quyết định 05/11/2026)
+
+Bước chủ nhà duyệt gợi ý đã bị bỏ: `set_draft` ghi thẳng `published` (có căn) / `needs_verification` / `no_match`; graph là `rank → save_draft → publish`, không còn `interrupt()` hay resume. Người thuê nhận thông báo `rooms_ready` mỗi run công bố (trước đây `rooms_approved`); chủ nhà nhận lead `source="recommended"` khi căn của họ lọt top 5 (không kèm thu nhập). Bảng `hm_run_reviews` giữ nguyên dữ liệu cũ, chỉ đọc.
 
 | Endpoint | Quy tắc |
 |---|---|
-| `GET /landlord/recommendations` | Các run còn hiệu lực có phòng của chủ nhà này |
-| `GET /landlord/recommendations/{run}` | DTO chỉ gồm phòng của chủ nhà này, kèm `review_progress {landlords, decided}`. Chủ nhà không liên quan → 403. |
-| `POST /landlord/recommendations/{run}/review` | Quyết định cho phần phòng của mình → DTO |
-| `POST /landlord/recommendations/{run}/retry` | Chủ nhà của run hoặc admin: resume quyết định cuối đã ghi. Chỉ admin được tạo lại run lỗi. Run mới không thừa kế quyết định. |
+| `POST /sessions/{id}/rerun` | Người thuê chạy lại vòng tìm khi run hiện tại `generating`/`generation_failed` → `ResultsResult`. 409 `retry_conflict` nếu run không lỗi, 409 `no_run` nếu chưa có run, 409 `stale_profile` nếu hồ sơ đã đổi. |
+| `POST /admin/failed-runs/{run}/retry` | Chỉ admin: tạo lại run hiện tại đang lỗi generation → projection admin (không trả hồ sơ, `housing_ratio` bị che). Run mới không thừa kế gì ngoài hồ sơ đã xác nhận. |
 | `GET /admin/failed-runs` | Admin: các run `generating` hoặc `generation_failed` |
 
-DTO: `run_id,session_id,status,profile_version,catalog_version,profile,items,diagnostics,decision,review_progress`. `decision` là quyết định của chính chủ nhà đó.
-
-Quy tắc trạng thái:
-- Run ở `pending_review` cho tới khi có chủ nhà đầu tiên duyệt; từ đó là `partially_published` và khách thấy ngay phòng đã duyệt.
-- Khi mọi chủ nhà có phòng trong run đã quyết định, ledger ghi `decision` cuối (`event_id`), run chuyển sang `reviewed`, graph resume, rồi chốt `published` (có ít nhất một phòng được duyệt), `needs_revision` hoặc `rejected`.
-- Thứ tự khách thấy giữ thứ tự của trợ lý. Mỗi chủ nhà chỉ đổi thứ tự trong các vị trí phòng của mình.
-
-Review request:
-
-```json
-{"decision":"approve","expected_profile_version":1,"keep_room_ids":["room-id"],"reason":"Đã kiểm tra nguồn và tổng phí.","idempotency_key":"unique-review-key"}
-```
-
-Khi `keep_room_ids` khác thứ tự đề xuất của trợ lý (bỏ căn hoặc đổi thứ tự), request phải có `override_reason` (1–1000 ký tự). Thiếu thì trả 422 `override_reason_required`. Review event lưu `agent_order` (thứ tự của trợ lý) và `overridden`. Event ghi trước GĐ2 không có hai trường này. `keep_room_ids` chỉ được gồm phòng của chính chủ nhà (phòng khác → 422 `invalid_selection`); mỗi chủ nhà quyết định một lần cho mỗi run (khác payload → 409 `review_conflict`).
-
-Decision là approve/reject/needs_revision; approve cần ≥1 ID thuộc nháp, có thể chọn thứ tự qua API. Cùng key và toàn bộ payload/actor cho cùng run replay quyết định cũ; khác payload trả conflict. Không có publish client flag. Review event commit trước resume; nếu graph lỗi, `review_resume_failed`/503 giữ event ở `reviewed` để retry. Finalize kiểm active run/profile/catalog dưới transaction khóa catalog chung với writer. Thiếu điểm resume trả `recovery_required`, không công bố chỉ từ event.
+Trạng thái run còn `generating, generation_failed, published, invalidated, no_match, needs_verification` — các trạng thái duyệt cũ (`pending_review`, `partially_published`, `reviewed`, `rejected`, `needs_revision`) chỉ còn trong migration v16 và dữ liệu lịch sử. Migration v16 chuyển run cũ đang chờ/đang duyệt sang `invalidated`; khách xác nhận lại hồ sơ để chạy vòng mới.
 
 ## Nền tảng: 5 phân hệ (E1–E6, 05/10/2026)
 
@@ -214,8 +199,8 @@ Kho bootstrap JSON chỉ nạp khi trống; CLI import merge có revision và tr
 
 ## Vận hành
 
-`GET /health` giữ DTO status/storage/auth/method/workers/public và kiểm kết nối ledger; lỗi DB trả `storage_unavailable`/503. `public` là giá trị `HOMEMATCH_PUBLIC`: frontend chỉ bật trải nghiệm đăng nhập nhanh bằng tài khoản seed khi `auth_mode=seed` và `public=false` (môi trường demo local; bản public đã quay mật khẩu seed). `GET /ready` trả `{status:"ready",storage,schema_version:13,checks:{ledger:"ok",catalog:"ok",checkpoints:"ok"}}`; schema/catalog/checkpoint lỗi trả `not_ready`/503. Readiness kiểm storage cốt lõi; coverage/provider P được kiểm khi ranking và có fallback rõ ràng.
+`GET /health` giữ DTO status/storage/auth/method/workers/public (trường `auto_publish` đã bỏ cùng bước duyệt, 05/11/2026) và kiểm kết nối ledger; lỗi DB trả `storage_unavailable`/503. `public` là giá trị `HOMEMATCH_PUBLIC`: frontend chỉ bật trải nghiệm đăng nhập nhanh bằng tài khoản seed khi `auth_mode=seed` và `public=false` (môi trường demo local; bản public đã quay mật khẩu seed). `GET /ready` trả `{status:"ready",storage,schema_version:16,checks:{ledger:"ok",catalog:"ok",checkpoints:"ok"}}`; schema/catalog/checkpoint lỗi trả `not_ready`/503. Readiness kiểm storage cốt lõi; coverage/provider P được kiểm khi ranking và có fallback rõ ràng.
 
-Metrics reset khi restart. `duration_seconds` là tổng thời gian máy xử lý, không phải p95 hoặc thời gian chủ nhà chờ duyệt. Provider metrics có `logical_calls,reported_tokens,calls_without_token_usage`; số tokens đã báo không bao gồm lượt thiếu usage. Log dùng route mẫu, không lưu URL/query/body, token hoặc raw chat; log duy nhất chứa mã xác minh là DEV-STUB có nhãn giả. Dùng `backend/logging.json` và `--no-access-log` khi chạy server.
+Metrics reset khi restart. `duration_seconds` là tổng thời gian máy xử lý, không phải p95. Provider metrics có `logical_calls,reported_tokens,calls_without_token_usage`; số tokens đã báo không bao gồm lượt thiếu usage. Log dùng route mẫu, không lưu URL/query/body, token hoặc raw chat; log duy nhất chứa mã xác minh là DEV-STUB có nhãn giả. Dùng `backend/logging.json` và `--no-access-log` khi chạy server.
 
-Manager diagnostics bổ sung `ranking_version,ranking_config,profile_hash,query_text_hash,catalog_version,requested_method`. Các metadata này lưu trong snapshot run, không mở thêm đường đọc cho renter. Migration ledger tự chạy khi startup, hoặc chủ động dùng `python -m backend.manage migrate`. Schema hiện tại là v13 (v4 memory/cache embedding, v5 duyệt theo chủ nhà, v6 lượt xem và lịch từ tin, v7 live chat/transcript, v8 thông báo/job, v9 PMS & CRM, v10 trạng thái duyệt chủ nhà, v11 vòng đời ticket hỗ trợ, v12 ảnh tin/ảnh sự cố, v13 ưu đãi chủ nhà); DB v1/v2 được tiếp nhận, bootstrap tạo đơn vị mặc định và membership cho staff seed đã tồn tại, không xóa/sửa bản ghi cũ. Backend từ chối DB có schema mới hơn code.
+Manager diagnostics bổ sung `ranking_version,ranking_config,profile_hash,query_text_hash,catalog_version,requested_method`. Các metadata này lưu trong snapshot run, không mở thêm đường đọc cho renter. Migration ledger tự chạy khi startup, hoặc chủ động dùng `python -m backend.manage migrate`. Schema hiện tại là v16 (v4 memory/cache embedding, v5 danh sách nháp theo chủ nhà, v6 lượt xem và lịch từ tin, v7 live chat/transcript, v8 thông báo/job, v9 PMS & CRM, v10 trạng thái duyệt chủ nhà, v11 vòng đời ticket hỗ trợ, v12 ảnh tin/ảnh sự cố, v13 ưu đãi chủ nhà, v14 số điện thoại liên hệ, v15 căn đã lưu của người thuê, v16 bỏ duyệt gợi ý — công bố ngay); DB v1/v2 được tiếp nhận, bootstrap tạo đơn vị mặc định và membership cho staff seed đã tồn tại, không xóa/sửa bản ghi cũ. Backend từ chối DB có schema mới hơn code.

@@ -20,7 +20,7 @@ it("shows the reviewed result count above the room cards", () => {
       onViewing={vi.fn()}
     />,
   );
-  expect(screen.getByText(/Kết quả đã duyệt:/)).toBeInTheDocument();
+  expect(screen.getByText(/Kết quả phù hợp:/)).toBeInTheDocument();
   expect(screen.getByText("2")).toBeInTheDocument();
 });
 it("offers one-criterion relax chips on no_match that only prefill the chat", async () => {

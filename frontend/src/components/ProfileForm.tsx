@@ -239,8 +239,8 @@ export function ProfileForm({
         </span>
       </div>
       <p className="subtle">
-        Tiêu chí chỉ có hiệu lực sau khi bạn xác nhận. Gợi ý mới luôn cần quản
-        lý duyệt.
+        Tiêu chí chỉ có hiệu lực sau khi bạn xác nhận. Kết quả mới hiện ngay sau
+        khi bạn xác nhận.
       </p>
       {confirmed && (
         <div className="confirmed-summary">
@@ -574,8 +574,8 @@ export function ProfileForm({
           </button>
         </div>
         <p className="input-hint">
-          Đổi hồ sơ hoặc kịch bản cần tạo gợi ý mới và duyệt lại. Lưu nháp chưa
-          xác nhận ngân sách.
+          Đổi hồ sơ hoặc kịch bản sẽ tạo vòng tìm mới ngay. Lưu nháp chưa xác
+          nhận ngân sách.
         </p>
       </form>
     </section>

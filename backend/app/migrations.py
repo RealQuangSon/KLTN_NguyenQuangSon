@@ -305,6 +305,15 @@ MIGRATIONS = (
         );
         CREATE INDEX IF NOT EXISTS hm_room_saves_user ON hm_room_saves(user_id, created_at);
     """),
+    (16, "recommendation_auto_publish", """
+        -- Quyết định 05/11/2026: bỏ bước chủ nhà duyệt gợi ý. Kết quả tới người
+        -- thuê ngay sau khi xếp hạng, nên mọi run cũ đang chờ hoặc đang duyệt hết
+        -- hiệu lực và khách xác nhận lại hồ sơ để chạy vòng mới. Bảng hm_run_reviews
+        -- giữ nguyên làm dữ liệu lịch sử (chỉ đọc, không ghi mới). Checkpoint
+        -- LangGraph của các thread cũ không còn đường resume nào, để nguyên vô hại.
+        UPDATE hm_runs SET status='invalidated'
+            WHERE status IN ('pending_review','partially_published','reviewed');
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

@@ -42,24 +42,6 @@ export function useDemoExperience(): boolean {
   }, []);
   return available;
 }
-// Auto-publish: phòng tự công bố không chờ duyệt (môi trường demo). Chỉ dùng
-// để đổi vài dòng copy trạng thái chờ — bật/tắt do máy chủ quyết định.
-export function useAutoPublish(): boolean {
-  const [autoPublish, setAutoPublish] = useState(false);
-  useEffect(() => {
-    let active = true;
-    new Api(null)
-      .get<{ auto_publish?: boolean }>("/health")
-      .then((health) => {
-        if (active) setAutoPublish(health?.auto_publish === true);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-  return autoPublish;
-}
 export async function quickExperienceLogin(
   username: string,
 ): Promise<{ access_token: string; actor: Actor }> {

@@ -1,27 +1,26 @@
 """Opt-in real PostgreSQL tests; temporary schemas, no model/embedding API calls."""
 import pytest
 
-from backend.app.models import Actor, CatalogStatus, Review
+from backend.app.models import Actor, CatalogStatus
 from backend.app.service import HomeMatchService
 
 
-def test_postgres_checkpoint_restart_auth_and_stale(postgres_storage, profile):
+def test_postgres_published_results_survive_restart_and_stale(postgres_storage, profile):
     from backend.app.auth import SeedAuth
     renter, landlord = Actor(id="renter-a", role="renter"), Actor(id="owner-a", role="owner")
     first = HomeMatchService(postgres_storage)
     auth = SeedAuth(first.repo, first.lock)
     credentials = auth.login("renter-a", "local-renter-a-password")
     sid = first.create_session(renter)["session_id"]
-    pending = first.confirm(sid, renter, profile, 0)
-    review = Review(decision="approve", expected_profile_version=1, reason="Kiểm tra PG", idempotency_key="pg-1")
-    first.repo.review(pending["run_id"], landlord.id, review)  # recorded event before process restart
+    published = first.confirm(sid, renter, profile, 0)
+    assert published["status"] == "published" and published["results"]
     first.close()
     second = HomeMatchService(postgres_storage)
     try:
         assert SeedAuth(second.repo, second.lock).actor(credentials["access_token"]) == renter
-        assert second.results(sid, renter)["results"] == []
-        second.retry(pending["run_id"], landlord)
-        assert second.results(sid, renter)["status"] == "published"
+        # Kết quả đã công bố vẫn đọc được sau khi khởi động lại quy trình.
+        again = second.results(sid, renter)
+        assert again["status"] == "published" and again["results"]
         room = second.catalog.rooms()[0]
         second.change_room_status(room.id, landlord, CatalogStatus(expected_revision=room.revision, available=False))
         assert second.results(sid, renter)["status"] == "invalidated"
@@ -29,22 +28,16 @@ def test_postgres_checkpoint_restart_auth_and_stale(postgres_storage, profile):
         second.close()
 
 
-def test_postgres_catalog_writer_before_finalize_blocks_old_publish(postgres_storage, profile):
+def test_postgres_catalog_writer_during_generation_leaves_run_stale(postgres_storage, profile):
     renter, landlord = Actor(id="renter-a", role="renter"), Actor(id="owner-a", role="owner")
     service = HomeMatchService(postgres_storage)
     writer = HomeMatchService(postgres_storage)
     try:
         sid = service.create_session(renter)["session_id"]
-        pending = service.confirm(sid, renter, profile, 0)
-        request = Review(decision="approve", expected_profile_version=1, reason="Race kiểm soát", idempotency_key="race-1")
-        service.repo.review(pending["run_id"], landlord.id, request)
+        service.confirm(sid, renter, profile, 0)
+        # Writer sửa kho song song: run đã công bố trước đó phải bị coi là cũ.
         room = writer.catalog.rooms()[0]
         writer.change_room_status(room.id, landlord, CatalogStatus(expected_revision=room.revision, available=False))
-        # Writer's transaction committed before graph finalization.
-        from langgraph.types import Command
-        event = service.repo.run(pending["run_id"])["decision"]
-        with service.lock:
-            service.recommendation_graph.invoke(Command(resume={"event_id": event["event_id"]}), service._config(pending["run_id"]))
         assert service.results(sid, renter)["status"] == "invalidated"
         assert service.results(sid, renter)["results"] == []
     finally:
@@ -122,11 +115,11 @@ def test_postgres_missing_vector_falls_back_without_dropping_eligible_rooms(post
         expected, _ = service.catalog.match(profile, "B1")
         service.matching_method = "P"
         sid = service.create_session(renter)["session_id"]
-        pending = service.confirm(sid, renter, profile, 0)
-        draft = service.draft(pending["run_id"], landlord)
-        assert draft["diagnostics"]["algorithm"] == "B1_fallback"
-        assert draft["diagnostics"]["semantic_status"] == "unavailable"
-        assert [item["room_id"] for item in draft["items"]] == [item.room_id for item in expected]
-        assert service.results(sid, renter)["results"] == []
+        result = service.confirm(sid, renter, profile, 0)
+        run = service.repo.run(result["run_id"])
+        assert run["diagnostics"]["algorithm"] == "B1_fallback"
+        assert run["diagnostics"]["semantic_status"] == "unavailable"
+        assert [item["room_id"] for item in run["items"]] == [item.room_id for item in expected]
+        assert [item["room_id"] for item in service.results(sid, renter)["results"]] == [item.room_id for item in expected]
     finally:
         service.close()

@@ -63,40 +63,21 @@ def run(base: str, test_client=None) -> dict:
         confirmed = request("POST", f"/sessions/{sid}/confirm", "renter-a", {
             "expected_draft_revision": patch["draft_revision"], "profile": profile})
         run_id = confirmed["run_id"]
+        # Quyết định 05/11/2026: kết quả công bố ngay sau khi xếp hạng, không chờ duyệt.
         results = request("GET", f"/sessions/{sid}/results", "renter-a")
-        assert results["status"] == "pending_review" and results["results"] == []
-        # Each landlord sees only their own rooms of the shortlist; uninvolved landlords get 403.
-        drafts = {}
-        for landlord in landlords:
-            response = client.get(f"/landlord/recommendations/{run_id}",
-                                  headers={"Authorization": f"Bearer {tokens[landlord]}"})
-            assert response.status_code in (200, 403)
-            if response.status_code == 200:
-                drafts[landlord] = response.json()
-                assert all(item["landlord_id"] == landlord for item in drafts[landlord]["items"])
-        assert drafts and sum(len(draft["items"]) for draft in drafts.values()) >= 2
-        request("POST", f"/sessions/{sid}/compare", "renter-a",
-                {"room_ids": [item["room_id"] for draft in drafts.values() for item in draft["items"]][:2]}, expected=403)
-        checks.append("pending_has_no_candidates_and_per_landlord_review_scope")
+        assert results["status"] == "published" and results["results"]
+        # Endpoint duyệt gợi ý đã bị xóa: mọi vai trò đều 404, người thuê khác vẫn 403.
+        request("GET", "/landlord/recommendations", "owner-a", expected=404)
+        request("GET", f"/landlord/recommendations/{run_id}", "owner-a", expected=404)
+        request("GET", f"/sessions/{sid}/results", "renter-b", expected=403)
+        checks.append("published_in_one_turn_and_review_endpoints_removed")
 
-        expected_visible = []
-        for landlord, draft in drafts.items():
-            own = [item["room_id"] for item in draft["items"]]
-            review = {"decision": "approve", "expected_profile_version": draft["profile_version"],
-                      "keep_room_ids": list(reversed(own)), "reason": "Kiểm tra smoke với dữ liệu hoàn toàn giả lập.",
-                      "override_reason": "Smoke kiểm tra đổi thứ tự có lý do." if len(own) > 1 else None,
-                      "idempotency_key": f"smoke-review-{uuid4()}"}
-            request("POST", f"/landlord/recommendations/{run_id}/review", landlord, review)
-            request("POST", f"/landlord/recommendations/{run_id}/review", landlord, review)
-            expected_visible += own
-        results = request("GET", f"/sessions/{sid}/results", "renter-a")
-        assert results["status"] == "published"
         ids = [item["room_id"] for item in results["results"]]
-        assert sorted(ids) == sorted(expected_visible)
+        assert len(ids) >= 2
         comparison = request("POST", f"/sessions/{sid}/compare", "renter-a", {"room_ids": ids[:2]})
         assert len(comparison["items"]) == 2
         assert all(item["cost"]["monthly_total_vnd"] is not None for item in comparison["items"])
-        checks.append("approval_subset_order_replay_and_comparison")
+        checks.append("published_order_and_comparison")
 
         first = results["results"][0]
         owner = first["landlord_id"]
@@ -157,7 +138,7 @@ def main():
         tempdir = None if database_url else tempfile.TemporaryDirectory(prefix="homematch-smoke-")
         try:
             target = database_url or str(Path(tempdir.name) / "smoke.sqlite")
-            app = create_app(lambda: HomeMatchService(target, auto_publish=False))
+            app = create_app(lambda: HomeMatchService(target))
             with TestClient(app, base_url=args.base) as client:
                 result = run(args.base, client)
         finally:

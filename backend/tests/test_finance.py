@@ -8,7 +8,7 @@ from backend.app.catalog import DEFAULT_CATALOG, Catalog
 from backend.app.costs import (affordability_band, assess_affordability, calculate_cost, estimate_loan,
                                loan_installment)
 from backend.app.main import create_app
-from backend.app.models import (Actor, DomainError, LoanTerms, Profile, Quote, Review, Scenario,
+from backend.app.models import (Actor, DomainError, LoanTerms, Profile, Quote, Scenario,
                                 SimulationRequest)
 
 DEMO = json.loads(DEFAULT_CATALOG.read_text(encoding="utf-8"))["rooms"]
@@ -112,9 +112,7 @@ def test_apartment_bedrooms_filter_and_unknown_needs_verification(tmp_path):
 def published(service, renter, landlord, profile):
     session_id = service.create_session(renter)["session_id"]
     run_id = service.confirm(session_id, renter, profile, 0)["run_id"]
-    ids = [item["room_id"] for item in service.draft(run_id, landlord)["items"]]
-    service.review(run_id, landlord, Review(decision="approve", expected_profile_version=1,
-                                           reason="Đã kiểm tra.", idempotency_key="k"))
+    ids = [item["room_id"] for item in service.repo.run(run_id)["items"]]
     return session_id, run_id, ids
 
 
@@ -122,7 +120,9 @@ def test_sale_projection_hides_income_and_exact_ratio(service, renter, landlord)
     profile = demo_profile(monthly_income_vnd=12_000_000)
     session_id, run_id, _ = published(service, renter, landlord, profile)
     sale = service._admin_projection(service.repo.run(run_id))
-    assert "monthly_income_vnd" not in sale["profile"]
+    # Thu nhập không bao giờ có trong projection admin: hồ sơ không trả về,
+    # tỉ lệ khả năng chi trả luôn bị che.
+    assert "profile" not in sale
     assert all(item["cost"]["affordability"]["housing_ratio"] is None for item in sale["items"])
     assert all(item["cost"]["affordability"]["band"] != "chua_ro" for item in sale["items"])
     mine = service.results(session_id, renter)["results"]

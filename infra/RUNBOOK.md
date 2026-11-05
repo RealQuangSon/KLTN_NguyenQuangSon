@@ -26,12 +26,10 @@ Setup/startup chạy migration có phiên bản và tạo checkpointer nếu ch�
 | Catalog không phải 220 căn v2 | DB đã có seed cũ; initial file không ghi đè. Tái tạo ở DB mới hoặc import có chủ đích; import cũ có thể tạo kho trộn |
 | 401/403 | Login lại hoặc dùng actor đúng bản ghi; chủ nhà chỉ thấy phòng, lịch, hợp đồng của mình; khách chỉ thấy dữ liệu của mình |
 | 409 draft/catalog | Đọc lại phiên/kho, sửa từ revision mới; không auto-resend confirm/toggle |
-| AI timeout/context limit | Dùng form nhu cầu rồi confirm; finance/auth/HITL vẫn chạy bằng code. Không gửi lại chat tự động |
+| AI timeout/context limit | Dùng form nhu cầu rồi confirm; finance/auth/xếp hạng vẫn chạy bằng code. Không gửi lại chat tự động |
 | P thiếu vector/provider | App fallback B1 gắn nhãn; eval P ghi unavailable. Không tạo vector giả để điền metric |
-| Run generation lỗi | Admin xem `/admin/failed-runs` rồi gọi `/landlord/recommendations/{run}/retry`; run mới cần duyệt mới |
-| Quyết định đã ghi, chưa finalize | Run `reviewed` hoặc lỗi `review_resume_failed`: chủ nhà của run hoặc admin retry hoặc replay đúng review payload/key; quyết định đã commit và graph chỉ resume bằng event ID trong ledger |
-| Checkpoint không còn điểm resume | Không chỉnh raw state để bypass HITL; khách xác nhận lại và duyệt run mới |
-| Stale sau đổi hồ sơ/kho | Khách confirm profile hiện tại, tạo và duyệt lại. Không công bố nháp cũ |
+| Run generation lỗi | Người thuê tự chạy lại `POST /sessions/{id}/rerun`; admin xem `/admin/failed-runs` rồi gọi `/admin/failed-runs/{run}/retry`. Run mới công bố ngay (bỏ duyệt 05/11/2026) |
+| Stale sau đổi hồ sơ/kho | Khách confirm profile hiện tại để chạy vòng mới; run cũ hết hiệu lực, không công bố nháp cũ |
 | Viewing vẫn requested | Cần chủ nhà của phòng xác nhận/từ chối; yêu cầu ban đầu chưa là hẹn được xác nhận |
 | Không thấy thông báo nhắc | Kiểm `HOMEMATCH_JOBS_INTERVAL_SECONDS` (0 là tắt); chạy tay `python -m backend.manage jobs` hoặc Admin Console → Vận hành; xem `hm_job_runs` |
 | Không lập được hóa đơn | Thiếu chỉ số đầu/cuối kỳ hoặc đơn giá phí (`invoice_incomplete`), hoặc kỳ đã có hóa đơn (`invoice_exists`) |

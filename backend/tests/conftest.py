@@ -13,9 +13,6 @@ def offline_mode(monkeypatch):
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "demo")
     monkeypatch.setenv("HOMEMATCH_MATCHING_METHOD", "B1")
     monkeypatch.setenv("HOMEMATCH_EMBEDDING_MODE", "disabled")
-    # The app auto-publishes by default; tests keep the landlord-review path
-    # (HITL invariants) and opt into auto-publish explicitly where needed.
-    monkeypatch.setenv("HOMEMATCH_AUTO_PUBLISH", "false")
     # Tests trigger automation explicitly; no background thread inside TestClient apps.
     monkeypatch.setenv("HOMEMATCH_JOBS_INTERVAL_SECONDS", "0")
 

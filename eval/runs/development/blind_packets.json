@@ -17,6 +17,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -211,6 +212,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -405,6 +407,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -599,6 +602,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -785,6 +789,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 7",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -832,6 +837,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -1018,6 +1024,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 1",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -1063,6 +1070,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -1261,6 +1269,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -1447,6 +1456,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 3",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -1491,6 +1501,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -1685,6 +1696,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -1879,6 +1891,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -2073,6 +2086,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -2267,6 +2281,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -2449,6 +2464,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 7",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -2501,6 +2517,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -2699,6 +2716,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -2897,6 +2915,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -3095,6 +3114,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -3293,6 +3313,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -3479,6 +3500,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 10",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -3523,6 +3545,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -3717,6 +3740,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -3911,6 +3935,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -4105,6 +4130,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -4287,6 +4313,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": null,
         "city": "TP.HCM",
         "cost_split": "none",
@@ -4337,6 +4364,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -4523,6 +4551,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 7",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -4570,6 +4599,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -4768,6 +4798,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -4966,6 +4997,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -5164,6 +5196,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -5362,6 +5395,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -5548,6 +5582,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 1",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -5593,6 +5628,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -5791,6 +5827,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -5977,6 +6014,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 3",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -6022,6 +6060,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -6216,6 +6255,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -6410,6 +6450,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -6604,6 +6645,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -6798,6 +6840,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 300000,
@@ -6980,6 +7023,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": null,
         "city": "TP.HCM",
         "cost_split": "none",
@@ -7030,6 +7074,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -7228,6 +7273,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -7426,6 +7472,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -7612,6 +7659,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận Cầu Giấy",
         "city": "Hà Nội",
         "cost_split": "none",
@@ -7662,6 +7710,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -7860,6 +7909,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -8046,6 +8096,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận Đống Đa",
         "city": "Hà Nội",
         "cost_split": "none",
@@ -8091,6 +8142,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -8289,6 +8341,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -8475,6 +8528,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận Nam Từ Liêm",
         "city": "Hà Nội",
         "cost_split": "none",
@@ -8519,6 +8573,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -8717,6 +8772,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -8915,6 +8971,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -9101,6 +9158,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận 7",
         "city": "TP.HCM",
         "cost_split": "none",
@@ -9153,6 +9211,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -9359,6 +9418,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -9565,6 +9625,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -9771,6 +9832,7 @@
                 "phu_hop": "0.30"
               }
             },
+            "assumed_fees": [],
             "assumptions": {
               "electricity_kwh": "140",
               "moving_vnd": 500000,
@@ -9957,6 +10019,7 @@
         }
       ],
       "confirmed_profile": {
+        "accept_estimated_data": false,
         "area": "Quận Cầu Giấy",
         "city": "Hà Nội",
         "cost_split": "equal",

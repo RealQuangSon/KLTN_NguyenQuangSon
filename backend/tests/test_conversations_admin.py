@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.conversations import mask_pii
 from backend.app.main import create_app
-from backend.app.models import Actor, DomainError, Review
+from backend.app.models import Actor, DomainError
 
 ADMIN = Actor(id="admin-a", role="admin")
 
@@ -11,10 +11,8 @@ ADMIN = Actor(id="admin-a", role="admin")
 def published_session(service, renter, landlord, profile):
     sid = service.create_session(renter)["session_id"]
     service.message(sid, renter, "Tìm phòng TP.HCM Quận 7, gọi tôi 0901234567 hoặc a@b.com")
-    run_id = service.confirm(sid, renter, profile.model_copy(update={"monthly_income_vnd": 20_000_000}),
-                             service.session(sid, renter)["draft_revision"])["run_id"]
-    service.review(run_id, landlord, Review(decision="approve", expected_profile_version=1, reason="ok",
-                                            idempotency_key="k"))
+    service.confirm(sid, renter, profile.model_copy(update={"monthly_income_vnd": 20_000_000}),
+                    service.session(sid, renter)["draft_revision"])
     return sid, service.results(sid, renter)["results"][0]["room_id"]
 
 

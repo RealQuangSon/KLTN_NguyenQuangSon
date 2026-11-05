@@ -7,7 +7,7 @@ by model output; offline demo mode only.
 import pytest
 
 from backend.app.agent_capability import CAPABILITIES, Resource, assert_unprivileged, require
-from backend.app.models import Actor, DomainError, Review
+from backend.app.models import Actor, DomainError
 from backend.app.service import HomeMatchService
 
 
@@ -28,10 +28,9 @@ def own_service(tmp_path):
 
 def test_capability_matrix_covers_every_public_entry():
     expected = {"session:create", "session:read", "chat:message", "draft:patch", "profile:confirm",
-                "results:read", "compare:run", "viewing:prepare", "viewing:request", "viewing:read",
-                "viewing:respond", "support:handoff", "support:list", "support:manage",
-                "account:review_landlord", "run:draft_list", "run:read",
-                "run:review", "run:retry", "catalog:read", "catalog:write",
+                "results:read", "results:rerun", "compare:run", "viewing:prepare", "viewing:request",
+                "viewing:read", "viewing:respond", "support:handoff", "support:list", "support:manage",
+                "account:review_landlord", "run:retry", "catalog:read", "catalog:write",
                 "saved:read", "saved:write", "viewed:read"}
     assert expected == set(CAPABILITIES)
 
@@ -47,8 +46,7 @@ def test_wrong_role_is_blocked_before_execution(own_service, renter, landlord):
     own_rooms = own_service.rooms(landlord)  # a landlord reads only own listings
     assert own_rooms["shared_catalog"] is False
     assert {room["id"] for room in own_rooms["rooms"]}  # demo rooms default to owner-a
-    for call in (lambda: own_service.rooms(renter), lambda: own_service.drafts(renter),
-                 lambda: own_service.support_tickets(renter)):
+    for call in (lambda: own_service.rooms(renter), lambda: own_service.support_tickets(renter)):
         with pytest.raises(DomainError):
             call()
 
@@ -64,15 +62,13 @@ def test_wrong_owner_and_unassigned_manager_are_blocked(own_service, renter, lan
         with pytest.raises(DomainError) as error:
             call()
         assert error.value.code == "forbidden"
-    # Even a forged manager role fails resource ownership: review targets a run
-    # whose session is assigned to manager-a, not to whoever claims the role.
+    # Even a forged manager role cannot touch the renter's session: rerun targets
+    # a run whose session belongs to the renter, not to whoever claims a role.
     forged = Actor(id="renter-a", role="manager")
     with pytest.raises(DomainError) as error:
-        own_service.review(run_id, forged, Review(
-            decision="approve", expected_profile_version=1, reason="Không có quyền.",
-            idempotency_key="forged"))
+        own_service.rerun(sid, forged)
     assert error.value.code == "forbidden"
-    assert own_service.repo.run(run_id)["status"] == "pending_review"
+    assert own_service.repo.run(run_id)["status"] == "published"
 
 
 def test_unknown_action_and_privileged_payload_are_rejected(renter):
@@ -105,17 +101,14 @@ def test_handoff_from_chat_is_deterministic_idempotent_and_honest(own_service, r
     assert trace["guard"]["budget"]["used"] == 0  # clear-intent routing skips the LLM
 
 
-def test_viewing_preparation_from_chat_requires_approved_current_room(own_service, renter, landlord, profile):
+def test_viewing_preparation_from_chat_requires_published_current_room(own_service, renter, landlord, profile):
     sid = own_service.create_session(renter)["session_id"]
-    run_id = own_service.confirm(sid, renter, profile, 0)["run_id"]
-    # Pending run: nothing is approved, so preparation must refuse before creating.
+    # No run yet: preparation must refuse before creating anything.
     with pytest.raises(DomainError) as error:
         own_service.message(sid, renter, "Cho tôi đặt lịch xem demo-01")
     assert error.value.code == "not_visible"
     assert own_service.viewings(renter) == []
-    own_service.review(run_id, landlord, Review(
-        decision="approve", expected_profile_version=1, reason="Đã kiểm tra.",
-        idempotency_key="viewing-prep"))
+    run_id = own_service.confirm(sid, renter, profile, 0)["run_id"]
     reply = own_service.message(sid, renter, "Cho tôi đặt lịch xem demo-01")
     assert reply["status"] == "needs_clarification"
     assert "demo-01" in reply["message"] and "chưa tạo lịch xem" in reply["message"]

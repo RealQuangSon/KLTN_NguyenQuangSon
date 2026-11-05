@@ -37,7 +37,6 @@ OWNER_CAPABILITIES = frozenset({
 MANAGER_CAPABILITIES = frozenset({
     "org.read",
     "org.members.read",
-    "recommendation.review.assigned",
     "recommendation.retry.assigned",
     "catalog.read.private",
     "catalog.status.update",

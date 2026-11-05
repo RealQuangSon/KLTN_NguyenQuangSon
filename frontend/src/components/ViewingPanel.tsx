@@ -217,7 +217,7 @@ export function ViewingList({
         description={
           manager
             ? "Yêu cầu xem các phòng của bạn sẽ xuất hiện tại đây."
-            : "Sau khi nhận danh sách đã duyệt, bạn có thể đề xuất thời gian xem phòng."
+            : "Sau khi có danh sách gợi ý, bạn có thể đề xuất thời gian xem phòng."
         }
         icon="calendar"
       />

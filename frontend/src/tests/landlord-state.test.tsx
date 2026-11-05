@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { Api, ApiError } from "../api";
 import { LandlordWorkspace } from "../pages/LandlordWorkspace";
-import type { Room, Recommendation } from "../types";
+import type { Room } from "../types";
 import { deferred, profile, room } from "./fixtures";
 const catalog = (revision: number, published = true): Room => ({
   id: "room-1",
@@ -66,41 +66,4 @@ it("reads the catalog again after a stale CAS failure before allowing another mu
     expected_revision: 3,
     published: true,
   });
-}, 20000);
-it("retains the review payload/key after a lost response and only publishes the server decision", async () => {
-  const api = new Api("test");
-  const draft: Recommendation = {
-    run_id: "r1",
-    session_id: "s1",
-    status: "pending_review",
-    profile_version: 1,
-    catalog_version: "catalog-1",
-    profile,
-    items: [room()],
-    diagnostics: { rejected: {}, verification: {} },
-    decision: null,
-  };
-  vi.spyOn(api, "get").mockImplementation(async (path) =>
-    path === "/landlord/recommendations" ? [draft] : (draft as never),
-  );
-  const post = vi
-    .spyOn(api, "post")
-    .mockRejectedValueOnce(new ApiError(0, "network_error", "Mất phản hồi"))
-    .mockResolvedValueOnce({ ...draft, status: "published" });
-  render(<LandlordWorkspace api={api} tab="review" />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: /Phiên s1/ }));
-  await user.type(
-    await screen.findByLabelText("Lý do quyết định"),
-    "Đã kiểm tra chi phí và nguồn.",
-  );
-  await user.click(screen.getByRole("button", { name: "Duyệt 1 phòng" }));
-  await screen.findByText("Mất phản hồi");
-  expect(screen.queryByText(/Đã công bố đúng/)).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Duyệt 1 phòng" }));
-  await screen.findByText(
-    "Đã công bố đúng danh sách được duyệt cho người thuê.",
-  );
-  expect(post.mock.calls[0][1]).toEqual(post.mock.calls[1][1]);
-  expect(post).toHaveBeenCalledTimes(2);
 }, 20000);

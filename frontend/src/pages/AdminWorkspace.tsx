@@ -751,7 +751,7 @@ export function AdminWorkspace({
                       onClick={() =>
                         void act(() =>
                           api.post(
-                            `/landlord/recommendations/${run.run_id}/retry`,
+                            `/admin/failed-runs/${run.run_id}/retry`,
                             {},
                           ),
                         )

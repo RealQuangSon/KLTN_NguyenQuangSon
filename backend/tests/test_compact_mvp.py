@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from backend.app.catalog import Catalog
 from backend.app.interpreter import OpenAIInterpreter
 from backend.app.main import create_app
-from backend.app.models import Actor, CatalogStatus, DomainError, DraftPatch, Review
+from backend.app.models import Actor, CatalogStatus, DomainError, DraftPatch
 from backend.app.semantic import OpenAIEmbeddings
 from backend.app.service import HomeMatchService
 
@@ -71,8 +71,7 @@ def test_draft_cas_correction_and_privileged_fields(service, renter):
 def test_shared_catalog_cas_and_stale_publication(service, renter, landlord, profile):
     sid = service.create_session(renter)["session_id"]
     run = service.confirm(sid, renter, profile, 0)
-    service.review(run["run_id"], landlord, Review(
-        decision="approve", expected_profile_version=1, reason="Đã kiểm tra", idempotency_key="catalog-review"))
+    assert run["status"] == "published"
     room = service.catalog.rooms()[0]
     service.change_room_status(room.id, landlord, CatalogStatus(expected_revision=room.revision, available=False))
     assert service.results(sid, renter)["status"] == "invalidated"
@@ -82,7 +81,7 @@ def test_shared_catalog_cas_and_stale_publication(service, renter, landlord, pro
         service.rooms(renter)
 
 
-def test_generation_failure_manual_retry_requires_new_approval(service, renter, landlord, admin, profile):
+def test_generation_failure_manual_retry_produces_a_fresh_published_run(service, renter, landlord, admin, profile):
     sid = service.create_session(renter)["session_id"]
     graph = service.recommendation_graph
     service.recommendation_graph = SimpleNamespace(invoke=lambda *args: (_ for _ in ()).throw(RuntimeError("private error")))
@@ -90,8 +89,8 @@ def test_generation_failure_manual_retry_requires_new_approval(service, renter, 
     assert failed["status"] == "generation_failed" and failed["results"] == []
     service.recommendation_graph = graph
     new = service.retry(failed["run_id"], admin)
-    assert new["run_id"] != failed["run_id"] and new["status"] == "pending_review" and new["decision"] is None
-    assert service.results(sid, renter)["results"] == []
+    assert new["run_id"] != failed["run_id"] and new["status"] == "published" and new["items"]
+    assert service.results(sid, renter)["status"] == "published"
     assert service.repo.run(failed["run_id"])["status"] == "invalidated"
 
 
@@ -175,27 +174,25 @@ def test_no_match_offers_soft_suggestions_and_never_relaxes_automatically(servic
     other = service.create_session(renter)["session_id"]
     service.confirm(other, renter, profile, 0)
     normal = service.results(other, renter)
-    assert normal["status"] == "pending_review" and "suggestions" not in normal
-    # Pending runs still expose the pipeline steps for process transparency.
-    assert normal["steps"] and any("Chờ chủ nhà duyệt" in step for step in normal["steps"])
+    assert normal["status"] == "published" and "suggestions" not in normal
+    # Published runs expose the pipeline steps for process transparency.
+    assert normal["steps"] and any("công bố" in step for step in normal["steps"])
     assert normal["diagnostics_summary"]["kept"] >= 1
 
 
-def test_auto_publish_puts_rooms_in_front_of_the_renter_without_a_human(monkeypatch, tmp_path, renter, profile):
-    # Chế độ auto-publish (demo): renter không phải chờ ai duyệt — phòng qua bộ
-    # lọc là công bố ngay; quyết định tự động vẫn ghi sổ với lý do nói rõ.
-    monkeypatch.setenv("HOMEMATCH_AUTO_PUBLISH", "1")
+def test_results_reach_the_renter_without_any_human_step(tmp_path, renter, profile):
+    # Quyết định 05/11/2026: phòng qua bộ lọc là công bố ngay cho người thuê,
+    # không còn hàng đợi duyệt của chủ nhà, không ghi sự kiện duyệt mới nào.
     agent = HomeMatchService(tmp_path / "auto.sqlite")
     try:
         session_id = agent.create_session(renter)["session_id"]
         agent.confirm(session_id, renter, profile, 0)
         result = agent.results(session_id, renter)
-        assert result["status"] == "published" and result["results"], "tự công bố ngay, không chờ duyệt"
-        # Sổ audit ghi đủ quyết định tự động, lý do nói rõ không phải người duyệt tay.
-        reviews = agent.repo.reviews(result["run_id"])
-        assert reviews and "auto-publish" in reviews["owner-a"]["payload"]["reason"]
-        # Hàng đợi duyệt của chủ nhà trống: không còn việc nào cần người làm.
-        assert agent.drafts(Actor(id="owner-a", role="owner")) == []
+        assert result["status"] == "published" and result["results"], "công bố ngay, không chờ duyệt"
+        # Bảng duyệt cũ chỉ còn dữ liệu lịch sử, không ghi thêm bản ghi nào.
+        assert agent.repo.reviews(result["run_id"]) == {}
+        assert agent.repo.db.execute("SELECT COUNT(*) AS c FROM hm_runs WHERE status IN "
+                                     "('pending_review','partially_published','reviewed')").fetchone()["c"] == 0
     finally:
         agent.close()
 

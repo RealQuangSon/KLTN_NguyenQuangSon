@@ -35,17 +35,17 @@ def test_matrix_covers_exactly_four_roles_with_scoped_staff_rights():
     assert set(ROLE_CAPABILITIES) == {"renter", "owner", "manager", "admin"}
     assert "org.create" in capabilities_for("admin")
     assert "org.members.manage" in capabilities_for("owner")
-    assert "recommendation.review.assigned" in capabilities_for("manager")
+    # Quyết định 05/11/2026: không còn quyền duyệt gợi ý cho vai nào.
+    assert "recommendation.review.assigned" not in capabilities_for("manager")
+    assert "recommendation.review.assigned" not in capabilities_for("owner")
     # Admin is not a wildcard: it never gains renter resource capabilities.
     assert not (ADMIN_CAPABILITIES & capabilities_for("renter"))
     assert "session.create" not in capabilities_for("admin")
-    # Owner and manager cannot approve AI recommendations; that stays manager-scoped.
-    assert "recommendation.review.assigned" not in capabilities_for("owner")
     assert "audit.read" not in capabilities_for("manager")
     # Renters never hold organization or staff capabilities.
     renter_scope = capabilities_for("renter")
     assert not renter_scope & {"org.create", "org.members.manage", "audit.read",
-                               "catalog.status.update", "recommendation.review.assigned"}
+                               "catalog.status.update"}
 
 
 def test_state_dictionaries_are_closed_and_self_consistent():
@@ -182,7 +182,8 @@ def test_v2_style_database_migrates_to_v3_without_data_loss(storage):
     try:
         assert repo.schema_version == SCHEMA_VERSION
         assert repo.db.execute("SELECT COUNT(*) AS c FROM hm_schema_migrations").fetchone()["c"] == len(MIGRATIONS)
-        assert repo.run("legacy-run")["status"] == "pending_review"
+        # Migration 16 (bỏ duyệt gợi ý): run cũ đang chờ duyệt chuyển hết hiệu lực.
+        assert repo.run("legacy-run")["status"] == "invalidated"
         # Default organization exists and the legacy staff user got a membership.
         orgs = repo.db.execute("SELECT id FROM hm_organizations").fetchall()
         assert [row["id"] for row in orgs] == [organizations.DEFAULT_ORGANIZATION_ID]

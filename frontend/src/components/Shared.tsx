@@ -243,8 +243,7 @@ export function Icon({
     mic: "M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3zM19 11a7 7 0 01-14 0M12 18v4",
     heart:
       "M12 20.5C7.5 16.9 3.5 13.6 3.5 9.8A4.6 4.6 0 0112 7a4.6 4.6 0 018.5 2.8c0 3.8-4 7.1-8.5 10.7z",
-    layers:
-      "M12 3l9 5-9 5-9-5 9-5zm9 10l-9 5-9-5m18 5l-9 5-9-5",
+    layers: "M12 3l9 5-9 5-9-5 9-5zm9 10l-9 5-9-5m18 5l-9 5-9-5",
     expand: "M4 9V4h5m11 11v5h-5m0-16h5v5M9 20H4v-5",
     user: "M12 11a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 0116 0",
     thumbUp:
@@ -574,7 +573,6 @@ export function PublishedResults({
   onAskFollowUp,
   savedIds,
   onToggleSave,
-  autoPublish = false,
 }: {
   result: Results | null;
   selected: string[];
@@ -588,8 +586,6 @@ export function PublishedResults({
   // Căn đã lưu của người thuê: bộ id hiện trạng + bật/tắt lưu ngay trên thẻ.
   savedIds?: string[];
   onToggleSave?: (roomId: string) => void;
-  // Chế độ tự công bố: không có bước chủ nhà duyệt nên không gọi là "đã duyệt".
-  autoPublish?: boolean;
 }) {
   if (!result)
     return (
@@ -601,24 +597,16 @@ export function PublishedResults({
     );
   if (!visibleStatuses.includes(result.status)) {
     const descriptions: Record<string, string> = {
-      pending_review:
-        "Quản lý đang kiểm tra các lựa chọn, nguồn và bảng phí. Bạn sẽ nhận danh sách sau khi được duyệt.",
-      reviewed:
-        "Quyết định đã được ghi nhận. Máy chủ đang hoàn tất công bố; danh sách chưa hiển thị.",
       generating:
         "Hệ thống đang kiểm tra điều kiện và tổng chi phí theo hồ sơ đã xác nhận.",
       invalidated:
-        "Nhu cầu hoặc kho phòng đã thay đổi. Xác nhận hồ sơ để tạo bản mới và chờ duyệt lại.",
+        "Nhu cầu hoặc kho phòng đã thay đổi. Xác nhận hồ sơ để tạo bản mới và tìm lại.",
       no_match:
         "Chưa có phòng đạt đầy đủ điều kiện. Bạn có thể chủ động sửa tiêu chí; hệ thống không tự nới ngân sách.",
       needs_verification:
         "Có phòng cần xác minh giá, phí hoặc điều kiện bắt buộc. Thiếu dữ liệu chưa có nghĩa là đạt yêu cầu.",
-      needs_revision:
-        "Quản lý đề nghị sửa nhu cầu. Kiểm tra hồ sơ và xác nhận lại.",
       generation_failed:
-        "Tạo gợi ý bị gián đoạn. Đọc lại trạng thái hoặc liên hệ quản lý để khôi phục an toàn.",
-      generating_failed:
-        "Tạo gợi ý bị gián đoạn. Quản lý có thể khởi tạo lại; danh sách mới vẫn cần duyệt.",
+        "Tạo gợi ý bị gián đoạn. Chạy lại vòng tìm hoặc liên hệ quản trị để khôi phục an toàn.",
     };
     return (
       <>
@@ -628,7 +616,7 @@ export function PublishedResults({
             descriptions[result.status] ||
             "Kiểm tra và xác nhận hồ sơ để tiếp tục."
           }
-          icon={result.status === "pending_review" ? "shield" : "home"}
+          icon="home"
         />
         {result.suggestions && result.suggestions.length > 0 && (
           <div className="suggestion-list">
@@ -644,29 +632,32 @@ export function PublishedResults({
             </small>
           </div>
         )}
-        {Object.values(result.diagnostics_summary?.verification ?? {}).some((count) => count > 0) &&
+        {Object.values(result.diagnostics_summary?.verification ?? {}).some(
+          (count) => count > 0,
+        ) &&
           onAskFollowUp && (
-          <div className="suggestion-list">
-            <span className="eyebrow">PHÒNG THIẾU DỮ LIỆU</span>
-            <div className="relax-chips">
-              <button
-                type="button"
-                className="button small outline"
-                onClick={() =>
-                  onAskFollowUp(
-                    "Chấp nhận dữ liệu ước tính — cho mình xem cả phòng thiếu bảng phí hoặc sức chứa, dữ liệu theo giả định chuẩn có nhãn ước tính nhé.",
-                  )
-                }
-              >
-                Chấp nhận dữ liệu ước tính
-              </button>
+            <div className="suggestion-list">
+              <span className="eyebrow">PHÒNG THIẾU DỮ LIỆU</span>
+              <div className="relax-chips">
+                <button
+                  type="button"
+                  className="button small outline"
+                  onClick={() =>
+                    onAskFollowUp(
+                      "Chấp nhận dữ liệu ước tính — cho mình xem cả phòng thiếu bảng phí hoặc sức chứa, dữ liệu theo giả định chuẩn có nhãn ước tính nhé.",
+                    )
+                  }
+                >
+                  Chấp nhận dữ liệu ước tính
+                </button>
+              </div>
+              <small>
+                Dữ liệu thiếu trong tin (phí điện/nước, sức chứa…) được thay
+                bằng giả định chuẩn kèm nhãn ước tính; bạn kiểm tra lại khi xem
+                phòng.
+              </small>
             </div>
-            <small>
-              Dữ liệu thiếu trong tin (phí điện/nước, sức chứa…) được thay bằng giả
-              định chuẩn kèm nhãn ước tính; bạn kiểm tra lại khi xem phòng.
-            </small>
-          </div>
-        )}
+          )}
         {result.status === "no_match" && onAskFollowUp && (
           <div className="suggestion-list">
             <span className="eyebrow">NỚI MỘT TIÊU CHÍ ĐỂ TÌM LẠI</span>
@@ -715,10 +706,10 @@ export function PublishedResults({
   }
   return (
     <div className="room-list">
-      {/* Đếm hiển thị kiểu workspace tham chiếu: người dùng biết số căn duyệt
-          qua và số căn đang hiện (danh sách giới hạn 5 căn đầu). */}
+      {/* Đếm hiển thị kiểu workspace tham chiếu: người dùng biết số căn khớp
+          nhu cầu và số căn đang hiện (danh sách giới hạn 5 căn đầu). */}
       <p className="results-count">
-        {autoPublish ? "Kết quả phù hợp" : "Kết quả đã duyệt"}: <strong>{result.results.length}</strong> căn
+        Kết quả phù hợp: <strong>{result.results.length}</strong> căn
         {result.results.length > 5 &&
           ` · đang hiện 5 căn đầu, dùng tìm theo bộ lọc để xem thêm`}
       </p>

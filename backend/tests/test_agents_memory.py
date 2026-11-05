@@ -36,7 +36,7 @@ def test_each_turn_records_the_agent_and_its_tools(service, renter):
 def test_ranking_agent_is_recorded_in_run_diagnostics(service, renter, landlord, profile):
     sid = service.create_session(renter)["session_id"]
     run_id = service.confirm(sid, renter, profile, 0)["run_id"]
-    assert service.draft(run_id, landlord)["diagnostics"]["agent"] == {
+    assert service.repo.run(run_id)["diagnostics"]["agent"] == {
         "agent": "ranking", "tools": ["match_catalog"], "steps": 1}
 
 

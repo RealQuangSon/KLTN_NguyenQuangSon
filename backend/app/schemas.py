@@ -4,12 +4,11 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .models import Actor, Candidate, CostResult, DraftProfile, Model, Profile, Review, Room
+from .models import Actor, Candidate, CostResult, DraftProfile, Model, Profile, Room
 
 
-RunStatus = Literal["generating", "generation_failed", "pending_review", "partially_published", "reviewed",
-                    "published", "invalidated", "no_match", "needs_verification",
-                    "rejected", "needs_revision"]
+RunStatus = Literal["generating", "generation_failed", "published", "invalidated",
+                    "no_match", "needs_verification"]
 
 
 class LoginResult(Model):
@@ -88,9 +87,8 @@ class ResultsResult(Model):
 
     @model_validator(mode="after")
     def published_only(self):
-        # Rooms appear as soon as their own landlord approves (D-05), so a
-        # partially published run may carry results too.
-        if self.status not in ("published", "partially_published") and self.results:
+        # Kết quả chỉ đi kèm run đã công bố (auto-publish, quyết định 05/11/2026).
+        if self.status != "published" and self.results:
             raise ValueError("Unpublished recommendations cannot contain renter results")
         return self
 
@@ -151,31 +149,6 @@ class ListingSearchResult(Model):
     page_size: int
     items: list[dict]
     notice: str
-
-
-class ReviewEvent(Model):
-    event_id: str
-    actor_id: str
-    payload: Review
-    keep_room_ids: list[str]
-    # Absent on events recorded before override tracking existed.
-    agent_order: list[str] | None = None
-    overridden: bool | None = None
-    recorded_at: datetime
-
-
-class RecommendationResult(Model):
-    run_id: str
-    session_id: str
-    status: RunStatus
-    profile_version: int
-    catalog_version: str
-    profile: Profile
-    items: list[Candidate]
-    diagnostics: dict
-    decision: ReviewEvent | None
-    # How many landlords of this shortlist have decided so far.
-    review_progress: dict | None = None
 
 
 class RoomWithMedia(Room):
@@ -255,9 +228,6 @@ class HealthResult(Model):
     # public=true khi HOMEMATCH_PUBLIC=true; frontend dùng để tắt trải nghiệm
     # đăng nhập nhanh bằng tài khoản seed (chỉ dành cho môi trường demo local).
     public: bool
-    # auto_publish=true khi HOMEMATCH_AUTO_PUBLISH=1: phòng tự công bố ngay
-    # không chờ duyệt; frontend dùng để đổi vài dòng copy trạng thái chờ.
-    auto_publish: bool
 
 
 class ReadyResult(Model):

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .models import DEFAULT_LANDLORD, DomainError, DraftProfile, Profile, Review
+from .models import DEFAULT_LANDLORD, DomainError, DraftProfile, Profile
 from .database import Database
 from .migrations import migrate
 from .organizations import ensure_bootstrap
@@ -76,7 +76,7 @@ class Repository:
             self.db.execute("INSERT INTO hm_profile_snapshots VALUES(?,?,?,?)",
                             (session_id, session["profile_version"], session["profile_json"], utc_now()))
             self.db.execute("UPDATE hm_runs SET status='invalidated' WHERE session_id=? "
-                            "AND status IN ('generating','pending_review','partially_published','reviewed','published')",
+                            "AND status IN ('generating','generation_failed','published')",
                             (session_id,))
         return self.session(session_id)
 
@@ -101,11 +101,17 @@ class Repository:
         return result
 
     def set_draft(self, run_id: str, items: list[dict], diagnostics: dict):
-        status = "pending_review" if items else ("needs_verification" if diagnostics["verification"] else "no_match")
+        # Quyết định 05/11/2026: có căn là công bố ngay (published), không chờ duyệt.
+        status = "published" if items else ("needs_verification" if diagnostics["verification"] else "no_match")
         with self.db:
             self.db.execute("UPDATE hm_runs SET items_json=?,diagnostics_json=?,status=? "
                             "WHERE id=? AND status='generating'",
                             (json.dumps(items, ensure_ascii=False), json.dumps(diagnostics), status, run_id))
+
+    def mark_published(self, run_id: str):
+        with self.db:
+            self.db.execute("UPDATE hm_runs SET published_at=? WHERE id=? "
+                            "AND status='published' AND published_at IS NULL", (utc_now(), run_id))
 
     def invalidate(self, run_id: str):
         with self.db:
@@ -118,91 +124,13 @@ class Repository:
                             (json.dumps({"error_code": "generation_failed"}), run_id))
 
     def reviews(self, run_id: str) -> dict[str, dict]:
+        """Read-only view of legacy hm_run_reviews rows (data kept after AG-00; no new writes)."""
         rows = self.db.execute("SELECT landlord_id,event_json FROM hm_run_reviews WHERE run_id=?", (run_id,))
         return {row["landlord_id"]: json.loads(row["event_json"]) for row in rows}
 
     @staticmethod
     def landlords(run: dict) -> list[str]:
         return sorted({item.get("landlord_id") or DEFAULT_LANDLORD for item in run["items"]})
-
-    @staticmethod
-    def visible_items(run: dict, reviews: dict[str, dict]) -> list[dict]:
-        """Approved rooms in the agent's order; each landlord's own reordering fills that
-        landlord's slots, so no landlord can move a room ahead of another landlord's room."""
-        kept = {landlord: list(event["keep_room_ids"]) for landlord, event in reviews.items()
-                if event["payload"]["decision"] == "approve"}
-        chosen = {room_id for ids in kept.values() for room_id in ids}
-        by_id = {item["room_id"]: item for item in run["items"]}
-        result = []
-        for item in run["items"]:
-            # A kept room marks one slot of its landlord; the slot takes that landlord's next choice.
-            if item["room_id"] in chosen:
-                result.append(by_id[kept[item.get("landlord_id") or DEFAULT_LANDLORD].pop(0)])
-        return result
-
-    def review(self, run_id: str, actor_id: str, review: Review) -> dict:
-        """Record one landlord's decision on their own rooms; finalize when every landlord decided."""
-        run = self.run(run_id)
-        own = [item["room_id"] for item in run["items"] if (item.get("landlord_id") or DEFAULT_LANDLORD) == actor_id]
-        if not own:
-            raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
-        payload = review.model_dump(mode="json")
-        old = self.reviews(run_id).get(actor_id)
-        if old is not None:
-            if old["payload"] == payload:
-                return old
-            raise DomainError("review_conflict", "Bạn đã có quyết định khác cho bản này.")
-        if run["status"] not in ("pending_review", "partially_published") \
-                or review.expected_profile_version != run["profile_version"]:
-            raise DomainError("stale_review", "Bản gợi ý không còn ở phiên bản đang chờ duyệt.")
-        keep = review.keep_room_ids if review.keep_room_ids is not None else own
-        if len(keep) != len(set(keep)) or not set(keep).issubset(own):
-            raise DomainError("invalid_selection", "Chỉ được chọn phòng của bạn thuộc bản nháp đủ điều kiện.", 422)
-        if review.decision == "approve" and not keep:
-            raise DomainError("invalid_selection", "Duyệt cần ít nhất một phòng.", 422)
-        # Dropping or reordering the agent's ranking must be justified so stock cannot be favoured silently.
-        overridden = review.decision == "approve" and keep != own
-        if overridden and not review.override_reason:
-            raise DomainError("override_reason_required",
-                              "Cần ghi lý do khi bỏ phòng hoặc đổi thứ tự so với đề xuất của trợ lý.", 422)
-        event = {"event_id": str(uuid4()), "actor_id": actor_id, "payload": payload,
-                 "keep_room_ids": keep if review.decision == "approve" else [], "agent_order": own,
-                 "overridden": overridden, "recorded_at": utc_now()}
-        with self.db:
-            try:
-                self.db.execute("INSERT INTO hm_run_reviews(run_id,landlord_id,event_json,created_at) VALUES(?,?,?,?)",
-                                (run_id, actor_id, json.dumps(event, ensure_ascii=False), event["recorded_at"]))
-            except Exception:
-                raise DomainError("review_conflict", "Quyết định đã thay đổi; cần tải lại.") from None
-            reviews = {**self.reviews(run_id), actor_id: event}
-            if set(reviews) >= set(self.landlords(run)):
-                # Every landlord decided: the ledger event the graph resumes with.
-                final = {"event_id": str(uuid4()), "landlords": sorted(reviews), "recorded_at": utc_now()}
-                changed = self.db.execute("UPDATE hm_runs SET decision_json=?,status='reviewed' WHERE id=? "
-                                          "AND status IN ('pending_review','partially_published') AND decision_json IS NULL",
-                                          (json.dumps(final), run_id)).rowcount
-            else:
-                approved = any(item["payload"]["decision"] == "approve" for item in reviews.values())
-                changed = self.db.execute("UPDATE hm_runs SET status=? WHERE id=? "
-                                          "AND status IN ('pending_review','partially_published')",
-                                          ("partially_published" if approved else "pending_review", run_id)).rowcount
-            if changed != 1:
-                raise DomainError("review_conflict", "Quyết định đã thay đổi; cần tải lại.")
-        return event
-
-    def finish_review(self, run_id: str):
-        decisions = [event["payload"]["decision"] for event in self.reviews(run_id).values()]
-        status = ("published" if "approve" in decisions else
-                  "needs_revision" if "needs_revision" in decisions else "rejected")
-        with self.db:
-            self.db.execute("UPDATE hm_runs SET status=?,published_at=? WHERE id=? AND status='reviewed'",
-                            (status, utc_now() if status == "published" else None, run_id))
-
-    def pending_runs(self, landlord_id: str) -> list[dict]:
-        rows = self.db.execute("SELECT id FROM hm_runs WHERE status IN "
-                               "('pending_review','partially_published','reviewed') ORDER BY created_at")
-        runs = [self.run(row["id"]) for row in rows]
-        return [run for run in runs if landlord_id in self.landlords(run)]
 
     def create_viewing(self, session: dict, run_id: str, room_id: str, requested_at: str, key: str,
                        landlord_id: str, mode: str = "offline") -> dict:
