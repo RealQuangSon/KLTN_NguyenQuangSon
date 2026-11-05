@@ -6,8 +6,11 @@ Matching runs on diacritic-free, casefolded text with word boundaries.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
 import unicodedata
+from pathlib import Path
 
 
 def fold(text: str) -> str:
@@ -108,3 +111,54 @@ def canonical_area(value: str | None, city: str | None = None) -> str | None:
         return None
     return find_area(value, canonical_city(city)) or " ".join(value.split())
 
+
+
+# --- AG-01: điểm mốc (điểm đến) từ danh mục tĩnh data/places.json ---
+
+_PLACES_PATH = Path(os.getenv(
+    "HOMEMATCH_PLACES_PATH",
+    Path(__file__).resolve().parents[2] / "data" / "places.json"))
+
+
+def _load_places() -> list[dict]:
+    if not _PLACES_PATH.exists():
+        return []
+    return json.loads(_PLACES_PATH.read_text(encoding="utf-8")).get("places", [])
+
+
+_PLACES: list[dict] = _load_places()
+# Longest alias first so "bach khoa ha noi" wins over a bare "bk" inside the same text.
+_PLACE_PATTERNS = sorted(
+    ((place, alias, _pattern(fold(alias))) for place in _PLACES
+     for alias in [*(place.get("names") or []), *(place.get("aliases") or [])]),
+    key=lambda item: -len(fold(item[1])),
+)
+
+
+def resolve_place(text: str, city: str | None = None) -> dict | None:
+    """Tên điểm mốc trong câu → điểm đến có tọa độ (AG-01).
+
+    So khớp fold dấu theo ranh giới từ, ưu tiên alias dài nhất; `city` (khi đã
+    biết) giới hạn kết quả. Hai điểm mốc khác thành phố khớp cùng độ dài alias
+    mà chưa biết thành phố thì trả None (không đoán). Không có điểm mốc ngoài
+    danh mục: trả None để luồng giữ nguyên hành vi cũ (hỏi/sắp theo khu vực)."""
+    if not _PLACE_PATTERNS:
+        return None
+    value = fold(text)
+    matches: dict[str, dict] = {}
+    best = -1
+    for place, alias, pattern in _PLACE_PATTERNS:
+        if city is not None and place["city"] != city:
+            continue
+        if pattern.search(value):
+            length = len(fold(alias))
+            if length > best:
+                best, matches = length, {place["id"]: place}
+            elif length == best:
+                matches.setdefault(place["id"], place)
+    if len(matches) != 1:
+        return None
+    place = next(iter(matches.values()))
+    return {"id": place["id"], "label": place["names"][0], "city": place["city"],
+            "latitude": place["latitude"], "longitude": place["longitude"],
+            "uncertainty_m": place.get("uncertainty_m", 500)}

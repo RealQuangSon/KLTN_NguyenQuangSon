@@ -18,6 +18,9 @@ LOAN_INTENT_PATTERNS = (re.compile(r"\bneu vay\b", re.I),
                         re.compile(r"\bvay\b.*\b\d+\s*thang\b", re.I),
                         re.compile(r"\btra gop\b", re.I),
                         re.compile(r"\blai suat\b", re.I))
+# AG-01: cụm "gần/cạnh/quanh <điểm mốc>" giữ nguyên dấu để tra places.json.
+NEAR_PLACE = re.compile(r"(?:gần|cạnh|quanh)\s+([A-Za-z0-9À-ỹ][A-Za-z0-9À-ỹ .]{0,40}?)"
+                        r"(?=[,.;!?]|\s(?:cho|thuê|tìm|phòng|trọ|căn|dưới|trên|khoảng|giá|người|và|rinh)\b|$)", re.I)
 
 
 def folded(text: str) -> str:
@@ -159,12 +162,14 @@ class DemoInterpreter:
                 negative = any(re.search(r"(?:khong can|khong muon|bo|khong thich)\s+" + re.escape(term), value) for term in terms)
                 (removed if negative else preferences).append(name)
         count = int(people.group(1)) if people else None
+        destination = NEAR_PLACE.search(text)
         return Extraction(
             intent=intent, city=city, area=area,
             room_type=room_type,
             bedrooms=int(bedrooms.group(1)) if bedrooms and 1 <= int(bedrooms.group(1)) <= 5 else None,
             people=count if count is not None and 1 <= count <= 20 else None,
             preferences=preferences,
+            destination_text=destination.group(1).strip() if destination else None,
             needs_destination="gan truong" in value or "gan noi lam" in value,
             accept_estimated_data=bool(re.search(r"(?:chap nhan|dong y|bat)\s+(?:phi|du lieu\s+)?uoc tinh|phi uoc tinh|du lieu uoc tinh", value)),
             remove_preferences=removed,
@@ -182,7 +187,10 @@ room_type chỉ nhận room (phòng trọ/phòng riêng), studio hoặc apartmen
 bedrooms là số phòng ngủ khi người dùng nói rõ (ví dụ "1PN", "2 phòng ngủ"), ngược lại null.
 Thành phố chỉ là TP.HCM hoặc Hà Nội khi được nêu (kể cả "Sài Gòn", "HN"); khu vực ghi theo tên quận như "Quận 7", "Quận Cầu Giấy".
 Chỉ ghi sở thích đã nêu. Từ điển tiện ích: {", ".join(AMENITY_KEYS)}.
-needs_destination=true nếu có yêu cầu gần trường/chỗ làm.
+destination_text là tên điểm mốc người dùng muốn ở gần (trường, bệnh viện, khu công nghiệp, ga,
+trung tâm thương mại) sau từ "gần/cạnh/quanh", ví dụ "gần HUST" → "HUST", giữ nguyên tên gốc;
+chưa nêu thì null.
+needs_destination=true nếu có yêu cầu gần trường/chỗ làm nhưng không nêu tên cụ thể.
 accept_estimated_data=true khi người dùng đồng ý chấp nhận dữ liệu ước tính/giả định chuẩn cho phòng thiếu bảng phí hoặc sức chứa (ví dụ "chấp nhận phí ước tính", "chấp nhận dữ liệu ước tính"); ngược lại false.
 Ghi remove_preferences khi người dùng bỏ ưu tiên cũ; không đồng thời thêm cùng ưu tiên.
 soft_description chỉ mô tả sở thích mềm đã nêu, không số tiền, liên hệ hoặc tiêu chí xác nhận.

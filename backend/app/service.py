@@ -27,9 +27,9 @@ from . import advisor, auth, automation, conversations, copilot, handbook, listi
 from .catalog import Catalog, StoredCatalog
 from .costs import estimate_cost, estimate_with_affordability
 from .interpreter import DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, rent_budget_hint, fixed_intent, make_interpreter, redact
-from .locations import city_for_area
-from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, DomainError, DraftPatch, DraftProfile,
-                     Profile, RoomInput, RoomUpdate, SimulationRequest)
+from .locations import city_for_area, resolve_place
+from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination, DomainError, DraftPatch,
+                     DraftProfile, Profile, RoomInput, RoomUpdate, SimulationRequest)
 from .repository import Repository
 from .organizations import record_audit
 from .operations import Metrics
@@ -329,7 +329,7 @@ class HomeMatchService:
             session = self._session_for(session_id, actor, "renter")
             require("draft:patch", actor, Resource.for_session(session))
             fields = {"city", "area", "people", "preferences", "room_type", "bedrooms",
-                      "needs_destination", "accept_estimated_data", "soft_description"}
+                      "needs_destination", "accept_estimated_data", "soft_description", "destination"}
             if set(patch.set) - fields or set(patch.clear_fields) - fields:
                 raise DomainError("invalid_patch", "Chỉ sửa trường nhu cầu nháp được hỗ trợ.", 422)
             values = json.loads(session["draft_json"])
@@ -1421,6 +1421,16 @@ class HomeMatchService:
                 # Free text never carries contacts or money into the draft.
                 draft.soft_description = redact(extracted["soft_description"])
                 touched.add("soft_description")
+            if extracted.get("destination_text"):
+                # AG-01: tra danh mục điểm mốc tĩnh (không gọi API trả phí) → điểm
+                # đến có tọa độ, xếp hạng theo khoảng cách ở vòng tìm tiếp theo.
+                place = resolve_place(extracted["destination_text"], draft.city)
+                if place:
+                    draft.destination = Destination(
+                        label=place["label"], latitude=place["latitude"], longitude=place["longitude"],
+                        uncertainty_m=place["uncertainty_m"], max_distance_m=3000)
+                    draft.needs_destination = False
+                    touched.add("destination")
             if extracted.get("needs_destination"):
                 draft.needs_destination = True
                 touched.add("needs_destination")

@@ -36,3 +36,9 @@ Schema code ở `backend/app/models.py` là nguồn kiểm tra payload. `null` l
 `Profile` chứa form đã xác nhận, tách khỏi `Extraction` và tiền được nhắc trong chat. Location có accuracy và uncertainty; không suy diễn thời gian di chuyển. `soft_description` chỉ chứa ưu tiên mềm; loại tiền/liên hệ trước embedding.
 
 Import kho bằng CLI backend là merge có kiểm revision; không tự xóa ID bị bỏ khỏi JSON. Dùng DB mới để tái tạo đúng 220 căn của dataset v2, thay vì trộn với kho demo hoặc kho v1 cũ.
+
+## places.json (AG-01, 05/11/2026)
+
+`places.json` là danh mục điểm mốc tĩnh (≥60 trường ĐH, bệnh viện, KCN, ga, bến xe, TTTM, khu đô thị ở TP.HCM và Hà Nội) dùng để hiểu "gần HUST" trong chat và xếp hạng theo khoảng cách. Mỗi mục có `names[]`, `aliases[]` (không dấu, lowercase), `city`, tọa độ và `uncertainty_m`.
+
+**Nguồn tọa độ:** xấp xỉ từ kiến thức địa lý công khai (kiểm chứng thủ công 05/11/2026), độ chính xác cấp toà nhà/khu vực, đã ghi `uncertainty_m` 300–1500 m. Đây không phải dữ liệu đo đạc; engine dùng tọa độ chỉ để xếp khoảng cách tương đối và có ghi nhãn `approximate`. Không gọi geocoder trả phí lúc chạy; muốn nâng độ chính xác sẽ mở task riêng (MP-01 dùng Goong cho đường đi, không ghi đè danh mục).

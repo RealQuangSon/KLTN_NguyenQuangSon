@@ -146,7 +146,8 @@ class Room(Model):
 
 FieldStatus = Literal["unknown", "inferred", "confirmed"]
 DRAFT_TRACKED_FIELDS = ("city", "area", "people", "preferences", "room_type", "bedrooms",
-                        "needs_destination", "accept_estimated_data", "soft_description", "budget_hint")
+                        "needs_destination", "accept_estimated_data", "soft_description", "budget_hint",
+                        "destination")
 
 
 class DraftProfile(Model):
@@ -156,6 +157,9 @@ class DraftProfile(Model):
     budget_hint_vnd: int | None = Field(default=None, gt=0, strict=True)
     people: int | None = Field(default=None, ge=1, le=20, strict=True)
     preferences: list[str] = Field(default_factory=list)
+    # AG-01: điểm đến có tọa độ từ danh mục places.json (inferred từ chat hoặc
+    # confirmed qua form); xếp hạng theo khoảng cách dùng đúng trường này.
+    destination: Destination | None = None
     needs_destination: bool = False
     # Bật chấp nhận dữ liệu ước tính từ hội thoại ("chấp nhận phí/dữ liệu ước tính").
     accept_estimated_data: bool = False
@@ -293,6 +297,8 @@ class Extraction(Model):
     bedrooms: int | None = Field(default=None, ge=1, le=5)
     people: int | None = Field(ge=1, le=20)
     preferences: list[str]
+    # AG-01: cụm "gần <điểm mốc>" nguyên văn để tra danh mục places.json.
+    destination_text: str | None = None
     needs_destination: bool
     # Người dùng đồng ý xem phòng thiếu bảng phí/sức chứa với dữ liệu giả định chuẩn.
     accept_estimated_data: bool = False

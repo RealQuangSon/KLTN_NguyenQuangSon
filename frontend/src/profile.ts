@@ -27,7 +27,8 @@ export function profileFromDraft(draft: Draft | null): Profile | null {
       moving_vnd: 300000,
       setup_vnd: 200000,
     },
-    destination: null,
+    // AG-01: điểm đến do trợ lý suy ra từ chat (places.json) hoặc nhập form.
+    destination: draft.destination ?? null,
   };
 }
 // Sau lần xác nhận đầu, lượt chat đổi nhu cầu (vd. "chấp nhận dữ liệu ước
@@ -60,6 +61,7 @@ export function profileUpdateFromChat(
     );
   if (changed("accept_estimated_data") && after.accept_estimated_data)
     next.accept_estimated_data = true;
+  if (changed("destination")) next.destination = after.destination ?? null;
   if (changed("soft_description"))
     next.soft_description = after.soft_description ?? null;
   return JSON.stringify(next) === JSON.stringify(confirmed) ? null : next;

@@ -110,6 +110,7 @@ export interface Draft {
   people: number | null;
   preferences: string[];
   budget_hint_vnd: number | null;
+  destination?: Destination | null;
   needs_destination: boolean;
   accept_estimated_data?: boolean;
   room_type?: RoomType | null;
