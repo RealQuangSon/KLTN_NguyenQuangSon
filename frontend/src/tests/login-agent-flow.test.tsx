@@ -39,6 +39,21 @@ it("lets a fresh renter type the first message right away: creates the session a
         posts.push({ url, body });
         if (url.endsWith("/sessions"))
           return json({ ...session("session-fresh"), message: undefined });
+        if (url.endsWith("/sessions/session-fresh/messages/stream"))
+          // WS-02: luồng chat trả NDJSON, dòng cuối là done + data đầy đủ.
+          return new Response(
+            JSON.stringify({
+              type: "done",
+              data: {
+                ...session("session-fresh"),
+                intent: "find_room",
+                status: "needs_clarification",
+                message: "Mình đã ghi nhận nhu cầu. Kiểm tra hồ sơ bên phải nhé.",
+                usage: { logical_calls: 1, tokens: 7, mode: "demo_rules" },
+              },
+            }) + "\n",
+            { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+          );
         if (url.endsWith("/sessions/session-fresh/messages"))
           return json({
             ...session("session-fresh"),
@@ -67,7 +82,7 @@ it("lets a fresh renter type the first message right away: creates the session a
   // Đúng thứ tự: tạo phiên rồi gửi câu đầu tiên.
   expect(posts.map((p) => p.url.split("/api").pop())).toEqual([
     "/sessions",
-    "/sessions/session-fresh/messages",
+    "/sessions/session-fresh/messages/stream",
   ]);
   expect(posts[1].body.text).toBe("Tìm nhà trọ 4 triệu một tháng gần HUST");
   // Phiên mở: câu của người dùng + phản hồi trợ lý trong khung chat.

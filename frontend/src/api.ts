@@ -92,6 +92,109 @@ export class Api {
     form.append("file", file);
     return this.request<T>(path, { method: "POST", body: form });
   }
+  // WS-02: đọc luồng NDJSON các bước xử lý — từng dòng {"type":"step",...},
+  // dòng cuối {"type":"done","data"} (hoặc {"type":"error","error"}).
+  // Luồng đứt giữa chừng → ApiError để caller thử lại (tối đa 2 lần).
+  async streamTurn<T>(
+    path: string,
+    body: unknown,
+    onStep?: (step: { name: string; kind: string; detail: string }) => void,
+  ): Promise<T> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.base}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new ApiError(
+        0,
+        "network_error",
+        "Không kết nối được máy chủ. Kiểm tra kết nối rồi thử lại.",
+      );
+    }
+    if (!response.ok || !response.body) {
+      const data = await response.json().catch(() => null);
+      if (response.status === 401) this.onUnauthorized();
+      throw new ApiError(
+        response.status,
+        data?.error?.code || "request_failed",
+        data?.error?.message || `Yêu cầu chưa hoàn tất (${response.status}).`,
+      );
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let done: T | null = null;
+    while (true) {
+      const { value, done: finished } = await reader.read();
+      if (finished) break;
+      buffer += decoder.decode(value, { stream: true });
+      let index: number;
+      while ((index = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 1);
+        if (!line) continue;
+        const event = JSON.parse(line) as {
+          type: string;
+          step?: { name: string; kind: string; detail: string };
+          data?: T;
+          error?: { code: string; message: string };
+        };
+        if (event.type === "step") onStep?.(event.step!);
+        else if (event.type === "done") done = event.data ?? null;
+        else
+          throw new ApiError(
+            0,
+            event.error?.code || "stream_error",
+            event.error?.message || "Lượt xử lý bị gián đoạn.",
+          );
+      }
+    }
+    if (done === null)
+      throw new ApiError(
+        0,
+        "stream_broken",
+        "Luồng xử lý bị đứt trước khi hoàn tất.",
+      );
+    return done;
+  }
+
+  // Gửi một lượt chat: ưu tiên stream bước xử lý; đứt luồng thì thử lại tối đa
+  // 2 lần; vẫn lỗi thì quay về endpoint trả một lần (hành vi cũ).
+  async turn<T>(
+    path: string,
+    body: unknown,
+    onStep?: (step: { name: string; kind: string; detail: string }) => void,
+  ): Promise<T> {
+    const streamPath = `${path}/stream`;
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await this.streamTurn<T>(streamPath, body, onStep);
+      } catch (error) {
+        if (
+          error instanceof ApiError &&
+          error.status >= 400 &&
+          error.status < 500
+        )
+          throw error; // lỗi nghiệp vụ: không thử lại
+        lastError = error;
+      }
+    }
+    try {
+      return await this.post<T>(path, body);
+    } catch (error) {
+      if (lastError instanceof ApiError && !(error instanceof ApiError))
+        throw lastError;
+      throw error;
+    }
+  }
+
   // Ảnh sự cố không công khai: cần bearer token nên phải fetch thủ công rồi
   // trả object URL; component gọi phải URL.revokeObjectURL khi unmount.
   async blobUrl(path: string): Promise<string> {

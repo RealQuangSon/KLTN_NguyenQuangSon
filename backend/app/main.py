@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
 import os
+import json
 import logging
 import threading
 import time
@@ -8,7 +9,7 @@ from typing import Annotated, Callable, Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Query, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -328,6 +329,48 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.post("/sessions/{session_id}/messages", response_model=MessageResult, response_model_exclude_unset=True)
     def message(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
         return agent.message(session_id, actor, body.text, body.cost_input)
+
+    @app.post("/sessions/{session_id}/messages/stream", responses={200: {"content": {
+        "application/x-ndjson": {"schema": {"type": "string",
+                                            "description": "NDJSON: step* rồi done|error"}}}}})
+    def message_stream(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
+        """WS-02: stream NDJSON các bước xử lý — từng dòng
+        {"type":"step","step":{name,kind,detail}} phát ngay khi chạy, dòng cuối
+        {"type":"done","data":<MessageResult>} (hoặc {"type":"error","error":…}).
+        Timeout lượt 60 s ở phía đọc; client thử lại tối đa 2 lần khi đứt."""
+        import queue as _queue
+
+        def generate():
+            events: _queue.Queue = _queue.Queue()
+
+            def worker():
+                try:
+                    result = agent.message(session_id, actor, body.text, body.cost_input,
+                                           emit=lambda step: events.put(("step", step)))
+                    events.put(("done", result))
+                except DomainError as error:
+                    events.put(("error", {"code": error.code, "message": str(error)}))
+                except Exception:
+                    logger.exception("message_stream_failed")
+                    events.put(("error", {"code": "internal_error",
+                                          "message": "Không thể hoàn tất yêu cầu."}))
+
+            threading.Thread(target=worker, name="homematch-turn", daemon=True).start()
+            while True:
+                try:
+                    kind, payload = events.get(timeout=60)
+                except _queue.Empty:
+                    yield json.dumps({"type": "error", "error": {
+                        "code": "turn_timeout", "message": "Lượt xử lý quá 60 giây; hãy thử lại."}},
+                        ensure_ascii=False) + "\n"
+                    break
+                line = json.dumps({"type": kind, "data" if kind == "done" else "step" if kind == "step" else "error": payload},
+                                  ensure_ascii=False) + "\n"
+                yield line
+                if kind in {"done", "error"}:
+                    break
+
+        return StreamingResponse(generate(), media_type="application/x-ndjson")
 
     @app.post("/sessions/{session_id}/confirm", response_model=ResultsResult, response_model_exclude_unset=True)
     def confirm(session_id: str, body: ConfirmRequest, actor: ActorDep, agent: ServiceDep):
@@ -813,6 +856,21 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def revoke_my_session(token_id: str, actor: ActorDep, agent: ServiceDep):
         return revoke_session(agent.repo, actor.id, token_id)
 
+    # WS-02: FastAPI mặc định gắn application/json rỗng cho StreamingResponse —
+    # ghi đè bằng hợp đồng NDJSON thật để openapi.json không "ăn gian" schema.
+    def openapi_with_stream_contract():
+        if not app.openapi_schema:
+            from fastapi.openapi.utils import get_openapi
+            app.openapi_schema = get_openapi(
+                title=app.title, version=app.version, description=app.description,
+                routes=app.routes)
+            operation = app.openapi_schema["paths"]["/sessions/{session_id}/messages/stream"]["post"]
+            operation["responses"]["200"] = {
+                "description": "NDJSON stream: step* rồi done|error",
+                "content": {"application/x-ndjson": {"schema": {"type": "string"}}}}
+        return app.openapi_schema
+
+    app.openapi = openapi_with_stream_contract  # type: ignore[method-assign]
     return app
 
 

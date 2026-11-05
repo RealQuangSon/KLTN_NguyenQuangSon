@@ -194,7 +194,10 @@ class HomeMatchService:
             require("session:read", actor)
             return self._session_projection(self._session_for(session_id, actor, "renter"))
 
-    def message(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None) -> dict:
+    def message(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
+                emit=None) -> dict:
+        """Một lượt chat. `emit` (WS-02) nhận từng sự kiện bước ngay khi chạy:
+        {"name", "kind": router|tool|guardrail|system, "detail"} — không PII."""
         with self.lock:
             session = self._session_for(session_id, actor, "renter")
             require("chat:message", actor, Resource.for_session(session))
@@ -210,6 +213,9 @@ class HomeMatchService:
                     # draft is left untouched. Flagged text on an explicit
                     # deterministic route (cost/support) still runs the engine,
                     # which never reads the message body.
+                    if emit is not None:
+                        emit({"name": "guardrail", "kind": "guardrail",
+                              "detail": "Tin nhắn có dấu hiệu chèn lệnh — cách ly khỏi trợ lý"})
                     response, provenance = quarantine_reply(scan), stamp("deterministic-engine", "injection_quarantine")
                 elif explicit_route is None and viewing_intent(text):
                     response, provenance = self._prepare_viewing(session, actor, text)
@@ -217,7 +223,7 @@ class HomeMatchService:
                     # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
                     # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
                     try:
-                        response, provenance = run_agent_turn(self, session, actor, text)
+                        response, provenance = run_agent_turn(self, session, actor, text, emit=emit)
                     except DomainError as error:
                         if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
                             raise
@@ -233,7 +239,13 @@ class HomeMatchService:
                             provenance = stamp("deterministic-engine", "provider_fallback")
                         response = {**response, "agent_mode": "graph_fallback"}
                 else:
+                    if emit is not None:
+                        emit({"name": "route", "kind": "router",
+                              "detail": "Định tuyến theo luật và agent chuyên trách"})
                     response, provenance = self._chat_turn(session, actor, text, explicit_route, cost_input)
+                    if emit is not None:
+                        emit({"name": str(response.get("intent") or "graph"), "kind": "system",
+                              "detail": "Hệ thống tự bổ sung: trả lời theo nhánh tất định"})
             except DomainError as error:
                 if error.code not in PROVIDER_FALLBACK_CODES:
                     raise

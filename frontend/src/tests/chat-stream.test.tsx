@@ -1,0 +1,178 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Api, ApiError } from "../api";
+import { RenterWorkspace } from "../pages/RenterWorkspace";
+import { RouterProvider } from "../router";
+import type { Session } from "../types";
+import { session } from "./fixtures";
+
+// WS-02: luồng chat ưu tiên stream bước xử lý (NDJSON); hiển thị "Đã xử lý qua
+// N bước" theo bước thật; đứt luồng → thử lại → fallback endpoint cũ.
+
+function ndjsonResponse(lines: unknown[]): Response {
+  const body = lines.map((line) => JSON.stringify(line) + "\n").join("");
+  return new Response(body, {
+    status: 200,
+    headers: { "Content-Type": "application/x-ndjson" },
+  });
+}
+
+const baseSession = session();
+const doneData = {
+  ...baseSession,
+  intent: "find_room",
+  status: "needs_clarification",
+  questions: null,
+  message: "Mình hiểu HUST ở Đại Cồ Việt, Hai Bà Trưng; kết quả đã hiện bên phải.",
+  usage: { logical_calls: 2, tokens: 10, mode: "openai" },
+  steps: [
+    "find_place: điểm mốc Đại học Bách Khoa Hà Nội (Hà Nội)",
+    "search_rooms: 3 căn khớp",
+  ],
+} as unknown as Session & { steps: string[] };
+
+describe("Api.streamTurn", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("parses step events and resolves the done payload", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ndjsonResponse([
+          {
+            type: "step",
+            step: {
+              name: "route",
+              kind: "router",
+              detail: "AI phân tích nhu cầu",
+            },
+          },
+          {
+            type: "step",
+            step: { name: "find_place", kind: "tool", detail: "điểm mốc HUST" },
+          },
+          { type: "done", data: doneData },
+        ]),
+      ),
+    );
+    const api = new Api("token");
+    const seen: string[] = [];
+    const data = await api.streamTurn<typeof doneData>(
+      "/sessions/s/messages/stream",
+      {},
+      (step) => seen.push(`${step.name}: ${step.detail}`),
+    );
+    expect(seen).toEqual([
+      "route: AI phân tích nhu cầu",
+      "find_place: điểm mốc HUST",
+    ]);
+    expect(data.steps).toHaveLength(2);
+  });
+
+  it("throws a friendly ApiError when the stream breaks before done", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        ndjsonResponse([
+          {
+            type: "step",
+            step: { name: "route", kind: "router", detail: "x" },
+          },
+        ]),
+      ),
+    );
+    const api = new Api("token");
+    await expectAsyncError(api.streamTurn("/sessions/s/messages/stream", {}));
+  });
+});
+
+describe("Api.turn retry policy", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("retries a broken stream once and then falls back to the plain POST", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("không phải ndjson", { status: 200 }))
+      .mockRejectedValueOnce(new TypeError("connection reset"));
+    vi.stubGlobal("fetch", fetchMock);
+    const api = new Api("token");
+    const post = vi
+      .spyOn(api, "post")
+      .mockResolvedValue(doneData as unknown as never);
+    const data = await api.turn<typeof doneData>(
+      "/sessions/s/messages/stream",
+      {},
+    );
+    expect(data.steps).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry a 4xx business error", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        { error: { code: "budget_exceeded", message: "Hết ngân sách phiên." } },
+        { status: 429 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const api = new Api("token");
+    const post = vi.spyOn(api, "post");
+    await expectAsyncError(api.turn("/sessions/s/messages", {}));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(post).not.toHaveBeenCalled();
+  });
+});
+
+it("renders the real step list under the assistant reply", async () => {
+  const api = new Api("token");
+  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  vi.spyOn(api, "get").mockImplementation(
+    async (path) =>
+      (path.endsWith("/results")
+        ? {
+            session_id: "session-1",
+            status: "awaiting_confirmation",
+            results: [],
+          }
+        : baseSession) as never,
+  );
+  const turnSpy = vi
+    .spyOn(api, "turn")
+    .mockImplementation(async (_path, _body, onStep) => {
+      onStep?.({ name: "find_place", kind: "tool", detail: "điểm mốc HUST" });
+      return doneData as unknown as never;
+    });
+  render(
+    <RouterProvider>
+      <RenterWorkspace
+        api={api}
+        actor={{ id: "renter-a", role: "renter" }}
+        tab="search"
+      />
+    </RouterProvider>,
+  );
+  const composer = await screen.findByPlaceholderText(
+    "Nhắn cho HomeMatch Agent…",
+  );
+  const user = userEvent.setup();
+  await user.type(composer, "gần HUST");
+  await user.keyboard("{Enter}");
+  expect(turnSpy).toHaveBeenCalled();
+  await screen.findByText(/Mình hiểu/);
+  const disclosure = await screen.findByRole("button", {
+    name: /Đã xử lý qua 2 bước/,
+  });
+  await user.click(disclosure);
+  await screen.findByText(/find_place: điểm mốc Đại học Bách Khoa Hà Nội/);
+  expect(screen.getByText(/search_rooms: 3 căn khớp/)).toBeInTheDocument();
+}, 20000);
+
+async function expectAsyncError(promise: Promise<unknown>) {
+  await expect(promise).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof ApiError &&
+      ["stream_broken", "budget_exceeded"].includes(error.code),
+  );
+}

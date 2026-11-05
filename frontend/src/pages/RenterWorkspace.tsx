@@ -36,6 +36,8 @@ type Message = {
   // FE-07: reply của intent simulate_finance kèm thẻ mô phỏng hoặc nhắc xem lại danh sách.
   simulation?: ChatSimulation | null;
   needsResults?: boolean;
+  // WS-02: các bước xử lý thật của lượt ("tool: mô tả") — bung được sau câu trả lời.
+  steps?: string[];
 };
 // Thẻ mô phỏng trong luồng chat (README §7.4). Bảng kết quả tái dùng đúng
 // component của SimulationPanel nên không viết lại cách format số.
@@ -226,6 +228,8 @@ export function RenterWorkspace({
   );
   // Đánh giá câu trả lời chỉ lưu trên trình duyệt này, không gửi lên máy chủ.
   const [feedback, setFeedback] = useState<null | "up" | "down">(null);
+  // WS-02: bước xử lý đang chạy theo sự kiện thật từ stream ("tên — mô tả").
+  const [turnStep, setTurnStep] = useState<string | null>(null);
   // Căn đã lưu của người thuê: nạp một lần khi vào workspace, tối ưu trên thẻ.
   const [savedIds, setSavedIds] = useState<string[]>([]);
   useEffect(() => {
@@ -433,6 +437,7 @@ export function RenterWorkspace({
       return false;
     } finally {
       lock.current = false;
+      setTurnStep(null);
       if (live.current) setBusy(false);
     }
   };
@@ -464,10 +469,17 @@ export function RenterWorkspace({
       const sid = current.current;
       const value = content.trim();
       if (!sid || !value) return;
-      const response = await api.post<Session>(`/sessions/${sid}/messages`, {
-        text: value,
-      });
+      // WS-02: ưu tiên stream bước xử lý; đứt luồng → thử lại ≤2 lần → fallback POST.
+      const response = await api.turn<Session & { steps?: string[] }>(
+        `/sessions/${sid}/messages`,
+        { text: value },
+        (step) => {
+          if (live.current && current.current === sid)
+            setTurnStep(`${step.name} — ${step.detail}`);
+        },
+      );
       if (live.current && current.current === sid) {
+        setTurnStep(null);
         apply(response);
         putMessages((m) => [
           ...m,
@@ -495,6 +507,8 @@ export function RenterWorkspace({
                 ? (response.simulation ?? null)
                 : null,
             needsResults: response.status === "needs_results",
+            // WS-02: "Đã xử lý qua N bước" bung được theo bước thật.
+            steps: response.steps ?? undefined,
           },
         ]);
       }
@@ -952,73 +966,87 @@ export function RenterWorkspace({
             </button>
           </header>
           <div className="agent-chat-body" aria-live="polite" ref={messageList}>
-            {messages.length === 0 ? (
+            {messages.length === 0 && !busy ? (
               <p className="subtle">
                 Bạn có thể tiếp tục chia sẻ nhu cầu. Nội dung hội thoại không
                 được lưu trên trình duyệt sau khi đăng xuất.
               </p>
             ) : (
-              messages.map((m, i) => (
-                <div className={`chat-message ${m.role}`} key={i}>
-                  <span className="visually-hidden">
-                    {m.role === "assistant" ? "Trợ lý HomeMatch" : "Bạn"}
-                  </span>
-                  <p>{m.text}</p>
-                  {m.simulation && (
-                    <SimulationMessage simulation={m.simulation} />
-                  )}
-                  {m.needsResults && (
-                    <button
-                      type="button"
-                      className="button small outline"
-                      onClick={() => {
-                        // Danh sách gợi ý thuộc phiên; về đúng màn list của
-                        // khách rồi cuộn tới bảng kết quả (cùng cơ chế điều
-                        // hướng với openConversation, không phụ thuộc provider).
-                        setSideView("rooms");
-                        setShowMap(true);
-                        window.history.pushState(null, "", "/tro-ly-ai");
-                        window.dispatchEvent(new PopStateEvent("popstate"));
-                        document
-                          .getElementById("results-panel")
-                          ?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                          });
-                      }}
-                    >
-                      Xem danh sách gợi ý <Icon name="arrow" size={14} />
-                    </button>
-                  )}
-                  {m.role === "assistant" &&
-                    i === lastAssistantIdx &&
-                    !busy && (
-                      <div
-                        className="chat-feedback"
-                        aria-label="Đánh giá câu trả lời"
-                      >
-                        <button
-                          type="button"
-                          aria-label="Hữu ích"
-                          aria-pressed={feedback === "up"}
-                          title="Đánh giá chỉ lưu trên máy này"
-                          onClick={() => rate("up")}
-                        >
-                          <Icon name="thumbUp" size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Chưa hữu ích"
-                          aria-pressed={feedback === "down"}
-                          title="Đánh giá chỉ lưu trên máy này"
-                          onClick={() => rate("down")}
-                        >
-                          <Icon name="thumbDown" size={14} />
-                        </button>
-                      </div>
+              <>
+                {busy && turnStep && (
+                  <p
+                    className="chat-turn-step"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Đang xử lý — bước: {turnStep}
+                  </p>
+                )}
+                {messages.map((m, i) => (
+                  <div className={`chat-message ${m.role}`} key={i}>
+                    <span className="visually-hidden">
+                      {m.role === "assistant" ? "Trợ lý HomeMatch" : "Bạn"}
+                    </span>
+                    <p>{m.text}</p>
+                    {m.steps && m.steps.length > 0 && (
+                      <StepsDisclosure steps={m.steps} />
                     )}
-                </div>
-              ))
+                    {m.simulation && (
+                      <SimulationMessage simulation={m.simulation} />
+                    )}
+                    {m.needsResults && (
+                      <button
+                        type="button"
+                        className="button small outline"
+                        onClick={() => {
+                          // Danh sách gợi ý thuộc phiên; về đúng màn list của
+                          // khách rồi cuộn tới bảng kết quả (cùng cơ chế điều
+                          // hướng với openConversation, không phụ thuộc provider).
+                          setSideView("rooms");
+                          setShowMap(true);
+                          window.history.pushState(null, "", "/tro-ly-ai");
+                          window.dispatchEvent(new PopStateEvent("popstate"));
+                          document
+                            .getElementById("results-panel")
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                        }}
+                      >
+                        Xem danh sách gợi ý <Icon name="arrow" size={14} />
+                      </button>
+                    )}
+                    {m.role === "assistant" &&
+                      i === lastAssistantIdx &&
+                      !busy && (
+                        <div
+                          className="chat-feedback"
+                          aria-label="Đánh giá câu trả lời"
+                        >
+                          <button
+                            type="button"
+                            aria-label="Hữu ích"
+                            aria-pressed={feedback === "up"}
+                            title="Đánh giá chỉ lưu trên máy này"
+                            onClick={() => rate("up")}
+                          >
+                            <Icon name="thumbUp" size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Chưa hữu ích"
+                            aria-pressed={feedback === "down"}
+                            title="Đánh giá chỉ lưu trên máy này"
+                            onClick={() => rate("down")}
+                          >
+                            <Icon name="thumbDown" size={14} />
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </>
             )}
             {busy && (
               <div className="chat-typing" role="status">

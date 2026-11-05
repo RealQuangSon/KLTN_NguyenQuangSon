@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 
 from pydantic import ValidationError
 
@@ -215,7 +216,8 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
     }
 
 
-def run_turn(service, session: dict, actor, text: str) -> tuple[dict, dict]:
+def run_turn(service, session: dict, actor, text: str,
+             emit=None) -> tuple[dict, dict]:
     """Một lượt chat chạy bằng vòng lặp tool. Trả về (response, provenance).
 
     Chỉ gọi khi `HOMEMATCH_LLM_MODE=openai`; mọi lỗi provider/budget/step nổ ra
@@ -239,6 +241,10 @@ def run_turn(service, session: dict, actor, text: str) -> tuple[dict, dict]:
     tool_payloads: list[str] = []
     usage_total = {"logical_calls": 0, "tokens": 0, "saw_none": False}
     response_dict: dict | None = None
+    turn_started = time.monotonic()
+    # WS-02: phát sự kiện bước ngay khi chạy; timeout lượt 60 s do endpoint giữ.
+    if emit is not None:
+        emit({"name": "route", "kind": "router", "detail": "AI phân tích nhu cầu"})
 
     def finalize(answer: str, questions: list[str] | None, mode_note: str | None = None):
         return {"intent": "find_room", "status": "needs_clarification", "message": answer,
@@ -246,6 +252,9 @@ def run_turn(service, session: dict, actor, text: str) -> tuple[dict, dict]:
                 "steps": [f"{entry['tool']}: {entry['detail']}" for entry in steps] or None}
 
     for _ in range(MAX_AGENT_STEPS):
+        if time.monotonic() - turn_started > 55:
+            response_dict = finalize(SAFE_REPLY, None)
+            break
         service.budget.spend(session["id"])
         try:
             completion = interpreter.client.chat.completions.create(
@@ -301,6 +310,8 @@ def run_turn(service, session: dict, actor, text: str) -> tuple[dict, dict]:
                 elif isinstance(result, dict) and result.get("saved"):
                     detail = "đã ghi nháp: " + ", ".join(result.get("fields") or [])
                 steps.append({"tool": name, "detail": str(detail)[:160]})
+                if emit is not None:
+                    emit({"name": name, "kind": "tool", "detail": str(detail)[:160]})
                 messages.append({"role": "tool", "tool_call_id": call.id, "content": payload})
                 if name == "ask_user" and isinstance(result, dict) and result.get("error") is None:
                     question = result.get("question") or ""
