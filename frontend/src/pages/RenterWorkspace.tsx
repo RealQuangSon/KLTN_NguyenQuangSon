@@ -98,6 +98,40 @@ function PreviewSkeleton({ label }: { label: string }) {
     </div>
   );
 }
+// AG-05: mã phòng trong câu trả lời bấm được — mở xem nhanh đúng căn đang có
+// trong kết quả; mã ngoài danh sách hiển thị chữ thường (không bấm được).
+const ROOM_ID_PATTERN =
+  /((?:chotot-\d+|synthetic-room-\d{1,3}|demo-\d{1,3}|room-[0-9a-f]{10}))/g;
+function RoomRefText({
+  text,
+  rooms,
+  onPick,
+}: {
+  text: string;
+  rooms: Candidate[];
+  onPick: (room: Candidate) => void;
+}) {
+  const parts = text.split(ROOM_ID_PATTERN);
+  return (
+    <p>
+      {parts.map((part, index) => {
+        const found = rooms.find((item) => item.room_id === part);
+        return found ? (
+          <button
+            key={index}
+            type="button"
+            className="text-button"
+            onClick={() => onPick(found)}
+          >
+            {part}
+          </button>
+        ) : (
+          part
+        );
+      })}
+    </p>
+  );
+}
 // "Đã xử lý qua N bước" kiểu workspace tham chiếu: bung được các bước pipeline
 // deterministic đã chạy thật (số liệu do máy chủ tính, không bịa).
 function StepsDisclosure({ steps }: { steps: string[] }) {
@@ -1027,7 +1061,15 @@ export function RenterWorkspace({
                     <span className="visually-hidden">
                       {m.role === "assistant" ? "Trợ lý HomeMatch" : "Bạn"}
                     </span>
-                    <p>{m.text}</p>
+                    {m.role === "assistant" ? (
+                      <RoomRefText
+                        text={m.text}
+                        rooms={resultList}
+                        onPick={(room) => setViewRoom(room)}
+                      />
+                    ) : (
+                      <p>{m.text}</p>
+                    )}
                     {m.steps && m.steps.length > 0 && (
                       <StepsDisclosure steps={m.steps} />
                     )}

@@ -20,8 +20,8 @@ from langgraph.graph import END, START, StateGraph
 
 from .agent_budget import SessionCallBudget
 from .agent_capability import Resource, require, require_session_role
-from .agent_guard import (PROVIDER_FALLBACK_CODES, finance_room_reference, provider_fallback_reply,
-                          quarantine_reply, redact_tree, room_reference, screen_injection,
+from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fallback_reply,
+                          quarantine_reply, redact_tree, resolve_room_reference, screen_injection,
                           viewing_intent, viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
 from .agent_loop import run_turn as run_agent_turn
@@ -321,13 +321,13 @@ class HomeMatchService:
         this session before anything is created. The viewing itself is still
         created by the explicit request_viewing form action with time + key."""
         require("viewing:prepare", actor, Resource.for_session(session))
-        room_id = room_reference(text)
+        result = self.results(session["id"], actor)
+        room_id = resolve_room_reference(text, result["results"])
         if room_id is None:
+            if mention_room_id(text):
+                raise DomainError("not_visible", "Phòng chưa thuộc kết quả hiện tại.", 403)
             return viewing_prep_missing_room_reply(), stamp("deterministic-engine", "viewing_prepare",
                                                             outcome="missing_room_reference")
-        result = self.results(session["id"], actor)
-        if room_id not in {item["room_id"] for item in result["results"]}:
-            raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý hiện tại.", 403)
         reply = {"intent": "find_room", "status": "needs_clarification",
                  "questions": [f"Phòng {room_id} đang trong bản gợi ý hiện tại (phiên bản hồ sơ "
                                f"{result['profile_version']}). Chọn thời gian xem có múi giờ trong tương lai "
@@ -424,21 +424,8 @@ class HomeMatchService:
         return base.model_copy(update=updates) if updates else base
 
     def room_reference_in(self, ref: str, visible: dict) -> str | None:
-        """AG-13: mã phòng hoặc 'căn số N / căn đầu / căn cuối' — chỉ id nằm trong
-        kết quả hiện tại. AG-05 sẽ nâng thành resolver đầy đủ trong agent_guard."""
-        room_id = room_reference(ref) or finance_room_reference(ref)
-        if room_id and room_id in visible:
-            return room_id
-        ids = list(visible)
-        match = re.search(r"căn\s*(?:số|thứ)\s*(\d+)", ref, re.I)
-        if match:
-            index = int(match.group(1)) - 1
-            return ids[index] if 0 <= index < len(ids) else None
-        if re.search(r"căn\s*(đầu|đầu tiên|dầu tiên)", ref, re.I) and ids:
-            return ids[0]
-        if re.search(r"căn\s*(cuối|cuối cùng)", ref, re.I) and ids:
-            return ids[-1]
-        return None
+        """AG-05: resolver đầy đủ trong agent_guard, bó trong danh sách đang có."""
+        return resolve_room_reference(ref, [{"room_id": room_id} for room_id in visible])
 
     def _suggested_prompts(self, session_id: str) -> list[str]:
         """WS-01: gợi ý tiếp theo tất định theo trạng thái phiên (không LLM, không số lạ)."""
@@ -1566,7 +1553,6 @@ class HomeMatchService:
     def _build_chat_graph(self):
         # Graph-only imports (AG-02): loan parsing stays with the interpreter and
         # the finance room-id pattern with the guard, outside other service code.
-        from .agent_guard import finance_room_reference
         from .interpreter import merge_loan_terms, parse_loan_terms
 
         def route(state: ChatState):
@@ -1682,8 +1668,8 @@ class HomeMatchService:
                 return reply(status="needs_clarification",
                              questions=["Bạn muốn vay trong bao nhiêu tháng (1–36 tháng)?"])
             visible_by_id = {item["room_id"]: item for item in visible["results"]}
-            mentioned = finance_room_reference(state["text"])
-            if mentioned is not None and mentioned not in visible_by_id:
+            mentioned = resolve_room_reference(state["text"], visible["results"])
+            if mentioned is None and mention_room_id(state["text"]):
                 raise DomainError("not_visible", "Chỉ mô phỏng phòng trong kết quả hiện tại.", 403)
             item = visible_by_id.get(mentioned) or visible["results"][0]
             room = next(room for room in self.catalog.rooms() if room.id == item["room_id"])
@@ -1743,7 +1729,8 @@ class HomeMatchService:
 
         def handbook_node(state: ChatState):
             # Retrieval only: platform entries and, when a listing is named, that landlord's house rules.
-            room_id = room_reference(state["text"])
+            visible = self.results(state["session_id"], state["actor"])["results"]
+            room_id = resolve_room_reference(state["text"], visible)
             room = next((room for room in self.catalog.rooms() if room.id == room_id), None) if room_id else None
             found = state["toolbox"].call("handbook", "search_handbook", handbook.answer, state["text"],
                                           room.house_rules if room else None)

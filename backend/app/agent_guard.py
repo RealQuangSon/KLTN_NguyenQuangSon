@@ -97,6 +97,61 @@ def finance_room_reference(text: str) -> str | None:
     return match.group(0) if match else None
 
 
+# AG-05: resolver tham chiếu căn — id đầy đủ (mọi nguồn: Chợ Tốt, synthetic,
+# room-hash, demo), thứ tự trong danh sách ("căn số 2", "căn thứ hai", "căn
+# đầu/cuối") hoặc tiêu đề rút gọn duy nhất. CHỈ trả id nằm trong visible_items
+# của run hiện tại; câu không nhắc căn → None, không đoán.
+ROOM_ID_PATTERNS = (re.compile(r"\b(chotot-\d+)\b", re.I),
+                    re.compile(r"\b(synthetic-room-\d{1,3})\b", re.I),
+                    re.compile(r"\b(room-[0-9a-f]{10})\b", re.I),
+                    re.compile(r"\b(demo-\d{1,3})\b", re.I))
+ROOM_ORDINAL_NUMBER = re.compile(r"căn\s*(?:số|thứ)\s*(\d{1,2})", re.I)
+ROOM_ORDINAL_WORDS = {"hai": 2, "ba": 3, "bốn": 4, "bon": 4, "năm": 5, "nam": 5, "một": 1, "mot": 1}
+ROOM_ORDINAL_WORD = re.compile(r"căn\s*(?:thứ|thu|số)?\s*(hai|ba|bốn|bon|năm|nam|một|mot)\b", re.I)
+ROOM_FIRST = re.compile(r"căn\s*(?:đầu|dầu|đầu tiên|first)", re.I)
+ROOM_LAST = re.compile(r"căn\s*(?:cuối|cuối cùng|last)", re.I)
+
+
+def mention_room_id(text: str) -> str | None:
+    """Token dạng mã phòng trong câu (bất kể có trong danh sách hay không) —
+    dùng để phân biệt 'không nhắc căn' với 'nhắc căn ngoài kết quả hiện tại'."""
+    for pattern in ROOM_ID_PATTERNS:
+        match = pattern.search(text)
+        if match:
+            return match.group(1)
+    return None
+
+
+def resolve_room_reference(text: str, visible_items: list) -> str | None:
+    """Câu nói → room_id trong danh sách đang hiển thị, hoặc None."""
+    ids = [item.get("room_id") for item in visible_items if item.get("room_id")]
+    if not ids:
+        return None
+    value = folded(text)
+    for pattern in ROOM_ID_PATTERNS:
+        match = pattern.search(text)
+        if match and match.group(1) in ids:
+            return match.group(1)
+    ordinal = ROOM_ORDINAL_NUMBER.search(text)
+    if ordinal:
+        index = int(ordinal.group(1)) - 1
+        return ids[index] if 0 <= index < len(ids) else None
+    word = ROOM_ORDINAL_WORD.search(text)
+    if word:
+        position = ROOM_ORDINAL_WORDS[word.group(1).lower()]
+        return ids[position - 1] if position <= len(ids) else None
+    if ROOM_FIRST.search(text):
+        return ids[0]
+    if ROOM_LAST.search(text):
+        return ids[-1]
+    matches = []
+    for room_id, item in zip(ids, visible_items):
+        title = folded((item.get("title") or "").split(". ")[0])
+        if len(title) >= 6 and title in value:
+            matches.append(room_id)
+    return matches[0] if len(matches) == 1 else None
+
+
 # Provider failures keep their taxonomy codes. At the chat boundary they turn
 # into this deterministic guided-form fallback; nothing is ever fabricated to
 # replace the missing extraction. Budget exhaustion (budget_exceeded) is always

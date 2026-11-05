@@ -5,7 +5,7 @@
     "backend/app/advisor.py": "7368fe7ecab32d7f6ee42e03a62ff8496775aec364455a3eec31802bf3ab49ce",
     "backend/app/agent_budget.py": "152c5173ea33ad88251c8df14a79869b53ae97aeeffcfbb7d437d1339b4d4a0c",
     "backend/app/agent_capability.py": "65deaff53b98363adb363f4211fff20875841ac4f8bfcee9a9c91075bdfbb370",
-    "backend/app/agent_guard.py": "0c42a1e76d0e346d29cbb78bcbd42213acbe4ff54bf780f65e4f544e0ac6ccdf",
+    "backend/app/agent_guard.py": "a87d9a0e316a357e3c81e7c502d45ee2be6c3c7879ada62fc94fe20d1558317b",
     "backend/app/agent_loop.py": "e0796d934cf8099fb891b8eb404bbbc2ba20b4a9d9c6809c430121d5c064c1ef",
     "backend/app/agent_provenance.py": "98bd2e7a3d269aba3b08fff0b54d6c270b2e79714e66e90d48786f002e9e1e4a",
     "backend/app/agents.py": "e5f1e871458310ce300f1557a776fe26f514a20471027183b870a4b2f728285e",
@@ -36,7 +36,7 @@
     "backend/app/repository.py": "2d02009bc4948e05e88ed418361d9842ac924636d0d79792e361b675c893b212",
     "backend/app/schemas.py": "caf21b87706d3bd8c2b6248d76477c57f26d6e15aa1fd67e7a985d8536c3525a",
     "backend/app/semantic.py": "ab4f7793d1b7bd25eaca42bb04c9ac0275e10824abc6b151ca01ae99d729a5cd",
-    "backend/app/service.py": "68aa3ae3503ea90d244cba1a1090430bc6d24d572560a8beb6855ddb170a7b56",
+    "backend/app/service.py": "57828fd54aac987d7f10ff2af8819aa0bf8a1c0544f8dd9428ce9a7d3f8d2886",
     "data/generate.py": "f0a782f9963d734566d0a8c26807d1c223dacc13fcadced05dcf111c0cdfe8f5",
     "eval/__init__.py": "9064bcade47312dfebf8ac237cd27a2a80bd7fcf9b3726826c9f1c2d686d2512",
     "eval/__main__.py": "c477dbc218a2b7579b6cee94b221fb62b4d8a81ef628885708a1baf0c507591d",
@@ -143,7 +143,7 @@
         "soft_description": null
       },
       "group_id": "profile-001",
-      "machine_latency_ms": 0.5373,
+      "machine_latency_ms": 0.5583,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -187,7 +187,7 @@
         "soft_description": null
       },
       "group_id": "profile-001",
-      "machine_latency_ms": 0.1771,
+      "machine_latency_ms": 0.1773,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -231,7 +231,7 @@
         "soft_description": null
       },
       "group_id": "profile-002",
-      "machine_latency_ms": 0.273,
+      "machine_latency_ms": 0.2666,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -274,7 +274,7 @@
         "soft_description": null
       },
       "group_id": "profile-003",
-      "machine_latency_ms": 0.1684,
+      "machine_latency_ms": 0.1725,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -316,7 +316,7 @@
         "soft_description": null
       },
       "group_id": "profile-004",
-      "machine_latency_ms": 0.1359,
+      "machine_latency_ms": 0.1199,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -400,7 +400,7 @@
         "soft_description": null
       },
       "group_id": "profile-005",
-      "machine_latency_ms": 0.12,
+      "machine_latency_ms": 0.1054,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -442,7 +442,7 @@
         "soft_description": null
       },
       "group_id": "profile-006",
-      "machine_latency_ms": 0.1252,
+      "machine_latency_ms": 0.1149,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -573,7 +573,7 @@
         "soft_description": null
       },
       "group_id": "profile-009",
-      "machine_latency_ms": 0.0933,
+      "machine_latency_ms": 0.0928,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -617,7 +617,7 @@
         "soft_description": null
       },
       "group_id": "profile-009",
-      "machine_latency_ms": 0.1188,
+      "machine_latency_ms": 0.1181,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -658,7 +658,7 @@
         "soft_description": null
       },
       "group_id": "profile-010",
-      "machine_latency_ms": 0.1099,
+      "machine_latency_ms": 0.1097,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -698,7 +698,7 @@
         "soft_description": null
       },
       "group_id": "profile-031",
-      "machine_latency_ms": 0.0981,
+      "machine_latency_ms": 0.101,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -741,7 +741,7 @@
         "soft_description": null
       },
       "group_id": "profile-032",
-      "machine_latency_ms": 0.1227,
+      "machine_latency_ms": 0.1247,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -784,7 +784,7 @@
         "soft_description": null
       },
       "group_id": "profile-035",
-      "machine_latency_ms": 0.0547,
+      "machine_latency_ms": 0.0541,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -826,7 +826,7 @@
         "soft_description": null
       },
       "group_id": "profile-036",
-      "machine_latency_ms": 0.102,
+      "machine_latency_ms": 0.1008,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -866,7 +866,7 @@
         "soft_description": null
       },
       "group_id": "profile-040",
-      "machine_latency_ms": 0.126,
+      "machine_latency_ms": 0.1257,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
