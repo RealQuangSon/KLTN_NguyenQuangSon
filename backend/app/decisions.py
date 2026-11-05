@@ -7,6 +7,7 @@ trên xác suất `count` của lớp 2, ghi `decided_by="fallback"`, không ch�
 from __future__ import annotations
 
 import json
+import math
 import os
 
 AUTO_THRESHOLD = 0.80
@@ -16,18 +17,23 @@ DECISION_TIMEOUT_S = 2.0
 
 
 def _jev_payload(clarification: dict, context: dict) -> dict:
-    """Request Jev: state đã qua redact (không tiền tuyệt đối, SĐT, email,
-    thu nhập — caller chịu trách nhiệm, ở đây chỉ kiểm lại miền giá trị)."""
+    """Request Jev theo Decisions API: `state` là object, `questions` khóa theo
+    tên, câu `choice` có `criteria` = {id phương án: mô tả}. State đã qua redact
+    (không tiền tuyệt đối, SĐT, email, thu nhập — caller chịu trách nhiệm, ở đây
+    chỉ kiểm lại miền giá trị)."""
+    from .clarify import question_for
     state = json.dumps(context, ensure_ascii=False)
     for banned in ("monthly_income_vnd", "@", "090", "091", "092", "093",
                    "032", "035", "038", "039", "070", "083", "zalo.me"):
         if banned in state:
             raise ValueError(f"context carries banned token: {banned}")
     return {"model": DECISION_MODEL,
-            "state": state,
-            "questions": [{"id": "clarify", "type": "choice",
-                           "criteria": [{"id": option["id"], "label": option["label"]}
-                                        for option in clarification["options"]]}]}
+            "state": context,
+            "questions": {"clarify": {
+                "type": "choice",
+                "instructions": "Dựa trên hội thoại và nhu cầu nháp trong state, khách nhiều khả năng "
+                                f"chọn phương án nào cho câu hỏi: {question_for(clarification.get('field', ''))}",
+                "criteria": {option["id"]: option["label"] for option in clarification["options"]}}}}
 
 
 def _rules(clarification: dict) -> tuple[str, dict | None]:
@@ -67,15 +73,21 @@ def decide(clarification: dict, context: dict, *, client=None,
                 json=_jev_payload(clarification, context))
         if response.status_code != 200:
             raise RuntimeError(f"jev_http_{response.status_code}")
-        data = response.json()
-        answer = (data.get("answers") or [{}])[0]
-        chosen = answer.get("choice_id")
-        probability = float(answer.get("probability") or 0.0)
+        answer = (response.json().get("answers") or {}).get("clarify") or {}
+        probabilities = answer.get("probabilities") or {}
         options = {option["id"]: option for option in clarification["options"]}
-        best = options.get(chosen)
-        if best is None:
+        best = options.get(answer.get("choice"))
+        if best is None or not probabilities:
             raise RuntimeError("jev_unknown_choice")
-        if probability >= AUTO_THRESHOLD:
+        # Kiểm toàn bộ trước khi ghi: response hỏng không được làm lệch luật dự phòng.
+        parsed = {key: float(probabilities.get(key, 0.0)) for key in options}
+        if not all(math.isfinite(p) and 0 <= p <= 1 for p in parsed.values()):
+            raise ValueError("jev_invalid_probability")
+        # Chip xếp theo xác suất của Jev (cao nhất đứng đầu).
+        for option in clarification["options"]:
+            option["probability"] = round(parsed[option["id"]], 4)
+        clarification["options"].sort(key=lambda option: -option["probability"])
+        if best["probability"] >= AUTO_THRESHOLD:
             return "accept", best, "jev", None
         return "ask", best, "jev", None
     except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat

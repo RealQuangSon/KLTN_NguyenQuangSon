@@ -102,13 +102,46 @@ def test_jev_fake_accepts_and_falls_back_on_error():
          "interpretation": {"field": "budget", "kind": "rent_cap", "scope": "rent"}},
     ]}
     fake = SimpleNamespace(post=lambda url, json=None: SimpleNamespace(
-        status_code=200, json=lambda: {"answers": [{"choice_id": "opt-1", "probability": 0.9}]}))
+        status_code=200, json=lambda: {"answers": {"clarify": {
+            "type": "choice", "choice": "opt-1", "probabilities": {"opt-0": 0.1, "opt-1": 0.9},
+            "confidence": 0.8}}}))
     decision, best, decided_by, _ = decisions.decide(clarification, {}, client=fake, mode="jev")
     assert decision == "accept" and best["id"] == "opt-1" and decided_by == "jev"
+    # Chip xếp lại theo xác suất của Jev.
+    assert [option["id"] for option in clarification["options"]] == ["opt-1", "opt-0"]
+
+    unsure = SimpleNamespace(post=lambda url, json=None: SimpleNamespace(
+        status_code=200, json=lambda: {"answers": {"clarify": {
+            "type": "choice", "choice": "opt-0", "probabilities": {"opt-0": 0.6, "opt-1": 0.4}}}}))
+    decision, best, decided_by, _ = decisions.decide(clarification, {}, client=unsure, mode="jev")
+    assert decision == "ask" and best["id"] == "opt-0" and decided_by == "jev"
 
     broken = SimpleNamespace(post=lambda url, json=None: (_ for _ in ()).throw(RuntimeError("boom")))
     decision, best, decided_by, error = decisions.decide(clarification, {}, client=broken, mode="jev")
     assert decided_by == "fallback" and decision == "ask" and error == "RuntimeError"
+
+
+def test_jev_payload_matches_decisions_api_shape():
+    clarification = {"field": "destination", "options": [
+        {"id": "opt-0", "label": "Trong 2 km"}, {"id": "opt-1", "label": "Trong 5 km"}]}
+    body = decisions._jev_payload(clarification, {"draft": {"city": "Hà Nội"}})
+    assert body["state"] == {"draft": {"city": "Hà Nội"}}
+    question = body["questions"]["clarify"]
+    assert question["type"] == "choice" and question["instructions"]
+    assert question["criteria"] == {"opt-0": "Trong 2 km", "opt-1": "Trong 5 km"}
+
+
+@pytest.mark.parametrize("bad", ["invalid", float("nan"), float("inf"), -0.1, 1.1])
+def test_jev_invalid_probabilities_keep_rules_unchanged(bad):
+    clarification = {"options": [
+        {"id": "a", "label": "A", "probability": 0.5},
+        {"id": "b", "label": "B", "probability": 0.5}]}
+    fake = SimpleNamespace(post=lambda *args, **kwargs: SimpleNamespace(
+        status_code=200, json=lambda: {"answers": {"clarify": {
+            "choice": "a", "probabilities": {"a": 0.99, "b": bad}}}}))
+    decision, _, decided_by, error = decisions.decide(clarification, {}, client=fake, mode="jev")
+    assert (decision, decided_by, error) == ("ask", "fallback", "ValueError")
+    assert [option["probability"] for option in clarification["options"]] == [0.5, 0.5]
 
 
 def test_jev_payload_never_carries_money_or_pii():
