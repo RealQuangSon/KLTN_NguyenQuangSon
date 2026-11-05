@@ -548,7 +548,7 @@ class HomeMatchService:
             self.repo.update_draft(session_id, draft, patch.expected_draft_revision)
             return {**self.session(session_id, actor), "status": "needs_clarification", "questions": self._questions(session_id)}
 
-    def _questions(self, session_id: str) -> list[str]:
+    def _questions(self, session_id: str, has_changes: bool = True) -> list[str]:
         session = self.repo.session(session_id)
         draft = DraftProfile.model_validate_json(session["draft_json"])
         confirmed = json.loads(session["profile_json"]) if session["profile_json"] else {}
@@ -565,8 +565,27 @@ class HomeMatchService:
             if draft.budget_hint_vnd:
                 notes.append("mức tiền nhắc được hiểu là trần TỔNG THÁNG, mặc định 1 người 1 xe")
             tail = ("; ".join(notes) + " — sai thì sửa trong \"Nhu cầu của tôi\"") if notes else "bạn có thể nhắn thêm tiện ích muốn ưu tiên"
-            questions.append(f"Mình chạy tìm theo nhu cầu đã nắm ({tail}). "
-                             "Kết quả sẽ tự hiện ở khung bên phải trong chốc lát.")
+            # AG-03: chỉ hứa run mới khi lượt vừa ĐỔI nhu cầu; nhu cầu không đổi
+            # thì nói thật là danh sách hiện tại vẫn đúng.
+            outcome = ("Kết quả sẽ tự hiện ở khung bên phải trong chốc lát." if has_changes
+                       else "Danh sách hiện tại vẫn đúng với nhu cầu của bạn.")
+            questions.append(f"Mình chạy tìm theo nhu cầu đã nắm ({tail}). {outcome}")
+        # AG-03: run hiện tại bị giữ vì thiếu sức chứa/bảng phí → hỏi rõ kèm số
+        # tin, đề nghị "chấp nhận dữ liệu ước tính" (khách bấm mới bật, không
+        # bao giờ bật ngầm).
+        if draft.city or draft.area:
+            if session["active_run_id"] and not draft.accept_estimated_data:
+                try:
+                    run = self.repo.run(session["active_run_id"])
+                except Exception:
+                    run = None
+                if run and run["status"] == "needs_verification":
+                    verification = (run.get("diagnostics") or {}).get("verification") or {}
+                    held = sum(count for key, count in verification.items()
+                               if key in {"availability_or_capacity", "monthly_fees", "initial_fees"})
+                    if held:
+                        questions.append(f"Có {held} tin thiếu sức chứa/bảng phí trong kho. "
+                                         "Nhắn “chấp nhận dữ liệu ước tính” để xem kèm nhãn ước tính?")
         return questions[:2]
 
     def results(self, session_id: str, actor: Actor) -> dict:
@@ -1656,7 +1675,7 @@ class HomeMatchService:
                 draft.evidence_ref[field] = evidence
             state["toolbox"].call("needs", "update_draft", self.repo.update_draft,
                                   session["id"], draft, session["draft_revision"])
-            questions = self._questions(session["id"])
+            questions = self._questions(session["id"], has_changes=bool(touched))
             if needs_budget_baseline:
                 # Không có mức cũ để nới/giảm: hỏi rõ, không đoán (AG-02).
                 questions = ["Mình chưa nắm mức tổng tháng hiện tại của bạn; cho mình biết mức muốn áp "
