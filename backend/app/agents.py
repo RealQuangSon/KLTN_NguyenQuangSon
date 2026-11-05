@@ -17,10 +17,14 @@ from typing import Callable
 from .models import DomainError
 
 AGENT_TOOLS: dict[str, frozenset[str]] = {
-    "needs": frozenset({"extract_needs", "update_draft", "read_memory"}),
-    "finance": frozenset({"calculate_cost", "assess_affordability", "estimate_loan", "simulate_scenarios"}),
+    "needs": frozenset({"extract_needs", "update_draft", "read_memory",
+                        # AG-13: tool của vòng lặp agent (chỉ chạy khi mode openai).
+                        "find_place", "update_needs", "search_rooms", "confirm_and_search",
+                        "ask_user", "room_details", "prepare_viewing"}),
+    "finance": frozenset({"calculate_cost", "assess_affordability", "estimate_loan", "simulate_scenarios",
+                          "estimate_cost"}),
     "ranking": frozenset({"match_catalog", "semantic_scores", "explain_candidate"}),
-    "support": frozenset({"request_support"}),
+    "support": frozenset({"request_support", "open_landlord_chat"}),
     "handbook": frozenset({"search_handbook"}),
 }
 MAX_STEPS = 4

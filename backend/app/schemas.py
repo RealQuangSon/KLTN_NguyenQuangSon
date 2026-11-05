@@ -63,6 +63,10 @@ class MessageResult(SessionResult):
     house_rules: list[str] | None = None
     disclaimer: str | None = None
     usage: Usage
+    # AG-13: các bước tool vòng lặp agent đã chạy ("tool: mô tả", không PII) và
+    # chế độ chạy ("loop" | "graph_fallback", chỉ có ở chế độ openai).
+    steps: list[str] | None = None
+    agent_mode: str | None = None
     # Where this turn's content came from (user/deterministic-engine/interpreter + node).
     provenance: dict | None = None
     # Injection/privacy screening outcome for the turn (flag, patterns, redactions).

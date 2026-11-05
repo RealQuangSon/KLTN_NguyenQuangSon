@@ -1,6 +1,6 @@
 # Bằng chứng đánh giá phát triển HomeMatch — split `dev`
 
-Stage: `development` · rankings hash: `bed4e6f3273e3e3b…` · catalog hash: `e339343fd4548c6f…`
+Stage: `development` · rankings hash: `63174673b33a03b8…` · catalog hash: `e339343fd4548c6f…`
 
 Mọi bảng dưới đây truy được về artifact trong `evidence_index.csv`. Đây là kết quả phát triển/khám phá, **không phải kết quả nghiên cứu**: nhãn relevance người chấm và phép đo GPT/P thật còn thiếu.
 
@@ -109,10 +109,10 @@ Items kiểm tra: 48 · claims: 142 · không hỗ trợ: 0
 
 | Pha | Số mẫu | p50 | p95 | Model calls |
 |---|---|---|---|---|
-| extraction | 18 | 0.1295 | 0.5608 | 0 |
-| finance_oracle | 22 | 0.0418 | 0.1231 | 0 |
-| ranking_B1 | 15 | 7.4698 | 9.2384 | 0 |
-| ranking_P | 15 | 7.065 | 30.6058 | 0 |
+| extraction | 18 | 0.1158 | 0.5653 | 0 |
+| finance_oracle | 22 | 0.0423 | 0.0885 | 0 |
+| ranking_B1 | 15 | 6.9402 | 7.4793 | 0 |
+| ranking_P | 15 | 6.9246 | 29.5778 | 0 |
 
 Tổng logical model calls: 0 · thời gian chờ duyệt: `excluded_machine_phases_only`. Không suy ra latency provider thật từ các số này.
 

@@ -111,6 +111,7 @@ Agent guardrails live in `agent_guard.py`, `agent_budget.py` (per-session LLM bu
 
 **Agents and memory:**
 - Chat graph nodes: `route` (supervisor), `interview` (needs agent), `finance`, `support`, `handbook`.
+- In `openai` mode a turn may run the **agent loop** (`agent_loop.py`, AG-13): the model reasons and calls tools itself (`find_place`, `update_needs`, `search_rooms`, `confirm_and_search`, `ask_user`, …) through `ToolBox.call` with `MAX_AGENT_STEPS = 6`. Money fields are read deterministically from the user's own sentence, never written by the model; tool results are stripped of income before they reach the model; numbers in the reply are checked against user text + tool results and replaced by a template on mismatch. Demo mode and provider/budget failures fall back to the graph above (`agent_mode="graph_fallback"`).
 - The recommendation graph has no interrupt or resume; its `rank` node acts as the ranking agent.
 - Every business call from a graph goes through `ToolBox.call(agent, tool, fn, ...)`, which enforces the per-agent allowlist and a 4-step limit. New tools must be added to `AGENT_TOOLS`.
 - Memory never stores money, income, loans or destinations. It prefills drafts only as `inferred`. Withdrawing consent deletes it.

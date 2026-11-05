@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
@@ -18,10 +19,11 @@ from langgraph.graph import END, START, StateGraph
 
 from .agent_budget import SessionCallBudget
 from .agent_capability import Resource, require, require_session_role
-from .agent_guard import (PROVIDER_FALLBACK_CODES, provider_fallback_reply,
+from .agent_guard import (PROVIDER_FALLBACK_CODES, finance_room_reference, provider_fallback_reply,
                           quarantine_reply, redact_tree, room_reference, screen_injection,
                           viewing_intent, viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
+from .agent_loop import run_turn as run_agent_turn
 from .agents import ToolBox
 from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
 from .catalog import Catalog, StoredCatalog
@@ -29,7 +31,7 @@ from .costs import estimate_cost, estimate_with_affordability
 from .interpreter import DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, rent_budget_hint, fixed_intent, make_interpreter, redact
 from .locations import city_for_area, resolve_place
 from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination, DomainError, DraftPatch,
-                     DraftProfile, Profile, RoomInput, RoomUpdate, SimulationRequest)
+                     DraftProfile, Profile, RoomInput, RoomUpdate, Scenario, SimulationRequest)
 from .repository import Repository
 from .organizations import record_audit
 from .operations import Metrics
@@ -211,6 +213,25 @@ class HomeMatchService:
                     response, provenance = quarantine_reply(scan), stamp("deterministic-engine", "injection_quarantine")
                 elif explicit_route is None and viewing_intent(text):
                     response, provenance = self._prepare_viewing(session, actor, text)
+                elif isinstance(self.interpreter, OpenAIInterpreter):
+                    # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
+                    # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
+                    try:
+                        response, provenance = run_agent_turn(self, session, actor, text)
+                    except DomainError as error:
+                        if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
+                            raise
+                        provider_error = error.code
+                        try:
+                            response, provenance = self._chat_graph_turn(session, actor, text,
+                                                                         explicit_route, cost_input, spend=False)
+                        except DomainError as inner:
+                            if inner.code not in PROVIDER_FALLBACK_CODES:
+                                raise
+                            # Graph cũ cũng lỗi provider → trả biểu mẫu có nhãn mã.
+                            response = provider_fallback_reply(inner.code)
+                            provenance = stamp("deterministic-engine", "provider_fallback")
+                        response = {**response, "agent_mode": "graph_fallback"}
                 else:
                     response, provenance = self._chat_turn(session, actor, text, explicit_route, cost_input)
             except DomainError as error:
@@ -256,7 +277,12 @@ class HomeMatchService:
 
     def _chat_turn(self, session: dict, actor: Actor, text: str, explicit_route: str | None,
                    cost_input: CostRequest | None) -> tuple[dict, dict]:
-        if explicit_route is None:
+        """Graph cũ (demo mode); agent loop đã chiếm nhánh openai ở message()."""
+        return self._chat_graph_turn(session, actor, text, explicit_route, cost_input, spend=True)
+
+    def _chat_graph_turn(self, session: dict, actor: Actor, text: str, explicit_route: str | None,
+                         cost_input: CostRequest | None, spend: bool = True) -> tuple[dict, dict]:
+        if explicit_route is None and spend:
             # One logical interpreter/provider call per extraction turn; attempts
             # count even when the provider fails.
             self.budget.spend(session["id"])
@@ -284,6 +310,126 @@ class HomeMatchService:
                  "message": f"Đã kiểm tra phòng {room_id} đủ điều kiện đặt lịch; chưa tạo lịch xem."}
         return reply, stamp("deterministic-engine", "viewing_prepare", room_id=room_id,
                             run_id=result["run_id"], outcome="prepared")
+
+    # --- AG-13: helpers cho vòng lặp agent ---
+
+    def _draft(self, session_id: str) -> DraftProfile:
+        return DraftProfile.model_validate_json(self.repo.session(session_id)["draft_json"])
+
+    def _apply_agent_patch(self, session_id: str, patch: dict) -> list[str]:
+        """Ghi nháp từ tool update_needs: chỉ trường nhu cầu được cấp, trạng thái
+        `inferred` với evidence `agent:rN`. Tiền/quyền bị chặn ở lớp tool."""
+        with self.repo.guard():
+            session = self.repo.session(session_id)
+            draft = DraftProfile.model_validate_json(session["draft_json"])
+            allowed = {"city", "area", "people", "room_type", "bedrooms", "preferences",
+                       "needs_destination", "accept_estimated_data", "soft_description", "destination"}
+            touched = set(patch) & allowed
+            for key, value in patch.items():
+                setattr(draft, key, value)
+            evidence = f"agent:r{session['draft_revision'] + 1}"
+            for key in touched:
+                draft.field_status[key] = "inferred"
+                draft.evidence_ref[key] = evidence
+            updated = DraftProfile.model_validate(draft.model_dump())
+            self.repo.update_draft(session_id, updated, session["draft_revision"])
+        return sorted(touched)
+
+    def _apply_chat_budget_hint(self, session_id: str, hint: int, expected_revision: int):
+        """Mức tiền trong câu khách (rent_budget_hint) ghi tất định vào nháp,
+        trạng thái inferred — bất biến: chỉ là gợi ý, chưa phải trần."""
+        with self.repo.guard():
+            session = self.repo.session(session_id)
+            draft = DraftProfile.model_validate_json(session["draft_json"])
+            draft.budget_hint_vnd = hint
+            draft.field_status["budget_hint"] = "inferred"
+            draft.evidence_ref["budget_hint"] = f"agent:r{expected_revision + 1}"
+            self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
+                                   expected_revision)
+
+    def _confirmed_profile(self, session_id: str) -> Profile:
+        session = self.repo.session(session_id)
+        if not session["profile_json"]:
+            raise DomainError("no_profile", "Chưa có hồ sơ đã xác nhận.", 409)
+        return Profile.model_validate_json(session["profile_json"])
+
+    def _profile_from_draft(self, session_id: str) -> Profile | None:
+        """Hồ sơ từ nháp (chưa ghi gì): lần đầu dùng mức tiền nháp làm trần như
+        auto-confirm ở FE; sau khi đã xác nhận chỉ áp trường nháp có bằng chứng
+        (chat/agent/form), KHÔNG đổi trần tiền — tiền chỉ là gợi ý tới khi khách
+        xác nhận qua form. None khi chưa đủ dữ liệu tối thiểu."""
+        session = self.repo.session(session_id)
+        draft = DraftProfile.model_validate_json(session["draft_json"])
+        scenario = Scenario(people=draft.people or 1, vehicles=1, electricity_kwh="140",
+                            water_m3="3", moving_vnd=300_000, setup_vnd=200_000)
+        if not session["profile_json"]:
+            if not draft.city or draft.budget_hint_vnd is None:
+                return None
+            return Profile(city=draft.city, area=draft.area, room_type=draft.room_type or "room",
+                           min_bedrooms=draft.bedrooms if (draft.room_type == "apartment" and draft.bedrooms) else None,
+                           max_monthly_cost_vnd=draft.budget_hint_vnd, scenario=scenario,
+                           preferences=list(draft.preferences), destination=draft.destination,
+                           soft_description=draft.soft_description,
+                           accept_estimated_data=draft.accept_estimated_data)
+        base = Profile.model_validate_json(session["profile_json"])
+        evidence = draft.evidence_ref
+        updates: dict = {}
+        if evidence.get("city") and draft.city:
+            updates["city"] = draft.city
+        if evidence.get("area"):
+            updates["area"] = draft.area
+        if evidence.get("room_type") and draft.room_type:
+            updates["room_type"] = draft.room_type
+            updates["min_bedrooms"] = draft.bedrooms if (
+                draft.room_type == "apartment" and evidence.get("bedrooms")) else None
+        scenario_update = {}
+        if evidence.get("people") and draft.people:
+            scenario_update["people"] = draft.people
+        if evidence.get("preferences"):
+            updates["preferences"] = [item for item in draft.preferences
+                                      if item not in base.must_amenities]
+        if evidence.get("destination"):
+            updates["destination"] = draft.destination
+        if evidence.get("accept_estimated_data") and draft.accept_estimated_data:
+            updates["accept_estimated_data"] = True
+        if evidence.get("soft_description"):
+            updates["soft_description"] = draft.soft_description
+        if scenario_update:
+            updates["scenario"] = base.scenario.model_copy(update=scenario_update)
+        return base.model_copy(update=updates) if updates else base
+
+    def room_reference_in(self, ref: str, visible: dict) -> str | None:
+        """AG-13: mã phòng hoặc 'căn số N / căn đầu / căn cuối' — chỉ id nằm trong
+        kết quả hiện tại. AG-05 sẽ nâng thành resolver đầy đủ trong agent_guard."""
+        room_id = room_reference(ref) or finance_room_reference(ref)
+        if room_id and room_id in visible:
+            return room_id
+        ids = list(visible)
+        match = re.search(r"căn\s*(?:số|thứ)\s*(\d+)", ref, re.I)
+        if match:
+            index = int(match.group(1)) - 1
+            return ids[index] if 0 <= index < len(ids) else None
+        if re.search(r"căn\s*(đầu|đầu tiên|dầu tiên)", ref, re.I) and ids:
+            return ids[0]
+        if re.search(r"căn\s*(cuối|cuối cùng)", ref, re.I) and ids:
+            return ids[-1]
+        return None
+
+    def _agent_context(self, session: dict) -> dict:
+        """Ngữ cảnh lượt agent: nháp + hồ sơ đã xác nhận (bỏ thu nhập) + 6 lượt
+        chat gần nhất đã PII-mask tại lúc ghi. Không bao gồm thu nhập."""
+        draft = DraftProfile.model_validate_json(session["draft_json"])
+        confirmed = json.loads(session["profile_json"]) if session["profile_json"] else None
+        if confirmed:
+            confirmed.pop("monthly_income_vnd", None)
+        rows = self.repo.db.execute(
+            "SELECT speaker,text FROM hm_chat_transcripts WHERE session_id=? "
+            "ORDER BY created_at DESC LIMIT 6", (session["id"],)).fetchall()
+        return {"draft": draft.model_dump(mode="json"),
+                "confirmed_profile": confirmed,
+                "recent_chat": [f"{row['speaker']}: {row['text']}" for row in reversed(rows)],
+                "notes": "draft.budget_hint_vnd là mức tiền khách nêu (gợi ý trần tổng tháng); "
+                         "destination chỉ đặt qua update_needs sau khi find_place tra được."}
 
     def agent_trace(self, session_id: str, actor: Actor) -> dict:
         """Redacted diagnostics of the last chat turn and result read. Service-level

@@ -13992,6 +13992,16 @@
             "type": "array",
             "title": "Preferences"
           },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Destination"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "needs_destination": {
             "type": "boolean",
             "title": "Needs Destination",
@@ -15498,6 +15508,31 @@
           },
           "usage": {
             "$ref": "#/components/schemas/Usage"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          },
+          "agent_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Mode"
           },
           "provenance": {
             "anyOf": [
