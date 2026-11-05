@@ -2,6 +2,8 @@
 
 ## HARNESS — HN-00 (06/11/2026)
 
+HN-03 bổ sung registry chung 22 tool (10 exposed), Args Pydantic, schema/allowlist/capability/view sinh tự động, envelope và handler cho tool mới trong một file. Schema v17 giữ khóa lượt/tool cùng transaction; retry không cộng tiền tương đối hoặc tạo run đôi, cache bỏ thu nhập/PII, dọn theo retention và từ chối replay khi nháp/kho đã đổi. FE dùng chung UUID qua stream retry và POST. Review độc lập đã sửa các lỗi replay, identifier và parity mô phỏng tài chính. Bằng chứng: pytest 542 pass / 8 skip; Vitest 105 pass, typecheck exit 0; kiểm check-local cuối ghi ở [review HN-03](review/HN-03.md). Chưa chạy live/Neon/PostgreSQL/E2E trình duyệt.
+
 Đã sửa định dạng Jev Decisions API: state object, questions.clarify theo khóa, criteria theo id; đọc answers.clarify.choice/probabilities và xếp chip. Review độc lập tìm và sửa lỗi cập nhật xác suất dở khi provider trả dữ liệu hỏng. Bằng chứng offline: `.venv/bin/python -m pytest -q` exit 0 (487 pass, 8 skip); `bash infra/check-local.sh` exit 0 (Vitest 105 pass, build/demo/smoke và eval qua). Bằng chứng live bàn giao từ người dùng ngày 06/11: HTTP 200, 0,85–1,14 s, khoảng 0,00002 USD/lần, decided_by=jev; phiên làm việc này không gọi live, không thử Neon hoặc PostgreSQL. Chi tiết: [review HN-00](review/HN-00.md).
 
 **Cập nhật:** 05/10/2026, sau đợt E1–E6 (5 phân hệ); bổ sung 08/10/2026 (đợt BE/FE/AG/DA); đối chiếu lại code 09/10/2026. **Code:** API 0.4.0 mở rộng (100 đường dẫn, 110 thao tác; `docs/openapi.json` khớp app), schema ledger **v13**. **Dữ liệu:** dataset v2 (220 căn, 4 chủ nhà). Đối chiếu với [danh mục yêu cầu](yeu-cau-san-pham.md) và [cổng nghiệm thu](tieu-chi-nghiem-thu.md#cổng-hoàn-thành).

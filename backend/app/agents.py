@@ -12,21 +12,15 @@ intent is explicit.
 """
 from __future__ import annotations
 
+from threading import Lock
 from typing import Callable
 
+from pydantic import ValidationError
+
+from .agent_tools import TOOL_REGISTRY, public_result, tools_by_agent
 from .models import DomainError
 
-AGENT_TOOLS: dict[str, frozenset[str]] = {
-    "needs": frozenset({"extract_needs", "update_draft", "read_memory",
-                        # AG-13: tool của vòng lặp agent (chỉ chạy khi mode openai).
-                        "find_place", "update_needs", "search_rooms", "confirm_and_search",
-                        "ask_user", "room_details", "prepare_viewing"}),
-    "finance": frozenset({"calculate_cost", "assess_affordability", "estimate_loan", "simulate_scenarios",
-                          "estimate_cost"}),
-    "ranking": frozenset({"match_catalog", "semantic_scores", "explain_candidate"}),
-    "support": frozenset({"request_support", "open_landlord_chat", "open_conversation"}),
-    "handbook": frozenset({"search_handbook"}),
-}
+AGENT_TOOLS: dict[str, frozenset[str]] = tools_by_agent()
 MAX_STEPS = 4
 
 
@@ -37,15 +31,49 @@ class ToolBox:
         self.max_steps = max_steps
         self.calls: list[dict] = []
         self.denied: list[dict] = []
+        self._lock = Lock()
 
     def call(self, agent: str, tool: str, function: Callable, *args, **kwargs):
-        if tool not in AGENT_TOOLS.get(agent, frozenset()):
-            self.denied.append({"agent": agent, "tool": tool})
-            raise DomainError("tool_not_allowed", f"Agent {agent} không được dùng công cụ {tool}.", 403)
-        if len(self.calls) >= self.max_steps:
-            raise DomainError("agent_step_limit", "Lượt xử lý vượt số bước cho phép.", 429)
-        self.calls.append({"agent": agent, "tool": tool})
+        # Chỉ giữ khóa khi dành bước; tool chỉ đọc được chạy song song ở executor.
+        with self._lock:
+            if tool not in AGENT_TOOLS.get(agent, frozenset()):
+                self.denied.append({"agent": agent, "tool": tool})
+                raise DomainError("tool_not_allowed", f"Agent {agent} không được dùng công cụ {tool}.", 403)
+            if len(self.calls) >= self.max_steps:
+                raise DomainError("agent_step_limit", "Lượt xử lý vượt số bước cho phép.", 429)
+            self.calls.append({"agent": agent, "tool": tool})
         return function(*args, **kwargs)
 
+    def invoke(self, name: str, function: Callable, arguments: dict) -> dict:
+        """Biên model: kiểm schema rồi gọi qua allowlist và chuẩn hóa kết quả.
+
+        Graph cũ tiếp tục dùng call() để nhận object nghiệp vụ nguyên bản.
+        Không ghi tham số lỗi hay nội dung exception vào phản hồi của provider.
+        """
+        definition = TOOL_REGISTRY.get(name)
+        if definition is None:
+            return {"ok": False, "error": "tool_unavailable", "message": "Công cụ không có trong registry.",
+                    "hint": "Chọn một công cụ trong danh sách được cấp."}
+        try:
+            parsed = definition.Args.model_validate(arguments)
+            result = self.call(definition.agent, name, function,
+                               **parsed.model_dump(mode="json", exclude_unset=True))
+            return {"ok": True, "data": public_result(result)}
+        except ValidationError:
+            return {"ok": False, "error": "invalid_patch" if name == "update_needs" else "invalid_arguments",
+                    "message": "Tham số chưa đúng hợp đồng công cụ.",
+                    "hint": "Dùng đúng tên trường và kiểu dữ liệu trong schema; không gửi trường tiền hay quyền."}
+        except DomainError as error:
+            return {"ok": False, "error": error.code, "message": definition.redact(str(error)),
+                    "hint": {"unknown_place": "Gọi find_place để kiểm chứng điểm mốc trước.",
+                             "needs_more_info": "Hỏi thành phố và mức tiền trước khi tìm.",
+                             "not_visible": "Chọn căn trong kết quả hiện tại hoặc workspace.",
+                             "stale_profile": "Đọc lại hồ sơ và xác nhận revision hiện tại."}.get(
+                                 error.code, "Kiểm tra thông tin từ khách và sửa tham số trước khi thử lại.")}
+        except Exception:
+            return {"ok": False, "error": "tool_failed", "message": "Công cụ tạm chưa xử lý được yêu cầu.",
+                    "hint": "Thử lại hoặc đề nghị khách dùng biểu mẫu."}
+
     def summary(self, agent: str) -> dict:
-        return {"agent": agent, "tools": [item["tool"] for item in self.calls], "steps": len(self.calls)}
+        with self._lock:
+            return {"agent": agent, "tools": [item["tool"] for item in self.calls], "steps": len(self.calls)}

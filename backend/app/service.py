@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import sqlite3
@@ -202,7 +203,48 @@ class HomeMatchService:
             return self._session_projection(self._session_for(session_id, actor, "renter"))
 
     def message(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
-                emit=None, workspace: dict | None = None) -> dict:
+                emit=None, workspace: dict | None = None, turn_id: str | None = None) -> dict:
+        """Retry cùng khóa trả lại lượt đã hoàn tất; quyền luôn kiểm trước cache.
+
+        Một transaction bao toàn bộ thay đổi nghiệp vụ và cache; checkpoint không
+        phải nguồn quyết định quyền hay công bố. Chỉ một worker như CLAUDE.md.
+        """
+        turn_id = turn_id or str(uuid4())
+        uuid_key = re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", turn_id)
+        if (not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", turn_id)
+                or (not uuid_key and redact(turn_id) != turn_id)):
+            raise DomainError("invalid_turn_id", "Mã lượt không hợp lệ.", 422)
+        request_hash = hashlib.sha256(json.dumps(
+            {"text": text, "workspace": workspace,
+             "cost_input": cost_input.model_dump(mode="json") if cost_input else None},
+            sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        with self.lock:
+            session = self._session_for(session_id, actor, "renter")
+            require("chat:message", actor, Resource.for_session(session))
+            with self.repo.guard():
+                previous = self.repo.db.execute(
+                    "SELECT * FROM hm_agent_requests WHERE session_id=? AND turn_id=?",
+                    (session_id, turn_id)).fetchone()
+                if previous:
+                    if previous["request_hash"] != request_hash:
+                        raise DomainError("idempotency_conflict", "Mã lượt đã dùng cho nội dung khác.", 409)
+                    if (previous["result_revision"] != session["draft_revision"]
+                            or previous["catalog_version"] != self.catalog.version):
+                        raise DomainError("stale_turn", "Nhu cầu hoặc kho đã đổi; hãy gửi một lượt mới.", 409)
+                    return {**self.session(session_id, actor), **json.loads(previous["response_json"])}
+                result = self._message_once(session_id, actor, text, cost_input, emit, workspace, turn_id)
+                # Không nhân bản hồ sơ/thu nhập vào cache lượt; chỉ lưu phản hồi đã che PII.
+                envelope = {key: value for key, value in result.items()
+                            if key not in self._session_projection(session)}
+                from .agent_tools import public_result
+                envelope = public_result(envelope, for_renter=True)
+                self.repo.db.execute("INSERT INTO hm_agent_requests VALUES(?,?,?,?,?,?,?)",
+                    (session_id, turn_id, request_hash, json.dumps(envelope, ensure_ascii=False),
+                     result["draft_revision"], self.catalog.version, conversations.utc_now()))
+                return {**self.session(session_id, actor), **envelope}
+
+    def _message_once(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
+                      emit=None, workspace: dict | None = None, turn_id: str | None = None) -> dict:
         """Một lượt chat. `emit` (WS-02) nhận từng sự kiện bước ngay khi chạy:
         {"name", "kind": router|tool|guardrail|system, "detail"} — không PII."""
         with self.lock:
@@ -240,7 +282,7 @@ class HomeMatchService:
                     # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
                     # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
                     try:
-                        response, provenance = run_agent_turn(self, session, actor, text, emit=emit)
+                        response, provenance = run_agent_turn(self, session, actor, text, emit=emit, turn_id=turn_id)
                     except DomainError as error:
                         if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
                             raise
@@ -282,7 +324,7 @@ class HomeMatchService:
                 "input_redacted": redact(text),
             }
             self._store_transcript(session_id, actor.id, text, response, provenance, scan.flagged)
-            return {**self.session(session_id, actor), **response, "usage": usage,
+            return {**self.session(session_id, actor), **response, "turn_id": turn_id, "usage": usage,
                     "provenance": provenance, "guard": guard}
 
     def _store_transcript(self, session_id: str, user_id: str, text: str, response: dict, provenance: dict,
@@ -302,6 +344,8 @@ class HomeMatchService:
     def purge_transcripts(self) -> int:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=CHAT_RETENTION_DAYS)).isoformat()
         with self.repo.db:
+            self.repo.db.execute("DELETE FROM hm_agent_requests WHERE created_at<?", (cutoff,))
+            self.repo.db.execute("DELETE FROM hm_agent_tool_calls WHERE created_at<?", (cutoff,))
             return self.repo.db.execute("DELETE FROM hm_chat_transcripts WHERE created_at<?", (cutoff,)).rowcount
 
     def _chat_turn(self, session: dict, actor: Actor, text: str, explicit_route: str | None,

@@ -35,7 +35,7 @@
 | FR-18 | Khách xem top căn kèm giải thích, chi phí, băng tài chính, khoản vay | CB | Đã có | AC-10 |
 | FR-19 | So sánh trực quan 2–3 căn: bảng, nhãn "Tốt nhất", biểu đồ chi phí | NC | Đã có | AC-10 |
 | FR-20 | Gửi yêu cầu xem căn; chủ nhà của căn xác nhận | CB | Đã có | AC-10 |
-| FR-21 | Multi-agent: supervisor và các agent nhu cầu, tài chính, xếp hạng, cẩm nang, hỗ trợ; danh sách tool riêng | NC | Đã có | AC-11 |
+| FR-21 | Multi-agent: supervisor và các agent nhu cầu, tài chính, xếp hạng, cẩm nang, hỗ trợ; danh sách tool riêng | NC | Đã có; HN-03 (06/11): registry sinh schema/quyền/view, hợp đồng tool và khóa retry bền (kiểm offline; chưa PG/live) | AC-11 |
 | FR-22 | Memory sở thích xuyên phiên khi khách đồng ý | NC | Đã có | AC-12 |
 | FR-23 | Đánh giá độ chính xác và độ hài lòng | NC | Một phần (CLI eval có; chưa có nhãn người chấm và khảo sát) | [eval](../eval/PLAN.md) |
 | FR-24 | Kho phòng, studio, căn hộ tại TP.HCM và Hà Nội | CB | Đã có (31/10: tin đăng có thêm nội dung tin đã che SĐT/email, ngày đăng, loại người đăng, phường cũ/mới, tên đường, ngày trống, kỳ thanh toán, thời hạn tối thiểu và 19 khóa tiện ích; trường mới đều `null` khi tin không ghi; áp cho catalog demo Chợ Tốt crawler 2.2. FC-01 31/10: mô tả, nội quy và features_text do chủ nhà nhập cũng được server che SĐT/email lúc tạo/sửa tin, trang tin công khai không hiện số liên hệ nào) | AC-13 |

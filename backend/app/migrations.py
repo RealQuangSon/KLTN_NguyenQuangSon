@@ -314,6 +314,20 @@ MIGRATIONS = (
         UPDATE hm_runs SET status='invalidated'
             WHERE status IN ('pending_review','partially_published','reviewed');
     """),
+    (17, "agent_tool_idempotency", """
+        CREATE TABLE IF NOT EXISTS hm_agent_requests (
+            session_id TEXT NOT NULL REFERENCES hm_sessions(id), turn_id TEXT NOT NULL,
+            request_hash TEXT NOT NULL, response_json TEXT NOT NULL,
+            result_revision INTEGER NOT NULL, catalog_version TEXT NOT NULL, created_at TEXT NOT NULL,
+            PRIMARY KEY(session_id, turn_id)
+        );
+        CREATE TABLE IF NOT EXISTS hm_agent_tool_calls (
+            session_id TEXT NOT NULL REFERENCES hm_sessions(id), turn_id TEXT NOT NULL,
+            tool TEXT NOT NULL, args_hash TEXT NOT NULL, idempotency_key TEXT NOT NULL,
+            result_json TEXT NOT NULL, created_at TEXT NOT NULL,
+            PRIMARY KEY(session_id, turn_id, tool, args_hash)
+        );
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

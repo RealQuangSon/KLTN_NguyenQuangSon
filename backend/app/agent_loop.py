@@ -13,11 +13,13 @@ from __future__ import annotations
 import json
 import re
 import time
+from functools import partial
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from .agent_provenance import stamp
+from .agent_guard import redact, redact_tree
 from .agents import ToolBox
 from .locations import resolve_place
 from .models import Destination, DomainError
@@ -38,43 +40,9 @@ Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền kh�
 Trả lời bằng tiếng Việt, ngắn gọn, nói rõ các bước đã làm."""
 
 
-def _tool(name: str, description: str, properties: dict, required: list[str]) -> dict:
-    return {"type": "function", "function": {
-        "name": name, "description": description,
-        "parameters": {"type": "object", "properties": properties,
-                       "required": required, "additionalProperties": False}}}
+from .agent_tools import TOOL_REGISTRY, tool_specs, workspace_view
 
-
-TOOL_SPECS = [
-    _tool("find_place", "Tra điểm mốc (trường, bệnh viện, KCN, ga, bến xe, TTTM, khu đô thị) theo tên/không dấu.",
-          {"query": {"type": "string"}, "city_hint": {"type": "string", "enum": ["TP.HCM", "Hà Nội"]}},
-          ["query"]),
-    _tool("update_needs", "Ghi nhu cầu đã kiểm chứng vào nháp. Chỉ các trường: city, area, people, room_type,"
-          " bedrooms, preferences (danh sách tiện ích), needs_destination, accept_estimated_data,"
-          " soft_description, destination_text (điểm mốc đã tra bằng find_place)."
-          " Cấm mọi trường tiền/thu nhập; mức tiền khách nêu đã được ghi tự động.",
-          {"patch": {"type": "object"}}, ["patch"]),
-    _tool("search_rooms", "Xem trước số căn khớp nhu cầu nháp (không ghi gì): số căn, giá thấp nhất, lý do bị loại.",
-          {}, []),
-    _tool("confirm_and_search", "Xác nhận hồ sơ từ nháp và chạy vòng tìm; trả trạng thái, số căn và top căn.",
-          {}, []),
-    _tool("ask_user", "Kết thúc lượt bằng MỘT câu hỏi ngắn + các lựa chọn ngắn để khách bấm;"
-          " lựa chọn phải đến từ kết quả find_place/search_rooms.",
-          {"question": {"type": "string"},
-           "options": {"type": "array", "items": {"type": "string"}, "maxItems": 4}},
-          ["question"]),
-    _tool("room_details", "Chi tiết một căn trong kết quả hiện tại theo mã phòng hoặc 'căn số N'.",
-          {"room_ref": {"type": "string"}}, ["room_ref"]),
-    _tool("estimate_cost", "Tính chi phí tháng/vào ở/khoản vay cho một căn trong kết quả hiện tại (tool tất định).",
-          {"room_id": {"type": "string"}}, ["room_id"]),
-    _tool("search_handbook", "Tra cẩm nang quyền lợi người thuê (nội quy, cọc, tạm trú…).",
-          {"question": {"type": "string"}}, ["question"]),
-    _tool("open_landlord_chat", "Mở hội thoại với chủ nhà của một căn trong kết quả hiện tại.",
-          {"room_ref": {"type": "string"}}, ["room_ref"]),
-    _tool("prepare_viewing", "Kiểm tra căn trong kết quả hiện tại có đặt lịch được không (chưa tạo lịch;"
-          " khách bấm xác nhận trên giao diện thì lịch mới được tạo).",
-          {"room_ref": {"type": "string"}}, ["room_ref"]),
-]
+TOOL_SPECS = tool_specs()
 TOOL_NAMES = frozenset(spec["function"]["name"] for spec in TOOL_SPECS)
 
 
@@ -219,42 +187,29 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
         return {"prepared": True, "room_id": item["room_id"],
                 "note": "Căn đủ điều kiện đặt lịch; khách chọn giờ và bấm 'Yêu cầu xem' thì lịch mới được tạo."}
 
-    return {
-        "find_place": {"agent": "needs", "fn": find_place},
-        "update_needs": {"agent": "needs", "fn": update_needs},
-        "search_rooms": {"agent": "needs", "fn": search_rooms},
-        "confirm_and_search": {"agent": "needs", "fn": confirm_and_search},
-        "ask_user": {"agent": "needs", "fn": ask_user},
-        "room_details": {"agent": "needs", "fn": room_details},
-        "estimate_cost": {"agent": "finance", "fn": estimate_cost},
-        "search_handbook": {"agent": "handbook", "fn": search_handbook},
-        "open_landlord_chat": {"agent": "support", "fn": open_landlord_chat},
-        "open_conversation": {"agent": "support", "fn": open_landlord_chat},
-        "prepare_viewing": {"agent": "needs", "fn": prepare_viewing},
-    }
+    handlers = {"find_place": find_place, "update_needs": update_needs,
+                "search_rooms": search_rooms, "confirm_and_search": confirm_and_search,
+                "ask_user": ask_user, "room_details": room_details, "estimate_cost": estimate_cost,
+                "search_handbook": search_handbook, "open_landlord_chat": open_landlord_chat,
+                "open_conversation": open_landlord_chat, "prepare_viewing": prepare_viewing}
+    for name, definition in TOOL_REGISTRY.items():
+        if definition.handler is not None:
+            handlers[name] = partial(definition.handler, service, session, actor, toolbox)
+    return {name: {"agent": TOOL_REGISTRY[name].agent, "fn": fn} for name, fn in handlers.items()}
 
 
 def pick_view(tool_names: list[str], draft) -> tuple[str, dict | None]:
-    """WS-01: agent điều khiển workspace — view chọn TẤT ĐỊNH theo tool của lượt
-    (LLM không tự chọn view). Không tool liên quan → "keep" (giữ view hiện tại)."""
-    if tool_names:
-        last = tool_names[-1]
-        if "confirm_and_search" in tool_names:
-            return ("map" if draft.destination else "list"), {"sorted_by": "distance" if draft.destination else "match"}
-        if last == "room_details":
-            return "detail", None
-        if last == "estimate_cost":
-            return "cost", None
-    return "keep", None
+    return workspace_view(tool_names, draft)
 
 
 def run_turn(service, session: dict, actor, text: str,
-             emit=None) -> tuple[dict, dict]:
+             emit=None, turn_id: str | None = None) -> tuple[dict, dict]:
     """Một lượt chat chạy bằng vòng lặp tool. Trả về (response, provenance).
 
     Chỉ gọi khi `HOMEMATCH_LLM_MODE=openai`; mọi lỗi provider/budget/step nổ ra
     cho caller rơi về graph cũ — vòng lặp không tự che lỗi mạng."""
     interpreter = service.interpreter
+    turn_id = turn_id or str(uuid4())
     # Mức tiền trong CÂU CỦA KHÁCH được đọc tất định (như graph cũ), không qua LLM:
     # model không được tự ghi trường tiền nào khác qua update_needs.
     from .interpreter import relative_budget, rent_budget_hint
@@ -278,8 +233,8 @@ def run_turn(service, session: dict, actor, text: str,
     tools = build_tools(service, session, actor, text, toolbox)
     messages = [
         {"role": "system", "content": AGENT_SYSTEM_PROMPT},
-        {"role": "user", "content": json.dumps(service._agent_context(session), ensure_ascii=False)},
-        {"role": "user", "content": text},
+        {"role": "user", "content": json.dumps(redact_tree(_strip_income(service._agent_context(session))), ensure_ascii=False)},
+        {"role": "user", "content": redact(text)},
     ]
     steps: list[dict] = []
     tool_payloads: list[str] = []
@@ -292,7 +247,7 @@ def run_turn(service, session: dict, actor, text: str,
 
     def finalize(answer: str, questions: list[str] | None):
         draft = service._draft(session["id"])
-        tool_names = [entry["tool"] for entry in steps]
+        tool_names = [entry["tool"] for entry in steps if entry.get("ok")]
         view, view_payload = pick_view(tool_names, draft)
         # AG-09: lượt mở hội thoại chủ nhà → intent landlord_handover để FE chuyển /tin-nhan.
         intent = "landlord_handover" if tool_names and tool_names[-1] in {"open_landlord_chat", "open_conversation"} else "find_room"
@@ -307,7 +262,7 @@ def run_turn(service, session: dict, actor, text: str,
                 "anchor": ({"label": draft.destination.label, "latitude": draft.destination.latitude,
                             "longitude": draft.destination.longitude,
                             "uncertainty_m": draft.destination.uncertainty_m} if draft.destination else None),
-                "turn_id": str(uuid4())}
+                "turn_id": turn_id}
 
     for _ in range(MAX_AGENT_STEPS):
         if time.monotonic() - turn_started > 55:
@@ -347,33 +302,24 @@ def run_turn(service, session: dict, actor, text: str,
                     result = {"error": "tool_unavailable",
                               "message": "Tool không có trong bộ được cấp hoặc tham số không phải JSON hợp lệ."}
                 else:
-                    try:
-                        result = toolbox.call(tools[name]["agent"], name, tools[name]["fn"], **arguments)
-                    except DomainError as error:
-                        result = {"error": error.code, "message": str(error)}
-                    except (TypeError, ValidationError) as error:
-                        result = {"error": "invalid_arguments", "message": str(error)[:300]}
-                payload = json.dumps(_strip_income(result), ensure_ascii=False, default=str)
+                    from .agent_executor import execute_tool
+                    result = execute_tool(service, toolbox, session["id"], turn_id,
+                                          name, tools[name]["fn"], arguments, actor=actor)
+                if "ok" not in result:
+                    result = {"ok": False, **result, "hint": "Chọn tool trong danh sách được cấp."}
+                data = result.get("data") or {}
+                payload = json.dumps(TOOL_REGISTRY[name].redact(result) if name in TOOL_REGISTRY else result, ensure_ascii=False, default=str)
                 tool_payloads.append(payload)
-                detail = (result.get("note") or result.get("message")
-                          if isinstance(result, dict) and result.get("error") is None
-                          else (f"lỗi {result.get('error')}" if isinstance(result, dict) and result.get("error")
-                                else name))
-                if isinstance(result, dict) and result.get("error"):
-                    detail = f"lỗi {result['error']}: {result.get('message', '')}"[:160]
-                elif isinstance(result, dict) and name == "find_place" and result.get("found"):
-                    detail = f"điểm mốc {result.get('label')} ({result.get('city')})"
-                elif isinstance(result, dict) and "count" in result:
-                    detail = f"{result['count']} căn khớp"
-                elif isinstance(result, dict) and result.get("saved"):
-                    detail = "đã ghi nháp: " + ", ".join(result.get("fields") or [])
-                steps.append({"tool": name, "detail": str(detail)[:160]})
+                detail = (TOOL_REGISTRY[name].summarize(result) if name in TOOL_REGISTRY
+                          else "Công cụ không được cấp")
+                safe_name = name if name in TOOL_REGISTRY else "tool_unavailable"
+                steps.append({"tool": safe_name, "detail": detail, "ok": result["ok"]})
                 if emit is not None:
-                    emit({"name": name, "kind": "tool", "detail": str(detail)[:160]})
+                    emit({"name": safe_name, "kind": "tool", "detail": detail})
                 messages.append({"role": "tool", "tool_call_id": call.id, "content": payload})
-                if name == "ask_user" and isinstance(result, dict) and result.get("error") is None:
-                    question = result.get("question") or ""
-                    questions = [question] + [f"Lựa chọn: {option}" for option in result.get("options", [])]
+                if name == "ask_user" and result["ok"]:
+                    question = data.get("question") or ""
+                    questions = [question] + [f"Lựa chọn: {option}" for option in data.get("options", [])]
                     response_dict = finalize(question, questions)
             if response_dict is not None:
                 break

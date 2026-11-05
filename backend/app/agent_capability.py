@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .agent_tools import tool_capabilities
 from .capabilities import ROLES as DOMAIN_ROLES
 from .models import Actor, DomainError
 
@@ -51,6 +52,12 @@ CAPABILITIES: dict[str, frozenset[str]] = {
     "catalog:read": frozenset({"owner", "admin"}),
     "catalog:write": frozenset({"owner", "admin"}),
 }
+
+# Registry là nguồn duy nhất cho ánh xạ tool -> hành động; quyền theo bản ghi
+# vẫn được kiểm trong service bằng Actor và Resource, không theo lời model.
+TOOL_CAPABILITIES = tool_capabilities()
+if set(TOOL_CAPABILITIES.values()) - set(CAPABILITIES):
+    raise ValueError("Registry tham chiếu hành động chưa được khai báo")
 
 # Import-time guard: agent actions may only reference domain roles from the
 # W-01 matrix; a typo or a role added in one module but not the other fails

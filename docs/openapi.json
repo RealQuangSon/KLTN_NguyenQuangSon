@@ -14040,6 +14040,15 @@
             },
             "type": "array",
             "title": "Remove Preferences"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "form",
+              "clarify"
+            ],
+            "title": "Source",
+            "default": "form"
           }
         },
         "additionalProperties": false,
@@ -14126,6 +14135,21 @@
                 "type": "null"
               }
             ]
+          },
+          "budget_scope": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "rent",
+                  "total"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Scope"
           },
           "needs_destination": {
             "type": "boolean",
@@ -15442,6 +15466,20 @@
             "minLength": 1,
             "title": "Text"
           },
+          "turn_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn Id"
+          },
           "cost_input": {
             "anyOf": [
               {
@@ -15515,6 +15553,7 @@
               "calculate_cost",
               "simulate_finance",
               "human_support",
+              "landlord_handover",
               "handbook",
               "unknown"
             ],
@@ -15528,7 +15567,8 @@
               "support_requested",
               "handbook_answer",
               "simulation",
-              "needs_results"
+              "needs_results",
+              "handover"
             ],
             "title": "Status"
           },
@@ -15589,6 +15629,17 @@
               }
             ],
             "title": "Ticket Id"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
           },
           "message": {
             "anyOf": [
@@ -15668,6 +15719,29 @@
               }
             ],
             "title": "Agent Mode"
+          },
+          "budget_explicit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Explicit"
+          },
+          "clarification": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarification"
           },
           "view": {
             "anyOf": [

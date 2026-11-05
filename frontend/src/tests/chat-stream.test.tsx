@@ -108,6 +108,11 @@ describe("Api.turn retry policy", () => {
     expect(data.steps).toHaveLength(2);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(post).toHaveBeenCalledTimes(1);
+    const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const secondBody = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(firstBody.turn_id).toBeTruthy();
+    expect(secondBody.turn_id).toBe(firstBody.turn_id);
+    expect(post.mock.calls[0][1]).toEqual(firstBody);
   });
 
   it("does not retry a 4xx business error", async () => {

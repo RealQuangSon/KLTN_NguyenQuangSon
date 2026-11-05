@@ -8,6 +8,8 @@ Từ 0.4.0: bốn vai trò renter/owner/manager/admin (manager không còn quy�
 
 ## Auth và lỗi
 
+HN-03 (06/11/2026): `POST /sessions/{id}/messages` và `/messages/stream` nhận thêm `turn_id?` (1–100 ký tự `A-Za-z0-9_-`, không dùng SĐT; UUID hợp lệ được giữ nguyên). Client sinh một UUID cho mỗi lượt và giữ nguyên khi retry; backend luôn kiểm quyền trước cache, replay lượt đã hoàn tất mà không ghi nháp/run/transcript lần hai. Cùng mã khác nội dung trả 409 `idempotency_conflict`; nháp/kho đã đổi trả 409 `stale_turn` để khách gửi lượt mới. Không gửi `turn_id` vẫn tương thích, server cấp mã mới. Schema v17 thêm ledger khóa lượt/tool, không lưu tham số thô hoặc hồ sơ thu nhập trong cache và dọn theo retention hội thoại. Kết quả tool gửi model theo `{ok:true,data}` hoặc `{ok:false,error,message,hint}`; registry `agent_tools.py` sinh schema Pydantic, allowlist, capability và view.
+
 `POST /auth/login {username,password}` → `{access_token,token_type:"bearer",expires_at,actor:{id,role}}`. Token do server cấp, không gửi role từ client. `GET /auth/me` trả actor kèm `landlord_status`: `null` với khách, còn chủ nhà là `pending`/`approved`/`rejected` (owner seed luôn là `approved`). `POST /auth/logout` thu hồi token, trả `{status:"logged_out"}`. Các endpoint còn lại trừ `/health`, `/ready`, tài liệu Swagger và nhóm auth lifecycle dưới đây yêu cầu `Authorization: Bearer …`.
 
 Tài khoản seed (mật khẩu mẫu `local-<username>-password`): `renter-a`, `renter-b` (renter), `owner-a`, `owner-b`, `owner-c`, `owner-d` (owner), `manager-a`, `manager-b` (manager cũ), `admin-a` (admin). Owner/manager/admin được bootstrap membership trong đơn vị mặc định `org-demo`; renter không thuộc đơn vị.

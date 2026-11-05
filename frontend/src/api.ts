@@ -172,6 +172,11 @@ export class Api {
     onStep?: (step: { name: string; kind: string; detail: string }) => void,
   ): Promise<T> {
     const streamPath = `${path}/stream`;
+    // Một mã cho cả stream retry và POST dự phòng, tránh ghi nghiệp vụ hai lần.
+    body = {
+      ...(body as Record<string, unknown>),
+      turn_id: crypto.randomUUID(),
+    };
     let lastError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {

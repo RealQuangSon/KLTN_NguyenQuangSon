@@ -78,6 +78,7 @@ class WorkspaceContext(Model):
 
 class MessageRequest(Model):
     text: str = Field(min_length=1, max_length=2000)
+    turn_id: str | None = Field(default=None, min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_-]+$")
     cost_input: CostRequest | None = None
     workspace: WorkspaceContext | None = None
 
@@ -339,6 +340,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.post("/sessions/{session_id}/messages", response_model=MessageResult, response_model_exclude_unset=True)
     def message(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
         return agent.message(session_id, actor, body.text, body.cost_input,
+                             turn_id=body.turn_id,
                              workspace=body.workspace.model_dump() if body.workspace else None)
 
     @app.post("/sessions/{session_id}/messages/stream", responses={200: {"content": {
@@ -357,6 +359,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
             def worker():
                 try:
                     result = agent.message(session_id, actor, body.text, body.cost_input,
+                                           turn_id=body.turn_id,
                                            emit=lambda step: events.put(("step", step)),
                                            workspace=body.workspace.model_dump() if body.workspace else None)
                     events.put(("done", result))
