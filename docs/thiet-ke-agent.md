@@ -1,6 +1,6 @@
 # Thiết kế AI Agent HomeMatch
 
-**Cập nhật:** 05/10/2026 (sau GĐ3). Cụ thể hóa FR-01–FR-04, FR-09–FR-17, FR-21–FR-22 trong [danh mục yêu cầu](yeu-cau-san-pham.md). Multi-agent, memory và cache embedding truy vấn đã có trong code; mục 2 mô tả cấu trúc graph trước GĐ3 để đối chiếu.
+**Cập nhật:** 08/10/2026 (sau GĐ3; thêm `simulate_finance` ở AG-02). Cụ thể hóa FR-01–FR-04, FR-09–FR-17, FR-21–FR-22 trong [danh mục yêu cầu](yeu-cau-san-pham.md). Multi-agent, memory và cache embedding truy vấn đã có trong code; mục 2 mô tả cấu trúc graph trước GĐ3 để đối chiếu.
 
 ## 1. Nguyên tắc
 
@@ -35,7 +35,7 @@ flowchart TD
 | Agent | Nhiệm vụ | Tool được phép | Không được |
 |---|---|---|---|
 | Nhu cầu | Phỏng vấn, trích xuất, hỏi tối đa 2 câu, xử lý "bỏ sở thích X" | `extract_needs`, `update_draft`, `read_memory` (khi khách đã đồng ý) | Xác nhận hồ sơ, đọc kho |
-| Tài chính | Giải thích chi phí, tính khả năng chi trả, mô phỏng vay và kịch bản | `calculate_cost`, `assess_affordability`, `estimate_loan`, `simulate_scenarios` | Tự sinh số tiền, đổi hồ sơ đã xác nhận |
+| Tài chính | Giải thích chi phí, tính khả năng chi trả, mô phỏng vay và kịch bản; **mô phỏng vay qua chat** (`simulate_finance`, AG-02): trả lời bằng số do tool `simulate_scenarios` tính, thiếu lãi suất thì hỏi lại, không tự đặt lãi mặc định | `calculate_cost`, `assess_affordability`, `estimate_loan`, `simulate_scenarios` | Tự sinh số tiền, đổi hồ sơ đã xác nhận |
 | Xếp hạng | Lọc cứng, B1/P, soạn lý do và đánh đổi từ diagnostics | `match_catalog`, `semantic_scores`, `explain_candidate` | Đổi trọng số theo từng phiên, dùng thuộc tính thương mại |
 | Cẩm nang | Trả lời quyền lợi, quy định chung, nội quy chủ nhà bằng truy xuất | `search_handbook` | Sinh nội dung pháp lý mới |
 | Hỗ trợ | Ghi yêu cầu gặp người thật cho admin; gợi ý "Chat với chủ nhà" | `request_support` | Tự liên hệ ai |
@@ -47,10 +47,10 @@ Cách triển khai: chat graph có các node `route` (supervisor), `interview` (
 
 Schema `Extraction` gồm:
 
-- `intent`: `find_room` | `calculate_cost` | `human_support` | `unknown`;
+- `intent`: `find_room` | `calculate_cost` | `simulate_finance` | `human_support` | `handbook` | `unknown`;
 - `city`, `area`, `room_type`, `people`, `preferences`, `remove_preferences`, `needs_destination`, `soft_description`.
 
-Từ GĐ2, `room_type` nhận `apartment` ("căn hộ", "chung cư") và có trường `bedrooms` ("1PN", "2 phòng ngủ"). Ý định `simulate_finance` vẫn là đích.
+Từ GĐ2, `room_type` nhận `apartment` ("căn hộ", "chung cư") và có trường `bedrooms` ("1PN", "2 phòng ngủ"). Từ AG-02 (08/10/2026), `simulate_finance` là luật `fixed_intent` chạy trước LLM: "nếu vay…", "vay…số tháng", "trả góp", "lãi suất", "mô phỏng vay"; `parse_loan_terms` tách kỳ hạn (1–60), lãi suất (0–50%, dấu phẩy thập phân) và tiền "20 triệu"/"20tr" (oracle độc lập `data/oracles/loan_parse_cases.json`). Node `finance` dựng kịch bản từ `loan` đã xác nhận, ghi đè bằng số parse được; thiếu lãi suất (không có trong hồ sơ lẫn câu hỏi) thì hỏi lại, **không đặt lãi mặc định**; tối đa 1 kịch bản mỗi lượt; câu trả lời là template tiếng Việt với số đã format, không gọi LLM. Chưa có danh sách duyệt → `status="needs_results"`.
 
 - Tiền và liên hệ được tách bằng `redact()` trước khi gửi LLM. Tiền chỉ còn là `budget_hint` để gợi ý điền form.
 - Thành phố và khu vực nhận diện qua `locations.py`: "Sài Gòn", "HN", "Q7", "q.10", "Bình Thạnh", "Cầu Giấy"… Không suy thành phố từ khu vực và không mặc định TP.HCM.
@@ -97,6 +97,7 @@ Từ GĐ2, `room_type` nhận `apartment` ("căn hộ", "chung cư") và có tr�
 | Nội dung | Bằng chứng |
 |---|---|
 | Định tuyến, nháp, hỏi lại, alias khu vực | `backend/tests/test_interpreter_api.py`, `test_locations.py`, `test_agent_*` |
+| Mô phỏng vay qua chat, parity với `/simulate`, oracle câu vay | `backend/tests/test_finance_chat.py`, `data/oracles/loan_parse_cases.json`, `eval intents --split dev` |
 | HITL, phiên bản, replay, khởi động lại | `test_workflow.py`, `test_backend_durability.py` |
 | Guard injection/PII, ngân sách lượt | `test_agent_guardrails.py` |
 | Chất lượng GPT-4o, P live | Chưa chạy. Cần API key, ngân sách và protocol đã khóa ([eval](../eval/PLAN.md)) |

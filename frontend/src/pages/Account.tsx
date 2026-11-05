@@ -9,6 +9,7 @@ interface AccountProfile {
   id: string;
   display_name: string | null;
   email: string | null;
+  contact_phone?: string | null;
   consents: Record<string, boolean>;
 }
 interface MemoryState {
@@ -56,6 +57,7 @@ export function AccountPage({
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -65,6 +67,7 @@ export function AccountPage({
           api.get<MemoryState>("/me/memory"),
         ]);
         setProfile(p);
+        setPhone(p.contact_phone ?? "");
         setMemory(m);
       } else {
         setSessions(await api.get<SessionEntry[]>("/me/sessions"));
@@ -118,6 +121,37 @@ export function AccountPage({
         </div>
         {isProfile ? (
           <>
+            {actor.role === "owner" && (
+              <>
+                <form
+                  className="phone-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void act(() =>
+                      api.patch("/me/profile", { contact_phone: phone.trim() }),
+                    );
+                  }}
+                >
+                  <label>
+                    Số điện thoại liên hệ
+                    <input
+                      type="tel"
+                      value={phone}
+                      placeholder="Ví dụ: 0901234567"
+                      maxLength={20}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </label>
+                  <button className="button small" disabled={busy || !profile}>
+                    Lưu
+                  </button>
+                </form>
+                <p className="input-hint">
+                  Hiện trên tin của bạn cho người đã đăng nhập; để trống để ẩn.
+                  Tin tham khảo từ Chợ Tốt không hiện số này.
+                </p>
+              </>
+            )}
             <label className="checkbox-line">
               <input
                 type="checkbox"

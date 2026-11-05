@@ -41,5 +41,5 @@ Các file được giữ nguyên nội dung vì là bằng chứng lịch sử: 
 | Mã | Việc | Người quyết |
 |---|---|---|
 | T1.4 | Xác nhận D-01/D-02 | Xong: người dùng xác nhận 05/10 |
-| — | `data/crawl_chotot.py` lấy tin từ API công khai của Chợ Tốt nhưng chưa được dùng. Chưa có xác nhận quyền sử dụng dữ liệu. Kho chính vẫn hoàn toàn tổng hợp. Không chạy crawler này để nạp kho khi chưa có quyền. | Người dùng |
-| — | `data/fixtures/v1` (hợp đồng, hóa đơn, công tơ) thuộc phạm vi cũ. Giữ lại nhưng không dùng. | — |
+| — | `data/crawl_chotot.py` lấy tin từ API công khai của Chợ Tốt nhưng chưa được dùng. Chưa có xác nhận quyền sử dụng dữ liệu. Kho chính vẫn hoàn toàn tổng hợp. Không chạy crawler này để nạp kho khi chưa có quyền. **Cập nhật 28/10/2026:** đã xóa khỏi repo. | Người dùng |
+| — | `data/fixtures/v1` (hợp đồng, hóa đơn, công tơ) thuộc phạm vi cũ. Giữ lại nhưng không dùng. **Cập nhật 28/10/2026:** đã xóa khỏi repo. | — |

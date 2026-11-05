@@ -1,6 +1,6 @@
 # Đặc tả sản phẩm HomeMatch AI Agent
 
-**Cập nhật:** 05/10/2026. Cụ thể hóa [đề cương](ke-hoach-kltn-homematch.md). Yêu cầu có mã ở [yeu-cau-san-pham.md](yeu-cau-san-pham.md).
+**Cập nhật:** 09/10/2026 (mục 5 khớp lại với code 08/10). Cụ thể hóa [đề cương](ke-hoach-kltn-homematch.md). Yêu cầu có mã ở [yeu-cau-san-pham.md](yeu-cau-san-pham.md).
 
 ## 1. Tổng quan
 
@@ -45,8 +45,8 @@ HomeMatch là nền tảng cho thuê phòng trọ, studio, căn hộ tại TP.HC
 ## 5. Ngoài phạm vi
 
 - Mua bán căn hộ, vay mua nhà, chấm tín dụng.
-- Ảnh và media của tin (chưa có kho lưu file).
-- Ưu đãi do chủ nhà tự đặt trong luồng chăm sóc khách.
+- Video, ảnh 360° và lưu ảnh trên object storage (ảnh tin và ảnh sự cố lưu file local/volume, có từ 08/10).
+- Ưu đãi làm thay đổi giá thuê hoặc thứ hạng (ưu đãi chủ nhà tự đặt chỉ là văn bản kèm luồng chăm sóc khách, có từ 08/10).
 - Các thành phố khác ngoài TP.HCM và Hà Nội.
 
 ## 6. Giả định
@@ -57,6 +57,6 @@ HomeMatch là nền tảng cho thuê phòng trọ, studio, căn hộ tại TP.HC
 | A-02 | Dữ liệu tổng hợp đủ để đánh giá phương pháp | Kết luận chỉ áp dụng cho dữ liệu tổng hợp |
 | A-03 | Có API key OpenAI và ngân sách cho chạy live | Chỉ báo cáo kết quả offline |
 | A-04 | Có 5–10 người tham gia khảo sát | RQ4 báo "chưa đo" |
-| A-05 | Có tài khoản Railway | NFR-09 báo "chưa triển khai" |
+| A-05 | ~~Có tài khoản Railway~~. Không còn cần: đồ án chỉ chạy localhost (D-09, 28/10) | — |
 
 Thuật ngữ ở [CONTEXT.md](../CONTEXT.md).

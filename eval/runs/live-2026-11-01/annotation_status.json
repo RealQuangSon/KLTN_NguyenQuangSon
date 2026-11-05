@@ -1,0 +1,7 @@
+{
+  "candidate_pairs": 48,
+  "completed_judgments": 0,
+  "pool_scope": "available_methods_only; final B1/P research requires both methods available and frozen input",
+  "profile_count": 15,
+  "status": "pending_human_judgments"
+}

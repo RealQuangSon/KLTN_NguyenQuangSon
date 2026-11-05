@@ -2,8 +2,10 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from fastapi.testclient import TestClient
 
 from backend.app.catalog import DEFAULT_CATALOG
+from backend.app.main import create_app
 from backend.app.models import (Actor, CatalogStatus, DomainError, Profile, Review, RoomInput, RoomUpdate,
                                 Scenario)
 from backend.app.service import HomeMatchService
@@ -71,6 +73,18 @@ def test_rooms_appear_as_each_landlord_approves_and_order_stays_in_own_slots(two
     assert set(visible) == set(a_rooms) | set(b_rooms[1:])
     a_positions = [index for index, room in enumerate(visible) if room in a_rooms]
     assert [visible[i] for i in a_positions] == a_rooms[::-1]
+
+
+def test_partially_published_results_pass_the_http_response_model(two_landlords, renter):
+    sid, run_id = shortlist(two_landlords, renter)
+    a_rooms = [item["room_id"] for item in two_landlords.repo.run(run_id)["items"] if item["landlord_id"] == "owner-a"]
+    two_landlords.review(run_id, OWNER_A, approve(keep_room_ids=a_rooms))
+    with TestClient(create_app(lambda: two_landlords)) as client:
+        response = client.get(f"/sessions/{sid}/results", headers={"Authorization": f"Bearer demo-{renter.id}"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "partially_published"
+    assert [item["room_id"] for item in body["results"]] == a_rooms
 
 
 def test_all_rejections_end_the_run_and_landlord_cannot_decide_twice(two_landlords, renter):

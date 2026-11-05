@@ -7,34 +7,36 @@ import time
 from typing import Annotated, Callable, Literal
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Query, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from pydantic import Field
 
+from .cost_metrics import estimate_cost_vnd, load_prices
 from .costs import estimate_cost
 from .locations import AREA_ALIASES, CITY_ALIASES
 from .listings import ListingQuery
 from .models import (Actor, CatalogStatus, ConfirmRequest, CostRequest, CostResult, DomainError,
-                     DraftPatch, MembershipGrant, Model, OrganizationCreate, ProfilePatch,
-                     RegisterRequest, Review, RoomInput, RoomUpdate, SimulationRequest, VerifyRequest, PasswordResetRequest,
-                     PasswordResetConfirm)
-from . import memory, organizations, pms
+                     DraftPatch, LandlordRejectRequest, MediaOrderRequest, MeResult, MembershipGrant, Model,
+                     OrganizationCreate, ProfilePatch, PromotionInput, RegisterRequest, Review, RoomInput,
+                     RoomUpdate, SimulationRequest, VerifyRequest, PasswordResetRequest, PasswordResetConfirm)
+from . import media, memory, organizations, pms
 from .auth import (SEED_USERS, DevDeliveryStub, SeedAuth, account_profile, confirm_password_reset,
-                   list_sessions, register_account, request_password_reset, revoke_session,
-                   update_account_profile, verify_account)
+                   landlord_status, list_sessions, register_account, request_password_reset,
+                   revoke_session, update_account_profile, verify_account)
 from .service import HomeMatchService
 from .auth import SEED_USERS, DevDeliveryStub, SeedAuth
 from .migrations import SCHEMA_VERSION, schema_version
 from .schemas import (CatalogResult, CompareResult, DraftResult, ErrorResult, HealthResult,
-                      ForgetResult, ListingSearchResult, LocationsResult, LoginResult, MemoryResult, LogoutResult, MembershipResult, MessageResult, MetricsResult,
+                      ForgetResult, ListingSearchResult, LocationsResult, LoginResult, MediaResult, MemoryResult,
+                      LogoutResult, MembershipResult, MessageResult, MetricsResult,
                       OrganizationResult, PasswordResetConfirmResult, PasswordResetRequestResult,
-                      ProfileResult, ReadyResult, RecommendationResult, RegisterResult,
+                      ProfileResult, PromotionResult, ReadyResult, RecommendationResult, RegisterResult,
                       ResultsResult, RoomResult, SessionEntry, SessionRevokeResult, SessionResult,
-                      SimulationResult, SupportResult, VerifyResult, ViewingResult)
+                      SimulationResult, SupportResult, SupportUpdate, VerifyResult, ViewingResult)
 
 logger = logging.getLogger("homematch.api")
 
@@ -271,7 +273,9 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
         except Exception:
             raise DomainError("storage_unavailable", "Kho dữ liệu tạm thời không khả dụng.", 503) from None
         return {"status": "ok", "prototype": True, "storage": "postgresql" if app.state.service.repo.db.postgres else "sqlite",
-                "auth_mode": app.state.auth_mode, "matching_method": app.state.service.matching_method, "workers": 1}
+                "auth_mode": app.state.auth_mode, "matching_method": app.state.service.matching_method, "workers": 1,
+                "public": bool(getattr(app.state, "public", False)),
+                "auto_publish": bool(getattr(app.state.service, "auto_publish", False))}
 
     @app.get("/ready", response_model=ReadyResult)
     def ready():
@@ -280,7 +284,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
             with agent.lock:
                 if schema_version(agent.repo.db) != SCHEMA_VERSION or not agent.catalog.version:
                     raise ValueError("Schema or catalog is not ready")
-                agent.checkpoint_connection.execute("SELECT 1 FROM checkpoints LIMIT 1").fetchone()
+                agent.checkpoint_probe()
         except Exception:
             raise DomainError("not_ready", "Backend chưa sẵn sàng; cần kiểm tra dữ liệu và checkpoint.", 503) from None
         return {"status": "ready", "storage": "postgresql" if agent.repo.db.postgres else "sqlite",
@@ -289,15 +293,20 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.get("/admin/metrics", response_model=MetricsResult)
     def metrics(actor: ActorDep, agent: ServiceDep):
         agent._role(actor, "admin")
-        return agent.metrics.snapshot()
+        snapshot = agent.metrics.snapshot()
+        # No price file configured -> cost stays null; never an unlabelled guess.
+        prices = load_prices(os.getenv("HOMEMATCH_PROVIDER_PRICES_PATH"))
+        snapshot["cost"] = estimate_cost_vnd(snapshot["provider_usage"], prices) if prices is not None else None
+        return snapshot
 
     @app.post("/auth/login", response_model=LoginResult)
     def login(body: LoginRequest):
         return app.state.auth.login(body.username, body.password)
 
-    @app.get("/auth/me", response_model=Actor)
-    def me(actor: ActorDep):
-        return actor
+    @app.get("/auth/me", response_model=MeResult)
+    def me(actor: ActorDep, agent: ServiceDep):
+        return MeResult(id=actor.id, role=actor.role,
+                        landlord_status=landlord_status(agent.repo, actor.id, actor.role))
 
     @app.post("/auth/logout", response_model=LogoutResult)
     def logout(actor: ActorDep, credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
@@ -364,6 +373,35 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def listing_viewing(room_id: str, body: ListingViewingRequest, actor: ActorDep, agent: ServiceDep):
         return agent.request_listing_viewing(actor, room_id, body.requested_at, body.idempotency_key, body.mode)
 
+    # --- Danh sách cá nhân người thuê: căn đã lưu / căn đã xem (trang cá nhân) ---
+
+    @app.get("/rooms/saved", response_model=list[dict])
+    def saved_rooms(actor: ActorDep, agent: ServiceDep):
+        return agent.saved_rooms(actor)
+
+    @app.put("/rooms/{room_id}/save", response_model=dict)
+    def save_room(room_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.set_room_saved(actor, room_id, True)
+
+    @app.delete("/rooms/{room_id}/save", response_model=dict)
+    def unsave_room(room_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.set_room_saved(actor, room_id, False)
+
+    @app.get("/rooms/viewed", response_model=list[dict])
+    def viewed_rooms(actor: ActorDep, agent: ServiceDep):
+        return agent.viewed_rooms(actor)
+
+    # --- BE-06: media files (public listing photos need no token) ---
+
+    @app.get("/media/{media_id}", response_class=FileResponse)
+    def get_media(media_id: str, agent: ServiceDep, actor: OptionalActorDep):
+        record, cache = agent.media_file(media_id, actor)
+        path = media.file_path(record)
+        if not path.exists():
+            raise DomainError("not_found", "Không tìm thấy tệp ảnh.", 404)
+        return FileResponse(path, media_type=record["content_type"], headers={
+            "Cache-Control": "public, max-age=300" if cache == "public" else "private, max-age=300"})
+
     @app.get("/handbook", response_model=list[dict])
     def handbook_entries():
         from .handbook import entries
@@ -418,6 +456,32 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.patch("/landlord/rooms/{room_id}/status", response_model=RoomResult)
     def room_status(room_id: str, body: CatalogStatus, actor: ActorDep, agent: ServiceDep):
         return agent.change_room_status(room_id, actor, body)
+
+    # --- BE-06: landlord listing photos ---
+
+    @app.post("/landlord/rooms/{room_id}/media", status_code=201, response_model=MediaResult)
+    def upload_room_media(room_id: str, file: UploadFile, actor: ActorDep, agent: ServiceDep):
+        record, created = agent.upload_room_media(actor, room_id, file)
+        # A duplicate upload (same content for the same room) returns the existing photo.
+        return JSONResponse(status_code=201 if created else 200, content=record)
+
+    @app.delete("/landlord/rooms/{room_id}/media/{media_id}", status_code=204)
+    def delete_room_media(room_id: str, media_id: str, actor: ActorDep, agent: ServiceDep):
+        agent.delete_room_media(actor, room_id, media_id)
+
+    @app.patch("/landlord/rooms/{room_id}/media/order", response_model=list[MediaResult])
+    def reorder_room_media(room_id: str, body: MediaOrderRequest, actor: ActorDep, agent: ServiceDep):
+        return agent.reorder_room_media(actor, room_id, body.media_ids)
+
+    # --- BE-07: landlord promotion per listing ---
+
+    @app.put("/landlord/rooms/{room_id}/promotion", response_model=PromotionResult)
+    def set_promotion(room_id: str, body: PromotionInput, actor: ActorDep, agent: ServiceDep):
+        return agent.set_promotion(actor, room_id, body)
+
+    @app.delete("/landlord/rooms/{room_id}/promotion", status_code=204)
+    def delete_promotion(room_id: str, actor: ActorDep, agent: ServiceDep):
+        agent.delete_promotion(actor, room_id)
 
     @app.post("/landlord/viewings/{viewing_id}/respond", response_model=ViewingResult)
     def respond_viewing(viewing_id: str, body: ViewingResponse, actor: ActorDep, agent: ServiceDep):
@@ -563,6 +627,11 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def update_ticket(ticket_id: str, body: pms.TicketUpdate, actor: ActorDep, agent: ServiceDep):
         return agent.update_ticket(actor, ticket_id, body)
 
+    @app.post("/maintenance/{ticket_id}/media", status_code=201, response_model=MediaResult)
+    def upload_maintenance_media(ticket_id: str, file: UploadFile, actor: ActorDep, agent: ServiceDep):
+        record, created = agent.upload_maintenance_media(actor, ticket_id, file)
+        return JSONResponse(status_code=201 if created else 200, content=record)
+
     # --- Notifications and automation ---
 
     @app.get("/notifications", response_model=dict)
@@ -618,6 +687,21 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def failed_runs(actor: ActorDep, agent: ServiceDep):
         return agent.failed_runs(actor)
 
+    # --- BE-03: landlord self-signup review ---
+
+    @app.get("/admin/landlord-applications", response_model=list[dict])
+    def landlord_applications(actor: ActorDep, agent: ServiceDep,
+                              status: Literal["pending", "approved", "rejected"] = "pending"):
+        return agent.landlord_applications(actor, status)
+
+    @app.post("/admin/landlord-applications/{user_id}/approve", response_model=dict)
+    def approve_landlord(user_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.approve_landlord(actor, user_id)
+
+    @app.post("/admin/landlord-applications/{user_id}/reject", response_model=dict)
+    def reject_landlord(user_id: str, body: LandlordRejectRequest, actor: ActorDep, agent: ServiceDep):
+        return agent.reject_landlord(actor, user_id, body.reason)
+
     @app.post("/sessions/{session_id}/viewings", status_code=201, response_model=ViewingResult)
     def request_viewing(session_id: str, body: ViewingRequest, actor: ActorDep, agent: ServiceDep):
         return agent.request_viewing(session_id, actor, body.room_id, body.requested_at, body.idempotency_key,
@@ -634,6 +718,17 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.get("/support-tickets", response_model=list[SupportResult])
     def support(actor: ActorDep, agent: ServiceDep):
         return agent.support_tickets(actor)
+
+    # --- BE-04: handoff support ticket lifecycle (admin) ---
+
+    @app.get("/admin/support-tickets", response_model=list[SupportResult])
+    def admin_support_tickets(actor: ActorDep, agent: ServiceDep,
+                              status: Literal["requested", "in_progress", "resolved"] | None = None):
+        return agent.support_tickets(actor, status)
+
+    @app.patch("/admin/support-tickets/{ticket_id}", response_model=SupportResult)
+    def admin_update_support_ticket(ticket_id: str, body: SupportUpdate, actor: ActorDep, agent: ServiceDep):
+        return agent.update_support_ticket(actor, ticket_id, body)
 
     # --- W-01/W-02: organizations, memberships (server-side roles only) ---
 
@@ -663,7 +758,8 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def register(body: RegisterRequest, request: Request, agent: ServiceDep):
         require_delivery_available(request)
         return register_account(agent.repo, body.username, body.password, body.email,
-                                body.display_name, delivery=request.app.state.delivery)
+                                body.display_name, delivery=request.app.state.delivery,
+                                account_type=body.account_type)
 
     @app.post("/auth/verify", response_model=VerifyResult)
     def verify(body: VerifyRequest, agent: ServiceDep):

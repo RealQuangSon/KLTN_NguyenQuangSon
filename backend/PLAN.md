@@ -6,10 +6,10 @@
 
 ## 1. Nền tảng hiện có (0.4.0)
 
-- FastAPI `main.py`; service và hai graph LangGraph `service.py`; ledger SQLite/PostgreSQL (`database.py`, `repository.py`, `migrations.py`, schema v9).
+- FastAPI `main.py`; service và hai graph LangGraph `service.py`; ledger SQLite/PostgreSQL (`database.py`, `repository.py`, `migrations.py`, schema v13).
 - `costs.py` (tổng tháng, tiền vào ở), `catalog.py` (lọc cứng, B1/P), `semantic.py` (embedding, pgvector), `locations.py` (alias thành phố/khu vực).
 - Auth seed và tự đăng ký có xác minh (stub log), token thu hồi được. Vai trò nghiệp vụ: khách, chủ nhà, admin; đơn vị, audit (`auth.py`, `capabilities.py`, `organizations.py`).
-- Đợt E1–E6: `listings.py`, `advisor.py`, `handbook.py`, `conversations.py`, `notifications.py`, `automation.py`, `pms.py`, `copilot.py` (chi tiết ở [kiến trúc đang chạy](../docs/kien-truc-trien-khai.md)).
+- Đợt E1–E6: `listings.py`, `advisor.py`, `handbook.py`, `conversations.py`, `notifications.py`, `automation.py`, `pms.py`, `copilot.py`; đợt 08/10: `media.py`, `promotions.py`, `cost_metrics.py` (chi tiết ở [kiến trúc đang chạy](../docs/kien-truc-trien-khai.md)).
 
 ## 2. Bất biến không được phá
 

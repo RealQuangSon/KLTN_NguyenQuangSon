@@ -249,6 +249,32 @@ class Repository:
             self.db.execute("INSERT INTO hm_room_views(id,room_id,user_id,viewed_at) VALUES(?,?,?,?)",
                             (str(uuid4()), room_id, user_id, utc_now()))
 
+    # --- Danh sách cá nhân người thuê: căn đã lưu / căn đã xem ---
+
+    def save_room(self, user_id: str, room_id: str):
+        with self.db:
+            self.db.execute(
+                "INSERT OR IGNORE INTO hm_room_saves(user_id,room_id,created_at) VALUES(?,?,?)",
+                (user_id, room_id, utc_now()))
+
+    def unsave_room(self, user_id: str, room_id: str):
+        with self.db:
+            self.db.execute("DELETE FROM hm_room_saves WHERE user_id=? AND room_id=?",
+                            (user_id, room_id))
+
+    def saved_room_ids(self, user_id: str) -> list[str]:
+        rows = self.db.execute(
+            "SELECT room_id FROM hm_room_saves WHERE user_id=? ORDER BY created_at DESC",
+            (user_id,)).fetchall()
+        return [row["room_id"] for row in rows]
+
+    def viewed_room_ids(self, user_id: str, limit: int = 24) -> list[str]:
+        rows = self.db.execute(
+            "SELECT room_id, MAX(viewed_at) AS last_viewed FROM hm_room_views "
+            "WHERE user_id=? GROUP BY room_id ORDER BY last_viewed DESC LIMIT ?",
+            (user_id, limit)).fetchall()
+        return [row["room_id"] for row in rows]
+
     def viewing(self, viewing_id: str) -> dict:
         row = self.db.execute("SELECT * FROM hm_viewings WHERE id=?", (viewing_id,)).fetchone()
         if row is None:
@@ -274,11 +300,32 @@ class Repository:
             return dict(row)
         ticket_id = str(uuid4())
         with self.db:
-            self.db.execute("INSERT INTO hm_support VALUES(?,?,?,'requested',?)",
+            self.db.execute("INSERT INTO hm_support(id,session_id,manager_id,status,created_at) "
+                            "VALUES(?,?,?,'requested',?)",
                             (ticket_id, session["id"], session["manager_id"], utc_now()))
         return dict(self.db.execute("SELECT * FROM hm_support WHERE id=?", (ticket_id,)).fetchone())
 
-    def support_tickets(self, manager_id: str | None = None) -> list[dict]:
-        if manager_id is None:
-            return [dict(row) for row in self.db.execute("SELECT * FROM hm_support ORDER BY created_at")]
-        return [dict(row) for row in self.db.execute("SELECT * FROM hm_support WHERE manager_id=?", (manager_id,))]
+    def support_ticket(self, ticket_id: str) -> dict | None:
+        row = self.db.execute("SELECT * FROM hm_support WHERE id=?", (ticket_id,)).fetchone()
+        return dict(row) if row else None
+
+    def support_tickets(self, manager_id: str | None = None,
+                        status: str | None = None) -> list[dict]:
+        query, params = "SELECT * FROM hm_support WHERE 1=1", []
+        if manager_id is not None:
+            query += " AND manager_id=?"
+            params.append(manager_id)
+        if status is not None:
+            query += " AND status=?"
+            params.append(status)
+        return [dict(row) for row in self.db.execute(query + " ORDER BY created_at", tuple(params))]
+
+    def update_support(self, ticket_id: str, updates: dict) -> dict:
+        """Apply a lifecycle transition (status/assignee/note/timestamps)."""
+        if not updates:
+            return self.support_ticket(ticket_id)
+        with self.db:
+            clause = ", ".join(f"{column}=?" for column in updates)
+            self.db.execute(f"UPDATE hm_support SET {clause} WHERE id=?",
+                            tuple(updates.values()) + (ticket_id,))
+        return self.support_ticket(ticket_id)

@@ -47,9 +47,13 @@ it("opens a renter deep link directly, navigates by links and returns via browse
     screen.queryByRole("link", { name: "Duyệt gợi ý" }),
   ).not.toBeInTheDocument();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("link", { name: "Tìm phòng" }));
+  await user.click(screen.getByRole("link", { name: "Trợ lý AI" }));
   await waitFor(() => expect(window.location.pathname).toBe("/tro-ly-ai"));
-  await screen.findByText("Nhà mới, vừa với cuộc sống.");
+  // Màn trợ lý mới: khung chào riêng (không còn hero/stepper của shell chuẩn).
+  // Tiêu đề có <span> màu cam giữa câu nên dùng accessible name của heading.
+  await screen.findByRole("heading", {
+    name: "Bạn đang tìm một nơi ở như thế nào?",
+  });
   await act(async () => {
     window.history.back();
   });
@@ -64,7 +68,7 @@ it("redirects an anonymous deep link into a protected area to the login page", a
   window.history.replaceState(null, "", "/chu-nha/phong");
   stubSession(async () => json({}));
   render(<App />);
-  await screen.findByText("Chào mừng bạn trở lại.", {}, { timeout: 4000 });
+  await screen.findByText("Đăng nhập HomeMatch", {}, { timeout: 4000 });
   expect(window.location.pathname).toBe("/dang-nhap");
 }, 15000);
 it("blocks a renter from the landlord route with a truthful 403 screen instead of landlord data", async () => {
@@ -146,7 +150,7 @@ it("validates the registration form locally before any network request", async (
   expect(screen.getByText("Mật khẩu nhập lại chưa khớp.")).toBeVisible();
   expect(calls).toHaveLength(0);
 }, 15000);
-it("reports a truthful error when the server has no register endpoint instead of faking success", async () => {
+it("shows the server-provided message when registration fails instead of faking success", async () => {
   window.history.replaceState(null, "", "/dang-ky");
   const calls = stubSession(async (url, options) => {
     if ((options?.method || "GET") === "POST" && url.endsWith("/auth/register"))
@@ -159,16 +163,26 @@ it("reports a truthful error when the server has no register endpoint instead of
   render(<App />);
   const user = await fillRegisterForm();
   await user.click(screen.getByRole("button", { name: "Đăng ký" }));
-  await screen.findByText(
-    /Máy chủ chưa có chức năng đăng ký \(cần POST \/auth\/register\)/,
-    {},
-    { timeout: 4000 },
-  );
+  // FE-01: mọi lỗi hiện đúng message máy chủ trả về, không còn câu báo cũ.
+  await screen.findByText("Không tìm thấy", {}, { timeout: 4000 });
   // Gọi đúng đường gốc 0.4.0, không còn giả định namespace /v1.
   expect(calls.some((call) => call.url.endsWith("/api/auth/register"))).toBe(
     true,
   );
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
+}, 15000);
+it("shows the network notice when the server cannot be reached during registration", async () => {
+  window.history.replaceState(null, "", "/dang-ky");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }),
+  );
+  render(<App />);
+  const user = await fillRegisterForm();
+  await user.click(screen.getByRole("button", { name: "Đăng ký" }));
+  await screen.findByText("Không kết nối được máy chủ", {}, { timeout: 4000 });
 }, 15000);
 it("shows only the server-provided outcome when registration succeeds", async () => {
   window.history.replaceState(null, "", "/dang-ky");

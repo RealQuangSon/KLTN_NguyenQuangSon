@@ -46,20 +46,42 @@ def test_chat_after_form_remarks_the_field_as_inferred(service, renter):
     assert reply["draft"]["evidence_ref"]["city"] == "chat:r2"
 
 
-def test_fresh_session_asks_room_type_and_city_first(service, renter):
+def test_fresh_session_asks_only_city(service, renter):
+    # Kiểu tham chiếu: không hỏi người/xe (mặc định 1/1, sửa được trong
+    # "Nhu cầu của tôi") — chỉ hỏi thứ thật sự chặn là địa bàn.
     sid = service.create_session(renter)["session_id"]
     reply = service.message(sid, renter, "Cho tôi xin chỗ ở")
-    assert reply["questions"] == ["Bạn cần phòng trọ, studio hay căn hộ?",
-                                  "Bạn muốn thuê tại thành phố nào?"]
+    assert reply["questions"] == ["Bạn muốn thuê tại thành phố nào?"]
+
+
+def test_first_message_with_a_district_pins_the_city(service, renter):
+    sid = service.create_session(renter)["session_id"]
+    reply = service.message(sid, renter,
+                            "Mình muốn thuê chỗ ở thoáng mát, gần trường học cho 2 người ở Bình Thạnh")
+    draft = reply["draft"]
+    assert draft["city"] == "TP.HCM"
+    assert draft["area"] == "Quận Bình Thạnh"
+    assert draft["people"] == 2
+    assert draft["field_status"]["city"] == "inferred"
+    assert draft["evidence_ref"]["city"] == "chat:r1"
+    # Room type is never interrogated; the district already answered the city.
+    # Điểm đến chưa rõ chỉ thành ghi chú giả định — không chặn vòng tìm.
+    assert len(reply["questions"]) == 1
+    assert "chưa rõ điểm đến" in reply["questions"][0]
+    assert "khu vực" in reply["questions"][0]
+    assert not any("thành phố nào" in question for question in reply["questions"])
+    assert not any("phòng trọ, studio" in question for question in reply["questions"])
 
 
 def test_filled_fields_are_not_reasked_and_destination_asks_details(service, renter):
     sid = service.create_session(renter)["session_id"]
     reply = service.message(sid, renter,
                             "Tìm phòng trọ TP.HCM cho 2 người gần trường, tầm 3 triệu")
-    assert len(reply["questions"]) == 2
-    assert reply["questions"][0].startswith("Mức tiền")
-    assert "tên điểm đến" in reply["questions"][1] and "mét" in reply["questions"][1]
+    # Không hỏi lại mức tiền (hiểu là trần tổng tháng) hay số người (mặc định
+    # 1/1); điểm đến chưa rõ chỉ thành ghi chú, không chặn vòng tìm.
+    assert len(reply["questions"]) == 1
+    assert "trần TỔNG THÁNG" in reply["questions"][0]
+    assert "khu vực" in reply["questions"][0]
     assert not any("thành phố nào" in question for question in reply["questions"])
     assert not any("bao nhiêu người" in question for question in reply["questions"])
 

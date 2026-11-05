@@ -77,7 +77,7 @@ Xây dựng một AI Agent:
 | Engine tài chính | Python `Decimal`, làm tròn VND: chi phí thuê, khả năng chi trả, vay annuity, hóa đơn |
 | Backend | FastAPI; một worker có luồng job nền cho tự động hóa |
 | Frontend | React + TypeScript; Leaflet + OpenStreetMap cho bản đồ |
-| Triển khai | Railway (PostgreSQL + pgvector) |
+| Triển khai | Chạy trên localhost: SQLite mặc định, PostgreSQL + pgvector local khi chạy P (D-09) |
 
 ## 6. Câu hỏi nghiên cứu
 
@@ -101,6 +101,7 @@ Xây dựng một AI Agent:
 | D-06 | — | Chat AI được lưu có che PII, giữ 90 ngày; mỗi lần admin mở đều ghi audit | Người dùng chọn 05/10 |
 | D-07 | Tích hợp bên ngoài | Thay bằng phương án không cần tài khoản: bản đồ OSM; phòng họp Jitsi cho xem trực tuyến; email là stub ghi log; chia sẻ mạng xã hội bằng link và sao chép, không tự đăng; giọng nói bằng Web Speech API của trình duyệt; thanh toán đối soát thủ công, không qua cổng thanh toán | Thiết kế 05/10 |
 | D-08 | Hợp đồng điện tử | Chấp thuận theo phiên bản trong ứng dụng cùng văn bản in được; **không** phải chữ ký số có giá trị pháp lý | Thiết kế 05/10 |
+| D-09 | Triển khai lên cloud (Railway) | Chỉ chạy trên **localhost**; không deploy Railway, không build Docker. Chạy live GPT-4o/pgvector (nếu có) cũng làm trên máy local | Người dùng chọn 28/10 |
 
 ## 8. Phương pháp của trợ lý
 
@@ -122,7 +123,11 @@ Kho v2 hoàn toàn **tổng hợp**:
 - 45 hồ sơ gold;
 - 22 ca oracle tài chính.
 
-Dữ liệu vận hành (hợp đồng, hóa đơn, tin nhắn, lượt xem) phát sinh khi dùng hệ thống. Không crawl hay tái sử dụng dữ liệu HubHome hay Chợ Tốt khi chưa có quyền. Chi tiết ở [kế hoạch dữ liệu](../data/PLAN.md).
+Dữ liệu vận hành (hợp đồng, hóa đơn, tin nhắn, lượt xem) phát sinh khi dùng hệ thống.
+
+**Catalog demo (quyết định 30/10/2026; cập nhật 31/10/2026 theo crawler 2.3):** mục tiêu **mỗi thành phố 2.500 tin** (tổng 5.000, chỉnh bằng `--per-city`), phòng trọ và căn hộ mỗi loại một nửa, hai thành phố luôn bằng nhau. Lấy từ API công khai của Chợ Tốt (`robots.txt` cho phép), ưu tiên tin cá nhân (`f=p`), thiếu thì bù tin môi giới (`f=c`, `poster_kind` theo bộ lọc nguồn); tin trùng và tin "nhiều phòng / giá từ" bị lọc trước khi chọn theo hạn mức. Snapshot cố định có SHA-256 trên PostgreSQL online. Catalog này chỉ dùng để demo trên dữ liệu thật; **mọi số đo đánh giá vẫn chạy trên kho tổng hợp ở trên**. Không thu thập tên, SĐT, ảnh hay tài khoản người đăng; người thuê liên hệ người đăng qua link tin gốc. Không dùng dữ liệu HubHome. **Đã chạy thật crawler 2.3 ngày 01/11/2026** (snapshot `chotot-2026-11-01` trên Neon): 2.446 tin, hai thành phố cân bằng 1.223/1.223, 76% tin cá nhân, TP.HCM toàn tin cá nhân; Hà Nội cạn nguồn sau lọc nên G6 hạ cả hai xuống mức 1.223.
+
+**Hạn chế về nguồn tin:** phần lớn tin cho thuê phòng ở Việt Nam đăng trong các group Facebook. Đề tài không thu thập nguồn này, vì điều khoản của Facebook cấm thu thập tự động và bài đăng chứa nhiều dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP). Catalog demo vì vậy chỉ phản ánh một phần thị trường. Chi tiết ở [kế hoạch dữ liệu](../data/PLAN.md).
 
 ## 10. Đánh giá
 
@@ -138,9 +143,8 @@ Khóa dữ liệu, cấu hình, prompt trước khi chạy tập test. Thiếu n
 ## 11. Kế hoạch
 
 Các giai đoạn GĐ1–GĐ3 và các đợt E1–E6 đã có code ngày 05/10 ([kế hoạch](ke-hoach-trien-khai.md), [trạng thái](trang-thai-trien-khai.md)). Còn lại:
-- deploy Railway;
-- chạy GPT-4o/pgvector thật;
-- demo trên trình duyệt;
+- chạy GPT-4o/pgvector thật trên máy local (cần API key);
+- demo trên trình duyệt (localhost);
 - đánh giá nghiên cứu (GĐ5).
 
 ## 12. Cơ sở tham khảo

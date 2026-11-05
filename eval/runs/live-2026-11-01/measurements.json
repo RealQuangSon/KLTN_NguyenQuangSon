@@ -1,0 +1,53 @@
+{
+  "cache_state": "not_applicable_offline_json_catalog",
+  "environment": "single local process, offline synthetic dataset; not provider latency",
+  "kind": "offline_machine_measurement",
+  "live_measurements": false,
+  "notice": "Timings describe the offline rule/B1 pipeline on this machine only; they are not GPT/embedding quality or provider latency evidence.",
+  "phases": {
+    "extraction": {
+      "mode": "live",
+      "model_calls": 18,
+      "p50": 2839.6729,
+      "p95": 3606.8955,
+      "samples": 18,
+      "unit": "ms"
+    },
+    "finance_oracle": {
+      "mode": "offline_cost_engine",
+      "model_calls": 0,
+      "p50": 0.0405,
+      "p95": 0.0998,
+      "samples": 22,
+      "unit": "ms"
+    },
+    "ranking_B1": {
+      "model_calls": 0,
+      "p50": 11.9692,
+      "p95": 17.1584,
+      "provider": "live",
+      "samples": 15,
+      "statuses": {
+        "successful": 15
+      },
+      "unit": "ms"
+    },
+    "ranking_P": {
+      "model_calls": 10,
+      "p50": 1009.395,
+      "p95": 1710.8569,
+      "provider": "live",
+      "samples": 15,
+      "statuses": {
+        "successful": 13,
+        "unavailable": 2
+      },
+      "unit": "ms"
+    }
+  },
+  "rankings_hash": "97e228ac74d44d90286b39bb98f2ecea7a9c6c98a540c642178af1c816b73cc1",
+  "review_waiting_time": "excluded_machine_phases_only",
+  "split": "dev",
+  "stage": "development",
+  "total_logical_model_calls": 28
+}

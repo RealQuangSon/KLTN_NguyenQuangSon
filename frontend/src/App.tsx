@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Api, ApiError } from "./api";
 import type { Actor, Role } from "./types";
-import { roleNames } from "./types";
+import { landlordPendingNote, roleNames } from "./types";
 import { Icon } from "./components/Shared";
 import { RenterWorkspace } from "./pages/RenterWorkspace";
 import { LandlordWorkspace } from "./pages/LandlordWorkspace";
@@ -11,6 +11,7 @@ import { InboxPage } from "./pages/Inbox";
 import { CopilotPage } from "./pages/Copilot";
 import { PublicListing } from "./pages/PublicListing";
 import { NotificationBell } from "./components/NotificationBell";
+import { ExperienceSwitch } from "./components/DemoExperience";
 import {
   BillingPage,
   LandlordDashboard,
@@ -21,12 +22,14 @@ import {
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { SavedPage } from "./pages/Saved";
 import { AdminWorkspace, type AdminSection } from "./pages/AdminWorkspace";
 import { AccountPage } from "./pages/Account";
 import { Forbidden, NotFound } from "./pages/StatusPages";
 import { RouterProvider, Redirect, useRouter } from "./router";
 import { Brand } from "./components/Brand";
 import { LoadingState } from "./components/LoadingState";
+import { clearLocal, clearLoginStorage } from "./session-storage";
 // FE-02: điều hướng theo route (deep link, back/forward) thay state tab.
 // Route UI theo UI_SPEC mục 3; màn chưa có API v1 là khung trung thực.
 type AppRoute =
@@ -34,6 +37,7 @@ type AppRoute =
   | { kind: "login" }
   | { kind: "register" }
   | { kind: "renter"; tab: "search" | "viewings" }
+  | { kind: "saved" }
   | { kind: "listings" }
   | { kind: "handbook" }
   | { kind: "inbox" }
@@ -51,6 +55,7 @@ type AppRoute =
 const publicKinds = ["landing", "login", "register"];
 const routeRoles: Partial<Record<AppRoute["kind"], Role[]>> = {
   renter: ["renter"],
+  saved: ["renter"],
   listings: ["renter"],
   handbook: ["renter"],
   inbox: ["renter", "owner"],
@@ -105,8 +110,8 @@ const sidebarNotes: Record<Role, { title: string; text: string }> = {
 const navByRole: Record<Role, { path: string; label: string; icon: string }[]> =
   {
     renter: [
-      { path: "/tro-ly-ai", label: "Tìm phòng", icon: "home" },
-      { path: "/tim-kiem", label: "Tìm theo bộ lọc", icon: "search" },
+      { path: "/tro-ly-ai", label: "Trợ lý AI", icon: "chat" },
+      { path: "/nguoi-thue/da-luu", label: "Đã lưu & đã xem", icon: "heart" },
       { path: "/tin-nhan", label: "Tin nhắn", icon: "chat" },
       { path: "/nguoi-thue/hop-dong", label: "Hợp đồng", icon: "compare" },
       { path: "/nguoi-thue/hoa-don", label: "Hóa đơn", icon: "clock" },
@@ -141,6 +146,7 @@ const navByRole: Record<Role, { path: string; label: string; icon: string }[]> =
     admin: [
       { path: "/quan-tri/hoi-thoai", label: "Hội thoại AI", icon: "chat" },
       { path: "/quan-tri/chuyen-giao", label: "Chuyển giao", icon: "compare" },
+      { path: "/quan-tri/ho-tro", label: "Yêu cầu hỗ trợ", icon: "clock" },
       { path: "/quan-tri/tai-khoan", label: "Người dùng", icon: "grid" },
       { path: "/quan-tri/tin-dang", label: "Tin đăng", icon: "home" },
       { path: "/quan-tri/van-hanh", label: "Vận hành", icon: "refresh" },
@@ -160,6 +166,8 @@ function resolveRoute(rawPath: string): AppRoute {
       return { kind: "renter", tab: "search" };
     case "/nguoi-thue/lich-xem":
       return { kind: "renter", tab: "viewings" };
+    case "/nguoi-thue/da-luu":
+      return { kind: "saved" };
     case "/tim-kiem":
       return { kind: "listings" };
     case "/cam-nang":
@@ -193,6 +201,7 @@ function resolveRoute(rawPath: string): AppRoute {
       return { kind: "landlord", tab: "viewings" };
     case "/quan-tri/hoi-thoai":
     case "/quan-tri/chuyen-giao":
+    case "/quan-tri/ho-tro":
     case "/quan-tri/tai-khoan":
     case "/quan-tri/tin-dang":
     case "/quan-tri/van-hanh":
@@ -212,11 +221,6 @@ function resolveRoute(rawPath: string): AppRoute {
         };
       return { kind: "not-found" };
   }
-}
-function clearLocal() {
-  Object.keys(sessionStorage)
-    .filter((key) => key.startsWith("homematch."))
-    .forEach((key) => sessionStorage.removeItem(key));
 }
 export default function App() {
   return (
@@ -284,7 +288,9 @@ function AppShell() {
   }, [api, token, clear]);
   const onAuthenticated = useCallback(
     (accessToken: string, nextActor: Actor) => {
-      clearLocal();
+      // Đăng nhập/chuyển trải nghiệm: xoá dữ liệu riêng tư nhưng giữ khoá phiên
+      // tư vấn của từng tài khoản để quay lại vai là dùng được trợ lý ngay.
+      clearLoginStorage();
       sessionStorage.setItem("homematch.token", accessToken);
       currentToken.current = accessToken;
       setToken(accessToken);
@@ -312,8 +318,7 @@ function AppShell() {
   };
   // Trang tin công khai (đích link chia sẻ) xem được dù đã hay chưa đăng nhập.
   if (route.kind === "public-listing")
-    return <PublicListing roomId={route.id} />;
-  if (boot)
+    return <PublicListing roomId={route.id} />;  if (boot)
     return (
       <div className="boot">
         <Brand />
@@ -353,9 +358,28 @@ function AppShell() {
       // nhập, không flash dữ liệu và không giả định quyền.
       <Redirect to="/dang-nhap" />
     );
-  if (publicKinds.includes(route.kind))
-    // Đã đăng nhập thì không giữ màn auth; đưa về cổng đúng vai trò.
+  // Màn auth sau khi đã có phiên: đưa về cổng đúng vai trò. Riêng trang chủ
+  // giữ nguyên như tham chiếu HubHome — người đã đăng nhập vẫn xem được landing,
+  // CTA chuyển thành "mở trợ lý" thay vì đăng nhập lại.
+  if (route.kind === "login" || route.kind === "register")
     return <Redirect to={roleHomes[actor.role]} />;
+  if (route.kind === "landing")
+    return (
+      <Landing
+        loggedIn
+        onLogin={() => navigate(roleHomes[actor.role])}
+        onNeed={(need) => {
+          setError(null);
+          if (actor.role === "renter") {
+            // Nhu cầu chia sẻ từ trang chủ đi thẳng vào phiên trợ lý đang mở.
+            setPendingNeed(need);
+            navigate("/tro-ly-ai");
+          } else {
+            navigate(roleHomes[actor.role]);
+          }
+        }}
+      />
+    );
   const allowed = routeRoles[route.kind];
   if (allowed && !allowed.includes(actor.role))
     return (
@@ -363,6 +387,33 @@ function AppShell() {
         homePath={roleHomes[actor.role]}
         homeLabel={`Về ${breadcrumbRoles[actor.role].toLowerCase()}`}
       />
+    );
+  // Màn trợ lý của người thuê dùng bố cục riêng kiểu workspace tham chiếu:
+  // sidebar icon mảnh + cột chat + khung preview (bản đồ + danh sách), không
+  // sidebar/topbar của các trang còn lại.
+  if (route.kind === "renter" && route.tab === "search")
+    return (
+      <div className="agent-screen">
+        <a className="skip-link" href="#main-content">
+          Chuyển đến nội dung
+        </a>
+        <IconRail
+          actor={actor}
+          api={api}
+          onLogout={() => void logout()}
+          onAuthenticated={onAuthenticated}
+        />
+        <main className="agent-main" id="main-content" tabIndex={-1}>
+          <RenterWorkspace
+            key={`${actor.id}:renter`}
+            api={api}
+            actor={actor}
+            tab={route.tab}
+            initialNeed={pendingNeed}
+            onNeedHandled={() => setPendingNeed(null)}
+          />
+        </main>
+      </div>
     );
   const links = navByRole[actor.role];
   const activeLink =
@@ -426,6 +477,8 @@ function AppShell() {
             <Icon name="logout" size={19} />
           </button>
         </div>
+        {/* Tự ẩn khi không phải seed local; component tự probe /health. */}
+        <ExperienceSwitch onAuthenticated={onAuthenticated} />
       </aside>
       <main className="app-main" id="main-content" tabIndex={-1}>
         <header className="topbar">
@@ -443,6 +496,14 @@ function AppShell() {
           </div>
         </header>
         <div className="page-content">
+          {/* FE-02: chủ nhà chờ duyệt thấy banner cố định trên mọi trang /chu-nha/*. */}
+          {actor.role === "owner" &&
+            actor.landlord_status === "pending" &&
+            path.startsWith("/chu-nha") && (
+              <div className="notice warning" role="status">
+                <span>{landlordPendingNote}</span>
+              </div>
+            )}
           {route.kind === "renter" ? (
             <RenterWorkspace
               key={`${actor.id}:renter`}
@@ -452,6 +513,8 @@ function AppShell() {
               initialNeed={pendingNeed}
               onNeedHandled={() => setPendingNeed(null)}
             />
+          ) : route.kind === "saved" ? (
+            <SavedPage key={`${actor.id}:saved`} api={api} />
           ) : route.kind === "listings" ? (
             <SearchPage key={`${actor.id}:listings`} api={api} />
           ) : route.kind === "handbook" ? (
@@ -484,6 +547,7 @@ function AppShell() {
               key={`${actor.id}:landlord`}
               api={api}
               tab={route.tab}
+              publishLocked={actor.landlord_status === "pending"}
             />
           ) : route.kind === "admin" ? (
             <AdminWorkspace api={api} section={route.section} />
@@ -499,5 +563,128 @@ function AppShell() {
         </footer>
       </main>
     </div>
+  );
+}
+// Sidebar icon mảnh cho màn trợ lý người thuê: mỗi icon dẫn tới một trang thật
+// của ứng dụng; khi rời /tro-ly-ai, shell chuẩn (sidebar đầy đủ) đảm nhiệm điều hướng.
+// Avatar mở menu tài khoản kiểu tham chiếu HubHome: trang cá nhân, đổi trải
+// nghiệm, về trang chủ và Đăng xuất bằng chữ rõ ràng.
+function IconRail({
+  actor,
+  api,
+  onLogout,
+  onAuthenticated,
+}: {
+  actor: Actor;
+  api: Api;
+  onLogout: () => void;
+  onAuthenticated: (token: string, nextActor: Actor) => void;
+}) {
+  const { path, navigate } = useRouter();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const items: { path: string; label: string; icon: string }[] = [
+    { path: "/tro-ly-ai", label: "Trợ lý AI", icon: "chat" },
+    { path: "/tim-kiem", label: "Tìm kiếm", icon: "search" },
+    { path: "/nguoi-thue/da-luu", label: "Đã lưu & đã xem", icon: "heart" },
+    { path: "/tin-nhan", label: "Tin nhắn", icon: "mail" },
+    { path: "/nguoi-thue/lich-xem", label: "Lịch xem của tôi", icon: "clock" },
+    { path: "/nguoi-thue/hop-dong", label: "Hợp đồng", icon: "compare" },
+    { path: "/nguoi-thue/hoa-don", label: "Hóa đơn", icon: "wallet" },
+    { path: "/nguoi-thue/sua-chua", label: "Sửa chữa", icon: "refresh" },
+  ];
+  const go = (to: string) => (event: React.MouseEvent) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    setAccountOpen(false);
+    navigate(to);
+  };
+  return (
+    <aside className="icon-rail" aria-label="Điều hướng chính">
+      <a href="/" className="rail-brand" aria-label="Trang chủ HomeMatch" onClick={go("/")}>
+        <Icon name="home" size={21} />
+      </a>
+      <nav aria-label="Điều hướng workspace">
+        {items.map((item) => {
+          const active = path.replace(/\/+$/, "") === item.path;
+          return (
+            <a
+              key={item.path}
+              href={item.path}
+              className={active ? "rail-link active" : "rail-link"}
+              aria-label={item.label}
+              title={item.label}
+              aria-current={active ? "page" : undefined}
+              onClick={go(item.path)}
+            >
+              <Icon name={item.icon} size={20} />
+            </a>
+          );
+        })}
+      </nav>
+      <div className="rail-bottom">
+        <NotificationBell api={api} onNavigate={(to) => navigate(to)} />
+        <button
+          type="button"
+          className={accountOpen ? "rail-link open" : "rail-link"}
+          aria-haspopup="menu"
+          aria-expanded={accountOpen}
+          aria-label={`Tài khoản ${actor.id}`}
+          title="Tài khoản"
+          onClick={() => setAccountOpen((value) => !value)}
+        >
+          <span className="rail-avatar">{avatarLabels[actor.role]}</span>
+          <span className="visually-hidden">{actor.id}</span>
+        </button>
+      </div>
+      {accountOpen && (
+        <>
+          {/* Nền trong suốt để bấm ra ngoài là đóng menu */}
+          <div
+            className="popover-backdrop"
+            onClick={() => setAccountOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="account-popover" aria-label="Menu tài khoản">
+            <div className="account-popover-head">
+              <span className="avatar">{avatarLabels[actor.role]}</span>
+              <div>
+                <strong>{actor.id}</strong>
+                <small>{roleNames[actor.role]}</small>
+              </div>
+            </div>
+            <a href="/nguoi-thue/da-luu" onClick={go("/nguoi-thue/da-luu")}>
+              <Icon name="heart" size={16} /> Đã lưu &amp; đã xem
+            </a>
+            <a href="/tai-khoan/ho-so" onClick={go("/tai-khoan/ho-so")}>
+              <Icon name="shield" size={16} /> Tài khoản &amp; bảo mật
+            </a>
+            <a href="/" onClick={go("/")}>
+              <Icon name="home" size={16} /> Về trang chủ
+            </a>
+            <div className="account-popover-divider" />
+            {/* Chuyển trải nghiệm nhanh chỉ hiện ở seed local; tự ẩn khi bản public. */}
+            <ExperienceSwitch onAuthenticated={onAuthenticated} />
+            <button
+              type="button"
+              className="account-popover-logout"
+              onClick={() => {
+                setAccountOpen(false);
+                onLogout();
+              }}
+            >
+              <Icon name="logout" size={17} /> Đăng xuất
+            </button>
+          </div>
+        </>
+      )}
+    </aside>
   );
 }

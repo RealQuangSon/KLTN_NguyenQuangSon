@@ -1,6 +1,6 @@
 # Runbook HomeMatch local
 
-Runbook này mô tả bản local (schema v9: luồng khách–chủ nhà và 5 phân hệ). Việc hạ tầng tiếp theo (Docker, Railway, GPT-4o/pgvector live) ở [PLAN](PLAN.md). Runbook local chưa phải hướng dẫn vận hành bản deploy.
+Runbook này mô tả bản local (schema v13). Đồ án chỉ chạy trên localhost (D-09); cấu hình Docker/Railway đã xóa khỏi repo ngày 28/10/2026. Chạy GPT-4o/pgvector live trên máy local ở [PLAN](PLAN.md) và [live-run](live-run.md).
 
 Đường chạy mặc định là SQLite/rule/B1. Đọc README để cài, seed và mở hai workspace. Backend không tự nạp `.env`; kiểm tra biến process mà không in secret.
 
@@ -38,7 +38,7 @@ Setup/startup chạy migration có phiên bản và tạo checkpointer nếu ch�
 
 ## Auth và public mode
 
-Đổi mật khẩu seed: dừng API, đặt đủ bốn biến password mạnh rồi chạy `python -m backend.manage seed-users --rotate-passwords`; thao tác thu hồi token. Sau đó khởi động API và kiểm tra login. Public mode kiểm PG/auth/password khớp stored hash/CORS, không tự biến credential local thành credential public. Container/cloud còn cần build và smoke thực tế.
+Đổi mật khẩu seed: dừng API, đặt đủ bốn biến password mạnh rồi chạy `python -m backend.manage seed-users --rotate-passwords`; thao tác thu hồi token. Sau đó khởi động API và kiểm tra login. Public mode kiểm PG/auth/password khớp stored hash/CORS, không tự biến credential local thành credential public.
 
 ## Kiểm chứng vận hành
 

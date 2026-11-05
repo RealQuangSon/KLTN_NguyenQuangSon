@@ -1,6 +1,6 @@
 # Kiến trúc đích HomeMatch AI Agent
 
-**Cập nhật:** 05/10/2026 (sau E1–E6). Kiến trúc cần đạt khi deploy và chạy live. Phần lớn thành phần đã có trong code; xem [kiến trúc đang chạy](kien-truc-trien-khai.md). Mục tiêu ban đầu là hoàn thành GĐ1–GĐ4 ([kế hoạch](ke-hoach-trien-khai.md)). Kiến trúc đang chạy (0.4.0) nằm ở [kien-truc-trien-khai.md](kien-truc-trien-khai.md).
+**Cập nhật:** 05/10/2026 (sau E1–E6). Kiến trúc cần đạt khi chạy live trên localhost. Từ 28/10 đồ án chỉ chạy localhost (D-09); §5 chỉ còn là ghi nhận lịch sử. Phần lớn thành phần đã có trong code; xem [kiến trúc đang chạy](kien-truc-trien-khai.md). Mục tiêu ban đầu là hoàn thành GĐ1–GĐ4 ([kế hoạch](ke-hoach-trien-khai.md)). Kiến trúc đang chạy (0.4.0) nằm ở [kien-truc-trien-khai.md](kien-truc-trien-khai.md).
 
 ## 1. Thành phần
 
@@ -55,25 +55,13 @@ flowchart LR
 - Token ngẫu nhiên, server lưu hash SHA-256, có hạn và thu hồi được. Không dùng JWT.
 - Kiểm quyền theo bản ghi ở service: chủ phiên; chủ nhà của phòng (danh sách AI, lịch, chat, hợp đồng, hóa đơn, sự cố); admin cho console. Ma trận quyền nằm trong `agent_capability.py` và `capabilities.py`.
 - Dữ liệu tài chính: xem [tai-chinh-thue.md](tai-chinh-thue.md#8-bảo-mật-dữ-liệu-tài-chính). Log dùng route mẫu, không ghi body, query, token hay chat.
-- Không tự đọc `.env`. Secret nằm trong biến môi trường server (Railway variables).
+- Không tự đọc `.env`. Secret nằm trong biến môi trường của process (export trong shell khi chạy local).
 
-## 5. Triển khai Railway
+## 5. Triển khai Railway (đã xóa khỏi repo, ngoài phạm vi)
 
-| Dịch vụ | Cấu hình |
-|---|---|
-| API | `infra/Dockerfile.api`, `infra/railway.toml`, một worker, healthcheck `/ready` |
-| PostgreSQL | Image có extension `vector`, volume bền, backup riêng |
-| Frontend | `infra/Dockerfile.frontend` + Nginx, hoặc host tĩnh, trỏ `VITE_API_BASE_URL` tới API |
+Đồ án chỉ chạy trên localhost (D-09, 28/10/2026). Bản nháp cấu hình Docker/Railway (`Dockerfile.api`, `Dockerfile.frontend`, `compose.yaml`, `railway.toml`, `nginx.conf`, `deploy-railway.md`) chưa từng build hay deploy và đã **xóa khỏi repo ngày 28/10/2026**. Trình bày dưới đây chỉ để chép lại ý tưởng ban đầu: API một worker kèm healthcheck `/ready`; PostgreSQL có extension `vector` và volume bền; frontend tĩnh trỏ `VITE_API_BASE_URL` tới API.
 
-Biến môi trường chính:
-
-- `HOMEMATCH_DATABASE_URL`;
-- `HOMEMATCH_AUTH_MODE=seed`, `HOMEMATCH_PUBLIC=true`, mật khẩu seed mạnh;
-- `HOMEMATCH_LLM_MODE=openai`, `OPENAI_API_KEY`;
-- `HOMEMATCH_EMBEDDING_MODE=openai`, `HOMEMATCH_MATCHING_METHOD=P`;
-- `HOMEMATCH_CORS_ORIGINS`.
-
-Danh sách đầy đủ ở [env-inventory](../infra/env-inventory.md). Hướng dẫn chuẩn bị ở [deploy-railway](../infra/deploy-railway.md).
+Biến môi trường khi ấy cần: `HOMEMATCH_DATABASE_URL`; `HOMEMATCH_AUTH_MODE=seed`, `HOMEMATCH_PUBLIC=true`, mật khẩu seed mạnh; `HOMEMATCH_LLM_MODE=openai`, `OPENAI_API_KEY`; `HOMEMATCH_EMBEDDING_MODE=openai`, `HOMEMATCH_MATCHING_METHOD=P`; `HOMEMATCH_CORS_ORIGINS`. Danh sách đầy đủ ở [env-inventory](../infra/env-inventory.md).
 
 ## 6. Quyết định kiến trúc
 

@@ -3,6 +3,7 @@ import pytest
 from data.generate import generate
 from backend.app.catalog import Catalog
 from backend.app.models import Candidate
+from backend.app.service import HomeMatchService
 from eval.common import EvaluationError, read_json, read_jsonl, sha256_file, write_json, write_jsonl
 from eval.measurement import measurement_report, percentile
 from eval.pipeline import extraction_report, oracle_report, ranking_run
@@ -25,6 +26,11 @@ def test_invariants_pass_on_generated_dataset(tmp_path):
     assert report["passed"] and report["failed"] == 0
     assert report["profile_count"] == 15 and report["eligible_candidate_checks"] > 0
     assert report["counterfactual"]["invariant_holds"]
+    # LF-01/F2: posting time and poster kind must not move the ranking either.
+    meta = report["counterfactual"]["listing_meta"]
+    assert meta["invariant_holds"] and meta["profiles_compared"] == 15
+    assert meta["posted_at_past_changed"] == 0 and meta["posted_at_future_changed"] == 0
+    assert meta["poster_kind_changed"] == 0
     assert report["availability_flip_enforced"] is True
     assert report["violations"] == {}
 
@@ -47,6 +53,49 @@ def test_invariants_detect_leaky_eligible_set(tmp_path):
     assert not report["passed"]
     assert report["violations"]["published"] >= 1
     assert any(row["violations"] for row in report["rows"])
+
+
+def test_invariants_promotion_counterfactual_reports_zero_changes(tmp_path):
+    dataset, runs = tmp_path / "data", tmp_path / "runs"
+    generate(dataset)
+    report = invariants_report(dataset, "dev", runs / "invariants.json")
+    promotion = report["counterfactual"]["promotion"]
+    assert report["passed"] and report["failed"] == 0
+    assert report["promotion_rank_changes"] == 0
+    assert promotion["invariant_holds"] and promotion["promoted_room_id"]
+    assert promotion["profiles_compared"] == 15
+    assert promotion["positive_control"] == "promotion visible on listing DTO"
+
+
+def test_invariants_promotion_counterfactual_gates_leaked_ranking(tmp_path):
+    dataset, runs = tmp_path / "data", tmp_path / "runs"
+    generate(dataset)
+
+    def promotion_biased_service(path):
+        # Eval-side double standing in for a backend bug: the ranker reorders rooms
+        # based on hm_promotions, i.e. the promotion leaks into ranking. Backend is
+        # untouched; the leak is direction-agnostic because any reordering violates.
+        service = HomeMatchService(path)
+        original_rank = service.catalog.rank
+
+        def biased_rank(profile, method="B1"):
+            ranked, diagnostics = original_rank(profile, method=method)
+            promoted = {row["room_id"] for row in
+                        service.repo.db.execute("SELECT room_id FROM hm_promotions").fetchall()}
+            return ([item for item in ranked if item.room_id not in promoted]
+                    + [item for item in ranked if item.room_id in promoted]), diagnostics
+
+        service.catalog.rank = biased_rank
+        return service
+
+    report = invariants_report(dataset, "dev", runs / "invariants.json",
+                               promotion_service_factory=promotion_biased_service)
+    assert not report["passed"]
+    assert report["promotion_rank_changes"] >= 1
+    assert report["counterfactual"]["promotion"]["changed"] == report["promotion_rank_changes"]
+    assert report["violations"]["promotion_changed_ranking"] >= 1
+    # The double only biases the after-write pass, so the positive control still holds.
+    assert report["counterfactual"]["promotion"]["positive_control"] == "promotion visible on listing DTO"
 
 
 def test_grounding_supports_template_claims_and_flags_tampered_amount(tmp_path):

@@ -1,8 +1,14 @@
-import { useState } from "react";
-import type { Fee, Room, RoomType } from "../types";
-import { amenities, occupancyLabels, roomTypeLabels } from "../types";
+import { useEffect, useState } from "react";
+import { Api, mediaSrc } from "../api";
+import type { Fee, Photo, Promotion, Room, RoomType } from "../types";
+import {
+  amenities,
+  landlordPendingNote,
+  occupancyLabels,
+  roomTypeLabels,
+} from "../types";
 import { cityAreas } from "../locations";
-import { ErrorNotice, Icon } from "./Shared";
+import { ErrorNotice, Icon, roomTitle } from "./Shared";
 // Form tạo/sửa tin của chủ nhà. Máy chủ gán id, revision, chủ sở hữu và nguồn;
 // sửa tin dùng expected_revision để không ghi đè thay đổi của phiên khác.
 const FEE_NAMES = [
@@ -12,6 +18,12 @@ const FEE_NAMES = [
   "parking",
   "service",
 ] as const;
+// FE-05: kiểm ở client chỉ để báo sớm; máy chủ vẫn quyết định khi tải lên.
+const MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+// FE-06: ưu đãi 1–200 ký tự, hạn từ hôm nay tới hôm nay + 90 ngày.
+const PROMO_MAX_CHARS = 200;
+const PROMO_MAX_DAYS = 90;
 const FEE_LABELS: Record<string, string> = {
   electricity: "Điện (đ/kWh)",
   water: "Nước",
@@ -76,20 +88,173 @@ const fromRoom = (room: Room | null): Values => ({
   features: room?.features_text ?? "",
   rules: room?.house_rules ?? "",
 });
+// Ngày cục bộ dạng YYYY-MM-DD cho input date (tránh lệch múi giờ của toISOString).
+const isoDay = (offset: number) => {
+  const day = new Date();
+  day.setDate(day.getDate() + offset);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+};
 export function RoomEditor({
+  api,
   room,
   onSubmit,
   onCancel,
+  publishLocked = false,
 }: {
+  api: Api;
   room: Room | null;
   onSubmit: (body: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
+  // FE-02: chủ nhà đang chờ duyệt không được bật công khai; máy chủ vẫn là nơi
+  // chặn cuối (403 landlord_not_approved) nếu request vẫn lọt qua.
+  publishLocked?: boolean;
 }) {
   const [values, setValues] = useState<Values>(() => fromRoom(room));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // FE-05: ảnh chỉ thao tác được khi tin đã tồn tại (có id).
+  const [media, setMedia] = useState<Photo[]>(room?.photos ?? []);
+  const [uploading, setUploading] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  // FE-06: ưu đãi hiện tại của tin (chỉ khi còn hạn, do máy chủ quyết định).
+  const [promotion, setPromotion] = useState<Promotion | null>(
+    room?.promotion ?? null,
+  );
+  const [promoText, setPromoText] = useState(promotion?.text ?? "");
+  const [promoUntil, setPromoUntil] = useState(promotion?.valid_until ?? "");
+  const [promoBusy, setPromoBusy] = useState(false);
+  // Chi tiết tin (photos + promotion) nằm ở /landlord/rooms/{id}; nạp im lặng,
+  // lỗi để máy chủ báo lại ở từng thao tác cụ thể.
+  useEffect(() => {
+    if (!room) return;
+    let active = true;
+    api
+      .get<Room>(`/landlord/rooms/${room.id}`)
+      .then((detail) => {
+        if (!active) return;
+        setMedia(detail.photos ?? []);
+        setPromotion(detail.promotion ?? null);
+        setPromoText(detail.promotion?.text ?? "");
+        setPromoUntil(detail.promotion?.valid_until ?? "");
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // Chỉ nạp lại khi đổi tin; đối tượng room có thể được tạo lại với cùng id.
+  }, [api, room?.id]);
   const set = <K extends keyof Values>(key: K, value: Values[K]) =>
     setValues((v) => ({ ...v, [key]: value }));
+  // FE-05: tải lần lượt từng file để thấy tiến độ và giữ thứ tự đã chọn.
+  const uploadPhotos = async (files: FileList | null) => {
+    if (!room || !files?.length) return;
+    const chosen = Array.from(files);
+    const rejected = chosen.filter(
+      (file) => file.size > MEDIA_MAX_BYTES || !MEDIA_TYPES.includes(file.type),
+    );
+    const acceptable = chosen.filter((file) => !rejected.includes(file));
+    setError(null);
+    setNotice(
+      rejected.length
+        ? `Đã bỏ qua ${rejected.length} tệp: chỉ nhận JPEG/PNG/WebP ≤ 5 MB (máy chủ vẫn kiểm tra lại).`
+        : null,
+    );
+    if (!acceptable.length) return;
+    setUploading({ done: 0, total: acceptable.length });
+    try {
+      const uploaded: Photo[] = [];
+      for (const [index, file] of acceptable.entries()) {
+        uploaded.push(
+          await api.upload<Photo>(`/landlord/rooms/${room.id}/media`, file),
+        );
+        setUploading({ done: index + 1, total: acceptable.length });
+      }
+      setMedia((current) => [...current, ...uploaded]);
+      setNotice(
+        `Đã tải ${uploaded.length} ảnh. Ảnh đầu tiên là ảnh bìa của tin.`,
+      );
+    } catch (err) {
+      // invalid_media / media_too_large / media_limit: hiện đúng message máy chủ.
+      setError((err as Error).message);
+    } finally {
+      setUploading(null);
+    }
+  };
+  const deletePhoto = async (photo: Photo) => {
+    if (!room) return;
+    setError(null);
+    try {
+      await api.delete(`/landlord/rooms/${room.id}/media/${photo.id}`);
+      setMedia((current) => current.filter((item) => item.id !== photo.id));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+  const movePhoto = async (index: number, step: -1 | 1) => {
+    if (!room) return;
+    const target = index + step;
+    if (target < 0 || target >= media.length) return;
+    const next = [...media];
+    [next[index], next[target]] = [next[target], next[index]];
+    setMedia(next);
+    try {
+      const saved = await api.patch<Photo[]>(
+        `/landlord/rooms/${room.id}/media/order`,
+        { media_ids: next.map((item) => item.id) },
+      );
+      setMedia(saved);
+    } catch (err) {
+      setMedia(media);
+      setError((err as Error).message);
+    }
+  };
+  // FE-06: lưu ưu đãi; giá hiển thị và thứ tự gợi ý không bị UI thay đổi.
+  const savePromotion = async () => {
+    if (!room) return;
+    const text = promoText.trim();
+    if (!text || !promoUntil) {
+      setError("Nhập nội dung ưu đãi và ngày hết hạn trước khi lưu.");
+      return;
+    }
+    setPromoBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const saved = await api.put<Promotion>(
+        `/landlord/rooms/${room.id}/promotion`,
+        { text, valid_until: promoUntil },
+      );
+      setPromotion(saved);
+      setPromoText(saved.text);
+      setPromoUntil(saved.valid_until);
+      setNotice(`Đã lưu ưu đãi, hiển thị tới ${saved.valid_until}.`);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+  const removePromotion = async () => {
+    if (!room) return;
+    setPromoBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await api.delete(`/landlord/rooms/${room.id}/promotion`);
+      setPromotion(null);
+      setPromoText("");
+      setPromoUntil("");
+      setNotice("Đã gỡ ưu đãi khỏi tin.");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPromoBusy(false);
+    }
+  };
   const body = () => ({
     title: values.title.trim(),
     city: values.city,
@@ -141,6 +306,11 @@ export function RoomEditor({
         </button>
       </div>
       <ErrorNotice error={error} onClose={() => setError(null)} />
+      {notice && (
+        <div className="notice success" role="status">
+          {notice}
+        </div>
+      )}
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -384,14 +554,21 @@ export function RoomEditor({
             onChange={(e) => set("rules", e.target.value)}
           />
         </label>
-        <label className="checkbox-line">
+        <label
+          className="checkbox-line"
+          title={publishLocked ? landlordPendingNote : undefined}
+        >
           <input
             type="checkbox"
             checked={values.published}
+            disabled={publishLocked}
             onChange={(e) => set("published", e.target.checked)}
           />
           Công khai tin cho khách tìm thấy
         </label>
+        {publishLocked && (
+          <small className="input-hint">{landlordPendingNote}</small>
+        )}
         <div className="form-actions">
           <button
             type="button"
@@ -407,6 +584,131 @@ export function RoomEditor({
           </button>
         </div>
       </form>
+      {/* FE-05/FE-06: ảnh và ưu đãi cần tin đã có id do máy chủ cấp. */}
+      {room && (
+        <>
+          <fieldset className="media-editor">
+            <legend>Ảnh tin</legend>
+            <label>
+              Chọn ảnh (JPEG/PNG/WebP, tối đa 5 MB mỗi ảnh)
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                disabled={Boolean(uploading)}
+                onChange={(e) => {
+                  void uploadPhotos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {uploading && (
+              <p className="input-hint" role="status">
+                Đang tải ảnh {uploading.done}/{uploading.total}…
+              </p>
+            )}
+            {media.length ? (
+              <ul className="media-grid">
+                {media.map((photo, index) => (
+                  <li key={photo.id} className="media-item">
+                    <img
+                      src={mediaSrc(photo.url)}
+                      alt={`Ảnh ${index + 1} của ${roomTitle(room.title)}`}
+                    />
+                    <div className="media-actions">
+                      <button
+                        type="button"
+                        className="text-button"
+                        aria-label={`Đưa ảnh ${index + 1} lên`}
+                        disabled={index === 0 || Boolean(uploading)}
+                        onClick={() => void movePhoto(index, -1)}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button"
+                        aria-label={`Đưa ảnh ${index + 1} xuống`}
+                        disabled={
+                          index === media.length - 1 || Boolean(uploading)
+                        }
+                        onClick={() => void movePhoto(index, 1)}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button"
+                        aria-label={`Xóa ảnh ${index + 1}`}
+                        disabled={Boolean(uploading)}
+                        onClick={() => void deletePhoto(photo)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                    {index === 0 && (
+                      <small className="input-hint">Ảnh bìa</small>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="subtle">
+                Tin chưa có ảnh thật; khách thấy hình minh họa.
+              </p>
+            )}
+          </fieldset>
+          <fieldset className="promotion-editor">
+            <legend>Ưu đãi</legend>
+            {promotion && (
+              <p className="notice" role="status">
+                Đang có ưu đãi đến {promotion.valid_until}: {promotion.text}
+              </p>
+            )}
+            <label>
+              Nội dung ưu đãi (hiển thị cho khách, không đổi giá trong tin)
+              <textarea
+                rows={2}
+                maxLength={PROMO_MAX_CHARS}
+                value={promoText}
+                onChange={(e) => setPromoText(e.target.value)}
+              />
+            </label>
+            <small className="input-hint">
+              {promoText.trim().length}/{PROMO_MAX_CHARS} ký tự
+            </small>
+            <label>
+              Hết hạn vào ngày (tối đa {PROMO_MAX_DAYS} ngày tới)
+              <input
+                type="date"
+                min={isoDay(0)}
+                max={isoDay(PROMO_MAX_DAYS)}
+                value={promoUntil}
+                onChange={(e) => setPromoUntil(e.target.value)}
+              />
+            </label>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="button outline"
+                disabled={promoBusy}
+                onClick={() => void removePromotion()}
+              >
+                Gỡ ưu đãi
+              </button>
+              <button
+                type="button"
+                className="button"
+                disabled={promoBusy}
+                onClick={() => void savePromotion()}
+              >
+                <Icon name="check" size={16} />
+                {promoBusy ? "Đang lưu…" : "Lưu ưu đãi"}
+              </button>
+            </div>
+          </fieldset>
+        </>
+      )}
     </section>
   );
 }

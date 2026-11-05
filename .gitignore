@@ -13,3 +13,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 *.log
+.DS_Store
+eval/labels/
+.neon
+.claude/settings.local.json
+.zcode/

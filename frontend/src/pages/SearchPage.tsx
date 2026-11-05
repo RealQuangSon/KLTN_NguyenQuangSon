@@ -1,16 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Api } from "../api";
 import type { Cost, Room, RoomType } from "../types";
-import { amenities, fees, occupancyLabels, roomTypeLabels } from "../types";
+import {
+  addressLine,
+  amenities,
+  fees,
+  occupancyLabels,
+  postedAgoLabel,
+  roomTypeLabels,
+} from "../types";
 import { cityAreas } from "../locations";
 import {
+  AmenityChips,
   CostBreakdown,
+  DescriptionText,
   EmptyState,
+  ContactInfo,
   ErrorNotice,
   Icon,
   money,
+  PosterBadge,
+  PromotionBadge,
+  TermsBlock,
   roomTitle,
 } from "../components/Shared";
+import { CoverPhoto, PhotoGallery } from "../components/PhotoGallery";
 import { MapView } from "../components/MapView";
 import { AdviceBox, type Advice } from "../components/Advice";
 import { ViewingForm } from "../components/ViewingPanel";
@@ -291,6 +305,9 @@ export function SearchPage({ api }: { api: Api }) {
               <option value="monthly_desc">Tổng tháng cao → thấp</option>
               <option value="rent_asc">Giá thuê thấp → cao</option>
               <option value="area_desc">Diện tích lớn → nhỏ</option>
+              {/* F2: "Mới đăng" chỉ ở tìm theo bộ lọc do người dùng chọn,
+                  không bao giờ dùng trong gợi ý AI. */}
+              <option value="posted_desc">Mới đăng</option>
             </select>
           </label>
         </div>
@@ -303,6 +320,15 @@ export function SearchPage({ api }: { api: Api }) {
                 filters.amenities.includes(id) ? "choice active" : "choice"
               }
               aria-pressed={filters.amenities.includes(id)}
+              // Máy chủ giới hạn 9 tiện nghi bắt buộc mỗi lần tìm (README §7.5).
+              disabled={
+                !filters.amenities.includes(id) && filters.amenities.length >= 9
+              }
+              title={
+                !filters.amenities.includes(id) && filters.amenities.length >= 9
+                  ? "Chọn tối đa 9 tiện nghi bắt buộc"
+                  : undefined
+              }
               onClick={() =>
                 set(
                   "amenities",
@@ -377,12 +403,20 @@ export function SearchPage({ api }: { api: Api }) {
                   className={`listing-card ${detail?.id === item.id ? "selected" : ""}`}
                   key={item.id}
                 >
+                  <CoverPhoto
+                    photos={item.photos}
+                    title={roomTitle(item.title)}
+                  />
                   <span className="eyebrow">
                     {item.area} · {item.city} ·{" "}
                     {roomTypeLabels[item.room_type ?? "room"]}
                     {item.bedrooms ? ` ${item.bedrooms}PN` : ""}
                   </span>
                   <h3>{roomTitle(item.title)}</h3>
+                  {/* FE-06: nhãn ưu đãi chỉ khi máy chủ trả promotion; giá không đổi. */}
+                  {item.promotion && (
+                    <PromotionBadge promotion={item.promotion} />
+                  )}
                   <p>
                     <strong>{money(item.cost.monthly_total_vnd)}</strong>
                     /tháng (ước tính) · thuê {money(item.quote.rent_vnd)} ·{" "}
@@ -472,8 +506,27 @@ export function SearchPage({ api }: { api: Api }) {
               <span className="eyebrow">
                 {detail.area} · {detail.city}
               </span>
-              <h2>{roomTitle(detail.title)}</h2>
+              <h2>
+                {roomTitle(detail.title)}{" "}
+                <PosterBadge posterKind={detail.poster_kind} />
+              </h2>
+              {/* LF-05: địa chỉ chi tiết, ngày đăng, nội dung tin, điều khoản
+                  thuê và chip tiện ích; thiếu phần nào thì bỏ/"Chưa rõ". */}
+              {addressLine(detail) && <p>{addressLine(detail)}</p>}
+              {postedAgoLabel(detail.posted_at) && (
+                <small>{postedAgoLabel(detail.posted_at)}</small>
+              )}
+              {detail.promotion && (
+                <PromotionBadge promotion={detail.promotion} withText />
+              )}
+              <PhotoGallery
+                photos={detail.photos}
+                title={roomTitle(detail.title)}
+              />
               {detail.features_text && <p>{detail.features_text}</p>}
+              <DescriptionText description={detail.description} />
+              <AmenityChips amenities={detail.amenities} />
+              <TermsBlock room={detail} />
               <CostBreakdown cost={detail.cost} />
               <h3>Nội quy & cách tính phí của chủ nhà</h3>
               <p>{detail.house_rules || "Chủ nhà chưa cung cấp nội quy."}</p>
@@ -525,6 +578,7 @@ export function SearchPage({ api }: { api: Api }) {
                   <small>{handbook.disclaimer}</small>
                 </div>
               )}
+              <ContactInfo contact={detail.contact} />
               <div className="form-actions">
                 <button
                   className="button outline"

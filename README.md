@@ -9,21 +9,23 @@ Khóa luận tốt nghiệp: nền tảng cho thuê phòng trọ, studio, căn h
   - Admin Console;
   - cổng chủ nhà (PMS & CRM);
   - trợ lý AI cho chủ nhà.
-- **Công nghệ:** GPT-4o, embedding + pgvector, LangGraph, FastAPI, React/TypeScript, Leaflet/OSM, Railway.
-- **Phạm vi:** cho thuê, không mua bán. Đây là điều chỉnh có chủ đích so với đề bài gốc; xem D-01→D-08 trong [đề cương](docs/ke-hoach-kltn-homematch.md).
+- **Công nghệ:** GPT-4o, embedding + pgvector, LangGraph, FastAPI, React/TypeScript, Leaflet/OSM. Chạy trên localhost (SQLite hoặc PostgreSQL local).
+- **Phạm vi:** cho thuê, không mua bán. Đây là điều chỉnh có chủ đích so với đề bài gốc; xem D-01→D-09 trong [đề cương](docs/ke-hoach-kltn-homematch.md).
 
 ## Trạng thái
 
-Ngày 05/10/2026, code có đủ trợ lý AI và 5 phân hệ (schema v9). Kết quả kiểm tra:
-- `bash infra/check-local.sh` pass: 196 test Python, 41 test UI, oracle 22/22, 0 vi phạm điều kiện cứng, 142/142 khẳng định có bằng chứng;
-- smoke qua HTTP thật trên server uvicorn pass.
+Code có đủ trợ lý AI và 5 phân hệ (05/10), cộng đợt 08/10: chủ nhà tự đăng ký và admin duyệt, ticket hỗ trợ, ảnh tin và ảnh sự cố, ưu đãi chủ nhà, mô phỏng vay trong chat, chi phí AI quy VND (schema v13). Kết quả kiểm tra:
+- `bash infra/check-local.sh` pass ngày 09/10/2026: 280 test Python (4 bỏ qua vì không có PostgreSQL), 74 test UI, oracle 22/22, hóa đơn 12/12, 0 vi phạm điều kiện cứng, 142/142 khẳng định có bằng chứng;
+- PostgreSQL 17.11: 417 passed (08/10/2026); smoke qua HTTP thật trên server uvicorn pass (05/10/2026).
 
 | Còn thiếu | Ghi chú |
 |---|---|
-| Deploy Railway, chạy GPT-4o/pgvector thật | Cần tài khoản và API key |
-| Demo trên trình duyệt, test PostgreSQL schema v9 | |
-| Ảnh tin và ảnh sự cố, ưu đãi chăm sóc khách, tự đăng mạng xã hội | Đang ở mức một phần |
+| Chạy GPT-4o/pgvector thật trên máy local | Cần `OPENAI_API_KEY` và ngân sách; hướng dẫn ở [infra/live-run.md](infra/live-run.md) |
+| Demo trên trình duyệt (localhost), kiểm viewport | Kịch bản ở [docs/kich-ban-demo.md](docs/kich-ban-demo.md), chưa quay |
+| Tự đăng mạng xã hội | Một phần: chỉ chia sẻ link và sao chép nội dung |
 | Nhãn người chấm, khảo sát người dùng | GĐ5 |
+
+Deploy Railway và build Docker **ngoài phạm vi** (D-09): đồ án chỉ cần chạy trên localhost.
 
 Chi tiết ở [trạng thái](docs/trang-thai-trien-khai.md). Dữ liệu là **hoàn toàn tổng hợp**: 220 căn, 4 chủ nhà.
 
@@ -62,6 +64,14 @@ Tài khoản local (mật khẩu `local-<username>-password`, không dùng khi p
 | `manager-a`, `manager-b` | Vai trò cũ, không còn quyền nghiệp vụ |
 
 ## Demo
+
+Trước khi mở trình duyệt, nạp kịch bản PMS mẫu cho `owner-a`/`renter-a` (chạy sau `seed-users`, chỉ dùng cho DB demo local; lệnh từ chối chạy khi `HOMEMATCH_PUBLIC=true` và bỏ qua nếu đã nạp rồi):
+
+```bash
+.venv/bin/python -m backend.manage seed-demo
+```
+
+Kịch bản `[DEMO]` gồm: một hợp đồng đã kích hoạt (bắt đầu 2 tháng trước), hai kỳ hóa đơn (kỳ 1 đã thu đủ, kỳ 2 quá hạn với một báo chuyển tiền một phần chờ chủ nhà xác nhận), một sự cố đang xử lý và một hội thoại 2 tin nhắn — mọi nội dung đều mang tiền tố `[DEMO]`.
 
 1. **Khách** `renter-a` chat: "Tìm căn hộ 1 phòng ngủ ở Cầu Giấy, Hà Nội cho 2 người, view thoáng".
    - Trên form, nhập trần tổng tháng 16.000.000 VND, tiền mặt 15.000.000 VND, thu nhập 30.000.000 VND, bật vay 12%/năm trong 12 tháng.
@@ -108,7 +118,7 @@ backend/   FastAPI; LangGraph (service.py); costs/catalog/locations; agents, mem
 frontend/  React/TypeScript: trợ lý, tìm kiếm + bản đồ, tin nhắn, cẩm nang, cổng chủ nhà (PMS/CRM, trợ lý), Admin Console
 data/      generator v2, kho tổng hợp, hồ sơ gold, oracle, manifest
 eval/      CLI đánh giá, protocol, kết quả development
-infra/     script local, Docker/Railway (chưa deploy), runbook
+infra/     script local, runbook (cấu hình Docker/Railway đã xóa khỏi repo, D-09)
 docs/      đề cương, đặc tả, yêu cầu, thiết kế, kế hoạch, bằng chứng
 ```
 

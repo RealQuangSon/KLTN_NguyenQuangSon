@@ -12,7 +12,7 @@ from .app.service import HomeMatchService
 
 def main():
     with TemporaryDirectory(prefix="homematch-demo-") as directory:
-        service = HomeMatchService(Path(directory) / "demo.sqlite", interpreter=DemoInterpreter())
+        service = HomeMatchService(Path(directory) / "demo.sqlite", interpreter=DemoInterpreter(), auto_publish=False)
         renter = Actor(id="renter-a", role="renter")
         landlord = Actor(id="owner-a", role="owner")  # demo rooms belong to owner-a
         session_id = service.create_session(renter)["session_id"]

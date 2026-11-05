@@ -1,8 +1,23 @@
 from decimal import Decimal, ROUND_HALF_UP
 
-from .models import Affordability, CostLine, CostRequest, CostResult, LoanEstimate, LoanTerms, Quote, Scenario
+from .models import Affordability, CostLine, CostRequest, CostResult, Fee, LoanEstimate, LoanTerms, Quote, Scenario
 
 REQUIRED_FEES = ("electricity", "water", "internet", "parking", "service")
+# Phí giả định khi người thuê CHỦ ĐỘNG bật "chấp nhận phí ước tính": mức nằm
+# giữa khoảng hợp lý của tin đăng (FEE_RULES của data/crawl_chotot.py), luôn
+# kèm nguồn ghi rõ là giả định và phòng vẫn bị gắn nhãn cần xác minh.
+ASSUMED_FEES: dict[str, Fee] = {
+    "electricity": Fee(name="electricity", amount_vnd=Decimal(3500), mode="kwh",
+                       source="giả định 3.500đ/kWh (tin đăng 1.500–6.000đ/kWh)"),
+    "water": Fee(name="water", amount_vnd=Decimal(20000), mode="m3",
+                 source="giả định 20.000đ/m³ (tin đăng 5.000–50.000đ/m³)"),
+    "internet": Fee(name="internet", amount_vnd=Decimal(100000), mode="fixed",
+                    source="giả định 100.000đ/tháng (tin đăng 30.000–500.000đ)"),
+    "parking": Fee(name="parking", amount_vnd=Decimal(70000), mode="vehicle",
+                   source="giả định 70.000đ/xe (tin đăng 30.000–600.000đ)"),
+    "service": Fee(name="service", amount_vnd=Decimal(300000), mode="fixed",
+                   source="giả định 300.000đ/tháng (tin đăng 30.000–2.000.000đ)"),
+}
 # Housing-cost-to-income bands; a rule of thumb shown with the result, not a legal standard.
 AFFORDABILITY_THRESHOLDS = {"phu_hop": Decimal("0.30"), "can_nhac": Decimal("0.40")}
 RATIO_DIGITS = Decimal("0.0001")
@@ -12,8 +27,12 @@ def rounded_vnd(value: Decimal) -> int:
     return int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
-def calculate_cost(quote: Quote, scenario: Scenario) -> CostResult:
-    """Pure arithmetic. Missing charges remain unknown, including an absent fee."""
+def calculate_cost(quote: Quote, scenario: Scenario,
+                   accept_estimated_fees: bool = False) -> CostResult:
+    """Pure arithmetic. Missing charges remain unknown, including an absent fee —
+    trừ khi người thuê bật chấp nhận phí ước tính: phí hoàn toàn vắng trong tin
+    được thay bằng giả định chuẩn có ghi nguồn (phí có trong tin nhưng không ghi
+    giá vẫn giữ unknown — tin nói có phí thì không được đặt giá hộ)."""
     lines = [CostLine(name="rent", period="monthly", amount_vnd=quote.rent_vnd,
                       source="quote.rent_vnd")]
     fees = {fee.name: fee for fee in quote.fees}
@@ -22,8 +41,12 @@ def calculate_cost(quote: Quote, scenario: Scenario) -> CostResult:
         "vehicle": Decimal(scenario.vehicles), "kwh": scenario.electricity_kwh,
         "m3": scenario.water_m3,
     }
+    assumed: list[str] = []
     for name in dict.fromkeys([*REQUIRED_FEES, *fees]):
         fee = fees.get(name)
+        if fee is None and accept_estimated_fees and name in ASSUMED_FEES:
+            fee = ASSUMED_FEES[name]
+            assumed.append(name)
         amount = None
         if fee is not None:
             if fee.included_in_rent:
@@ -58,6 +81,7 @@ def calculate_cost(quote: Quote, scenario: Scenario) -> CostResult:
         initial_total_vnd=None if missing_initial else initial_sum,
         missing_monthly=missing_monthly, missing_initial=missing_initial,
         lines=lines, assumptions=scenario.model_dump(mode="json"),
+        assumed_fees=assumed,
     )
 
 

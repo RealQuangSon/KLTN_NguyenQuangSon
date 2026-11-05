@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -17,9 +18,10 @@ class DomainError(Exception):
         self.http_status = http_status
 
 
-# Four target roles (W-01). Renters are customers; owner/manager/admin are
-# staff roles scoped by organization membership. The role always comes from
-# the server-side account record, never from the client.
+# Four target roles (W-01). Renters are customers; owner is the landlord,
+# manager is a legacy staff role without business permissions, admin is
+# platform staff; all staff roles are scoped by organization membership. The
+# role always comes from the server-side account record, never from the client.
 Role = Literal["renter", "owner", "manager", "admin"]
 ORG_MEMBERSHIP_ROLES = ("owner", "manager", "admin")
 
@@ -27,6 +29,15 @@ ORG_MEMBERSHIP_ROLES = ("owner", "manager", "admin")
 class Actor(Model):
     id: str
     role: Role
+
+
+# Landlord account review states (BE-03); NULL means "not a landlord account".
+LandlordStatus = Literal["pending", "approved", "rejected"]
+
+
+class MeResult(Actor):
+    """GET /auth/me: the actor plus the landlord review state of the account."""
+    landlord_status: LandlordStatus | None = None
 
 
 class Destination(Model):
@@ -58,6 +69,10 @@ class Quote(Model):
     rent_vnd: int = Field(ge=0, strict=True)
     deposit_vnd: int | None = Field(default=None, ge=0, strict=True)
     advance_months: int | None = Field(default=None, ge=1, le=24, strict=True)
+    # Listing-stated billing terms (LF-01); unknown stays None, never 0.
+    # payment_cycle_months is how often rent is paid, distinct from advance_months.
+    payment_cycle_months: int | None = Field(default=None, ge=1, le=12, strict=True)
+    min_lease_months: int | None = Field(default=None, ge=1, le=60, strict=True)
     fees: list[Fee]
     one_time_vnd: int | None = Field(default=None, ge=0, strict=True)
 
@@ -71,6 +86,15 @@ class Quote(Model):
 
 RoomType = Literal["room", "studio", "apartment"]
 Occupancy = Literal["vacant", "deposited", "rented"]
+# Single source of amenity keys (LF-01): crawler keyword mapping, interpreter
+# preferences, tests and the frontend labels all match this constant.
+# Values per room stay true/false/null; null means the post does not say.
+AMENITY_KEYS = (
+    "air_conditioning", "washing_machine", "balcony", "parking", "window",
+    "private_bathroom", "furniture", "pets_allowed", "quiet",
+    "kitchen", "wifi", "elevator", "security_24h", "camera", "loft",
+    "flexible_hours", "no_shared_landlord", "water_heater", "fridge",
+)
 # Rooms without an explicit landlord in legacy/demo data belong to this seed landlord.
 DEFAULT_LANDLORD = "owner-a"
 
@@ -104,6 +128,16 @@ class Room(Model):
     occupancy: Occupancy | None = None
     # Landlord's own rules (giờ giấc, gửi xe, cách tính điện nước) for the tenant handbook.
     house_rules: str | None = Field(default=None, max_length=2000)
+    # Listing-content fields (LF-01). description is the PII-masked post body;
+    # posted_at/poster_kind are server-set from the crawl, never client input.
+    # Unknown stays None; ranking never reads posted_at or poster_kind (F2).
+    description: str | None = Field(default=None, max_length=4000)
+    posted_at: datetime | None = None
+    poster_kind: Literal["broker", "individual"] | None = None
+    ward: str | None = None
+    ward_2025: str | None = None
+    street: str | None = None
+    available_from: date | None = None
 
     @property
     def landlord(self) -> str:
@@ -112,7 +146,7 @@ class Room(Model):
 
 FieldStatus = Literal["unknown", "inferred", "confirmed"]
 DRAFT_TRACKED_FIELDS = ("city", "area", "people", "preferences", "room_type", "bedrooms",
-                        "needs_destination", "soft_description", "budget_hint")
+                        "needs_destination", "accept_estimated_data", "soft_description", "budget_hint")
 
 
 class DraftProfile(Model):
@@ -123,6 +157,8 @@ class DraftProfile(Model):
     people: int | None = Field(default=None, ge=1, le=20, strict=True)
     preferences: list[str] = Field(default_factory=list)
     needs_destination: bool = False
+    # Bật chấp nhận dữ liệu ước tính từ hội thoại ("chấp nhận phí/dữ liệu ước tính").
+    accept_estimated_data: bool = False
     room_type: RoomType | None = None
     bedrooms: int | None = Field(default=None, ge=1, le=5, strict=True)
     soft_description: str | None = Field(default=None, max_length=1000)
@@ -164,6 +200,10 @@ class Profile(Model):
     scenario: Scenario
     destination: Destination | None = None
     soft_description: str | None = Field(default=None, max_length=1000)
+    # Người thuê chủ động chấp nhận dữ liệu ước tính: phí thiếu trong tin được
+    # thay bằng giả định chuẩn có ghi nguồn, sức chứa chưa rõ coi như vừa số
+    # người đã nêu — phòng vẫn hiện kèm nhãn ước tính, không bao giờ bật ngầm.
+    accept_estimated_data: bool = False
 
 
 class CostLine(Model):
@@ -194,7 +234,7 @@ class Affordability(Model):
     burden_vnd: int | None
     # The renter's own share after an equal split between occupants.
     renter_burden_vnd: int | None
-    # Withheld (null) in the manager projection so income cannot be back-computed.
+    # Withheld (null) in the landlord projection so income cannot be back-computed.
     housing_ratio: Decimal | None
     band: AffordabilityBand
     thresholds: dict[str, Decimal]
@@ -209,6 +249,9 @@ class CostResult(Model):
     missing_initial: list[str]
     lines: list[CostLine]
     assumptions: dict
+    # Tên các khoản phí đang là giả định chuẩn (chỉ khi hồ sơ bật chấp nhận
+    # dữ liệu ước tính); frontend hiển thị nhãn ước tính từ danh sách này.
+    assumed_fees: list[str] = Field(default_factory=list)
     affordability: Affordability | None = None
 
 
@@ -231,13 +274,19 @@ class Candidate(Model):
     synthetic: bool
     algorithm: str = "structured_baseline_v1"
     # Data-quality flags of the underlying listing; they never block eligibility,
-    # they tell renter/manager which evidence still needs human verification.
+    # they tell renter/landlord which evidence still needs human verification.
     verification: list[str] = Field(default_factory=list)
+    # Public coordinates mirror the listing projection: approximate at most,
+    # "area_only" means the renter map must not pin this room.
+    latitude: float | None = None
+    longitude: float | None = None
+    location_accuracy: Literal["exact", "approximate", "area_only"] = "area_only"
+    uncertainty_m: float | None = None
 
 
 class Extraction(Model):
     # Required nullable fields make the OpenAI output schema explicit.
-    intent: Literal["find_room", "calculate_cost", "human_support", "unknown"]
+    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support", "handbook", "unknown"]
     city: str | None
     area: str | None
     room_type: RoomType | None = None
@@ -245,6 +294,8 @@ class Extraction(Model):
     people: int | None = Field(ge=1, le=20)
     preferences: list[str]
     needs_destination: bool
+    # Người dùng đồng ý xem phòng thiếu bảng phí/sức chứa với dữ liệu giả định chuẩn.
+    accept_estimated_data: bool = False
     remove_preferences: list[str] = Field(default_factory=list)
     soft_description: str | None = Field(default=None, max_length=1000)
 
@@ -305,8 +356,22 @@ class CatalogStatus(Model):
     occupancy: Occupancy | None = None
 
 
+class MediaOrderRequest(Model):
+    """PATCH /landlord/rooms/{id}/media/order: the full photo list in the new order."""
+    media_ids: list[str] = Field(min_length=1, max_length=50)
+
+
+class PromotionInput(Model):
+    """PUT /landlord/rooms/{id}/promotion: landlord marketing text with an end
+    date; stored PII-masked and never read by pricing or ranking."""
+    text: str = Field(min_length=1, max_length=200)
+    valid_until: date
+
+
 class RoomInput(Model):
-    """Landlord-editable listing fields; id, revision, landlord and source are server-set."""
+    """Landlord-editable listing fields; id, revision, landlord and source are server-set.
+    posted_at and poster_kind stay server-set crawl facts (LF-01): they are not
+    part of the input and extra="forbid" rejects client attempts to set them."""
     title: str = Field(min_length=3, max_length=300)
     city: str = Field(min_length=2, max_length=64)
     area: str = Field(min_length=2, max_length=64)
@@ -325,6 +390,13 @@ class RoomInput(Model):
     quote: Quote
     features_text: str | None = Field(default=None, max_length=500)
     house_rules: str | None = Field(default=None, max_length=2000)
+    # Address detail and terms the landlord may edit; free text below is
+    # PII-masked server-side when the room is written (catalog.mask_listing_text).
+    description: str | None = Field(default=None, max_length=4000)
+    ward: str | None = None
+    ward_2025: str | None = None
+    street: str | None = None
+    available_from: date | None = None
 
 
 class RoomUpdate(RoomInput):
@@ -341,12 +413,19 @@ class MembershipGrant(Model):
 
 
 class RegisterRequest(Model):
-    # Registration always creates a renter account; staff roles are granted
-    # through organization memberships by an admin, never chosen by the client.
+    # account_type picks renter (default) or owner (landlord). Staff roles are
+    # granted through organization memberships by an admin, never chosen by the
+    # client; a landlord account starts as landlord_status='pending'.
     username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=10, max_length=200)
     email: str = Field(min_length=5, max_length=200)
     display_name: str | None = Field(default=None, min_length=1, max_length=120)
+    account_type: Literal["renter", "owner"] = "renter"
+
+
+class LandlordRejectRequest(Model):
+    # The rejection reason is required, admin-entered and shown to the landlord.
+    reason: str = Field(min_length=1, max_length=500)
 
 
 class VerifyRequest(Model):
@@ -369,4 +448,6 @@ class ProfilePatch(Model):
     # change the actor's role or organization (extra="forbid" rejects them).
     display_name: str | None = Field(default=None, min_length=1, max_length=120)
     email: str | None = Field(default=None, min_length=5, max_length=200)
+    # Landlords only; "" or null clears it. Normalized server-side.
+    contact_phone: str | None = Field(default=None, max_length=20)
     consents: dict[str, bool] | None = None

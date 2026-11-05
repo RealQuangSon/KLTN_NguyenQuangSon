@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import random
+from collections import Counter
 from pathlib import Path
 
 from backend.app.models import Extraction, Profile, Room
@@ -359,6 +360,341 @@ V2_CASES = [
 ]
 
 
+# DA-01 gold intents: authored utterances for every chat route, not human judgments.
+# Gold is what a human would label the utterance; the offline rules may disagree and the
+# `eval intents` suite records that (measurement only, no pass/fail threshold).
+# simulate_finance is gold for AG-02: until it lands, those cases are expected to misroute.
+INTENT_CASES = [
+    {"case_id": "I001", "split": "dev", "intent": "handbook", "text": "Nội quy nhà có cho nấu ăn bằng than không?"},
+    {"case_id": "I002", "split": "test", "intent": "handbook", "text": "Cho mình hỏi quy định gửi xe máy của nhà thế nào?"},
+    {"case_id": "I003", "split": "dev", "intent": "handbook", "text": "Khách thuê dài hạn có phải làm tạm trú không?"},
+    {"case_id": "I004", "split": "test", "intent": "handbook", "text": "Trường hợp nào được hoàn cọc, mình muốn đọc điều khoản."},
+    {"case_id": "I005", "split": "test", "intent": "handbook", "text": "Quyền lợi của người thuê trong hợp đồng có gì?"},
+    {"case_id": "I006", "split": "dev", "intent": "handbook", "text": "Cho mình xem cẩm nang thuê phòng với."},
+    {"case_id": "I007", "split": "test", "intent": "handbook", "text": "noi quy cho nuoi thu cung dc ko?"},
+    {"case_id": "I008", "split": "test", "intent": "handbook", "text": "Điều khoản về khách ở lại qua đêm ghi gì?"},
+    {"case_id": "I009", "split": "dev", "intent": "human_support", "text": "Mình muốn nói chuyện với người thật, không trả lời máy nữa."},
+    {"case_id": "I010", "split": "test", "intent": "human_support", "text": "Cho gặp nhân viên tư vấn giúp mình với."},
+    {"case_id": "I011", "split": "dev", "intent": "human_support", "text": "Tôi muốn gặp quản lý để trao đổi trực tiếp về phòng."},
+    {"case_id": "I012", "split": "test", "intent": "human_support", "text": "Làm sao chat với chủ nhà của phòng này?"},
+    {"case_id": "I013", "split": "test", "intent": "human_support", "text": "Mình cần nói chuyện với chủ nhà về lịch xem phòng."},
+    {"case_id": "I014", "split": "test", "intent": "human_support", "text": "gap chu nha duoc khong, minh hoi truc tiep"},
+    {"case_id": "I015", "split": "dev", "intent": "calculate_cost", "text": "Tính chi phí vào ở phòng Quận 7 cho 2 người."},
+    {"case_id": "I016", "split": "test", "intent": "calculate_cost", "text": "Tính tiền vào ở căn hộ Đống Đa cho 1 người."},
+    {"case_id": "I017", "split": "dev", "intent": "calculate_cost", "text": "Mô phỏng chi phí thuê studio Bình Thạnh giúp mình."},
+    {"case_id": "I018", "split": "test", "intent": "calculate_cost", "text": "tinh tien vao o tro q7 1 nguoi roi ra sao?"},
+    {"case_id": "I019", "split": "test", "intent": "calculate_cost", "text": "Cho mình tính chi phí vào ở của phòng này với 2 người và 1 xe máy."},
+    {"case_id": "I020", "split": "test", "intent": "calculate_cost", "text": "Muốn biết tổng tháng và tiền cọc, mô phỏng chi phí căn hộ 2 phòng ngủ."},
+    {"case_id": "I021", "split": "dev", "intent": "simulate_finance", "text": "Nếu vay 12 tháng thì sao nhỉ?"},
+    {"case_id": "I022", "split": "test", "intent": "simulate_finance", "text": "vay 20 triệu lãi 10% trong 6 tháng thì trả bao nhiêu?"},
+    {"case_id": "I023", "split": "dev", "intent": "simulate_finance", "text": "trả góp 24 tháng lãi suất 12,5% được không?"},
+    {"case_id": "I024", "split": "test", "intent": "simulate_finance", "text": "Tính tiền vay 15 triệu trong 12 tháng giúp mình."},
+    {"case_id": "I025", "split": "test", "intent": "simulate_finance", "text": "Mình muốn mô phỏng khoản vay 30 triệu lãi 9.5%."},
+    {"case_id": "I026", "split": "dev", "intent": "simulate_finance", "text": "Xem trước số tiền trả góp khi vay tiền cọc căn hộ."},
+    {"case_id": "I027", "split": "test", "intent": "simulate_finance", "text": "lai vay 8%/nam, vay 10 trieu tra trong 18 thang duoc khong?"},
+    {"case_id": "I028", "split": "test", "intent": "simulate_finance", "text": "Tính giúp mình khoản trả góp vay tiền thuê phòng 3 tháng đầu."},
+    {"case_id": "I029", "split": "dev", "intent": "find_room", "text": "Tìm phòng Quận 3 cho 1 người, cần cửa sổ."},
+    {"case_id": "I030", "split": "test", "intent": "find_room", "text": "tim tro hcm binh thanh 2 nguoi co may lanh"},
+    {"case_id": "I031", "split": "dev", "intent": "find_room", "text": "Mình cần thuê căn hộ Cầu Giấy cho 2 người."},
+    {"case_id": "I032", "split": "test", "intent": "find_room", "text": "Phòng trọ gần trường ở Thủ Đức cho 1 người."},
+    {"case_id": "I033", "split": "dev", "intent": "find_room", "text": "studio q7 giá 5 triệu có máy giặt không?"},
+    {"case_id": "I034", "split": "test", "intent": "find_room", "text": "tim phong q3 1 nguoi co wc rieng dc ko?"},
+    {"case_id": "I035", "split": "dev", "intent": "unknown", "text": "Chào bạn, mình chưa quyết định nhu cầu."},
+    {"case_id": "I036", "split": "test", "intent": "unknown", "text": "hello"},
+    # "trời" chứa "tro": ca bắt lỗi chuỗi con của luật offline, gold vẫn là unknown.
+    {"case_id": "I037", "split": "dev", "intent": "unknown", "text": "Hôm nay trời đẹp quá."},
+    {"case_id": "I038", "split": "test", "intent": "unknown", "text": "0987654321"},
+]
+
+# DA-02: hand-authored expected outputs for interpreter.parse_loan_terms (AG-02).
+# Ranges and decimal-comma handling follow README §7.4 and the AG-02 step 3 spec.
+LOAN_PARSE_CASES = [
+    {"case_id": "LP01", "text": "nếu vay 12 tháng thì sao",
+     "expected": {"term_months": 12, "annual_rate": None, "principal_vnd": None},
+     "note": "README §7.4; chỉ có kỳ hạn"},
+    {"case_id": "LP02", "text": "vay 20 triệu lãi 10% trong 6 tháng",
+     "expected": {"term_months": 6, "annual_rate": 10.0, "principal_vnd": 20_000_000},
+     "note": "README §7.4; đủ ba giá trị"},
+    {"case_id": "LP03", "text": "trả góp 24 tháng lãi suất 12,5%",
+     "expected": {"term_months": 24, "annual_rate": 12.5, "principal_vnd": None},
+     "note": "README §7.4; dấu phẩy thập phân"},
+    {"case_id": "LP04", "text": "cho vay 1,5 triệu được không",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": 1_500_000},
+     "note": "dấu phẩy thập phân của tiền"},
+    {"case_id": "LP05", "text": "lãi 0% vay 12 tháng thì sao",
+     "expected": {"term_months": 12, "annual_rate": 0.0, "principal_vnd": None},
+     "note": "lãi 0% là giá trị hợp lệ, không phải null"},
+    {"case_id": "LP06", "text": "12 tháng",
+     "expected": {"term_months": 12, "annual_rate": None, "principal_vnd": None},
+     "note": "không có chữ 'vay'; việc parse tách khỏi việc xếp ý định (DA-01)"},
+    {"case_id": "LP07", "text": "vay 100 tháng",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": None},
+     "note": "kỳ hạn ngoài khoảng 1–60 → null"},
+    {"case_id": "LP08", "text": "vay 20 triệu lãi 60%",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": 20_000_000},
+     "note": "lãi ngoài khoảng 0–50 → null"},
+    {"case_id": "LP09", "text": "vay 6 tháng hay 12 tháng tốt hơn?",
+     "expected": {"term_months": 6, "annual_rate": None, "principal_vnd": None},
+     "note": "hai số tháng: lấy số đầu tiên (re.search khớp đầu tiên)"},
+    {"case_id": "LP10", "text": "lai suat 9.5% vay 18 thang",
+     "expected": {"term_months": 18, "annual_rate": 9.5, "principal_vnd": None},
+     "note": "không dấu; dấu chấm thập phân"},
+    {"case_id": "LP11", "text": "vay 20tr",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": 20_000_000},
+     "note": "đơn vị 'tr'"},
+    {"case_id": "LP12", "text": "trả góp 3 tháng, tiền phòng 2,5 triệu mỗi tháng",
+     "expected": {"term_months": 3, "annual_rate": None, "principal_vnd": 2_500_000},
+     "note": "kỳ hạn và tiền trong cùng câu"},
+    {"case_id": "LP13", "text": "muốn vay 35 triệu, lãi 12%/năm, trả trong 36 tháng",
+     "expected": {"term_months": 36, "annual_rate": 12.0, "principal_vnd": 35_000_000},
+     "note": "lãi theo năm, dấu '%' ngay sau số"},
+    {"case_id": "LP14", "text": "cho mình vay tiền cọc với",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": None},
+     "note": "không có số nào"},
+    {"case_id": "LP15", "text": "vay 500 nghìn trả trong 3 tháng",
+     "expected": {"term_months": 3, "annual_rate": None, "principal_vnd": None},
+     "note": "đơn vị 'nghìn' không được đọc tiền → null"},
+    {"case_id": "LP16", "text": "vay 12,5 triệu lãi 15,5% trong 9 tháng",
+     "expected": {"term_months": 9, "annual_rate": 15.5, "principal_vnd": 12_500_000},
+     "note": "dấu phẩy thập phân ở cả tiền và lãi"},
+    {"case_id": "LP17", "text": "vay 5 triệu trả 60 tháng",
+     "expected": {"term_months": 60, "annual_rate": None, "principal_vnd": 5_000_000},
+     "note": "biên trên kỳ hạn 60 vẫn hợp lệ"},
+    {"case_id": "LP18", "text": "vay 5 triệu lãi 50%",
+     "expected": {"term_months": None, "annual_rate": 50.0, "principal_vnd": 5_000_000},
+     "note": "biên trên lãi 50 vẫn hợp lệ"},
+    {"case_id": "LP19", "text": "vay 61 tháng thì sao",
+     "expected": {"term_months": None, "annual_rate": None, "principal_vnd": None},
+     "note": "61 ngoài khoảng 1–60 → null"},
+]
+
+
+def _inv_fee(case_id: str, name: str, amount: int | str | None, mode: str = "fixed",
+             included: bool = False) -> dict:
+    source = f"synthetic://oracle-invoices/{case_id}/{name}"
+    return {"name": name, "amount_vnd": amount, "mode": mode,
+            "included_in_rent": included, "source": source}
+
+
+def _inv_quote(case_id: str, rent: int, electricity: int | str | None = 3_000,
+               electricity_included: bool = False, water: dict | None = None,
+               water_included: bool = False, internet: int | None = 100_000,
+               internet_included: bool = False, parking: int | None = 100_000,
+               parking_included: bool = False, service: int | None = 50_000,
+               service_included: bool = False) -> dict:
+    water = water or {"amount_vnd": 80_000, "mode": "person"}
+    return {"rent_vnd": rent, "deposit_vnd": rent, "advance_months": 1, "one_time_vnd": 0,
+            "fees": [_inv_fee(case_id, "electricity", electricity, "kwh", electricity_included),
+                     _inv_fee(case_id, "water", water["amount_vnd"], water["mode"], water_included),
+                     _inv_fee(case_id, "internet", internet, "fixed", internet_included),
+                     _inv_fee(case_id, "parking", parking, "vehicle", parking_included),
+                     _inv_fee(case_id, "service", service, "fixed", service_included)]}
+
+
+def _inv_line(name: str, label: str, quantity: str, unit_price: str, amount: int) -> dict:
+    return {"name": name, "label": label, "quantity": quantity,
+            "unit_price": unit_price, "amount_vnd": amount}
+
+
+def _rent_line(rent: int) -> dict:
+    return _inv_line("rent", "Tiền thuê", "1", str(rent), rent)
+
+
+def _included_line(name: str, label: str) -> dict:
+    return _inv_line(name, f"{label} (đã gồm trong thuê)", "0", "0", 0)
+
+
+# DA-03: hand-computed PMS invoice oracle. Expected totals and lines are authored
+# arithmetic, never engine output; each line rounds HALF_UP to whole VND.
+INVOICE_CASES = [
+    {"case_id": "INV-01-reference", "description": "Ví dụ có sẵn trong test_pms.py: 150 kWh, 2 người, 1 xe.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-01", 2_500_000),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 2, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "1200", "electricity_end": "1350"},
+     "expected_total_vnd": 3_360_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "150", "3000", 450_000),
+               _inv_line("water", "Nước", "2", "80000", 160_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "1", "100000", 100_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "2500000+150*3000+2*80000+100000+1*100000+50000=3360000"},
+    {"case_id": "INV-02-electricity-rounding", "description": "Điện số lẻ cần làm tròn HALF_UP.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-02", 2_500_000, electricity="3000.5"),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "100", "electricity_end": "200.5"},
+     "expected_total_vnd": 3_131_550, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "100.5", "3000.5", 301_550),
+               _inv_line("water", "Nước", "1", "80000", 80_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "1", "100000", 100_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "100.5*3000.5=301550.25→HALF_UP 301550; 2500000+301550+80000+100000+100000+50000=3131550"},
+    {"case_id": "INV-03-water-m3", "description": "Nước theo m³ với chỉ số lẻ, xe bằng 0.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-03", 2_500_000, water={"amount_vnd": 20_000, "mode": "m3"}),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 2, "vehicles": 0},
+     "reading": {"period": "2026-10", "electricity_start": "512", "electricity_end": "632",
+                 "water_start": "45.5", "water_end": "52.5"},
+     "expected_total_vnd": 3_150_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "120", "3000", 360_000),
+               _inv_line("water", "Nước", "7.0", "20000", 140_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "0", "100000", 0),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "120*3000=360000; 52.5-45.5=7.0 m3*20000=140000; 0 xe*100000=0; tổng 3150000"},
+    {"case_id": "INV-04-water-person", "description": "Nước theo người với 3 người ở.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-04", 2_500_000),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 3, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "0", "electricity_end": "200"},
+     "expected_total_vnd": 3_590_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "200", "3000", 600_000),
+               _inv_line("water", "Nước", "3", "80000", 240_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "1", "100000", 100_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "200*3000=600000; 3*80000=240000; tổng 3590000"},
+    {"case_id": "INV-05-many-vehicles", "description": "Nhiều xe (3 xe gửi).",
+     "room_type": "room",
+     "quote": _inv_quote("INV-05", 2_500_000),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 3},
+     "reading": {"period": "2026-10", "electricity_start": "10", "electricity_end": "60"},
+     "expected_total_vnd": 3_180_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "50", "3000", 150_000),
+               _inv_line("water", "Nước", "1", "80000", 80_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "3", "100000", 300_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "50*3000=150000; 3*100000=300000; tổng 3180000"},
+    {"case_id": "INV-06-included-internet", "description": "Internet đã gồm trong tiền thuê, không cộng.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-06", 2_500_000, internet_included=True),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "0", "electricity_end": "100"},
+     "expected_total_vnd": 3_030_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "100", "3000", 300_000),
+               _inv_line("water", "Nước", "1", "80000", 80_000),
+               _included_line("internet", "Internet"),
+               _inv_line("parking", "Gửi xe", "1", "100000", 100_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "Internet included→0; 2500000+300000+80000+100000+50000=3030000"},
+    {"case_id": "INV-07-reading-decreased", "description": "Chỉ số điện cuối nhỏ hơn đầu.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-07", 2_500_000),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "500", "electricity_end": "480"},
+     "expected_total_vnd": None, "expected_error": "reading_decreased",
+     "lines": None,
+     "calculation_note": "480<500 → từ chối ghi chỉ số, không lập hóa đơn"},
+    {"case_id": "INV-08-missing-rate", "description": "Thiếu đơn giá nước (amount null).",
+     "room_type": "room",
+     "quote": _inv_quote("INV-08", 2_500_000, water={"amount_vnd": None, "mode": "person"}),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "0", "electricity_end": "50"},
+     "expected_total_vnd": None, "expected_error": "invoice_incomplete",
+     "lines": None,
+     "calculation_note": "Đơn giá nước null → từ chối lập hóa đơn, không bao giờ tính 0"},
+    {"case_id": "INV-09-zero-kwh", "description": "Điện 0 kWh (chỉ số không đổi).",
+     "room_type": "room",
+     "quote": _inv_quote("INV-09", 2_500_000),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "700", "electricity_end": "700"},
+     "expected_total_vnd": 2_830_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _inv_line("electricity", "Điện", "0", "3000", 0),
+               _inv_line("water", "Nước", "1", "80000", 80_000),
+               _inv_line("internet", "Internet", "1", "100000", 100_000),
+               _inv_line("parking", "Gửi xe", "1", "100000", 100_000),
+               _inv_line("service", "Dịch vụ", "1", "50000", 50_000)],
+     "calculation_note": "0*3000=0; 2500000+80000+100000+100000+50000=2830000"},
+    {"case_id": "INV-10-large-apartment", "description": "Tiền thuê lớn: căn hộ 2 phòng ngủ.",
+     "room_type": "apartment",
+     "quote": _inv_quote("INV-10", 16_500_000, electricity=3_500,
+                         water={"amount_vnd": 100_000, "mode": "person"}, internet=200_000,
+                         parking=150_000, service=800_000),
+     "lease": {"rent_vnd": 16_500_000, "occupants": 2, "vehicles": 2},
+     "reading": {"period": "2026-10", "electricity_start": "1000", "electricity_end": "1180"},
+     "expected_total_vnd": 18_630_000, "expected_error": None,
+     "lines": [_rent_line(16_500_000),
+               _inv_line("electricity", "Điện", "180", "3500", 630_000),
+               _inv_line("water", "Nước", "2", "100000", 200_000),
+               _inv_line("internet", "Internet", "1", "200000", 200_000),
+               _inv_line("parking", "Gửi xe", "2", "150000", 300_000),
+               _inv_line("service", "Dịch vụ", "1", "800000", 800_000)],
+     "calculation_note": "180*3500=630000; 2*100000=200000; 2*150000=300000; tổng 18630000"},
+    {"case_id": "INV-11-water-reading-missing", "description": "Nước theo m³ nhưng thiếu chỉ số nước.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-11", 2_500_000, water={"amount_vnd": 20_000, "mode": "m3"}),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 1, "vehicles": 1},
+     "reading": {"period": "2026-10", "electricity_start": "0", "electricity_end": "100"},
+     "expected_total_vnd": None, "expected_error": "invoice_incomplete",
+     "lines": None,
+     "calculation_note": "Thiếu chỉ số nước → từ chối lập hóa đơn, không đoán số nước"},
+    {"case_id": "INV-12-all-included", "description": "Mọi phí đã gồm trong tiền thuê, không cần chỉ số.",
+     "room_type": "room",
+     "quote": _inv_quote("INV-12", 2_500_000, electricity_included=True,
+                         water={"amount_vnd": 80_000, "mode": "person"}, water_included=True,
+                         internet_included=True, parking_included=True, service_included=True),
+     "lease": {"rent_vnd": 2_500_000, "occupants": 2, "vehicles": 1},
+     "reading": None,
+     "expected_total_vnd": 2_500_000, "expected_error": None,
+     "lines": [_rent_line(2_500_000),
+               _included_line("electricity", "Điện"),
+               _included_line("water", "Nước"),
+               _included_line("internet", "Internet"),
+               _included_line("parking", "Gửi xe"),
+               _included_line("service", "Dịch vụ")],
+     "calculation_note": "Mọi phí included→0; tổng bằng tiền thuê 2500000"},
+]
+
+
+def make_intent_cases() -> dict:
+    counts: Counter = Counter(case["intent"] for case in INTENT_CASES)
+    splits: Counter = Counter(case["split"] for case in INTENT_CASES)
+    return {"notice": NOTICE,
+            "purpose": "Gold intent routing cases for the chat graph; authored synthetic utterances, not human judgments.",
+            "decision": "predicted = fixed_intent(text) or DemoInterpreter().extract(text).intent; "
+                        "matches the _build_chat_graph route node for the demo interpreter.",
+            "simulate_finance_status": "gold ahead of backend; AG-02 adds the intent, cases are expected to misroute until then",
+            "gate": "measurement_only_no_accuracy_threshold",
+            "counts": {"by_intent": dict(sorted(counts.items())), "by_split": dict(sorted(splits.items()))},
+            "cases": [dict(case) for case in INTENT_CASES]}
+
+
+def make_loan_parse_oracle() -> dict:
+    return {"notice": NOTICE,
+            "purpose": "Independent expected outputs for backend.app.interpreter.parse_loan_terms (AG-02); "
+                       "authored by hand, never derived from backend code.",
+            "rules": {
+                "input": "so khớp trên văn bản đã bỏ dấu (folded); parse tách riêng khỏi việc xếp ý định.",
+                "term_months": r"(\d{1,3})\s*thang; hợp lệ 1–60, ngoài khoảng → null; nhiều số khớp thì lấy số đầu tiên.",
+                "annual_rate": r"(\d{1,2}(?:[.,]\d{1,2})?)\s*%; dấu phẩy thập phân đổi thành dấu chấm; hợp lệ 0–50, ngoài khoảng → null.",
+                "principal_vnd": r"tiền đọc theo (\d+(?:[.,]\d+)?)\s*(trieu|tr\b); dấu phẩy là thập phân (1,5 triệu = 1500000); đơn vị khác (nghìn, đồng) → null."},
+            "sources": "README §7.4 và bước 3 của AG-02 trong docs/coding-plan/agent.md",
+            "cases": [dict(case) for case in LOAN_PARSE_CASES]}
+
+
+def make_invoice_oracle() -> dict:
+    cases = [{**case, "origin": "authored_independent_arithmetic_constants", "synthetic": True,
+              "human_cross_check_status": "pending"} for case in INVOICE_CASES]
+    return {"notice": NOTICE,
+            "purpose": "Hand-computed PMS invoice oracle; inputs mirror the lease quote snapshot, "
+                       "meter readings, occupants and vehicles that pms.invoice_lines consumes.",
+            "rounding": "mỗi dòng nhân số lượng × đơn giá rồi làm tròn HALF_UP sang VND nguyên; "
+                        "phí included_in_rent ra dòng 0; đơn giá/chỉ số thiếu thì từ chối lập, không tính 0.",
+            "expected_shape": "mỗi ca có expected_total_vnd hoặc expected_error; lines theo thứ tự dòng hóa đơn "
+                              "(rent trước, phí theo thứ tự quote); label chỉ để đọc, suite so tên khoản, số lượng, đơn giá và thành tiền.",
+            "cases": cases}
+
+
 def make_v2_profiles(start_number: int) -> list[dict]:
     rows = []
     for offset, case in enumerate(V2_CASES):
@@ -598,6 +934,9 @@ def generate(output: Path, count: int = V2_ROOMS, profile_count: int = 45) -> di
         "profile_ids": {split: [row["profile_id"] for row in profiles if row["split"] == split] for split in ("dev", "test")},
         "scope": "small synthetic prototype; not representative", "fallback": profile_count == 20})
     dump_json(output / "oracles/cost_cases.json", {"notice": NOTICE, "cases": make_oracles()})
+    dump_json(output / "profiles/intent_cases.json", make_intent_cases())
+    dump_json(output / "oracles/loan_parse_cases.json", make_loan_parse_oracle())
+    dump_json(output / "oracles/invoice_cases.json", make_invoice_oracle())
     files = [path for path in output.rglob("*") if path.is_file() and path.suffix in (".json", ".jsonl")
              and "manifests" not in path.parts]
     manifest = {"dataset_id": DATASET_ID if count == V2_ROOMS else "homematch-synthetic-v1",

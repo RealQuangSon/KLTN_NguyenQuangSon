@@ -54,11 +54,15 @@ export function Link({
   children: ReactNode;
 } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   const navigate = useNavigate();
+  // Consumer onClick chạy trước điều hướng; handler này đã kiểm tra
+  // defaultPrevented nên consumer có thể chặn điều hướng khi cần.
+  const { onClick: consumerOnClick, ...anchorProps } = rest;
   return (
     <a
       href={to}
-      {...rest}
+      {...anchorProps}
       onClick={(event) => {
+        consumerOnClick?.(event);
         if (
           event.defaultPrevented ||
           event.button !== 0 ||

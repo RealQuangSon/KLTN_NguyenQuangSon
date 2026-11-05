@@ -12,6 +12,8 @@ export HOMEMATCH_LLM_MODE=demo
 "$PYTHON" -m eval ranking --split dev
 "$PYTHON" -m eval metrics
 "$PYTHON" -m eval invariants --split dev
+"$PYTHON" -m eval intents --split dev
+"$PYTHON" -m eval invoices
 "$PYTHON" -m eval grounding
 "$PYTHON" -m eval measure
 "$PYTHON" -m eval report

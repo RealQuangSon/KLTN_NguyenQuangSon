@@ -137,7 +137,8 @@ def run(base: str, test_client=None) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default="http://127.0.0.1:8000")
-    parser.add_argument("--in-process", action="store_true", help="Use isolated SQLite/TestClient without opening TCP ports.")
+    parser.add_argument("--in-process", action="store_true",
+                        help="TestClient without TCP ports; uses HOMEMATCH_DATABASE_URL when set, else isolated SQLite.")
     args = parser.parse_args()
     if args.in_process:
         from fastapi.testclient import TestClient
@@ -150,10 +151,18 @@ def main():
             os.environ[name] = value
         for user in ("RENTER_A", "RENTER_B", "MANAGER_A", "MANAGER_B"):
             os.environ.pop("HOMEMATCH_PASSWORD_" + user, None)
-        with tempfile.TemporaryDirectory(prefix="homematch-smoke-") as directory:
-            app = create_app(lambda: HomeMatchService(Path(directory) / "smoke.sqlite"))
+        # Smoke PostgreSQL in place when HOMEMATCH_DATABASE_URL points at it (e.g. the
+        # local pg cluster); otherwise run against a throwaway isolated SQLite file.
+        database_url = os.getenv("HOMEMATCH_DATABASE_URL")
+        tempdir = None if database_url else tempfile.TemporaryDirectory(prefix="homematch-smoke-")
+        try:
+            target = database_url or str(Path(tempdir.name) / "smoke.sqlite")
+            app = create_app(lambda: HomeMatchService(target, auto_publish=False))
             with TestClient(app, base_url=args.base) as client:
                 result = run(args.base, client)
+        finally:
+            if tempdir is not None:
+                tempdir.cleanup()
     else:
         result = run(args.base)
     print(json.dumps(result, indent=2, ensure_ascii=False))

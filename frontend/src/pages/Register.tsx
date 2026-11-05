@@ -4,11 +4,11 @@ import { ErrorNotice, Icon } from "../components/Shared";
 import { Brand } from "../components/Brand";
 import { Link, useNavigate } from "../router";
 import { RoomIllustration } from "../components/RoomIllustration";
-// Màn đăng ký (S02, FE-18): gọi POST /auth/register theo contract 0.4.0
-// (docs/api-contract.md). Máy chủ luôn tạo tài khoản renter chưa xác minh
-// (pending_verification); mã xác minh chỉ nằm trong log dev-stub máy chủ.
-// Vai trò (renter/owner/manager/admin) do máy chủ cấp theo policy; biểu mẫu
-// không cho người dùng tự chọn vai trò nhạy cảm.
+// Màn đăng ký (S02, FE-18; FE-01/FE-02): gọi POST /auth/register theo hợp đồng
+// (docs/coding-plan/README.md §7.1). Người dùng tự chọn account_type
+// "renter"|"owner"; hồ sơ chủ nhà bắt đầu ở trạng thái chờ quản trị viên duyệt.
+// Xác minh email và cấp vai trò nhạy cảm vẫn do máy chủ quyết định. Lỗi hiển thị
+// đúng message máy chủ trả về, không bịa nhánh lỗi cũ (FE-01).
 type FieldErrors = Partial<
   Record<"full_name" | "email" | "username" | "password" | "confirm", string>
 >;
@@ -35,6 +35,7 @@ export function Register() {
     [username, setUsername] = useState(""),
     [password, setPassword] = useState(""),
     [confirm, setConfirm] = useState(""),
+    [accountType, setAccountType] = useState<"renter" | "owner">("renter"),
     [fieldErrors, setFieldErrors] = useState<FieldErrors>({}),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null),
@@ -53,6 +54,7 @@ export function Register() {
         password,
         email: email.trim(),
         display_name: fullName.trim(),
+        account_type: accountType,
       });
       // Chỉ hiển thị những gì máy chủ trả về: đăng ký luôn ở trạng thái
       // pending_verification; việc xác minh và cấp vai trò thuộc về máy chủ.
@@ -63,10 +65,10 @@ export function Register() {
             : "Máy chủ đã tiếp nhận đăng ký. Tình trạng kích hoạt và vai trò do máy chủ quyết định."),
       );
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404)
-        setError(
-          "Máy chủ chưa có chức năng đăng ký (cần POST /auth/register). Hiện tài khoản được cấp bởi quản trị viên.",
-        );
+      // FE-01: không còn nhánh 404 giả định máy chủ thiếu chức năng đăng ký;
+      // mọi lỗi hiện đúng message của ApiError, lỗi mạng hiển thị riêng.
+      if (err instanceof ApiError && err.status === 0)
+        setError("Không kết nối được máy chủ");
       else
         setError(err instanceof Error ? err.message : "Đăng ký chưa hoàn tất.");
     } finally {
@@ -87,8 +89,9 @@ export function Register() {
             <span>tìm một nơi ở phù hợp.</span>
           </h1>
           <p>
-            Tạo tài khoản người thuê để trò chuyện với trợ lý, lưu nhu cầu và
-            nhận danh sách phòng đã được quản lý duyệt.
+            Tạo tài khoản để trò chuyện với trợ lý, lưu nhu cầu và nhận danh
+            sách phòng đã được duyệt — hoặc đăng ký làm chủ nhà để đăng tin cho
+            thuê.
           </p>
         </div>
         <div className="login-art">
@@ -119,11 +122,12 @@ export function Register() {
           <span className="login-welcome-icon">
             <Icon name="home" size={25} />
           </span>
-          <span className="eyebrow">ĐĂNG KÝ TÀI KHOẢN NGƯỜI THUÊ</span>
+          <span className="eyebrow">ĐĂNG KÝ TÀI KHOẢN</span>
           <h2>Tạo tài khoản HomeMatch.</h2>
           <p className="subtle">
-            Tài khoản chủ nhà, quản lý và quản trị được cấp/duyệt bởi máy chủ
-            theo quy trình riêng; biểu mẫu này chỉ dùng cho người thuê.
+            Chọn vai trò của bạn: người thuê tìm phòng hoặc chủ nhà đăng tin.
+            Tài khoản quản lý và quản trị vẫn do máy chủ cấp theo quy trình
+            riêng.
           </p>
           <ErrorNotice error={error} onClose={() => setError(null)} />
           {serverNotice && (
@@ -138,6 +142,39 @@ export function Register() {
             }}
             noValidate
           >
+            <fieldset className="account-type">
+              <legend>Bạn là</legend>
+              <div className="chip-row">
+                <label className="checkbox-line">
+                  <input
+                    type="radio"
+                    name="account_type"
+                    value="renter"
+                    checked={accountType === "renter"}
+                    onChange={() => setAccountType("renter")}
+                    disabled={busy}
+                  />
+                  Người thuê
+                </label>
+                <label className="checkbox-line">
+                  <input
+                    type="radio"
+                    name="account_type"
+                    value="owner"
+                    checked={accountType === "owner"}
+                    onChange={() => setAccountType("owner")}
+                    disabled={busy}
+                  />
+                  Chủ nhà
+                </label>
+              </div>
+              {accountType === "owner" && (
+                <small className="input-hint">
+                  Sau khi xác minh email, tài khoản chủ nhà cần quản trị viên
+                  duyệt trước khi công khai tin.
+                </small>
+              )}
+            </fieldset>
             <label>
               Họ và tên
               <input
@@ -226,8 +263,8 @@ export function Register() {
             <Icon name="shield" size={18} />
             <p>
               Mật khẩu không được lưu trên trình duyệt. Yêu cầu đăng ký gửi tới
-              máy chủ thật; nếu máy chủ chưa hỗ trợ, màn hình sẽ báo đúng như
-              vậy thay vì báo thành công.
+              máy chủ thật; lỗi từ máy chủ được hiển thị nguyên văn thay vì báo
+              thành công ảo.
             </p>
           </div>
           <div className="login-form-footer">

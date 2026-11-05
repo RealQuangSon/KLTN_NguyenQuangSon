@@ -1,6 +1,6 @@
 # Bằng chứng đánh giá phát triển HomeMatch — split `dev`
 
-Stage: `development` · rankings hash: `ab5f310b96275a4e…` · catalog hash: `e89d0b3a3e50cf68…`
+Stage: `development` · rankings hash: `d7626d9b76d04cf7…` · catalog hash: `e339343fd4548c6f…`
 
 Mọi bảng dưới đây truy được về artifact trong `evidence_index.csv`. Đây là kết quả phát triển/khám phá, **không phải kết quả nghiên cứu**: nhãn relevance người chấm và phép đo GPT/P thật còn thiếu.
 
@@ -87,6 +87,8 @@ Nhãn người chấm còn trống; đầu ra máy không tự thành gold.
 | Ứng viên eligible đã kiểm | 62 |
 | Vi phạm | 0 |
 | Phản thực tế hoa hồng giữ rank | đạt |
+| Phản thực tế ngày đăng/loại người đăng giữ rank | đạt |
+| Phản thực tế ưu đãi giữ rank (thay đổi) | 0 |
 | Đối chứng available=false loại phòng | True |
 
 ## Grounding lời giải thích (đạt)
@@ -107,10 +109,10 @@ Items kiểm tra: 48 · claims: 142 · không hỗ trợ: 0
 
 | Pha | Số mẫu | p50 | p95 | Model calls |
 |---|---|---|---|---|
-| extraction | 18 | 0.1033 | 0.4883 | 0 |
-| finance_oracle | 22 | 0.043 | 0.1608 | 0 |
-| ranking_B1 | 15 | 6.8942 | 10.8226 | 0 |
-| ranking_P | 15 | 6.7445 | 7.2485 | 0 |
+| extraction | 18 | 0.1372 | 0.514 | 0 |
+| finance_oracle | 22 | 0.0404 | 0.1435 | 0 |
+| ranking_B1 | 15 | 7.8083 | 17.0786 | 0 |
+| ranking_P | 15 | 8.3125 | 40.2036 | 0 |
 
 Tổng logical model calls: 0 · thời gian chờ duyệt: `excluded_machine_phases_only`. Không suy ra latency provider thật từ các số này.
 

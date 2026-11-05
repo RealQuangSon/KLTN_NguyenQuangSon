@@ -3,10 +3,14 @@ import { Api } from "../api";
 import type { Actor } from "../types";
 import { ErrorNotice, Icon } from "../components/Shared";
 import { Brand } from "../components/Brand";
+import {
+  ExperienceChips,
+  useDemoExperience,
+} from "../components/DemoExperience";
 import { Link } from "../router";
-import { RoomIllustration } from "../components/RoomIllustration";
-// Màn đăng nhập (S02) tách từ App khi gắn router; giữ nguyên văn bản và luồng
-// pendingNeed từ trang chủ. Đăng ký là lối mới nối tới /dang-ky.
+// Màn đăng nhập (S02) theo bố cục tham chiếu hubhome.vn: cột trái là form tối giản
+// (chọn loại tài khoản, ô gạch chân, nút pill), cột phải là cảnh phố màu ấm vẽ bằng
+// CSS kèm tagline. Icon và hình dùng bộ của HomeMatch, không dùng tài sản của bên kia.
 export function Login({
   error,
   onError,
@@ -23,7 +27,14 @@ export function Login({
   const [username, setUsername] = useState(""),
     [password, setPassword] = useState(""),
     [showPassword, setShowPassword] = useState(false),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [role, setRole] = useState<"renter" | "owner">("renter"),
+    [forgotOpen, setForgotOpen] = useState(false),
+    [forgotUsername, setForgotUsername] = useState(""),
+    [forgotBusy, setForgotBusy] = useState(false),
+    [forgotNote, setForgotNote] = useState<string | null>(null);
+  // Chỉ hiện chip trải nghiệm nhanh khi /health xác nhận seed local.
+  const demoReady = useDemoExperience();
   const login = async () => {
     if (busy) return;
     setBusy(true);
@@ -40,56 +51,31 @@ export function Login({
       setBusy(false);
     }
   };
+  const requestReset = async () => {
+    if (forgotBusy || !forgotUsername.trim()) return;
+    setForgotBusy(true);
+    setForgotNote(null);
+    try {
+      await new Api(null).post("/auth/password-reset/request", {
+        username: forgotUsername.trim(),
+      });
+      // Email chỉ là stub ghi log trong môi trường local; nói thẳng điều đó.
+      setForgotNote(
+        "Đã ghi nhận yêu cầu. Môi trường local chưa có email thật — mã đặt lại nằm trong log máy chủ.",
+      );
+    } catch (err) {
+      setForgotNote(
+        err instanceof Error ? err.message : "Chưa gửi được yêu cầu đặt lại.",
+      );
+    } finally {
+      setForgotBusy(false);
+    }
+  };
   return (
-    <main className="login-layout">
-      <section className="login-story">
-        <Brand />
-        <div className="login-story-copy">
-          <span className="story-tag">
-            <Icon name="leaf" size={15} /> Một nơi ở. Nhiều điều phù hợp.
-          </span>
-          <h1>
-            Một căn phòng nhỏ.
-            <br />
-            <span>Một khởi đầu mới.</span>
-          </h1>
-          <p>
-            Tìm nơi bạn muốn trở về, với những lựa chọn phù hợp nhu cầu và chi
-            phí rõ ràng ngay từ đầu.
-          </p>
-        </div>
-        <div className="login-art">
-          <RoomIllustration />
-          <div className="art-caption">
-            <span>
-              <Icon name="sun" size={18} />
-            </span>
-            <div>
-              <strong>Vừa với cuộc sống của bạn</strong>
-              <small>Một nơi sáng hơn cho những ngày mới</small>
-            </div>
-          </div>
-        </div>
-        <div className="login-principles">
-          <span>
-            <Icon name="chat" />
-            Hỏi rõ nhu cầu
-          </span>
-          <span>
-            <Icon name="compare" />
-            So sánh chi phí
-          </span>
-          <span>
-            <Icon name="shield" />
-            Quản lý duyệt
-          </span>
-        </div>
-        <small className="story-footer">
-          HomeMatch · Đề tài KLTN · Dữ liệu phòng giả lập
-        </small>
-      </section>
-      <section className="login-form-side">
-        <div className="login-form">
+    <main className="auth-page">
+      <section className="auth-main">
+        <div className="auth-top">
+          <Brand />
           <button
             type="button"
             className="text-button login-back"
@@ -97,15 +83,42 @@ export function Login({
           >
             ← Về trang chủ
           </button>
-          <span className="login-welcome-icon">
-            <Icon name="home" size={25} />
-          </span>
-          <span className="eyebrow">NƠI Ở TIẾP THEO BẮT ĐẦU TỪ ĐÂY</span>
-          <h2>Chào mừng bạn trở lại.</h2>
-          <p className="subtle">
-            Đăng nhập để tiếp tục hành trình tìm phòng của bạn hoặc quản lý các
-            đề xuất tư vấn.
+        </div>
+        <div className="auth-card">
+          <h1>Đăng nhập HomeMatch</h1>
+          <p className="auth-sub">
+            {role === "renter"
+              ? "Trợ lý sẽ ghi nhớ khu vực, ngân sách và số người ở mà bạn đã chia sẻ."
+              : "Quản lý tin đăng, hợp đồng và hóa đơn trong cổng chủ nhà."}
           </p>
+          <div
+            className="auth-toggle"
+            role="group"
+            aria-label="Chọn loại tài khoản"
+          >
+            <button
+              type="button"
+              aria-pressed={role === "renter"}
+              onClick={() => setRole("renter")}
+            >
+              Người thuê
+            </button>
+            <button
+              type="button"
+              aria-pressed={role === "owner"}
+              onClick={() => setRole("owner")}
+            >
+              Chủ nhà
+            </button>
+          </div>
+          {demoReady && (
+            <ExperienceChips
+              kind={role}
+              disabled={busy}
+              onAuthenticated={onAuthenticated}
+              onError={onError}
+            />
+          )}
           {pendingNeed && (
             <div className="pending-need">
               <div className="pending-need-icon">
@@ -128,8 +141,10 @@ export function Login({
               void login();
             }}
           >
-            <label>
-              Tên đăng nhập
+            <label className="auth-field">
+              <span className="auth-req">
+                Tên đăng nhập <i aria-hidden="true">*</i>
+              </span>
               <input
                 autoComplete="username"
                 required
@@ -139,8 +154,10 @@ export function Login({
                 disabled={busy}
               />
             </label>
-            <div className="password-field">
-              <label htmlFor="login-password">Mật khẩu</label>
+            <div className="auth-field password-field">
+              <label htmlFor="login-password" className="auth-req">
+                Mật khẩu <i aria-hidden="true">*</i>
+              </label>
               <div className="password-input">
                 <input
                   id="login-password"
@@ -164,26 +181,76 @@ export function Login({
                 </button>
               </div>
             </div>
-            <button className="button" disabled={busy}>
+            <div className="auth-form-meta">
+              <small>Mật khẩu mã hóa scrypt — không lưu bản rõ</small>
+              <Link to="/cam-nang" className="auth-help">
+                Cần trợ giúp?
+              </Link>
+            </div>
+            <button className="auth-cta" disabled={busy}>
+              <Icon name="shield" size={17} />
               {busy ? "Đang đăng nhập…" : "Đăng nhập"}
-              <Icon name="arrow" size={18} />
             </button>
           </form>
-          <p className="auth-alt">
-            Chưa có tài khoản? <Link to="/dang-ky">Đăng ký</Link>
+          <p className="auth-terms">
+            Khi tiếp tục, bạn đồng ý sử dụng HomeMatch trong khuôn khổ đồ án
+            nghiên cứu; dữ liệu phòng là dữ liệu giả lập.
           </p>
-          <div className="login-note">
-            <Icon name="shield" size={18} />
-            <p>
-              Tài khoản người thuê và quản lý được cấp trong môi trường thử
-              nghiệm. Gợi ý phòng luôn được kiểm tra trước khi giới thiệu.
-            </p>
+          <Link to="/dang-ky" className="auth-alt-cta">
+            Chưa có tài khoản? Đăng ký
+          </Link>
+          <div className="auth-forgot">
+            {forgotOpen ? (
+              <>
+                <label className="auth-field">
+                  Tên đăng nhập cần đặt lại mật khẩu
+                  <input
+                    value={forgotUsername}
+                    onChange={(e) => setForgotUsername(e.target.value)}
+                    placeholder="ví dụ: renter-a"
+                    disabled={forgotBusy}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => void requestReset()}
+                  disabled={forgotBusy || !forgotUsername.trim()}
+                >
+                  {forgotBusy ? "Đang gửi…" : "Gửi yêu cầu đặt lại mật khẩu"}
+                </button>
+                {forgotNote && (
+                  <small className="auth-forgot-note">{forgotNote}</small>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                className="text-button auth-forgot-toggle"
+                onClick={() => setForgotOpen(true)}
+              >
+                Quên mật khẩu?
+              </button>
+            )}
           </div>
-          <div className="login-form-footer">
-            <span className="status-dot" /> Môi trường nghiên cứu · Kho phòng
-            giả lập
-          </div>
+          <p className="auth-safety">
+            HomeMatch không bao giờ hỏi mật khẩu của bạn qua điện thoại hay tin
+            nhắn.
+          </p>
         </div>
+      </section>
+      <section className="auth-hero" aria-hidden="true">
+        <div className="auth-sky">
+          <span className="auth-sun" />
+          <span className="auth-skyline far" />
+          <span className="auth-skyline near" />
+          <span className="auth-water" />
+        </div>
+        <p className="auth-tagline">
+          Một nơi ở.
+          <br />
+          Nhiều điều phù hợp.
+        </p>
       </section>
     </main>
   );

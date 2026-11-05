@@ -20,7 +20,7 @@ from .capabilities import ROLES as DOMAIN_ROLES
 from .models import Actor, DomainError
 
 # action -> allowed roles. Resource ownership is verified separately per role:
-# a renter must own the session, a manager must be the assigned manager.
+# a renter must own the session, a landlord must own the referenced resource.
 CAPABILITIES: dict[str, frozenset[str]] = {
     "session:create": frozenset({"renter"}),
     "session:read": frozenset({"renter", "owner"}),
@@ -33,8 +33,17 @@ CAPABILITIES: dict[str, frozenset[str]] = {
     "viewing:request": frozenset({"renter"}),
     "viewing:read": frozenset({"renter", "owner"}),
     "viewing:respond": frozenset({"owner"}),
+    # Danh sách cá nhân của người thuê: căn đã lưu và căn đã xem (trang cá nhân).
+    "saved:read": frozenset({"renter"}),
+    "saved:write": frozenset({"renter"}),
+    "viewed:read": frozenset({"renter"}),
     "support:handoff": frozenset({"renter"}),
-    "support:list": frozenset({"owner", "admin"}),
+    # Handoff tickets belong to the platform support workflow: only admins list
+    # and manage them (landlord conversations replace tickets for room topics).
+    "support:list": frozenset({"admin"}),
+    "support:manage": frozenset({"admin"}),
+    # Landlord account review (self-signup approval) is an admin decision.
+    "account:review_landlord": frozenset({"admin"}),
     # Landlords review only the rooms they own in a shortlist (per-landlord HITL).
     "run:draft_list": frozenset({"owner"}),
     "run:read": frozenset({"owner"}),

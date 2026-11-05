@@ -106,3 +106,37 @@ def test_handbook_is_reachable_from_chat_without_a_model_call(service, renter):
     reply = service.message(sid, renter, "Quy định về tạm trú khi thuê phòng thế nào?")
     assert reply["status"] == "handbook_answer" and reply["answers"][0]["id"] == "residence"
     assert reply["usage"]["logical_calls"] == 0 and reply["provenance"]["agent"] == "handbook"
+
+
+def test_saved_and_viewed_room_lists_are_renter_scoped(service):
+    room = next(room for room in service.catalog.rooms() if room.published)
+    renter = Actor(id="renter-a", role="renter")
+    owner = Actor(id="owner-a", role="owner")
+    assert service.set_room_saved(renter, room.id, True)["saved"] is True
+    saved = service.saved_rooms(renter)
+    assert [item["id"] for item in saved] == [room.id] and saved[0]["cost"]
+    # Capability chỉ cho người thuê: chủ nhà bị chặn cả xem và lưu.
+    with pytest.raises(DomainError):
+        service.saved_rooms(owner)
+    with pytest.raises(DomainError):
+        service.set_room_saved(owner, room.id, True)
+    # Bỏ lưu là xoá thật, đọc lại rỗng.
+    assert service.set_room_saved(renter, room.id, False)["saved"] is False
+    assert service.saved_rooms(renter) == []
+    # Căn đã xem: mở chi tiết với người thuê rồi đọc lại theo thứ tự mới nhất.
+    service.listing(room.id, renter)
+    viewed = service.viewed_rooms(renter)
+    assert [item["id"] for item in viewed] == [room.id]
+
+
+def test_saved_room_routes_over_http(service):
+    room = next(room for room in service.catalog.rooms() if room.published)
+    with TestClient(create_app(lambda: service)) as client:
+        assert client.put(f"/rooms/{room.id}/save", headers=RENTER).status_code == 200
+        saved = client.get("/rooms/saved", headers=RENTER)
+        assert saved.status_code == 200 and saved.json()[0]["id"] == room.id
+        # Chủ nhà không có quyền danh sách cá nhân người thuê.
+        assert client.get("/rooms/saved", headers=LANDLORD).status_code == 403
+        assert client.delete(f"/rooms/{room.id}/save", headers=RENTER).status_code == 200
+        assert client.get("/rooms/saved", headers=RENTER).json() == []
+        assert client.get("/rooms/viewed", headers=RENTER).status_code == 200

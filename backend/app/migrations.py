@@ -12,7 +12,12 @@ Version 7 adds renter-landlord live chat with handover context and the
 PII-masked AI chat transcript kept for admin audit. Version 8 adds in-app
 notifications (deduplicated) and the automation job log. Version 9 adds the
 landlord PMS/CRM: leases, meter readings, invoices, payments and claims,
-maintenance tickets and the lead pipeline. LangGraph
+maintenance tickets and the lead pipeline. Version 10 adds the landlord
+account review status (self-signup stays pending until an admin approves).
+Version 11 extends handoff support tickets with assignee, resolution note and
+timestamps. Version 12 adds listing and maintenance photo metadata (files are
+content-addressed on disk under HOMEMATCH_MEDIA_DIR). Version 13 adds the
+landlord promotion per listing (never read by pricing or ranking). LangGraph
 and optional pgvector tables remain owned by their respective adapters.
 """
 from __future__ import annotations
@@ -256,6 +261,49 @@ MIGRATIONS = (
             notes TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
             UNIQUE(landlord_id, renter_id, room_id)
         );
+    """),
+    (10, "landlord_account_review_status", """
+        ALTER TABLE hm_account_profiles ADD COLUMN landlord_status TEXT;
+        -- At migration time every existing owner account is a seed owner;
+        -- self-registered owners (which start as 'pending') do not exist yet.
+        UPDATE hm_account_profiles SET landlord_status='approved'
+            WHERE user_id IN (SELECT id FROM hm_users WHERE role='owner');
+    """),
+    (11, "support_ticket_lifecycle", """
+        ALTER TABLE hm_support ADD COLUMN assignee TEXT;
+        ALTER TABLE hm_support ADD COLUMN note TEXT;
+        ALTER TABLE hm_support ADD COLUMN updated_at TEXT;
+        ALTER TABLE hm_support ADD COLUMN resolved_at TEXT;
+        CREATE INDEX IF NOT EXISTS hm_support_status ON hm_support(status);
+    """),
+    (12, "listing_and_maintenance_media", """
+        CREATE TABLE IF NOT EXISTS hm_media (
+            id TEXT PRIMARY KEY, owner_kind TEXT NOT NULL, owner_id TEXT NOT NULL,
+            uploader_id TEXT NOT NULL, content_type TEXT NOT NULL, size_bytes INTEGER NOT NULL,
+            sha256 TEXT NOT NULL, position INTEGER NOT NULL, created_at TEXT NOT NULL,
+            UNIQUE(owner_kind, owner_id, sha256)
+        );
+        CREATE INDEX IF NOT EXISTS hm_media_owner ON hm_media(owner_kind, owner_id, position);
+    """),
+    (13, "landlord_promotions", """
+        CREATE TABLE IF NOT EXISTS hm_promotions (
+            room_id TEXT PRIMARY KEY, landlord_id TEXT NOT NULL, text TEXT NOT NULL,
+            valid_until TEXT NOT NULL, updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS hm_promotions_landlord ON hm_promotions(landlord_id);
+    """),
+    (14, "landlord_contact_phone", """
+        -- Landlord-entered contact phone shown on their own listings, never crawled.
+        ALTER TABLE hm_account_profiles ADD COLUMN contact_phone TEXT;
+    """),
+    (15, "renter_room_saves", """
+        -- Danh sách cá nhân của người thuê: căn đã lưu (trang cá nhân).
+        -- Người thuê chỉ sở hữu dòng của mình, bỏ lưu là xoá thật.
+        CREATE TABLE IF NOT EXISTS hm_room_saves (
+            user_id TEXT NOT NULL, room_id TEXT NOT NULL, created_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, room_id)
+        );
+        CREATE INDEX IF NOT EXISTS hm_room_saves_user ON hm_room_saves(user_id, created_at);
     """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]

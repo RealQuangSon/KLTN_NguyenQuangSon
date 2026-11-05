@@ -43,14 +43,21 @@ class Usage(Model):
     mode: str
     model: str | None = None
     context_utf8_upper_bound: int | None = None
+    # Reported input/output split (AG-03); null when the provider only reports a total.
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
 
 
 class MessageResult(SessionResult):
-    intent: Literal["find_room", "calculate_cost", "human_support", "handbook", "unknown"]
-    status: Literal["needs_clarification", "cost_estimate", "support_requested", "handbook_answer"]
+    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support", "handbook", "unknown"]
+    status: Literal["needs_clarification", "cost_estimate", "support_requested", "handbook_answer",
+                    "simulation", "needs_results"]
     questions: list[str] | None = None
     interpreter_mode: str | None = None
     cost: CostResult | None = None
+    # Loan what-if answered by the finance agent from a deterministic tool (AG-02):
+    # {room_id, room_title, scenario:{annual_rate, term_months, principal_vnd}, result}.
+    simulation: dict | None = None
     ticket_id: str | None = None
     message: str | None = None
     answers: list[dict] | None = None
@@ -73,10 +80,17 @@ class ResultsResult(Model):
     suggestions: list[str] | None = None
     # Deterministic-engine provenance for the ranking read (catalog/method/run status).
     provenance: dict | None = None
+    # Aggregate hard-filter counts (scanned/kept/rejected/verification) cho ca
+    # kho rỗng — chỉ số liệu tổng hợp, không chứa danh tính phòng nào.
+    diagnostics_summary: dict | None = None
+    # Các bước pipeline deterministic đã chạy thật của run này (minh bạch quy trình).
+    steps: list[str] | None = None
 
     @model_validator(mode="after")
     def published_only(self):
-        if self.status != "published" and self.results:
+        # Rooms appear as soon as their own landlord approves (D-05), so a
+        # partially published run may carry results too.
+        if self.status not in ("published", "partially_published") and self.results:
             raise ValueError("Unpublished recommendations cannot contain renter results")
         return self
 
@@ -164,14 +178,24 @@ class RecommendationResult(Model):
     review_progress: dict | None = None
 
 
+class RoomWithMedia(Room):
+    """Room DTO extended with the media fields the service attaches on read
+    paths (BE-06/BE-07). Never accepted as catalog input, never stored:
+    RoomInput/CatalogStatus payloads keep the canonical Room schema."""
+    # Listing photos in display order: [{id, url}].
+    photos: list[dict] | None = None
+    # Active landlord promotion: {text, valid_until} or null when none/expired.
+    promotion: dict | None = None
+
+
 class CatalogResult(Model):
-    rooms: list[Room]
+    rooms: list[RoomWithMedia]
     catalog_version: str
     shared_catalog: bool
 
 
 class RoomResult(Model):
-    room: Room
+    room: RoomWithMedia
     catalog_version: str
 
 
@@ -191,8 +215,34 @@ class SupportResult(Model):
     id: str
     session_id: str
     manager_id: str
-    status: Literal["requested"]
+    status: Literal["requested", "in_progress", "resolved"]
+    assignee: str | None = None
+    note: str | None = None
     created_at: datetime
+    updated_at: datetime | None = None
+    resolved_at: datetime | None = None
+
+
+class SupportUpdate(Model):
+    # Any current status may be replayed (idempotent no-op); the lifecycle
+    # itself is enforced by SUPPORT_TRANSITIONS in the service layer.
+    status: Literal["requested", "in_progress", "resolved"]
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class MediaResult(Model):
+    # One photo of a listing or maintenance ticket; url is always /media/{id}.
+    id: str
+    url: str
+    content_type: str
+    size_bytes: int
+    position: int
+
+
+class PromotionResult(Model):
+    room_id: str
+    text: str
+    valid_until: str
 
 
 class HealthResult(Model):
@@ -202,6 +252,12 @@ class HealthResult(Model):
     auth_mode: Literal["seed", "demo"]
     matching_method: Literal["B1", "P"]
     workers: Literal[1]
+    # public=true khi HOMEMATCH_PUBLIC=true; frontend dùng để tắt trải nghiệm
+    # đăng nhập nhanh bằng tài khoản seed (chỉ dành cho môi trường demo local).
+    public: bool
+    # auto_publish=true khi HOMEMATCH_AUTO_PUBLISH=1: phòng tự công bố ngay
+    # không chờ duyệt; frontend dùng để đổi vài dòng copy trạng thái chờ.
+    auto_publish: bool
 
 
 class ReadyResult(Model):
@@ -226,12 +282,29 @@ class GenerationMetric(Model):
     duration_seconds: float
 
 
+class CostMetric(Model):
+    """Operator cost estimate for the reported token usage (BE-05).
+
+    estimated_cost_vnd stays None when any needed price, fx rate or token
+    split is missing; `missing` lists the offending keys.
+    """
+
+    estimated_cost_vnd: int | None
+    price_effective_date: str | None
+    missing: list[str] = Field(default_factory=list)
+    basis: dict[str, dict[str, int]] = Field(default_factory=dict)
+
+
 class MetricsResult(Model):
     scope: Literal["current_process"]
     requests: list[RequestMetric]
     generations: list[GenerationMetric]
-    provider_usage: dict[str, int]
+    # Per-model usage lives under the nested "by_model" key (AG-03): a dict of
+    # per-model counters, hence the two-level int|dict union.
+    provider_usage: dict[str, int | dict[str, int | dict[str, int]]]
     semantic_usage: dict[str, int] = Field(default_factory=dict)
+    # Null when HOMEMATCH_PROVIDER_PRICES_PATH is not configured.
+    cost: CostMetric | None = None
 
 
 class ErrorField(Model):
@@ -313,6 +386,7 @@ class ProfileResult(Model):
     email: str | None
     email_verified: bool | None
     status: AccountStatus
+    contact_phone: str | None = None
     consents: dict[str, bool]
     organizations: list[OrgMembershipSummary]
 

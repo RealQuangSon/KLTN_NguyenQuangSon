@@ -54,20 +54,29 @@ it("carries the landing need through the login bounce into a fresh consultation"
   await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), need);
   await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
   expect(screen.getByText(need)).toBeVisible();
+  // Lượt công khai đầu tiên được trợ lý phản hồi ngay tại trang.
+  expect(
+    await screen.findByText(/Mình đã ghi nhận nhu cầu/, {}, { timeout: 2500 }),
+  ).toBeVisible();
+  // Từ lượt thứ hai, tiếp tục trò chuyện chuyển sang yêu cầu đăng nhập; phiên
+  // sau đăng nhập bắt đầu từ đúng câu hỏi mới nhất.
+  const followUp = "Cho mình xem thêm phòng ở Hà Nội dưới 4 triệu";
+  await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), followUp);
+  await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
   await screen.findByText(
     "Bạn vừa chia sẻ nhu cầu với trợ lý",
     {},
     { timeout: 2500 },
   );
-  await user.type(screen.getByLabelText("Tên đăng nhập"), "renter-a");
-  await user.type(screen.getByLabelText("Mật khẩu"), "test-password");
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter-a");
+  await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
   await screen.findByText(/tổng ngân sách tháng là bao nhiêu/);
   expect(posts.find((call) => call.url.endsWith("/sessions"))).toBeTruthy();
   expect(
     posts.find((call) => call.url.endsWith("/sessions/session-9/messages"))
       ?.body,
-  ).toEqual({ text: need });
+  ).toEqual({ text: followUp });
   expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
     "session-9",
   );
@@ -126,13 +135,19 @@ it("drops the pending landing need when a landlord signs in", async () => {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), need);
   await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
+  await screen.findByText(/Mình đã ghi nhận nhu cầu/, {}, { timeout: 2500 });
+  await user.type(
+    screen.getByLabelText("Nhu cầu tìm phòng của bạn"),
+    "Cho mình xem phòng gần chỗ làm",
+  );
+  await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
   await screen.findByText(
     "Bạn vừa chia sẻ nhu cầu với trợ lý",
     {},
     { timeout: 2500 },
   );
-  await user.type(screen.getByLabelText("Tên đăng nhập"), "owner-a");
-  await user.type(screen.getByLabelText("Mật khẩu"), "test-password");
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "owner-a");
+  await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
   await screen.findAllByText("Duyệt gợi ý");
   expect(

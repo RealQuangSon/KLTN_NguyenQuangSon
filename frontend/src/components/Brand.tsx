@@ -7,7 +7,10 @@ export function Brand() {
         <Icon name="home" size={22} />
       </span>
       <span className="brand-name">
-        HomeMatch<span className="brand-period">.</span>
+        <span className="brand-title">
+          HomeMatch<span className="brand-period">.</span>
+        </span>
+        <small className="brand-tag">Trợ lý tìm phòng</small>
       </span>
     </div>
   );

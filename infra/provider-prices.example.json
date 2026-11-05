@@ -1,0 +1,3 @@
+{"effective_date": null, "vnd_per_usd": null,
+ "models": {"gpt-4o": {"input_usd_per_1m": null, "output_usd_per_1m": null},
+            "text-embedding-3-small": {"input_usd_per_1m": null}}}

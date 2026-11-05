@@ -7,6 +7,7 @@ monthly total is listed as unknown instead of being treated as cheap.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import Field
@@ -17,7 +18,9 @@ from .locations import canonical_area, canonical_city
 from .models import Model, RoomType, Scenario
 from .projection import public_room_projection
 
-SORTS = ("monthly_asc", "monthly_desc", "rent_asc", "area_desc")
+# Rooms imported from a crawl (data/crawl_chotot.py): the poster is not a platform account.
+CRAWLED_SOURCE_PREFIXES = ("chotot://", "https://www.chotot.com/")
+SORTS = ("monthly_asc", "monthly_desc", "rent_asc", "area_desc", "posted_desc")
 
 
 class ListingQuery(Model):
@@ -31,7 +34,7 @@ class ListingQuery(Model):
     min_bedrooms: int | None = Field(default=None, ge=1, le=5)
     people: int = Field(default=1, ge=1, le=20)
     amenities: list[str] = Field(default_factory=list, max_length=9)
-    sort: Literal["monthly_asc", "monthly_desc", "rent_asc", "area_desc"] = "monthly_asc"
+    sort: Literal["monthly_asc", "monthly_desc", "rent_asc", "area_desc", "posted_desc"] = "monthly_asc"
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=50)
 
@@ -40,6 +43,18 @@ def listing_card(room, people: int = 1) -> dict:
     """Public projection plus the cost estimate for a default scenario."""
     cost = calculate_cost(room.quote, Scenario(people=people, vehicles=1))
     return {**public_room_projection(room), "cost": cost.model_dump(mode="json")}
+
+
+EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _posted_moment(value) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def search(rooms, query: ListingQuery) -> dict:
@@ -73,11 +88,15 @@ def search(rooms, query: ListingQuery) -> dict:
             continue
         matches.append(card)
     big = float("inf")
+    # "Mới đăng" là lựa chọn của người dùng ở tìm theo bộ lọc (F2): never used
+    # by the AI ranking. Unknown posting times sort last, never first.
+    posted = {card["id"]: _posted_moment(card.get("posted_at")) for card in matches}
     keys = {
         "monthly_asc": lambda c: (c["cost"]["monthly_total_vnd"] is None, c["cost"]["monthly_total_vnd"] or 0, c["id"]),
         "monthly_desc": lambda c: (c["cost"]["monthly_total_vnd"] is None, -(c["cost"]["monthly_total_vnd"] or 0), c["id"]),
         "rent_asc": lambda c: (c["quote"]["rent_vnd"], c["id"]),
         "area_desc": lambda c: (-c["area_m2"] if c["area_m2"] else big, c["id"]),
+        "posted_desc": lambda c: (posted[c["id"]] is None, -(posted[c["id"]] or EPOCH).timestamp(), c["id"]),
     }
     matches.sort(key=keys[query.sort])
     start = (query.page - 1) * query.page_size

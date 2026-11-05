@@ -1,0 +1,203 @@
+{
+  "cases": [
+    {
+      "case_id": "LP01",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": 12
+      },
+      "note": "README §7.4; chỉ có kỳ hạn",
+      "text": "nếu vay 12 tháng thì sao"
+    },
+    {
+      "case_id": "LP02",
+      "expected": {
+        "annual_rate": 10.0,
+        "principal_vnd": 20000000,
+        "term_months": 6
+      },
+      "note": "README §7.4; đủ ba giá trị",
+      "text": "vay 20 triệu lãi 10% trong 6 tháng"
+    },
+    {
+      "case_id": "LP03",
+      "expected": {
+        "annual_rate": 12.5,
+        "principal_vnd": null,
+        "term_months": 24
+      },
+      "note": "README §7.4; dấu phẩy thập phân",
+      "text": "trả góp 24 tháng lãi suất 12,5%"
+    },
+    {
+      "case_id": "LP04",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": 1500000,
+        "term_months": null
+      },
+      "note": "dấu phẩy thập phân của tiền",
+      "text": "cho vay 1,5 triệu được không"
+    },
+    {
+      "case_id": "LP05",
+      "expected": {
+        "annual_rate": 0.0,
+        "principal_vnd": null,
+        "term_months": 12
+      },
+      "note": "lãi 0% là giá trị hợp lệ, không phải null",
+      "text": "lãi 0% vay 12 tháng thì sao"
+    },
+    {
+      "case_id": "LP06",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": 12
+      },
+      "note": "không có chữ 'vay'; việc parse tách khỏi việc xếp ý định (DA-01)",
+      "text": "12 tháng"
+    },
+    {
+      "case_id": "LP07",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": null
+      },
+      "note": "kỳ hạn ngoài khoảng 1–60 → null",
+      "text": "vay 100 tháng"
+    },
+    {
+      "case_id": "LP08",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": 20000000,
+        "term_months": null
+      },
+      "note": "lãi ngoài khoảng 0–50 → null",
+      "text": "vay 20 triệu lãi 60%"
+    },
+    {
+      "case_id": "LP09",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": 6
+      },
+      "note": "hai số tháng: lấy số đầu tiên (re.search khớp đầu tiên)",
+      "text": "vay 6 tháng hay 12 tháng tốt hơn?"
+    },
+    {
+      "case_id": "LP10",
+      "expected": {
+        "annual_rate": 9.5,
+        "principal_vnd": null,
+        "term_months": 18
+      },
+      "note": "không dấu; dấu chấm thập phân",
+      "text": "lai suat 9.5% vay 18 thang"
+    },
+    {
+      "case_id": "LP11",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": 20000000,
+        "term_months": null
+      },
+      "note": "đơn vị 'tr'",
+      "text": "vay 20tr"
+    },
+    {
+      "case_id": "LP12",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": 2500000,
+        "term_months": 3
+      },
+      "note": "kỳ hạn và tiền trong cùng câu",
+      "text": "trả góp 3 tháng, tiền phòng 2,5 triệu mỗi tháng"
+    },
+    {
+      "case_id": "LP13",
+      "expected": {
+        "annual_rate": 12.0,
+        "principal_vnd": 35000000,
+        "term_months": 36
+      },
+      "note": "lãi theo năm, dấu '%' ngay sau số",
+      "text": "muốn vay 35 triệu, lãi 12%/năm, trả trong 36 tháng"
+    },
+    {
+      "case_id": "LP14",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": null
+      },
+      "note": "không có số nào",
+      "text": "cho mình vay tiền cọc với"
+    },
+    {
+      "case_id": "LP15",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": 3
+      },
+      "note": "đơn vị 'nghìn' không được đọc tiền → null",
+      "text": "vay 500 nghìn trả trong 3 tháng"
+    },
+    {
+      "case_id": "LP16",
+      "expected": {
+        "annual_rate": 15.5,
+        "principal_vnd": 12500000,
+        "term_months": 9
+      },
+      "note": "dấu phẩy thập phân ở cả tiền và lãi",
+      "text": "vay 12,5 triệu lãi 15,5% trong 9 tháng"
+    },
+    {
+      "case_id": "LP17",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": 5000000,
+        "term_months": 60
+      },
+      "note": "biên trên kỳ hạn 60 vẫn hợp lệ",
+      "text": "vay 5 triệu trả 60 tháng"
+    },
+    {
+      "case_id": "LP18",
+      "expected": {
+        "annual_rate": 50.0,
+        "principal_vnd": 5000000,
+        "term_months": null
+      },
+      "note": "biên trên lãi 50 vẫn hợp lệ",
+      "text": "vay 5 triệu lãi 50%"
+    },
+    {
+      "case_id": "LP19",
+      "expected": {
+        "annual_rate": null,
+        "principal_vnd": null,
+        "term_months": null
+      },
+      "note": "61 ngoài khoảng 1–60 → null",
+      "text": "vay 61 tháng thì sao"
+    }
+  ],
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "purpose": "Independent expected outputs for backend.app.interpreter.parse_loan_terms (AG-02); authored by hand, never derived from backend code.",
+  "rules": {
+    "annual_rate": "(\\d{1,2}(?:[.,]\\d{1,2})?)\\s*%; dấu phẩy thập phân đổi thành dấu chấm; hợp lệ 0–50, ngoài khoảng → null.",
+    "input": "so khớp trên văn bản đã bỏ dấu (folded); parse tách riêng khỏi việc xếp ý định.",
+    "principal_vnd": "tiền đọc theo (\\d+(?:[.,]\\d+)?)\\s*(trieu|tr\\b); dấu phẩy là thập phân (1,5 triệu = 1500000); đơn vị khác (nghìn, đồng) → null.",
+    "term_months": "(\\d{1,3})\\s*thang; hợp lệ 1–60, ngoài khoảng → null; nhiều số khớp thì lấy số đầu tiên."
+  },
+  "sources": "README §7.4 và bước 3 của AG-02 trong docs/coding-plan/agent.md"
+}

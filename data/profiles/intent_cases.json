@@ -1,0 +1,251 @@
+{
+  "cases": [
+    {
+      "case_id": "I001",
+      "intent": "handbook",
+      "split": "dev",
+      "text": "Nội quy nhà có cho nấu ăn bằng than không?"
+    },
+    {
+      "case_id": "I002",
+      "intent": "handbook",
+      "split": "test",
+      "text": "Cho mình hỏi quy định gửi xe máy của nhà thế nào?"
+    },
+    {
+      "case_id": "I003",
+      "intent": "handbook",
+      "split": "dev",
+      "text": "Khách thuê dài hạn có phải làm tạm trú không?"
+    },
+    {
+      "case_id": "I004",
+      "intent": "handbook",
+      "split": "test",
+      "text": "Trường hợp nào được hoàn cọc, mình muốn đọc điều khoản."
+    },
+    {
+      "case_id": "I005",
+      "intent": "handbook",
+      "split": "test",
+      "text": "Quyền lợi của người thuê trong hợp đồng có gì?"
+    },
+    {
+      "case_id": "I006",
+      "intent": "handbook",
+      "split": "dev",
+      "text": "Cho mình xem cẩm nang thuê phòng với."
+    },
+    {
+      "case_id": "I007",
+      "intent": "handbook",
+      "split": "test",
+      "text": "noi quy cho nuoi thu cung dc ko?"
+    },
+    {
+      "case_id": "I008",
+      "intent": "handbook",
+      "split": "test",
+      "text": "Điều khoản về khách ở lại qua đêm ghi gì?"
+    },
+    {
+      "case_id": "I009",
+      "intent": "human_support",
+      "split": "dev",
+      "text": "Mình muốn nói chuyện với người thật, không trả lời máy nữa."
+    },
+    {
+      "case_id": "I010",
+      "intent": "human_support",
+      "split": "test",
+      "text": "Cho gặp nhân viên tư vấn giúp mình với."
+    },
+    {
+      "case_id": "I011",
+      "intent": "human_support",
+      "split": "dev",
+      "text": "Tôi muốn gặp quản lý để trao đổi trực tiếp về phòng."
+    },
+    {
+      "case_id": "I012",
+      "intent": "human_support",
+      "split": "test",
+      "text": "Làm sao chat với chủ nhà của phòng này?"
+    },
+    {
+      "case_id": "I013",
+      "intent": "human_support",
+      "split": "test",
+      "text": "Mình cần nói chuyện với chủ nhà về lịch xem phòng."
+    },
+    {
+      "case_id": "I014",
+      "intent": "human_support",
+      "split": "test",
+      "text": "gap chu nha duoc khong, minh hoi truc tiep"
+    },
+    {
+      "case_id": "I015",
+      "intent": "calculate_cost",
+      "split": "dev",
+      "text": "Tính chi phí vào ở phòng Quận 7 cho 2 người."
+    },
+    {
+      "case_id": "I016",
+      "intent": "calculate_cost",
+      "split": "test",
+      "text": "Tính tiền vào ở căn hộ Đống Đa cho 1 người."
+    },
+    {
+      "case_id": "I017",
+      "intent": "calculate_cost",
+      "split": "dev",
+      "text": "Mô phỏng chi phí thuê studio Bình Thạnh giúp mình."
+    },
+    {
+      "case_id": "I018",
+      "intent": "calculate_cost",
+      "split": "test",
+      "text": "tinh tien vao o tro q7 1 nguoi roi ra sao?"
+    },
+    {
+      "case_id": "I019",
+      "intent": "calculate_cost",
+      "split": "test",
+      "text": "Cho mình tính chi phí vào ở của phòng này với 2 người và 1 xe máy."
+    },
+    {
+      "case_id": "I020",
+      "intent": "calculate_cost",
+      "split": "test",
+      "text": "Muốn biết tổng tháng và tiền cọc, mô phỏng chi phí căn hộ 2 phòng ngủ."
+    },
+    {
+      "case_id": "I021",
+      "intent": "simulate_finance",
+      "split": "dev",
+      "text": "Nếu vay 12 tháng thì sao nhỉ?"
+    },
+    {
+      "case_id": "I022",
+      "intent": "simulate_finance",
+      "split": "test",
+      "text": "vay 20 triệu lãi 10% trong 6 tháng thì trả bao nhiêu?"
+    },
+    {
+      "case_id": "I023",
+      "intent": "simulate_finance",
+      "split": "dev",
+      "text": "trả góp 24 tháng lãi suất 12,5% được không?"
+    },
+    {
+      "case_id": "I024",
+      "intent": "simulate_finance",
+      "split": "test",
+      "text": "Tính tiền vay 15 triệu trong 12 tháng giúp mình."
+    },
+    {
+      "case_id": "I025",
+      "intent": "simulate_finance",
+      "split": "test",
+      "text": "Mình muốn mô phỏng khoản vay 30 triệu lãi 9.5%."
+    },
+    {
+      "case_id": "I026",
+      "intent": "simulate_finance",
+      "split": "dev",
+      "text": "Xem trước số tiền trả góp khi vay tiền cọc căn hộ."
+    },
+    {
+      "case_id": "I027",
+      "intent": "simulate_finance",
+      "split": "test",
+      "text": "lai vay 8%/nam, vay 10 trieu tra trong 18 thang duoc khong?"
+    },
+    {
+      "case_id": "I028",
+      "intent": "simulate_finance",
+      "split": "test",
+      "text": "Tính giúp mình khoản trả góp vay tiền thuê phòng 3 tháng đầu."
+    },
+    {
+      "case_id": "I029",
+      "intent": "find_room",
+      "split": "dev",
+      "text": "Tìm phòng Quận 3 cho 1 người, cần cửa sổ."
+    },
+    {
+      "case_id": "I030",
+      "intent": "find_room",
+      "split": "test",
+      "text": "tim tro hcm binh thanh 2 nguoi co may lanh"
+    },
+    {
+      "case_id": "I031",
+      "intent": "find_room",
+      "split": "dev",
+      "text": "Mình cần thuê căn hộ Cầu Giấy cho 2 người."
+    },
+    {
+      "case_id": "I032",
+      "intent": "find_room",
+      "split": "test",
+      "text": "Phòng trọ gần trường ở Thủ Đức cho 1 người."
+    },
+    {
+      "case_id": "I033",
+      "intent": "find_room",
+      "split": "dev",
+      "text": "studio q7 giá 5 triệu có máy giặt không?"
+    },
+    {
+      "case_id": "I034",
+      "intent": "find_room",
+      "split": "test",
+      "text": "tim phong q3 1 nguoi co wc rieng dc ko?"
+    },
+    {
+      "case_id": "I035",
+      "intent": "unknown",
+      "split": "dev",
+      "text": "Chào bạn, mình chưa quyết định nhu cầu."
+    },
+    {
+      "case_id": "I036",
+      "intent": "unknown",
+      "split": "test",
+      "text": "hello"
+    },
+    {
+      "case_id": "I037",
+      "intent": "unknown",
+      "split": "dev",
+      "text": "Hôm nay trời đẹp quá."
+    },
+    {
+      "case_id": "I038",
+      "intent": "unknown",
+      "split": "test",
+      "text": "0987654321"
+    }
+  ],
+  "counts": {
+    "by_intent": {
+      "calculate_cost": 6,
+      "find_room": 6,
+      "handbook": 8,
+      "human_support": 6,
+      "simulate_finance": 8,
+      "unknown": 4
+    },
+    "by_split": {
+      "dev": 15,
+      "test": 23
+    }
+  },
+  "decision": "predicted = fixed_intent(text) or DemoInterpreter().extract(text).intent; matches the _build_chat_graph route node for the demo interpreter.",
+  "gate": "measurement_only_no_accuracy_threshold",
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "purpose": "Gold intent routing cases for the chat graph; authored synthetic utterances, not human judgments.",
+  "simulate_finance_status": "gold ahead of backend; AG-02 adds the intent, cases are expected to misroute until then"
+}

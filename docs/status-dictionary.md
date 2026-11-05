@@ -23,6 +23,30 @@ Profile/catalog/active run được kiểm lại khi đọc và trước finaliz
 
 Chat có `needs_clarification`, `cost_estimate`, `support_requested`; đây là trạng thái phản hồi chat, tách khỏi trạng thái run. Viewing bắt đầu `requested`, sau phản hồi manager thành `confirmed` hoặc `declined`.
 
+## Trạng thái tài khoản chủ nhà (BE-03, 08/10/2026)
+
+`landlord_status` trên `GET /auth/me`: `null` với khách; owner seed luôn là `approved`.
+
+| Status | Ý nghĩa | Hành động tiếp theo |
+|---|---|---|
+| `pending` | Chủ nhà tự đăng ký đã xác minh email, chưa được duyệt | Tạo/sửa tin nháp được; công khai tin bị chặn; chờ admin duyệt |
+| `approved` | Admin đã duyệt; được membership `owner` trong `org-demo` | Công khai tin bình thường |
+| `rejected` | Admin từ chối (kèm lý do trong thông báo) | Có thể được duyệt lại bởi admin |
+
+Lỗi mới: 403 `landlord_not_approved` — chủ nhà chưa được duyệt mà yêu cầu công khai tin; client hiển thị dòng chờ duyệt và khóa ô publish.
+
+## Trạng thái ticket hỗ trợ (BE-04, 08/10/2026)
+
+Ticket tạo từ chat khi khách muốn gặp nhân viên; chỉ admin liệt kê và chuyển trạng thái.
+
+| Status | Ý nghĩa | Chuyển được sang |
+|---|---|---|
+| `requested` | Khách vừa yêu cầu, chưa ai nhận | `in_progress`, `resolved` |
+| `in_progress` | Admin đã tiếp nhận (`assignee` là admin thực hiện) | `resolved` |
+| `resolved` | Đã xử lý xong (bắt buộc có `note`; `resolved_at` được ghi) | `in_progress` (mở lại) |
+
+Sai chuyển → 409 `ticket_state`; `resolved` thiếu `note` → 422 `note_required`; PATCH lặp lại đúng trạng thái hiện tại trả bản hiện tại, không ghi thêm và không thông báo lại. Mỗi lần đổi trạng thái, khách (chủ phiên) nhận một thông báo `support_update` với dedup `support:{id}:{status}`, link `/tro-ly-ai`.
+
 ## Lỗi và phản ứng của client
 
 Envelope thống nhất: `{error:{code,message,fields?},request_id}`. Header `X-Request-ID` khớp body; 401 có `WWW-Authenticate: Bearer`. Validation chỉ trả vị trí/loại lỗi, không trả lại input.
@@ -47,6 +71,8 @@ Envelope thống nhất: `{error:{code,message,fields?},request_id}`. Header `X-
 | 403 `account_unverified`, `account_disabled` | Tài khoản chưa xác minh email hoặc đã bị vô hiệu hóa |
 | 409 `lease_overlap`, `lease_state`, `lease_version`, `lease_not_accepted`, `invoice_exists`, `invoice_changed`, `claim_decided`, `ticket_state`, `conversation_closed`, `not_available` | Xung đột trạng thái hợp đồng, hóa đơn, sự cố, chat, phòng; đọc lại rồi thao tác |
 | 422 `invoice_incomplete`, `overpayment`, `reading_start_required`, `reading_decreased`, `invalid_period`, `invalid_renter`, `note_required`, `invalid_mode` | Dữ liệu vận hành chưa hợp lệ |
+| 422 `invalid_media`, `media_too_large`, `media_limit` | Ảnh không phải JPEG/PNG/WebP, vượt 5 MB hoặc vượt số ảnh tối đa (10 ảnh/tin, 5 ảnh/sự cố) |
+| 422 `invalid_promotion` | Ưu đãi sai ngày hạn (phải từ hôm nay UTC+7 đến tối đa +90 ngày) hoặc nội dung trống |
 | 403 `no_active_lease` | Chỉ người đang thuê mới báo hỏng được |
 | 422 `invalid_memory_field` | Trường ghi nhớ không được hỗ trợ |
 | 403 `tool_not_allowed`, 429 `agent_step_limit` | Lỗi nội bộ của agent (gọi tool ngoài danh sách hoặc quá số bước); lượt chat dừng, không bịa kết quả |

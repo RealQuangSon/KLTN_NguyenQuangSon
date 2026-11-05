@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Api } from "../api";
-import type { Room } from "../types";
+import type { Photo, Room } from "../types";
 import { EmptyState, ErrorNotice, Icon, money } from "../components/Shared";
 import { DocumentViewer } from "../components/DocumentViewer";
 // Quản lý vận hành (PMS & CRM): hợp đồng, hóa đơn/công nợ, sửa chữa, khách
@@ -66,6 +66,8 @@ interface Ticket {
   assignee: string | null;
   cost_vnd: number | null;
   timeline: { at: string; by: string; status: string; note: string | null }[];
+  // FE-05: ảnh sự cố (tối đa 5), xem cần token nên tải dạng blob.
+  photos?: Photo[];
 }
 interface Lead {
   id: string;
@@ -893,6 +895,70 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
   );
 }
 // ------------------------------------------------------------ maintenance
+// Ảnh sự cố không công khai: tải bằng fetch có bearer token rồi tạo object
+// URL; hủy toàn bộ object URL khi rời trang (FE-05).
+function TicketPhotos({
+  api,
+  photos,
+  title,
+}: {
+  api: Api;
+  photos: Photo[];
+  title: string;
+}) {
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const ids = photos.map((photo) => photo.id).join(",");
+  useEffect(() => {
+    const list = ids ? ids.split(",") : [];
+    const created: string[] = [];
+    let active = true;
+    void (async () => {
+      for (const id of list) {
+        try {
+          const url = await api.blobUrl(`/media/${id}`);
+          created.push(url);
+          if (active) setUrls((current) => ({ ...current, [id]: url }));
+          else URL.revokeObjectURL(url);
+        } catch (err) {
+          if (active) setError((err as Error).message);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+      created.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [api, ids]);
+  const shown = photos.filter((photo) => urls[photo.id]);
+  if (!photos.length) return null;
+  return (
+    <div className="ticket-photos">
+      <small>Ảnh đính kèm ({photos.length})</small>
+      {error && <small className="input-hint">{error}</small>}
+      <div className="media-grid">
+        {photos.map((photo) =>
+          urls[photo.id] ? (
+            <img
+              key={photo.id}
+              src={urls[photo.id]}
+              alt={`Ảnh sự cố ${title}`}
+            />
+          ) : (
+            <span key={photo.id} className="subtle" aria-label="Đang tải ảnh">
+              …
+            </span>
+          ),
+        )}
+      </div>
+      {!shown.length && !error && (
+        <small className="input-hint" role="status">
+          Đang tải ảnh…
+        </small>
+      )}
+    </div>
+  );
+}
 export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
   const load = useCallback(async () => {
     const tickets = await api.get<Ticket[]>("/maintenance");
@@ -915,6 +981,19 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
     priority: "normal",
   });
   const [notes, setNotes] = useState<Record<string, string>>({});
+  // FE-05: tối đa 5 ảnh đính kèm; chỉ tải lên sau khi ticket đã được tạo.
+  const TICKET_MAX_PHOTOS = 5;
+  const [pending, setPending] = useState<File[]>([]);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const choosePhotos = (files: FileList | null) => {
+    const chosen = Array.from(files ?? []).slice(0, TICKET_MAX_PHOTOS);
+    setPending(chosen);
+    setPhotoNote(
+      (files?.length ?? 0) > TICKET_MAX_PHOTOS
+        ? `Chỉ nhận tối đa ${TICKET_MAX_PHOTOS} ảnh; đã bỏ phần thừa.`
+        : null,
+    );
+  };
   const update = (ticket: Ticket, body: Record<string, unknown>) =>
     act(() =>
       api.patch(`/maintenance/${ticket.id}`, {
@@ -922,6 +1001,22 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
         note: notes[ticket.id] || null,
       }),
     );
+  const report = () =>
+    act(async () => {
+      const ticket = await api.post<{ id: string }>("/maintenance", form);
+      for (const [index, file] of pending.entries()) {
+        setPhotoNote(`Đang tải ảnh ${index + 1}/${pending.length}…`);
+        await api.upload(`/maintenance/${ticket.id}/media`, file);
+      }
+      setForm({
+        room_id: form.room_id,
+        title: "",
+        description: "",
+        priority: "normal",
+      });
+      setPending([]);
+      setPhotoNote(null);
+    });
   return (
     <>
       <Heading
@@ -944,7 +1039,7 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
           aria-label="Báo hỏng"
           onSubmit={(e) => {
             e.preventDefault();
-            void act(() => api.post("/maintenance", form));
+            void report();
           }}
         >
           <label>
@@ -993,6 +1088,21 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
               <option value="urgent">Khẩn</option>
             </select>
           </label>
+          <label>
+            Ảnh đính kèm (tối đa {TICKET_MAX_PHOTOS})
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={(e) => choosePhotos(e.target.files)}
+            />
+          </label>
+          {(pending.length > 0 || photoNote) && (
+            <small className="input-hint" role="status">
+              {photoNote ||
+                `${pending.length} ảnh sẽ tải lên sau khi yêu cầu được tạo.`}
+            </small>
+          )}
           <button className="button">Gửi yêu cầu</button>
         </form>
       )}
@@ -1028,6 +1138,11 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
                   </p>
                 ))}
               </details>
+              <TicketPhotos
+                api={api}
+                photos={ticket.photos ?? []}
+                title={ticket.title}
+              />
               <div className="inline-form">
                 <label>
                   Ghi chú

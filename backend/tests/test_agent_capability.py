@@ -29,8 +29,10 @@ def own_service(tmp_path):
 def test_capability_matrix_covers_every_public_entry():
     expected = {"session:create", "session:read", "chat:message", "draft:patch", "profile:confirm",
                 "results:read", "compare:run", "viewing:prepare", "viewing:request", "viewing:read",
-                "viewing:respond", "support:handoff", "support:list", "run:draft_list", "run:read",
-                "run:review", "run:retry", "catalog:read", "catalog:write"}
+                "viewing:respond", "support:handoff", "support:list", "support:manage",
+                "account:review_landlord", "run:draft_list", "run:read",
+                "run:review", "run:retry", "catalog:read", "catalog:write",
+                "saved:read", "saved:write", "viewed:read"}
     assert expected == set(CAPABILITIES)
 
 

@@ -135,10 +135,14 @@ def _metrics_section(metrics: dict) -> str:
 
 
 def _invariants_section(invariants: dict) -> str:
+    listing_meta = invariants["counterfactual"].get("listing_meta") or {}
     rows = [["Hồ sơ kiểm tra", invariants["profile_count"]],
             ["Ứng viên eligible đã kiểm", invariants["eligible_candidate_checks"]],
             ["Vi phạm", invariants["failed"]],
             ["Phản thực tế hoa hồng giữ rank", "đạt" if invariants["counterfactual"]["invariant_holds"] else "lệch"],
+            ["Phản thực tế ngày đăng/loại người đăng giữ rank",
+             "đạt" if listing_meta.get("invariant_holds", True) else "lệch"],
+            ["Phản thực tế ưu đãi giữ rank (thay đổi)", invariants["promotion_rank_changes"]],
             ["Đối chứng available=false loại phòng", _fmt(invariants["availability_flip_enforced"])]]
     return (f"## Bất biến điều kiện cứng ({'đạt' if invariants['passed'] else 'lệch'})\n\n"
             + _table(["Kiểm tra", "Kết quả"], rows))

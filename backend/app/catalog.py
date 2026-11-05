@@ -6,6 +6,7 @@ import math
 import unicodedata
 from pathlib import Path
 
+from .conversations import mask_pii
 from .costs import assess_affordability, calculate_cost, estimate_loan
 from .locations import canonical_area, canonical_city
 from .models import Candidate, Destination, Profile, Room
@@ -20,6 +21,18 @@ BAND_TRADEOFFS = {
     "can_nhac": "Tỷ lệ chi phí nhà ở trên thu nhập ở mức cần cân nhắc.",
     "vuot": "Tỷ lệ chi phí nhà ở trên thu nhập vượt mức khuyến nghị.",
 }
+
+
+# Landlord free text that the public listing page shows; contact details are
+# masked once at write time (FC-01/F4) so no read path can leak them.
+LISTING_TEXT_FIELDS = ("features_text", "house_rules", "description")
+
+
+def mask_listing_text(values: dict) -> dict:
+    for field in LISTING_TEXT_FIELDS:
+        if isinstance(values.get(field), str):
+            values[field] = mask_pii(values[field])
+    return values
 
 
 def fingerprint(value) -> str:
@@ -88,9 +101,9 @@ class Catalog:
                     mark("verification", "bedrooms"); continue
                 if room.bedrooms < profile.min_bedrooms:
                     mark("rejected", "bedrooms"); continue
-            if room.available is None or room.capacity is None:
+            if (room.available is None or room.capacity is None) and not profile.accept_estimated_data:
                 mark("verification", "availability_or_capacity"); continue
-            if not room.available or room.capacity < profile.scenario.people:
+            if room.available is False or (room.capacity is not None and room.capacity < profile.scenario.people):
                 mark("rejected", "availability_or_capacity"); continue
             required = [room.amenities.get(name) for name in profile.must_amenities]
             if any(value is False for value in required):
@@ -109,7 +122,8 @@ class Catalog:
                 if distance + error > profile.destination.max_distance_m:
                     mark("verification", "distance_boundary"); continue
 
-            cost = calculate_cost(room.quote, profile.scenario)
+            cost = calculate_cost(room.quote, profile.scenario,
+                                  accept_estimated_fees=profile.accept_estimated_data)
             if profile.max_rent_vnd is not None and room.quote.rent_vnd > profile.max_rent_vnd:
                 mark("rejected", "rent_budget"); continue
             if cost.monthly_total_vnd is None:
@@ -153,6 +167,9 @@ class Catalog:
                         for name in profile.preferences if room.amenities.get(name) is not True]
             if cost.initial_total_vnd is None:
                 tradeoffs.append("Tiền ban đầu chưa đầy đủ: " + ", ".join(cost.missing_initial))
+            if cost.assumed_fees:
+                tradeoffs.append("Phí " + ", ".join(cost.assumed_fees)
+                                 + " đang theo giả định chuẩn vì tin không ghi — cần xác minh lại khi xem.")
             if profile.destination:
                 reasons.append("Đạt bán kính đường thẳng khi tính cả sai số vị trí đã khai báo.")
             if loan_estimate := cost.affordability.loan:
@@ -163,6 +180,11 @@ class Catalog:
             # Listing-level data-quality flags: unknown evidence and location precision.
             verification = [f"amenity_unknown:{name}" for name, value in sorted(room.amenities.items())
                             if value is None]
+            if room.capacity is None:
+                # Sức chứa chưa ghi trong tin: coi như vừa số người đã nêu (có nhãn).
+                verification.append("capacity_unknown")
+            if cost.assumed_fees:
+                verification.append("fee_assumed:" + ",".join(cost.assumed_fees))
             verification += [f"fee_rate_unknown:{fee.name}" for fee in sorted(room.quote.fees, key=lambda f: f.name)
                              if fee.amount_vnd is None and fee.included_in_rent]
             if room.location_accuracy == "area_only":
@@ -178,6 +200,8 @@ class Catalog:
                 score=round(score, RANKING_CONFIG["round_digits"]), components=components, reasons=reasons,
                 tradeoffs=tradeoffs, source=room.source, synthetic=room.synthetic,
                 verification=verification,
+                latitude=room.latitude, longitude=room.longitude,
+                location_accuracy=room.location_accuracy, uncertainty_m=room.uncertainty_m,
             ))
         candidates.sort(key=lambda item: (-item.score, item.room_id))
         return candidates, diagnostics
@@ -226,13 +250,28 @@ class StoredCatalog(Catalog):
 
     def __init__(self, repo, initial: Catalog | None = None):
         self.repo = repo
+        # (catalog version, raw payloads). Every write goes through import_rooms, which
+        # bumps the version, so a matching version means the rows are unchanged. Only
+        # JSON is cached; each call builds fresh Room objects, so callers never share state.
+        self._payloads: tuple[str, list[str]] | None = None
         with self.repo.guard():
-            if not self.rooms():
+            if not self._load_rooms():
                 self.import_rooms((initial or Catalog()).rooms())
 
-    def rooms(self) -> list[Room]:
-        return [Room.model_validate_json(row["payload_json"]) for row in
+    def _load_payloads(self) -> list[str]:
+        return [row["payload_json"] for row in
                 self.repo.db.execute("SELECT payload_json FROM hm_rooms ORDER BY id").fetchall()]
+
+    def _load_rooms(self) -> list[Room]:
+        return [Room.model_validate_json(payload) for payload in self._load_payloads()]
+
+    def rooms(self) -> list[Room]:
+        # Hosted PostgreSQL makes the full read costly (2.5 MB per call for ~2,800 rooms);
+        # the version probe is one small row.
+        version = self.version
+        if self._payloads is None or self._payloads[0] != version:
+            self._payloads = (version, self._load_payloads())
+        return [Room.model_validate_json(payload) for payload in self._payloads[1]]
 
     @property
     def version(self) -> str:
@@ -253,7 +292,9 @@ class StoredCatalog(Catalog):
                 self.repo.db.execute("INSERT INTO hm_rooms(id,revision,payload_json) VALUES(?,?,?) "
                                      "ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,payload_json=excluded.payload_json",
                                      (room.id, room.revision, room.model_dump_json()))
-            values = [room.model_dump(mode="json") for room in self.rooms()]
+            # Uncached: the rows just changed but the stored version has not been bumped yet.
+            self._payloads = None
+            values = [room.model_dump(mode="json") for room in self._load_rooms()]
             encoded = json.dumps(values, sort_keys=True, ensure_ascii=False).encode()
             version = hashlib.sha256(encoded).hexdigest()
             self.repo.db.execute("UPDATE hm_catalog_meta SET version=? WHERE id='catalog'", (version,))
@@ -289,7 +330,7 @@ class StoredCatalog(Catalog):
     def create_room(self, landlord_id: str, data) -> dict:
         from uuid import uuid4
         room_id = f"room-{uuid4().hex[:10]}"
-        values = data.model_dump(mode="json")
+        values = mask_listing_text(data.model_dump(mode="json"))
         if values.get("occupancy"):
             values["available"] = values["occupancy"] == "vacant"
         room = Room.model_validate({**values, "id": room_id, "revision": 1, "landlord_id": landlord_id,
@@ -305,7 +346,7 @@ class StoredCatalog(Catalog):
                 raise DomainError("not_found", "Không tìm thấy phòng.", 404)
             if room.revision != data.expected_revision:
                 raise DomainError("catalog_conflict", "Tin đã đổi; hãy tải lại trước khi sửa.")
-            values = data.model_dump(mode="json", exclude={"expected_revision"})
+            values = mask_listing_text(data.model_dump(mode="json", exclude={"expected_revision"}))
             if values.get("occupancy"):
                 values["available"] = values["occupancy"] == "vacant"
             changed = Room.model_validate({**room.model_dump(), **values, "revision": room.revision + 1})

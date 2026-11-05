@@ -16,7 +16,9 @@ def test_openapi_defines_success_and_safe_error_contracts(service):
         for operation in operations.values():
             responses = operation["responses"]
             success = responses.get("200", responses.get("201"))
-            assert success["content"]["application/json"]["schema"]
+            # 204 no-content deletes and FileResponse media downloads are legitimate non-JSON successes.
+            if success is not None and "content" in success:
+                assert success["content"]["application/json"]["schema"]
             assert responses["422"]["content"]["application/json"]["schema"]["$ref"].endswith("ErrorResult")
     with pytest.raises(ValueError, match="Unpublished"):
         ResultsResult.model_validate({"session_id": "fixture", "status": "pending_review", "results": [

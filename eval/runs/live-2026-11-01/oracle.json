@@ -1,0 +1,2615 @@
+{
+  "case_count": 22,
+  "cases": [
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [
+        {
+          "actual_pass": true,
+          "expected_monthly_pass": true,
+          "monthly_limit_vnd": 3250000,
+          "passed": true
+        },
+        {
+          "actual_pass": false,
+          "expected_monthly_pass": false,
+          "monthly_limit_vnd": 3249999,
+          "passed": true
+        },
+        {
+          "actual_pass": true,
+          "expected_initial_pass": true,
+          "initial_limit_vnd": 5500000,
+          "passed": true
+        },
+        {
+          "actual_pass": false,
+          "expected_initial_pass": false,
+          "initial_limit_vnd": 5499999,
+          "passed": true
+        }
+      ],
+      "case_id": "C01-reference",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "machine_latency_ms": 0.1475,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "200",
+          "moving_vnd": 300000,
+          "people": 2,
+          "setup_vnd": 200000,
+          "vehicles": 2,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 600000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 160000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3610000,
+        "monthly_total_vnd": 3610000
+      },
+      "budget_checks": [],
+      "case_id": "C02-people-vehicles",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3610000,
+        "monthly_total_vnd": 3610000
+      },
+      "machine_latency_ms": 0.0581,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 60000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3230000,
+        "monthly_total_vnd": 3230000
+      },
+      "budget_checks": [],
+      "case_id": "C03-water-m3",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3230000,
+        "monthly_total_vnd": 3230000
+      },
+      "machine_latency_ms": 0.0448,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": true,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3150000,
+        "monthly_total_vnd": 3150000
+      },
+      "budget_checks": [],
+      "case_id": "C04-included",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3150000,
+        "monthly_total_vnd": 3150000
+      },
+      "machine_latency_ms": 0.0405,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3150000,
+        "monthly_total_vnd": 3150000
+      },
+      "budget_checks": [],
+      "case_id": "C05-zero-with-source",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3150000,
+        "monthly_total_vnd": 3150000
+      },
+      "machine_latency_ms": 0.0402,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [
+          "water"
+        ],
+        "monthly_known_vnd": 3170000,
+        "monthly_total_vnd": null
+      },
+      "budget_checks": [
+        {
+          "actual_pass": false,
+          "expected_monthly_pass": false,
+          "monthly_limit_vnd": 9000000,
+          "passed": true
+        }
+      ],
+      "case_id": "C06-unknown-water",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [
+          "water"
+        ],
+        "monthly_known_vnd": 3170000,
+        "monthly_total_vnd": null
+      },
+      "machine_latency_ms": 0.0405,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "missing"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [
+          "service"
+        ],
+        "monthly_known_vnd": 3200000,
+        "monthly_total_vnd": null
+      },
+      "budget_checks": [],
+      "case_id": "C07-absent-service",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [
+          "service"
+        ],
+        "monthly_known_vnd": 3200000,
+        "monthly_total_vnd": null
+      },
+      "machine_latency_ms": 0.0385,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 3000000,
+        "initial_total_vnd": null,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [
+          "deposit"
+        ],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "C08-unknown-deposit",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 3000000,
+        "initial_total_vnd": null,
+        "missing_initial": [
+          "deposit"
+        ],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "machine_latency_ms": 0.039,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 10500000,
+        "initial_total_vnd": 10500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 7500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "C09-three-months",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 10500000,
+        "initial_total_vnd": 10500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "machine_latency_ms": 0.038,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5650000,
+        "initial_total_vnd": 5650000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 150000,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "C10-one-time",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5650000,
+        "initial_total_vnd": 5650000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "machine_latency_ms": 0.0399,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "0",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 0,
+          "water_m3": "0"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2650000,
+        "monthly_total_vnd": 2650000
+      },
+      "budget_checks": [],
+      "case_id": "C11-zero-usage",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2650000,
+        "monthly_total_vnd": 2650000
+      },
+      "machine_latency_ms": 0.0392,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "1",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 3001,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2833001,
+        "monthly_total_vnd": 2833001
+      },
+      "budget_checks": [],
+      "case_id": "C12-round-half-up",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2833001,
+        "monthly_total_vnd": 2833001
+      },
+      "machine_latency_ms": 0.0389,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": true,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2830000,
+        "monthly_total_vnd": 2830000
+      },
+      "budget_checks": [],
+      "case_id": "C13-included-unknown-rate",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 2830000,
+        "monthly_total_vnd": 2830000
+      },
+      "machine_latency_ms": 0.0385,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 3000000,
+        "initial_total_vnd": null,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [
+          "first_rent",
+          "one_time"
+        ],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "C14-missing-initial",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 3000000,
+        "initial_total_vnd": null,
+        "missing_initial": [
+          "first_rent",
+          "one_time"
+        ],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "machine_latency_ms": 0.0388,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": null,
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 75000,
+            "included_in_rent": false,
+            "name": "cleaning",
+            "period": "monthly",
+            "source": "synthetic://fees/cleaning"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3325000,
+        "monthly_total_vnd": 3325000
+      },
+      "budget_checks": [],
+      "case_id": "C15-extra-monthly",
+      "differences": {},
+      "expected": {
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3325000,
+        "monthly_total_vnd": 3325000
+      },
+      "machine_latency_ms": 0.0436,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "can_nhac",
+          "burden_vnd": 8019016,
+          "housing_ratio": "0.3208",
+          "loan": {
+            "annual_rate": "0.12",
+            "exceeds_max_principal": false,
+            "installment_vnd": 949016,
+            "method": "annuity",
+            "principal_vnd": 5500000,
+            "term_months": 6,
+            "total_interest_vnd": 194096
+          },
+          "renter_burden_vnd": 8019016,
+          "shortfall_vnd": 5500000,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "120",
+          "moving_vnd": 500000,
+          "people": 2,
+          "setup_vnd": 1000000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 13500000,
+        "initial_total_vnd": 13500000,
+        "lines": [
+          {
+            "amount_vnd": 6000000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 150000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 6000000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 6000000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 500000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 1000000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 7070000,
+        "monthly_total_vnd": 7070000
+      },
+      "budget_checks": [],
+      "case_id": "L01-worked-example",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0998,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "chua_ro",
+          "burden_vnd": 3350000,
+          "housing_ratio": null,
+          "loan": {
+            "annual_rate": "0",
+            "exceeds_max_principal": false,
+            "installment_vnd": 100000,
+            "method": "annuity",
+            "principal_vnd": 1200000,
+            "term_months": 12,
+            "total_interest_vnd": 0
+          },
+          "renter_burden_vnd": 3350000,
+          "shortfall_vnd": 1200000,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "L02-zero-rate",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.062,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "can_nhac",
+          "burden_vnd": 3250000,
+          "housing_ratio": "0.3250",
+          "loan": null,
+          "renter_burden_vnd": 3250000,
+          "shortfall_vnd": 0,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "L03-no-shortfall",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0512,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "can_nhac",
+          "burden_vnd": 3610000,
+          "housing_ratio": "0.3008",
+          "loan": null,
+          "renter_burden_vnd": 1805000,
+          "shortfall_vnd": null,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "200",
+          "moving_vnd": 300000,
+          "people": 2,
+          "setup_vnd": 200000,
+          "vehicles": 2,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 600000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 160000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3610000,
+        "monthly_total_vnd": 3610000
+      },
+      "budget_checks": [],
+      "case_id": "L04-equal-split",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0471,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "chua_ro",
+          "burden_vnd": 3733537,
+          "housing_ratio": null,
+          "loan": {
+            "annual_rate": "0.10",
+            "exceeds_max_principal": true,
+            "installment_vnd": 483537,
+            "method": "annuity",
+            "principal_vnd": 5500000,
+            "term_months": 12,
+            "total_interest_vnd": 302444
+          },
+          "renter_burden_vnd": 3733537,
+          "shortfall_vnd": 5500000,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "L05-exceeds-cap",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0554,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "phu_hop",
+          "burden_vnd": 3250000,
+          "housing_ratio": "0.3000",
+          "loan": null,
+          "renter_burden_vnd": 3250000,
+          "shortfall_vnd": null,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "L06-boundary-30",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0455,
+      "passed": true
+    },
+    {
+      "actual": {
+        "affordability": {
+          "band": "can_nhac",
+          "burden_vnd": 3250000,
+          "housing_ratio": "0.4000",
+          "loan": null,
+          "renter_burden_vnd": 3250000,
+          "shortfall_vnd": null,
+          "thresholds": {
+            "can_nhac": "0.40",
+            "phu_hop": "0.30"
+          }
+        },
+        "assumptions": {
+          "electricity_kwh": "140",
+          "moving_vnd": 300000,
+          "people": 1,
+          "setup_vnd": 200000,
+          "vehicles": 1,
+          "water_m3": "3"
+        },
+        "initial_known_vnd": 5500000,
+        "initial_total_vnd": 5500000,
+        "lines": [
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "rent",
+            "period": "monthly",
+            "source": "quote.rent_vnd"
+          },
+          {
+            "amount_vnd": 420000,
+            "included_in_rent": false,
+            "name": "electricity",
+            "period": "monthly",
+            "source": "synthetic://fees/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "name": "water",
+            "period": "monthly",
+            "source": "synthetic://fees/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "internet",
+            "period": "monthly",
+            "source": "synthetic://fees/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "name": "parking",
+            "period": "monthly",
+            "source": "synthetic://fees/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "name": "service",
+            "period": "monthly",
+            "source": "synthetic://fees/service"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "deposit",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 2500000,
+            "included_in_rent": false,
+            "name": "first_rent",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 0,
+            "included_in_rent": false,
+            "name": "one_time",
+            "period": "initial",
+            "source": "quote"
+          },
+          {
+            "amount_vnd": 300000,
+            "included_in_rent": false,
+            "name": "moving",
+            "period": "initial",
+            "source": "scenario"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "name": "setup",
+            "period": "initial",
+            "source": "scenario"
+          }
+        ],
+        "missing_initial": [],
+        "missing_monthly": [],
+        "monthly_known_vnd": 3250000,
+        "monthly_total_vnd": 3250000
+      },
+      "budget_checks": [],
+      "case_id": "L07-boundary-40",
+      "differences": {},
+      "expected": {},
+      "machine_latency_ms": 0.0447,
+      "passed": true
+    }
+  ],
+  "code_hashes": {
+    "backend/app/__init__.py": "26504cf15e830f4edfef0f6339701246b391e53358b093abf33a05365a5bacf8",
+    "backend/app/advisor.py": "7368fe7ecab32d7f6ee42e03a62ff8496775aec364455a3eec31802bf3ab49ce",
+    "backend/app/agent_budget.py": "152c5173ea33ad88251c8df14a79869b53ae97aeeffcfbb7d437d1339b4d4a0c",
+    "backend/app/agent_capability.py": "90a9194aa134a75c91645a302717542451a0b11e3f6ed6b6ea962acd45c98826",
+    "backend/app/agent_guard.py": "0c42a1e76d0e346d29cbb78bcbd42213acbe4ff54bf780f65e4f544e0ac6ccdf",
+    "backend/app/agent_provenance.py": "98bd2e7a3d269aba3b08fff0b54d6c270b2e79714e66e90d48786f002e9e1e4a",
+    "backend/app/agents.py": "04894210139852cba03a61357f056ebe711919d93b87b8d458ca9b98f82bc09f",
+    "backend/app/auth.py": "323658688a98521451c2f2547c23193679acdd9e32b3ad173c52aba0be08cf4d",
+    "backend/app/automation.py": "c3648273330198317a40bb01832a538ca95de9bb43941eb9c15b688bc88a6d5b",
+    "backend/app/capabilities.py": "6fdfc7e5d1f005427b73012e8cd9fc5d9ca68366e4d707dccf7ab2285ffcefbe",
+    "backend/app/catalog.py": "4282cd565aceb5dd754d6d1551201101307127c1a69f9d03a0d4705c0c037c2c",
+    "backend/app/conversations.py": "51b10bea4209d23608deea2dace5a90a5197fa6235f01f106afd1ca5f648eece",
+    "backend/app/copilot.py": "a5cc311253fb61d4e2f3e49bc73a7d8ad4514dd24f0d6bfd27f0a36cf6d8c7ee",
+    "backend/app/cost_metrics.py": "347b0d062a3199a507f7767bc790d4c757ea2fcd2179e512e18658aa67b3af6a",
+    "backend/app/costs.py": "e285fa92d48d2ba687d8c8a17dd1260707012c13938042ecc8c523205d0e2ef2",
+    "backend/app/database.py": "ab6907c20a9e10a3f591c8a90f710c2f0cd82fff4e6793cec85a919ba0bca57c",
+    "backend/app/handbook.py": "89f1bc2e275c1447eb6c2633bb563f78c1370700e11b20c7f4c6859971a8af2e",
+    "backend/app/interpreter.py": "4f6a99e6ce0139abf0778e45c914598946b0d255561a6f101ebbb8602ea2ce45",
+    "backend/app/listings.py": "6a1a8f31edd1f0080b94eee918c948816ffba42fcd37a80be13ae1d5c135c9ac",
+    "backend/app/locations.py": "f63e60e9c45f1d01aaf3719b486d29e25368a032cc78bb4ca263e980e282a824",
+    "backend/app/main.py": "e9cf13f82c25ce6385be60d8c92ee7dbbb4081f8dcccb91891c488331747ab68",
+    "backend/app/media.py": "efb6e4b2fe9765d6d36f5f7068a1b120f10eec00dd12acc362b02e7949f2e918",
+    "backend/app/memory.py": "217aca5fbe8ed0578eed1afd1ba8d78fb2fb3abbdbecf802ccba93366e1e6db4",
+    "backend/app/migrations.py": "69310f5f0993b07372ebce8497a03ddb88d55b44fb7ad9459ca645a889c87725",
+    "backend/app/models.py": "ef16706ce3c338adc761986764e5c1c6c43ac4b2e83e48d9e42033b634e70247",
+    "backend/app/notifications.py": "39b3fcac748c014fdae8fad5bf86c35ddf494e009472be7db27cd0f1ecf8d051",
+    "backend/app/operations.py": "81b607e8a6b5882a400d04cc1ea0f0ea1648c4987568d6814f5529ed3d246ee6",
+    "backend/app/organizations.py": "2c7af715a58ed0f60bf8d3ae6a5c2e2e9462c557729866cf1abd56f89c7259b9",
+    "backend/app/pms.py": "2faf16d8a3ab2448b23dc458aa1cc656b689a9a789897d37affea4fbbadc6423",
+    "backend/app/projection.py": "1c5ca25c99811aa3015ec204d93775654956c6bf9af10c41e79c8dc343baf6d4",
+    "backend/app/promotions.py": "fc6dd06c41a5ac11d1377cef2f4210f8426f2772cb5c819cbc93ebe89f4fc712",
+    "backend/app/repository.py": "91b35cbb3e9ff8f8f92857e8fdf733ebf2f9a721d79bcd8ec9cf783fddd42ca8",
+    "backend/app/schemas.py": "389c9779b1c0404e4b24ed1d30daf58dcd6b1920902c56c6070554713d91a150",
+    "backend/app/semantic.py": "ab4f7793d1b7bd25eaca42bb04c9ac0275e10824abc6b151ca01ae99d729a5cd",
+    "backend/app/service.py": "99f0cb921674552cfb7287bd2e18390700b67a489139c173967ff57a11d68ecd",
+    "data/generate.py": "f0a782f9963d734566d0a8c26807d1c223dacc13fcadced05dcf111c0cdfe8f5",
+    "eval/__init__.py": "9064bcade47312dfebf8ac237cd27a2a80bd7fcf9b3726826c9f1c2d686d2512",
+    "eval/__main__.py": "c477dbc218a2b7579b6cee94b221fb62b4d8a81ef628885708a1baf0c507591d",
+    "eval/common.py": "dbe0aa7049ff4f5be02ce8a70a75641340f697ab51266b8c2263867d6ced3051",
+    "eval/config/protocol.json": "9cc1c5a98b0b0612273706c85bd9f5137830915f46d70fd3b120bc3597a9271f",
+    "eval/intents.py": "3d3b2988813c50f6e9369ec7b83e971d6c987b8364688b549547ea3bddcd91b5",
+    "eval/invoices.py": "5b91764e4feb84aaa219c2f42bc9e28df1fa9518e55c390d31df9aafc636b969",
+    "eval/labeling.py": "0170bf6bb9f8e19729fb696d13ca18182ee716e32c0e9a9851da69e187c2cfdb",
+    "eval/measurement.py": "a913c726fd7e3c3a2ad44f895ed2195d3c9429a84946457db398cac90c2e6e86",
+    "eval/metrics.py": "3973b9273c8b3c1d9fb60c7f19c44a4d5845a73111de34a96121c57408002bc9",
+    "eval/pipeline.py": "d4b78c24bfcda33da5f2a69d750ca6576ac739634b838d880ed50a2cf025438e",
+    "eval/reporting.py": "785be3e03eff5580c3ef72cb96bab78a631851f0a425c40bd3722d3551031b2a",
+    "eval/suites.py": "00a53e436bf6db526015ed21447064979922dda1e63507fbf272511a8c812060",
+    "requirements.lock": "d6994fedbbadf67ac3d60dac7ba6e6be02ac9c7dce0590f607637a299eb5c47b",
+    "requirements.txt": "4f8e6c56349e5ad1ebad162e45176e58db0c3442e6367146e9a64bd1e01ec856"
+  },
+  "exact_vnd_required": true,
+  "failed": 0,
+  "input_manifest_hash": "592be828a817e0005168ee933f0731b6331a3f512e1c89cfd9480bfa4af47b40",
+  "kind": "offline_finance_component",
+  "model_calls": 0,
+  "oracle_origin": "Authored arithmetic constants, independent of engine output; human cross-check pending.",
+  "passed": 22
+}

@@ -15,7 +15,9 @@ Backend đọc biến process, không tự nạp `.env`. Frontend Vite đọc `.
 | `HOMEMATCH_LLM_MODE` | `demo/openai`; default `demo`, không gọi provider | Interpreter |
 | `HOMEMATCH_SESSION_LLM_BUDGET` | 50 lượt gọi interpreter tối đa mỗi phiên (đếm cả lần lỗi); vượt → lỗi `budget_exceeded` 429 | Service (agent budget) |
 | `OPENAI_API_KEY` | Secret server, chỉ cần khi chủ động chọn live | SDK adapters |
-| `OPENAI_MODEL` | `gpt-4o-2024-08-06` | Extraction adapter |
+| `OPENAI_BASE_URL` | Không đặt → endpoint OpenAI chính thức; đặt `https://openrouter.ai/api/v1` để gọi qua OpenRouter | SDK adapters |
+| `OPENAI_MODEL` | `gpt-4o-2024-08-06`; khi qua OpenRouter dùng id đầy đủ của gateway, vd. `openai/gpt-6-luna` | Extraction adapter |
+| `HOMEMATCH_LLM_API` | `responses` (mặc định, API Responses của OpenAI) hoặc `chat_completions` cho gateway chỉ có `/chat/completions` như OpenRouter; giá trị khác làm service không khởi động được | Interpreter |
 | `HOMEMATCH_CONTEXT_TOKEN_CAP` | 4000; giới hạn ước lượng đầu vào, không phải tokenizer chính xác | Extraction adapter |
 | `HOMEMATCH_MATCHING_METHOD` | `B1/P`; default B1 | Service |
 | `HOMEMATCH_EMBEDDING_MODE` | `disabled/openai`; live cần PG/key/index | Service |
@@ -25,12 +27,14 @@ Backend đọc biến process, không tự nạp `.env`. Frontend Vite đọc `.
 | `HOMEMATCH_JOBS_INTERVAL_SECONDS` | 300; chu kỳ job nền trong API (nhắc lịch, thanh toán, gia hạn, chăm sóc khách, dọn chat); 0 tắt | API |
 | `HOMEMATCH_REENGAGE_AFTER_HOURS` | 24; khách xem tin quá số giờ này mà chưa đặt lịch thì được gợi ý căn tương đương | Automation |
 | `HOMEMATCH_CHAT_RETENTION_DAYS` | 90; số ngày giữ chat AI đã che PII | Service |
+| `HOMEMATCH_MEDIA_DIR` | `.local/media`; thư mục chứa file ảnh tin và ảnh sự cố trên đĩa local; metadata ảnh nằm trong bảng `hm_media` | Service/media |
+| `HOMEMATCH_PROVIDER_PRICES_PATH` | Không đặt → `/admin/metrics` trả `cost: null`. Đường dẫn file JSON bảng giá provider (mẫu `infra/provider-prices.example.json`, không chứa giá thật; người dùng tự điền giá và `effective_date` từ trang giá chính thức). File lỗi/không đọc được được coi như chưa cấu hình | API (`/admin/metrics`, BE-05) |
 | `HOMEMATCH_PUBLIC_BASE_URL` | `http://127.0.0.1:5173`; gốc URL cho trang tin `/tin/{id}` trong bài đăng | Service |
 | `LANGGRAPH_STRICT_MSGPACK` | `true` | Checkpoint serialization |
 | `HOMEMATCH_TEST_DATABASE_URL` | Không đặt thì skip integration PG; tests dùng schema riêng rồi dọn | pytest |
 | `HOMEMATCH_PG_BIN`, `HOMEMATCH_PG_PORT` | `pg_config --bindir`, 55432 | Infra local scripts |
 | `HOMEMATCH_PYTHON` | `.venv/bin/python` | `check-local.sh` |
+| `HOMEMATCH_LIVE_BUDGET_VND` | Bắt buộc > 0 khi chạy `infra/live_run.sh`; chỉ kê khai, không phải trần chi (AG-04) | `infra/live_run.sh` |
 | `VITE_API_BASE_URL` | `/api`; proxy dev tới API localhost:8000 | Frontend, công khai |
-| `PORT` | 8000 nếu không có | Docker API start |
 
 Không đưa model key, DB URL, mật khẩu hoặc raw checkpoint vào frontend/artifact công khai. Opaque token không cần signing key. Thay env password không tự ghi đè hash cũ: dùng `python -m backend.manage seed-users --rotate-passwords`; thao tác này thu hồi token của bốn tài khoản seed.

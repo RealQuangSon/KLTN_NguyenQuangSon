@@ -1,6 +1,6 @@
 # Trạng thái triển khai HomeMatch AI Agent
 
-**Cập nhật:** 05/10/2026, sau đợt E1–E6 (5 phân hệ). **Code:** API 0.4.0 mở rộng (89 đường dẫn), schema ledger **v9**. **Dữ liệu:** dataset v2 (220 căn, 4 chủ nhà). Đối chiếu với [danh mục yêu cầu](yeu-cau-san-pham.md) và [cổng nghiệm thu](tieu-chi-nghiem-thu.md#cổng-hoàn-thành).
+**Cập nhật:** 05/10/2026, sau đợt E1–E6 (5 phân hệ); bổ sung 08/10/2026 (đợt BE/FE/AG/DA); đối chiếu lại code 09/10/2026. **Code:** API 0.4.0 mở rộng (100 đường dẫn, 110 thao tác; `docs/openapi.json` khớp app), schema ledger **v13**. **Dữ liệu:** dataset v2 (220 căn, 4 chủ nhà). Đối chiếu với [danh mục yêu cầu](yeu-cau-san-pham.md) và [cổng nghiệm thu](tieu-chi-nghiem-thu.md#cổng-hoàn-thành).
 
 ## 1. Bằng chứng chạy ngày 05/10/2026
 
@@ -12,6 +12,8 @@
 | `eval oracle` | 22/22 ca khớp |
 | `eval extraction --split dev` | Độ chính xác ý định 1,0; micro-F1 1,0 |
 | `eval invariants` | 0 vi phạm trên 62 cặp hồ sơ–căn; phản thực tế hoa hồng và thời gian tồn: thứ hạng không đổi |
+| `eval intents --split dev` (08/10, sau AG-02) | 15 ca dev gold ý định: chỉ đo, không ngưỡng; `simulate_finance` 3/3 (trước AG-02: 0/3); tổng 14/15 đúng, còn sai `I037` unknown→find_room; confusion matrix kèm trong `eval/runs/development/intents.json` |
+| `eval invoices` (mới 08/10) | 12/12 ca hóa đơn tính tay khớp từng dòng và tổng (`INV-01`–`INV-12`, oracle độc lập `data/oracles/invoice_cases.json`) |
 | `eval grounding` | 142/142 khẳng định có bằng chứng |
 | `pytest` | **196 passed**, 4 skipped (PostgreSQL không cấu hình) |
 | Vitest | **41/41**; TypeScript và `vite build` thành công |
@@ -25,14 +27,25 @@
 | Server uvicorn thật, DB mới, kho v2, `HOMEMATCH_JOBS_INTERVAL_SECONDS=5` | `/ready` = `ready`, schema 9 |
 | `infra.smoke_api` qua **HTTP thật** | Passed: duyệt theo nhiều chủ nhà, lịch xem trực tuyến, CAS, hết hiệu lực |
 | Job nền | Tự chạy và ghi `hm_job_runs` |
+| PostgreSQL **17.11** (cluster local 127.0.0.1:55432, `HOMEMATCH_TEST_DATABASE_URL`, schema v9) | **286 passed**, 0 fail (08/10/2026); smoke `infra.smoke_api --in-process` trên DB PostgreSQL: passed (`storage: postgresql`; `smoke_api` giờ dùng `HOMEMATCH_DATABASE_URL` khi đặt) |
+| PostgreSQL sau BE-03/BE-04 (schema v11) | **337 passed**, 0 fail (08/10/2026, migration v10+v11 chạy sạch trên PostgreSQL) |
+| PostgreSQL sau BE-06/BE-07 (schema v13) | **396 passed**, 0 fail (08/10/2026, migration v12+v13 chạy sạch trên PostgreSQL) |
+| PostgreSQL hồi quy cuối (schema v13, gồm BE-05/AG-02/BE-08) | **417 passed**, 0 fail (08/10/2026) |
+| BE-03 + BE-04 (mới 08/10) | pytest **233 passed**, 4 skipped; `eval` bộ đầy đủ pass; `vite build`, `backend.demo`, `smoke_api` pass. 2 test Vitest của FE-05 đang làm dở (`media-photos.test.tsx`, thuộc FE) chưa xanh tại thời điểm chốt BE |
+
+**Chạy lại ngày 09/10/2026** (schema v13, SQLite, offline; sau khi đối chiếu docs với code): `bash infra/check-local.sh` **exit 0**: pytest **280 passed**, 4 skipped (PostgreSQL không cấu hình); Vitest **74/74**; `tsc` và `vite build` pass; oracle 22/22; `eval intents` 14/15 (`simulate_finance` 3/3); `eval invoices` 12/12; `eval invariants` 0 vi phạm, `promotion_rank_changes` 0; grounding 142/142; `backend.demo` và `smoke_api --in-process` pass. OpenAPI sinh từ app khớp `docs/openapi.json` (100 đường dẫn). Không chạy lại PostgreSQL.
+
+**Nghiệm thu ngày 13/10/2026** (schema v13, offline):
+- `bash infra/check-local.sh` exit 0, số liệu như 09/10. PostgreSQL 17 local: **417 passed**, 0 fail.
+- Kiểm thử hộp đen độc lập qua HTTP (TestClient, SQLite tạm, ngoài bộ test của repo): 67 ca cho AC-01–05, 07–10, 14–19, 21, 22, 24–26 và NFR-01, gồm các ca cố tình vi phạm (người ngoài đọc dữ liệu, thu vượt nợ, chấp thuận phiên bản cũ, chèn phòng chủ nhà khác). Kết quả 66/67.
+- **Lỗi đã sửa:** `GET /sessions/{id}/results` trả **500** khi run ở `partially_published`. Nguyên nhân: validator `ResultsResult.published_only` (`schemas.py`) chỉ cho phép kết quả khi `published`, trái với D-05. Test cũ không bắt được vì gọi thẳng `service.results()`, còn `smoke_api` duyệt hết chủ nhà rồi mới đọc. Đã sửa và thêm test qua HTTP `test_partially_published_results_pass_the_http_response_model`; pytest SQLite **281 passed**, 4 skipped.
+- **Ca không đạt (chưa sửa):** ở chế độ demo, câu hỏi cẩm nang diễn đạt tự nhiên bị nhận sai ý định ("tiền cọc có được trả lại không" → `find_room`/`unknown`). Thử 13 câu tự viết: 2/13 đúng. Đây là mẫu nhỏ, không phải số đo; nó cho thấy `eval intents` 14/15 chưa phản ánh câu của người dùng thật.
 
 **Giới hạn:**
 - Micro-F1 1,0 chỉ là sanity check, vì luật offline và bộ câu gold cùng tác giả.
 - Chưa có bằng chứng cho:
-  - GPT-4o và P với vector thật;
-  - PostgreSQL ở phiên bản này (lần gần nhất là [01/10](kiem-chung-backend.md));
+  - GPT-4o và P với vector thật (chạy local);
   - demo trên trình duyệt;
-  - Railway;
   - nhãn người chấm và khảo sát người dùng.
 
 ## 2. Đối chiếu yêu cầu
@@ -41,14 +54,14 @@
 |---|---|---|
 | Trợ lý AI (FR-01–25) | Tất cả, trừ hai mục bên phải | FR-11 (P chưa chạy live), FR-23 (chưa có nhãn và khảo sát) |
 | Cổng người thuê (FR-26–31) | Tất cả | — |
-| Tự động hóa (FR-32–35) | FR-32, 34, 35 | FR-33 (chưa có ưu đãi do chủ nhà đặt) |
-| Admin Console (FR-36–38) | Tất cả | — |
-| Cổng chủ nhà (FR-39–45) | FR-39, 41, 42, 44, 45 | FR-40 (chưa có ảnh), FR-43 (chưa đính ảnh) |
+| Tự động hóa (FR-32–35) | FR-32, 33, 34, 35 (FR-33 thêm ưu đãi chủ nhà kèm chăm sóc khách, 08/10) | — |
+| Admin Console (FR-36–38, 49) | Tất cả (FR-38 thêm vòng đời ticket hỗ trợ, FR-49 đăng ký + duyệt chủ nhà, 08/10) | — |
+| Cổng chủ nhà (FR-39–45) | FR-39, 40, 41, 42, 43, 44, 45 (FR-40 thêm ảnh tin, FR-43 thêm ảnh sự cố, 08/10) | — |
 | Trợ lý chủ nhà (FR-46–48) | FR-46, 48 | FR-47 (không tự đăng lên mạng xã hội) |
 
 **Cổng:**
 - G1, G2, G-NT: các AC đều có test tự động pass; còn demo trên trình duyệt.
-- G3 (Railway, live) và G4 (nghiên cứu): chưa đạt.
+- G3 (chạy live trên máy local) và G4 (nghiên cứu): chưa đạt. Deploy Railway và Docker ngoài phạm vi (D-09, 28/10).
 
 ## 3. Thay đổi code theo đợt (05/10/2026)
 
@@ -64,17 +77,36 @@
 | E4 | Thông báo chống trùng (v8); job nền: nhắc lịch, chăm sóc khách, dọn chat; đồng bộ trạng thái và giá | `notifications.py`, `automation.py`, `NotificationBell.tsx` | `test_automation.py` |
 | E5 | PMS & CRM (v9): hợp đồng, công tơ, hóa đơn, báo chuyển và xác nhận, biên lai, đối soát, bảo trì, khách tiềm năng, dashboard, báo cáo; nhắc thanh toán và gia hạn | `pms.py`, `Pms.tsx`, `DocumentViewer.tsx` | `test_pms.py`, `pms.test.tsx` |
 | E6 | Bài đăng theo kênh, chia sẻ, trang tin công khai, cố vấn (giá, phòng trống, doanh thu), giọng nói | `copilot.py`, `Copilot.tsx`, `PublicListing.tsx` | `test_copilot.py`, `copilot.test.tsx` |
+| AG1+AG3 (mới 08/10) | Đồng bộ `Literal` intent (thêm `handbook` vào `Extraction`) với test dùng `get_args` tự bắt lệch; tách token input/output (cả hai dạng Responses API và Chat Completions), token embedding, và tổng hợp usage theo model trong `provider_usage` của `/admin/metrics` | `models.py` (1 dòng Literal), `interpreter.py`, `semantic.py`, `operations.py`, `schemas.py` (2 trường bổ sung) | `test_interpreter_intents.py`, `test_agent_usage.py` |
+| BE-03 (mới 08/10) | Chủ nhà tự đăng ký `account_type:"owner"` (schema **v10**: `landlord_status`), pending đăng nhập/tạo tin nháp được nhưng publish → 403 `landlord_not_approved`; admin duyệt/từ chối (capability `account:review_landlord`, membership owner, audit, thông báo dedup); `/auth/me` trả `landlord_status` | `migrations.py`, `auth.py`, `models.py`, `agent_capability.py`, `organizations.py` (`ensure_membership`), `service.py`, `main.py` | `test_landlord_signup.py` (6 test) |
+| BE-04 (mới 08/10) | Vòng đời ticket hỗ trợ (schema **v11**: `assignee/note/updated_at/resolved_at` trên `hm_support`); `SUPPORT_TRANSITIONS`, 409 `ticket_state`, 422 `note_required`, PATCH idempotent; `GET/PATCH /admin/support-tickets` capability `support:manage`; `support:list` bỏ `owner`; thông báo khách dedup `support:{id}:{status}` | `migrations.py`, `repository.py`, `service.py`, `schemas.py`, `agent_capability.py`, `main.py` | `test_support_tickets.py` (5 test) |
+| BE-06 (mới 08/10) | Ảnh tin và ảnh sự cố (schema **v12**: `hm_media`, UNIQUE owner+hash); file theo hash tại `HOMEMATCH_MEDIA_DIR` (mặc định `.local/media`, volume khi deploy); kiểm magic bytes (không tin content-type), 5 MB/ảnh, 10 ảnh/tin, 5 ảnh/sự cố; tải trùng trả bản cũ (200); xóa file khi hết tham chiếu; `GET /media/{id}` theo quyền (ảnh tin công khai không cần token); DTO `photos` trên `/listings`, `/listings/{id}`, `/landlord/rooms`, `/maintenance`; thêm `python-multipart==0.0.32` vào requirements | `media.py` (mới), `migrations.py`, `service.py`, `main.py`, `schemas.py`, `models.py`, `infra/compose.yaml`, `infra/deploy-railway.md`, `infra/env-inventory.md` | `test_media.py` (12 test) |
+| BE-07 (mới 08/10) | Ưu đãi chủ nhà (schema **v13**: `hm_promotions`); `PUT/DELETE /landlord/rooms/{id}/promotion`, chỉ chủ nhà của tin (người khác 404), hạn [hôm nay UTC+7, +90 ngày] → 422 `invalid_promotion`, text 1–200 đã che PII; DTO `promotion` chỉ khi còn hạn trên listing/room; job chăm sóc khách nối " — Ưu đãi: … (đến dd/mm)" giữ nguyên dedup key; không đọc `hm_promotions` trong catalog/costs/semantic (xếp hạng bất biến, có test) | `promotions.py` (mới), `migrations.py`, `service.py`, `main.py`, `schemas.py`, `models.py`, `automation.py` | `test_promotions.py` (7 test) |
+| BE-05 (mới 08/10) | Chi phí vận hành quy VND: `cost_metrics.py` thuần (`Decimal`, `ROUND_HALF_UP`), thiếu giá/tỷ giá → `estimated_cost_vnd: null` + `missing`, không ước đoán; `/admin/metrics` trả `cost` đọc `provider_usage.by_model`; bảng giá qua `HOMEMATCH_PROVIDER_PRICES_PATH` (mẫu `infra/provider-prices.example.json`, không chứa giá thật) | `cost_metrics.py` (mới), `main.py`, `schemas.py` (`CostMetric`), `infra/env-inventory.md` | `test_cost_metrics.py` (7 test) |
+| AG-02 (mới 08/10) | Ý định chat `simulate_finance`: nhánh luật trước nhánh `calculate_cost`, `parse_loan_terms` khớp 19/19 ca oracle `data/oracles/loan_parse_cases.json`; node `finance` mô phỏng qua `ToolBox` (parity tuyệt đối với `/simulate`), không gọi LLM, không tự đặt lãi mặc định; `MessageResult` thêm `status: simulation|needs_results` + trường `simulation` | `interpreter.py`, `agent_guard.py`, `service.py` (chỉ `_build_chat_graph` + `_simulate_item` dùng chung), `models.py`, `schemas.py` | `test_finance_chat.py` (13 test); `eval intents` dev 14/15, simulate_finance 3/3 |
+| DA-04 (mới 08/10) | `eval invariants` thêm phản thực tế ưu đãi: đặt `hm_promotions` qua `HomeMatchService.set_promotion` trên DB tạm, báo `promotion_rank_changes` (khác 0 → suite fail); tài liệu suite cập nhật | `eval/suites.py`, `eval/tests/test_suites.py`, `eval/README.md`, `eval/PLAN.md` | `test_suites.py` (test phản thực tế ưu đãi) |
+| FE-01..04, FE-05..07 (mới 08/10) | FE: sửa thông báo đăng ký; đăng ký chủ nhà + admin duyệt + banner chờ duyệt; màn `/quan-tri/ho-tro`; thẻ chi phí AI; upload/xem/sắp xếp ảnh + `PhotoGallery`; nhãn "Ưu đãi"; thẻ mô phỏng vay trong chat (`needs_results` → nút xem danh sách) | `Register.tsx`, `AdminWorkspace.tsx`, `App.tsx`, `RoomEditor.tsx`, `RenterWorkspace.tsx`, `SearchPage.tsx`, `PublicListing.tsx`, `Pms.tsx`, `api.ts`, `types.ts`, `PhotoGallery.tsx` (mới), `Shared.tsx`, `Simulation.tsx` | `landlord-signup.test.tsx`, `support-tickets.test.tsx`, `media-photos.test.tsx`, `promotion.test.tsx`, `chat-simulation.test.tsx`, `routing.test.tsx` (Vitest 74) |
+| FE-09 (mới 08/10) | Kịch bản demo `docs/kich-ban-demo.md` (3 vai trò, 5 phân hệ, duyệt chủ nhà, partially_published; mỗi bước có tài khoản/URL/thao tác/kết quả mong đợi/ô ảnh). Kiểm viewport 360/768/1280: **chưa chạy** — môi trường agent không có trình duyệt tự động; đã xác minh stack khởi động và đăng nhập bằng API | `docs/kich-ban-demo.md`, `docs/tieu-chi-nghiem-thu.md` (trạng thái demo) | — |
+| BE-08 (mới 08/10) | Lệnh `python -m backend.manage seed-demo`: kịch bản `[DEMO]` cho owner-a/renter-a (hợp đồng kích hoạt 2 tháng trước, 2 kỳ hóa đơn — kỳ 1 thu đủ, kỳ 2 quá hạn kèm báo chuyển một phần chờ xác nhận, 1 sự cố in_progress, 1 hội thoại 2 tin nhắn); idempotent qua dấu `[DEMO]`; từ chối khi `HOMEMATCH_PUBLIC=true`; chỉ gọi method service/pms, không SQL trực tiếp, không nới validation | `backend/manage.py` | `test_seed_demo.py` (6 test) |
+| BE-09 (mới 08/10) | Chuẩn bị deploy Railway (chưa deploy; từ 28/10 ngoài phạm vi, D-09, và cấu hình đã **xóa khỏi repo ngày 28/10/2026**): `nginx.conf` thêm `client_max_body_size 6m` cho upload ảnh; xác nhận `--workers 1` và SPA fallback `try_files … /index.html`; `deploy-railway.md` đủ điều kiện (PG có `vector`, 1 replica API, volume media, `HOMEMATCH_PUBLIC=true` + mật khẩu mạnh cho cả 9 tài khoản seed, `HOMEMATCH_PUBLIC_BASE_URL`, CORS, setup một lần, cách xem `/ready`); Docker **chưa build** — máy không có Docker | `infra/nginx.conf`, `infra/deploy-railway.md`, `infra/compose.yaml` (đã xóa) | — |
+| BE-01 (08/10, ghi bổ sung 09/10) | Chạy test PostgreSQL 17.11 cho schema v9 rồi v13; `smoke_api` dùng `HOMEMATCH_DATABASE_URL` khi đặt | `infra/smoke_api.py` | Số liệu ở §1 (286 → 417 passed) |
+| BE-02 (08/10, ghi bổ sung 09/10) | Dọn dẹp: hằng `LEGACY_ASSIGNEE` cho cột cũ `hm_sessions.manager_id` (không dùng cho quyền); comment "manager" → landlord; `deploy-railway.md` liệt kê đủ 9 tài khoản seed; `compose.yaml` thêm `HOMEMATCH_PUBLIC_BASE_URL` | `service.py`, `models.py`, `infra/deploy-railway.md`, `infra/compose.yaml` | check-local |
+| AG-04 (08/10, ghi bổ sung 09/10) | Chuẩn bị chạy live (chưa chạy): `infra/live_run.sh` kiểm `OPENAI_API_KEY` (không in) và `HOMEMATCH_LIVE_BUDGET_VND`, đòi gõ `yes`, ghi kết quả vào `eval/runs/live-<ngày>/`; hướng dẫn `infra/live-run.md`; mẫu bảng giá `infra/provider-prices.example.json` | `infra/` | Chỉ kiểm nhánh thiếu key dừng với exit ≠ 0 |
+| AG-04 chạy thật (01/11/2026, model `openai/gpt-6-luna` qua gateway chat_completions của người dùng) | **Đã chạy live lần đầu** — `eval/runs/live-2026-11-01/`: extraction 18 câu gold dev qua GPT-6 (Responses→chat_completions, store=False): intent accuracy **17/18 (94,4%)**, micro-F1 **97,1%** (city/area/people/needs_destination F1 1,0; preferences recall 0,79 — bỏ sót 5 mention, 0 dương giả), 0 failure, p50 2,84 s/p95 3,61 s mỗi lượt. Ranking P (pgvector, text-embedding-3-small 1536d, alpha 0,3): 13/15 hồ sơ chạy semantic thành công, 2 hồ sơ rơi `B1_structured_fallback` đúng thiết kế (không có soft_description để nhúng); **top-5 trùng B1 13/13** trên catalog tổng hợp; B1 ~11 ms vs P ~800 ms mỗi hồ sơ (round-trip embedding). Tổng token live: ~1 smoke call 886 token + 18 lượt extraction + 220 căn nhúng + 440 token truy vấn + 10 lượt gọi P — gateway không trả usage VND nên `cost_vnd: unavailable` (nhân theo giá gateway để ra tiền). Lưu ý vận hành: cluster PG local `.local/pgdata` còn dữ liệu phiên cũ khiến guard hash trong `eval/pipeline.py` chặn đúng lần chạy đầu; tạo lại DB trống rồi `setup` + `index` lại là hết | `infra/live_run.sh`, `eval/runs/live-2026-11-01/` (9 artifact: extraction, rankings, oracle, measurements, annotation packets) | Trên máy người dùng, key riêng; chưa có nhãn người chấm (GĐ5) nên đây là số mô tả, không phải đánh giá độ hài lòng |
+| DA-01..03, DA-05 (08/10, ghi bổ sung 09/10) | Gold ý định chat `data/profiles/intent_cases.json` (`eval intents`); oracle câu vay `data/oracles/loan_parse_cases.json`; oracle hóa đơn tính tay `data/oracles/invoice_cases.json` (`eval invoices`); GĐ5: `eval/FREEZE.md`, `eval label-sheet`/`label-report`, phiếu `eval/survey/khao-sat.md` + `eval survey-report` | `data/`, `eval/intents.py`, `eval/invoices.py`, `eval/labeling.py` | `test_intent_oracle.py`, `test_loan_parse_oracle.py`, `test_invoice_oracle.py`, `test_labeling.py` |
+| FC-01 (31/10) | Sửa 4 lỗi từ đợt kiểm LF: (1) mô tả/nội quy/features_text do chủ nhà nhập được server che SĐT/email lúc tạo/sửa tin (`catalog.mask_listing_text`) — trang `/tin/:id` cho người chưa đăng nhập không còn thấy số nào; (2) regex ngày trống nhận "trống ngày D/M", còn "trống ngay" chỉ khớp khi sau đó không có ngày cụ thể hay "mai"; (3) "trống từ" ngày quá khứ: ≤90 ngày → ngày đăng (phòng trống sẵn), hơn 6 tháng → năm sau, khoảng giữa → `null`; `llm_fees.verify_date` dùng lại regex crawler thay bản chép tay; (4) `DemoInterpreter` hiểu "có gác" (từ khóa `loft` ngang bằng `KEYWORD_AMENITIES` của crawler, có test so khớp) | `catalog.py`, `models.py` (comment), `data/crawl_chotot.py`, `data/llm_fees.py`, `interpreter.py` | `test_listing_fields.py` (+1), `test_crawl_chotot_fields.py` (+5 ca), `test_llm_fees.py` (+1); check-local exit 0 (412 pytest pass/7 skip, Vitest 80) |
+| FC-02..05 (31/10, cập nhật 01/11) | Crawler 2.3: cào theo hạn mức `--per-city` (mặc định 2.500/thành phố, mỗi loại một nửa, dự phòng 1,3×), cá nhân `f=p` trước, thiếu thì bù môi giới `f=c` (trong tổ hợp và sau lọc, tối đa 2 vòng); `poster_kind` theo bộ lọc nguồn (G1); ba lớp lọc — trùng chính xác (như cũ), trùng gần đúng giữa tài khoản (tọa độ+giá+diện tích+loại, tiêu đề bỏ dấu ≥0,8), tin "nhiều phòng/giá từ" (chặn nhầm "giá từ chủ nhà"/"giá từ 1/12") — nhóm bị loại >25% thì dừng không ghi snapshot; chọn hạn mức tất định (individual → mới → ad_id), G6 hạ cả hai thành phố khi một bên thiếu; `--max-minutes` quá giờ dừng sạch (C2); `by_target` ghi `available_total/fetched/kept_after_filters/selected`. `llm_fees.py`: `--max-calls`/`--max-tokens` (token thật lượt gọi mới), hai thành phố xen kẽ, ước tính token (chars/3), >1 triệu token cần `--yes`. FC-04 đo nhanh tải SQLite (phòng tổng hợp nháp): 5.000 vs 2.779 phòng — rooms() lạnh 55/31 ms, rooms() ấm 45/23 ms, rank B1 59/32 ms, GET /listings trang 1 166/87 ms, danh sách phòng chủ nhà 72/40 ms (p50) → chậm nhất ~1,9×, dưới ngưỡng 2× nên **không tối ưu**; **chưa đo PostgreSQL** (máy không có PG local; không dùng Neon). **01/11 — cào thật + đẩy Neon ĐÃ CHẠY**: `chotot-2026-11-01` trên Neon — 2.446 tin, cân bằng 1.223/thành phố (G6 hạ cả hai vì Hà Nội cạn nguồn sau lọc), TP.HCM 100% cá nhân, tổng 76% cá nhân / 24% môi giới, 100% có tọa độ, phủ 41 khu vực; lớp 2 loại 29, lớp 3 loại 354 (~5%), không nhóm vượt 25%; snapshot `chotot-2026-10-30` giữ nguyên (C2). Hai lỗi sửa kèm test sau lượt: merge `p/c`↔`poster_kind` trong by_target; dedup pool giữa các vòng bù theo room id. **Lượt LLM bổ phí cho snapshot mới CHƯA chạy** (L8) | `data/crawl_chotot.py`, `data/llm_fees.py`, `data/measure_catalog_load.py` (mới, chỉ đo) | `test_crawl_chotot_quota.py` (mới, 16 test: MockTransport + thuần), `test_llm_fees.py` (+4), `test_crawl_chotot_fields.py` (cập nhật G1) |
 
 Vai trò `manager` không còn quyền nghiệp vụ. Route `/manager/*` được thay bằng `/landlord/*` và `/admin/*`. Trang giữ chỗ `OwnerWorkspace` đã bỏ vì có dashboard thật thay thế.
 
 ## 4. Việc tiếp theo
 
 1. Demo đầu-cuối trên trình duyệt cho cả ba vai trò: ảnh hoặc video, để chốt G1, G2, G-NT.
-2. Chạy test PostgreSQL (`HOMEMATCH_TEST_DATABASE_URL`) cho schema v9.
-3. Deploy Railway; chạy GPT-4o/pgvector với ngân sách người dùng cấp (G3).
+2. Test PostgreSQL (`HOMEMATCH_TEST_DATABASE_URL`) cho schema v9 — **đã xong 08/10/2026**: 286 passed trên PostgreSQL 17.11 (xem §1).
+3. Chạy GPT-4o/pgvector trên máy local với ngân sách người dùng cấp (G3, `infra/live_run.sh`). Deploy Railway và Docker: ngoài phạm vi (D-09, 28/10).
 4. Mục còn "Một phần":
-   - ảnh tin và ảnh sự cố (cần kho lưu file);
-   - ưu đãi chăm sóc khách;
-   - ý định chat `simulate_finance`;
-   - số liệu chi phí bằng VND.
+   - số liệu chi phí bằng VND — **đã xong 08/10/2026** (BE-05, `cost` trên `/admin/metrics`; giá thật do người dùng điền vào file bảng giá);
+   - ảnh tin và ảnh sự cố — **đã xong 08/10/2026** (BE-06 + FE-05, lưu file theo hash tại `HOMEMATCH_MEDIA_DIR`);
+   - ưu đãi chăm sóc khách — **đã xong 08/10/2026** (BE-07 + FE-06);
+   - ý định chat `simulate_finance` và thẻ hiển thị trong chat — **đã xong 08/10/2026** (AG-02 + FE-07).
 5. GĐ5: đánh giá nghiên cứu.

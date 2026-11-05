@@ -17,6 +17,65 @@ interface Option {
 }
 const ratePercent = (rate: string | number | undefined) =>
   rate == null ? "12" : String(Math.round(Number(rate) * 10000) / 100);
+// Bảng kết quả dùng chung (FE-07): SimulationPanel và thẻ mô phỏng trong chat
+// hiển thị bằng đúng một chỗ format — không viết lại cách làm tròn/đơn vị.
+export function SimulationResults({
+  items,
+}: {
+  items: { label: string; cost: Cost }[];
+}) {
+  const row = (label: string, value: (cost: Cost) => string) => (
+    <tr>
+      <th>{label}</th>
+      {items.map((item, index) => (
+        <td key={index}>{value(item.cost)}</td>
+      ))}
+    </tr>
+  );
+  return (
+    <div className="table-scroll simulation-results">
+      <table>
+        <thead>
+          <tr>
+            <th>Chỉ số</th>
+            {items.map((item, index) => (
+              <th key={index}>{item.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {row("Tổng tháng", (c) => money(c.monthly_total_vnd))}
+          {row("Tiền vào ở", (c) => money(c.initial_total_vnd))}
+          {row("Còn thiếu khi vào ở", (c) =>
+            money(c.affordability?.shortfall_vnd),
+          )}
+          {row("Trả góp", (c) =>
+            c.affordability?.loan
+              ? `${money(c.affordability.loan.installment_vnd)} × ${c.affordability.loan.term_months} tháng`
+              : "Không vay",
+          )}
+          {row("Tổng lãi", (c) =>
+            c.affordability?.loan
+              ? money(c.affordability.loan.total_interest_vnd)
+              : "—",
+          )}
+          {row("Phần của bạn mỗi tháng", (c) =>
+            money(c.affordability?.renter_burden_vnd),
+          )}
+          {row("Khả năng chi trả", (c) =>
+            c.affordability
+              ? `${bandLabels[c.affordability.band]}${
+                  c.affordability.housing_ratio
+                    ? ` (${percent(c.affordability.housing_ratio)})`
+                    : ""
+                }`
+              : "Chưa rõ",
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 const defaults = (profile: Profile): Option[] => {
   const base = {
     people: String(profile.scenario.people),
@@ -85,14 +144,6 @@ export function SimulationPanel({
       setBusy(false);
     }
   };
-  const row = (label: string, value: (cost: Cost) => string) => (
-    <tr>
-      <th>{label}</th>
-      {results.map((item, index) => (
-        <td key={index}>{value(item.cost)}</td>
-      ))}
-    </tr>
-  );
   return (
     <section className="panel simulation" aria-label="Mô phỏng tài chính">
       <div className="section-heading">
@@ -181,49 +232,7 @@ export function SimulationPanel({
         <Icon name="refresh" size={16} />
         {busy ? "Đang tính…" : "Tính các kịch bản"}
       </button>
-      {results.length > 0 && (
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Chỉ số</th>
-                {results.map((item, index) => (
-                  <th key={index}>{item.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {row("Tổng tháng", (c) => money(c.monthly_total_vnd))}
-              {row("Tiền vào ở", (c) => money(c.initial_total_vnd))}
-              {row("Còn thiếu khi vào ở", (c) =>
-                money(c.affordability?.shortfall_vnd),
-              )}
-              {row("Trả góp", (c) =>
-                c.affordability?.loan
-                  ? `${money(c.affordability.loan.installment_vnd)} × ${c.affordability.loan.term_months} tháng`
-                  : "Không vay",
-              )}
-              {row("Tổng lãi", (c) =>
-                c.affordability?.loan
-                  ? money(c.affordability.loan.total_interest_vnd)
-                  : "—",
-              )}
-              {row("Phần của bạn mỗi tháng", (c) =>
-                money(c.affordability?.renter_burden_vnd),
-              )}
-              {row("Khả năng chi trả", (c) =>
-                c.affordability
-                  ? `${bandLabels[c.affordability.band]}${
-                      c.affordability.housing_ratio
-                        ? ` (${percent(c.affordability.housing_ratio)})`
-                        : ""
-                    }`
-                  : "Chưa rõ",
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {results.length > 0 && <SimulationResults items={results} />}
       <p className="input-hint">
         Ước tính theo lãi suất bạn nhập, không phải báo giá tín dụng. Muốn tìm
         phòng theo kịch bản mới, hãy sửa và xác nhận lại hồ sơ.

@@ -4,11 +4,11 @@ Vai trò: `renter` là **khách**, `owner` là **chủ nhà** (duyệt phòng c�
 
 API version `0.4.0`; source: `backend/app/main.py`, `models.py`, response contracts trong `schemas.py` và projections trong `service.py`. [OpenAPI snapshot](openapi.json) mô tả cả request/response/error schema; [dictionary](status-dictionary.md) khóa trạng thái và phản ứng với lỗi. FE gọi `/api` qua Vite proxy, backend route không có prefix `/api`.
 
-Từ 0.4.0: bốn vai trò renter/owner/manager/admin (manager không còn quyền nghiệp vụ từ 05/10) (`backend/app/capabilities.py` là ma trận quyền duy nhất), domain organization/membership/ownership, audit log và public/private projection (`backend/app/projection.py`). Schema ledger là v3; luồng 0.3.0 renter/manager giữ nguyên hành vi.
+Từ 0.4.0: bốn vai trò renter/owner/manager/admin (manager không còn quyền nghiệp vụ từ 05/10) (`backend/app/capabilities.py` là ma trận quyền duy nhất), domain organization/membership/ownership, audit log và public/private projection (`backend/app/projection.py`). Schema ledger lúc mở 0.4.0 là v3 (hiện là v13, xem cuối tài liệu); luồng 0.3.0 renter/manager giữ nguyên hành vi.
 
 ## Auth và lỗi
 
-`POST /auth/login {username,password}` → `{access_token,token_type:"bearer",expires_at,actor:{id,role}}`. Token do server cấp, không gửi role từ client. `GET /auth/me` trả actor; `POST /auth/logout` thu hồi token, trả `{status:"logged_out"}`. Các endpoint còn lại trừ `/health`, `/ready`, tài liệu Swagger và nhóm auth lifecycle dưới đây yêu cầu `Authorization: Bearer …`.
+`POST /auth/login {username,password}` → `{access_token,token_type:"bearer",expires_at,actor:{id,role}}`. Token do server cấp, không gửi role từ client. `GET /auth/me` trả actor kèm `landlord_status`: `null` với khách, còn chủ nhà là `pending`/`approved`/`rejected` (owner seed luôn là `approved`). `POST /auth/logout` thu hồi token, trả `{status:"logged_out"}`. Các endpoint còn lại trừ `/health`, `/ready`, tài liệu Swagger và nhóm auth lifecycle dưới đây yêu cầu `Authorization: Bearer …`.
 
 Tài khoản seed (mật khẩu mẫu `local-<username>-password`): `renter-a`, `renter-b` (renter), `owner-a`, `owner-b`, `owner-c`, `owner-d` (owner), `manager-a`, `manager-b` (manager cũ), `admin-a` (admin). Owner/manager/admin được bootstrap membership trong đơn vị mặc định `org-demo`; renter không thuộc đơn vị.
 
@@ -20,7 +20,7 @@ Domain/validation/HTTP errors dùng `{error:{code,message,fields?},request_id}`;
 
 | Endpoint | Request / response |
 |---|---|
-| `POST /auth/register` (201) | `{username,password,email,display_name?}` → `{status:"pending_verification",user:{id,role:"renter"},delivery:"dev_stub_log_only"}`. Luôn tạo tài khoản renter chưa xác minh; role/org không nhận từ client. Mật khẩu ≥10 ký tự; username `^[a-z0-9][a-z0-9-]{2,49}$`; trùng tên → 409 `account_exists`, trùng email → 409 `email_in_use`. |
+| `POST /auth/register` (201) | `{username,password,email,display_name?,account_type?}` → `{status:"pending_verification",user:{id,role},delivery:"dev_stub_log_only"}`. `account_type` nhận `renter` (mặc định) hoặc `owner`; giá trị khác → 422. Chọn `owner` tạo tài khoản chủ nhà chưa xác minh với `landlord_status='pending'`; role staff không bao giờ nhận từ client. Mật khẩu ≥10 ký tự; username `^[a-z0-9][a-z0-9-]{2,49}$`; trùng tên → 409 `account_exists`, trùng email → 409 `email_in_use`. |
 | `POST /auth/verify` | `{username,token}` → `{status:"verified"}`. Token đơn dụng, hạn 30 phút; sai → 409 `invalid_token`, đã dùng → `token_used`, hết hạn → `token_expired`. |
 | `POST /auth/password-reset/request` | `{username}` → `{status:"reset_requested"}` giống hệt cho mọi username (không tiết lộ tồn tại). Tài khoản seed và bị disable không được cấp token. |
 | `POST /auth/password-reset/confirm` | `{username,token,new_password}` → `{status:"password_reset"}`; thu hồi toàn bộ token đăng nhập, đánh dấu email đã xác minh. |
@@ -29,6 +29,50 @@ Domain/validation/HTTP errors dùng `{error:{code,message,fields?},request_id}`;
 | `DELETE /me/sessions/{token_id}` | `{status:"revoked"}`; không thuộc user → 404, đã thu hồi → 409 `session_revoked`. |
 
 Gửi email xác minh là **stub phát triển ghi log** (`dev_stub_log_only`), nhãn rõ, không gọi dịch vụ ngoài. Ở chế độ public (`HOMEMATCH_PUBLIC=true`), `register`, `password-reset/request` và PATCH đổi email trả 503 `delivery_unavailable` thay vì giả gửi.
+
+## Đăng ký chủ nhà và duyệt (BE-03, 08/10/2026)
+
+Chủ nhà tự đăng ký (`account_type:"owner"`) phải xác minh email, sau đó ở trạng thái `landlord_status='pending'`: đăng nhập được, tạo và sửa tin được, nhưng **không công khai tin được** — mọi yêu cầu publish (tạo tin `published=true`, PUT tin với `published=true`, PATCH status `published:true`) trả 403 `landlord_not_approved`. Tạo tin không gửi `published` thì mặc định là bản nháp chưa công khai. Owner seed (`owner-a`…`owner-d`) luôn được coi là `approved`.
+
+| Endpoint | Quy tắc |
+|---|---|
+| `GET /admin/landlord-applications?status=pending\|approved\|rejected` | Chỉ admin (capability `account:review_landlord`); mặc định `pending`. Trả `[{user_id,email,display_name,landlord_status,created_at,verified}]`; owner seed không xuất hiện. |
+| `POST /admin/landlord-applications/{user_id}/approve` (200) | `{user_id,landlord_status:"approved"}`. Cập nhật status, tạo membership `owner` trong `org-demo` (idempotent), ghi audit `account.landlord_approved`, thông báo cho chủ nhà (dedup `landlord:{user_id}:approved`). Người không phải admin → 403; user không phải owner ứng tuyển → 404. |
+| `POST /admin/landlord-applications/{user_id}/reject` (200) | Body `{reason}` bắt buộc 1–500 ký tự (thiếu/sai → 422). Trả `{user_id,landlord_status:"rejected"}`, ghi audit `account.landlord_rejected`, thông báo kèm lý do (dedup `landlord:{user_id}:rejected`). |
+
+## Ticket hỗ trợ (BE-04, 08/10/2026)
+
+Ticket gặp nhân viên tạo từ chat (`hm_support`), chỉ admin thao tác:
+
+| Endpoint | Quy tắc |
+|---|---|
+| `GET /admin/support-tickets?status=requested\|in_progress\|resolved` | Chỉ admin (capability `support:manage`/`support:list`). Trả `[{id,session_id,manager_id,status,assignee,note,created_at,updated_at,resolved_at}]`. |
+| `PATCH /admin/support-tickets/{id} {status,note?}` | Chuyển trạng thái theo `requested → in_progress → resolved`, `resolved → in_progress` (mở lại). Sai chuyển → 409 `ticket_state`; `resolved` thiếu `note` → 422 `note_required`; gửi lại đúng trạng thái hiện tại → trả bản hiện tại, không ghi gì thêm. Chuyển sang `in_progress` đặt `assignee` là admin thực hiện. Mỗi lần đổi trạng thái, khách (chủ phiên) nhận một thông báo `support_update` (dedup `support:{id}:{status}`, link `/tro-ly-ai`). `GET /support-tickets` cũng chỉ còn admin; owner gọi → 403. |
+
+## Ảnh tin và ảnh sự cố (BE-06, 08/10/2026)
+
+Ảnh lưu metadata trong bảng `hm_media` (schema v12), file lưu theo hash nội dung tại `HOMEMATCH_MEDIA_DIR` (mặc định `.local/media` trên đĩa local). Loại ảnh quyết định bằng magic bytes (JPEG/PNG/WebP), **không** tin content-type của client. Giới hạn: 5 MB/ảnh (422 `media_too_large`), 10 ảnh/tin, 5 ảnh/sự cố (422 `media_limit`); sai loại → 422 `invalid_media`. Tải trùng (cùng tin + cùng hash) trả lại bản cũ với status 200. Không bao giờ dùng tên file người dùng gửi: đường dẫn là `{MEDIA_DIR}/{sha256[:2]}/{sha256}.{ext}`.
+
+| Endpoint | Quy tắc |
+|---|---|
+| `POST /landlord/rooms/{room_id}/media` multipart `file` (201) | Chỉ chủ nhà của tin (người khác → 404). Trả `{id, url:"/media/{id}", content_type, size_bytes, position}`; trùng nội dung → 200 cùng bản cũ. |
+| `DELETE /landlord/rooms/{room_id}/media/{media_id}` (204) | Chỉ chủ nhà của tin và ảnh phải thuộc tin đó, sai → 404. Xóa bản ghi; file chỉ bị xóa khi không còn bản ghi nào dùng hash đó. |
+| `PATCH /landlord/rooms/{room_id}/media/order {media_ids:[…]}` (200) | Chỉ chủ nhà của tin; danh sách phải gồm đúng các ảnh hiện có → 422 `invalid_request`. Trả lại danh sách ảnh theo thứ tự mới. |
+| `POST /maintenance/{ticket_id}/media` multipart `file` (201) | Khách của hợp đồng đang hiệu lực hoặc chủ nhà của phòng; người ngoài → 404. Trả media DTO; trùng → 200. |
+| `GET /media/{media_id}` | Ảnh tin công khai: không cần token; ảnh tin ẩn: chỉ chủ nhà; ảnh sự cố: chỉ hai bên; người khác → 404. Trả file kèm `Cache-Control: private, max-age=300` (ảnh công khai dùng `public`). |
+
+DTO mới: `photos:[{id,url}]` (theo `position`) có trong `GET /listings`, `GET /listings/{id}`, `GET /landlord/rooms` và `/landlord/rooms/{id}` (trường `photos` của room) và mỗi mục trong `GET /maintenance`.
+
+## Ưu đãi của chủ nhà (BE-07, 08/10/2026)
+
+Bảng `hm_promotions` (schema v13), mỗi tin một bản ghi. Ưu đãi **không đổi giá thuê và không vào xếp hạng** (`catalog.py`, `costs.py`, `semantic.py` không đọc `hm_promotions`).
+
+| Endpoint | Quy tắc |
+|---|---|
+| `PUT /landlord/rooms/{room_id}/promotion {text, valid_until}` (200) | Chỉ chủ nhà của tin (người khác → 404). `text` 1–200 ký tự, lưu đã che PII (số điện thoại → `[SĐT đã che]`, email → `[email đã che]`); `valid_until` từ hôm nay (UTC+7) đến hôm nay + 90 ngày, sai → 422 `invalid_promotion`. Trả `{room_id, text, valid_until}`. |
+| `DELETE /landlord/rooms/{room_id}/promotion` (204) | Chỉ chủ nhà của tin; chưa có ưu đãi → 404. |
+
+DTO: `promotion:{text, valid_until}|null` (chỉ khi còn hạn) trong `GET /listings`, `GET /listings/{id}`, `GET /landlord/rooms`, `/landlord/rooms/{id}`. Job chăm sóc khách (`lead_reengagement`) nối vào câu gợi ý `" — Ưu đãi: {text} (đến {dd/mm})"` cho căn còn ưu đãi; dedup key giữ nguyên.
 
 ## Đơn vị, membership và audit (0.4.0)
 
@@ -82,6 +126,10 @@ Public projection (module `backend/app/projection.py`) là allowlist: chỉ phò
 `room_type` nhận `room` | `studio` | `apartment`. **`Room`** và **`Candidate`** có thêm `room_type`, `bedrooms`. `Room` có thêm `features_text` (mô tả mềm, được đưa vào văn bản semantic).
 
 `POST /sessions` điền sẵn nháp từ memory khi khách đã đồng ý: `field_status = inferred`, `evidence_ref = memory:<phiên>`, `draft_revision` vẫn bằng 0. Chat provenance có thêm `agent`, `tools`, `steps`; run diagnostics có `agent` của agent xếp hạng. `/admin/metrics` có thêm `semantic_usage: {query_embedding_calls, query_cache_hits}`.
+
+`/admin/metrics` có thêm `cost` (BE-05, 08/10/2026): `{estimated_cost_vnd, price_effective_date, missing: [str], basis: {...}}` hoặc `null` khi chưa cấu hình bảng giá. Tính bằng `Decimal` từ `provider_usage.by_model` (token input/output và embedding tách riêng, làm tròn VND `ROUND_HALF_UP`); thiếu bất kỳ giá hay tỷ giá nào cần dùng → `estimated_cost_vnd: null` kèm `missing` liệt kê khóa còn thiếu, không ước đoán. Bảng giá đặt qua `HOMEMATCH_PROVIDER_PRICES_PATH` (mẫu `infra/provider-prices.example.json`, không chứa giá thật; người dùng tự điền từ trang giá chính thức).
+
+Chat có thêm ý định `simulate_finance` (AG-02, 08/10/2026): `MessageResult` nhận thêm `status: "simulation" | "needs_results"` và `simulation: {room_id, room_title, scenario: {annual_rate, term_months, principal_vnd}, result} | null` với `result` giống một phần tử của `POST /sessions/{id}/simulate`. Số trả góp do tool tất định tính (không qua LLM); chưa có danh sách duyệt → `needs_results`.
 
 **`CostResult.affordability`** là `null` khi không có dữ liệu tài chính. Khi có:
 
@@ -138,7 +186,7 @@ Decision là approve/reject/needs_revision; approve cần ≥1 ID thuộc nháp,
 
 | Nhóm | Endpoint | Ghi chú |
 |---|---|---|
-| Tìm kiếm công khai | `GET /listings` (query: `city, area, room_type, min_rent, max_rent, max_monthly, min_area_m2, min_bedrooms, people, amenities[], sort, page, page_size`) | Không cần đăng nhập. Chỉ tin `published`, chưa cọc/thuê. Tham số lạ → 422. |
+| Tìm kiếm công khai | `GET /listings` (query: `city, area, room_type, min_rent, max_rent, max_monthly, min_area_m2, min_bedrooms, people, amenities[], sort, page, page_size`) | Không cần đăng nhập. Chỉ tin `published`, chưa cọc/thuê. Tham số lạ → 422. `sort` nhận `monthly_asc, monthly_desc, rent_asc, area_desc, posted_desc` (31/10: "Mới đăng" chỉ ở tìm theo bộ lọc). DTO tin có thêm `description, posted_at, poster_kind, ward, ward_2025, street, available_from` và quote có `payment_cycle_months, min_lease_months`; chưa biết là `null`. |
 | | `GET /listings/{id}?people=` | Chi tiết, chi phí ước tính, nội quy, `landlord_id`. Ghi lượt xem (gắn khách nếu có token). |
 | | `POST /listings/compare {room_ids, people, budget?, preferences}` | Kèm `advice {recommended_room_id, summary, rooms[{pros, cons}]}` |
 | Cẩm nang | `GET /handbook`, `POST /handbook/ask {question, room_id?}` | Truy xuất mục chung và nội quy chủ nhà; kèm `disclaimer` |
@@ -152,7 +200,7 @@ Decision là approve/reject/needs_revision; approve cần ≥1 ID thuộc nháp,
 | Hai bên | `GET /leases`; `GET /leases/{id}`; `GET /leases/{id}/document`; `POST /leases/{id}/accept {expected_version}` | Khách không thấy bản nháp. Chấp thuận sai phiên bản → 409 `lease_version`. |
 | | `GET /invoices`; `GET /invoices/{id}`; `GET /invoices/{id}/document?receipt_no=`; `POST /invoices/{id}/claims {amount_vnd, reference}`; `GET /payment-claims` | Báo đã chuyển chưa phải đã thu. `payment_status` `unpaid`/`partially_paid`/`paid`; `overdue` tính từ số dư và hạn. |
 | | `GET /maintenance`; `POST /maintenance {room_id, title, description, priority}`; `PATCH /maintenance/{id} {status?, assignee?, cost_vnd?, note?}` | Chỉ người đang thuê gửi được (403 `no_active_lease`). Khách chỉ chuyển sang `closed` hoặc `reopened` (cần ghi chú). |
-| Admin | `GET /admin/transcripts`; `GET /admin/transcripts/{session}`; `GET /admin/handovers`; `GET /admin/users`; `GET /admin/rooms`; `PATCH /admin/rooms/{id}/status`; `GET /admin/metrics`; `POST /admin/jobs/run`; `GET /admin/jobs` | Mở transcript ghi audit `transcript.viewed`. Transcript đã che PII, giữ 90 ngày. |
+| Admin | `GET /admin/transcripts`; `GET /admin/transcripts/{session}`; `GET /admin/handovers`; `GET /admin/users`; `GET /admin/rooms`; `PATCH /admin/rooms/{id}/status`; `GET /admin/metrics`; `POST /admin/jobs/run`; `GET /admin/jobs`; `GET /admin/support-tickets`; `PATCH /admin/support-tickets/{id}` | Mở transcript ghi audit `transcript.viewed`. Transcript đã che PII, giữ 90 ngày. Ticket hỗ trợ xem mục riêng ở trên. |
 
 Văn bản hợp đồng, hóa đơn, biên lai trả về `{html}` để giao diện hiển thị và in. Đây không phải chữ ký số.
 
@@ -166,8 +214,8 @@ Kho bootstrap JSON chỉ nạp khi trống; CLI import merge có revision và tr
 
 ## Vận hành
 
-`GET /health` giữ DTO status/storage/auth/method/workers và kiểm kết nối ledger; lỗi DB trả `storage_unavailable`/503. `GET /ready` trả `{status:"ready",storage,schema_version:9,checks:{ledger:"ok",catalog:"ok",checkpoints:"ok"}}`; schema/catalog/checkpoint lỗi trả `not_ready`/503. Readiness kiểm storage cốt lõi; coverage/provider P được kiểm khi ranking và có fallback rõ ràng.
+`GET /health` giữ DTO status/storage/auth/method/workers/public và kiểm kết nối ledger; lỗi DB trả `storage_unavailable`/503. `public` là giá trị `HOMEMATCH_PUBLIC`: frontend chỉ bật trải nghiệm đăng nhập nhanh bằng tài khoản seed khi `auth_mode=seed` và `public=false` (môi trường demo local; bản public đã quay mật khẩu seed). `GET /ready` trả `{status:"ready",storage,schema_version:13,checks:{ledger:"ok",catalog:"ok",checkpoints:"ok"}}`; schema/catalog/checkpoint lỗi trả `not_ready`/503. Readiness kiểm storage cốt lõi; coverage/provider P được kiểm khi ranking và có fallback rõ ràng.
 
 Metrics reset khi restart. `duration_seconds` là tổng thời gian máy xử lý, không phải p95 hoặc thời gian chủ nhà chờ duyệt. Provider metrics có `logical_calls,reported_tokens,calls_without_token_usage`; số tokens đã báo không bao gồm lượt thiếu usage. Log dùng route mẫu, không lưu URL/query/body, token hoặc raw chat; log duy nhất chứa mã xác minh là DEV-STUB có nhãn giả. Dùng `backend/logging.json` và `--no-access-log` khi chạy server.
 
-Manager diagnostics bổ sung `ranking_version,ranking_config,profile_hash,query_text_hash,catalog_version,requested_method`. Các metadata này lưu trong snapshot run, không mở thêm đường đọc cho renter. Migration ledger tự chạy khi startup, hoặc chủ động dùng `python -m backend.manage migrate`. Schema hiện tại là v9 (v4 memory/cache embedding, v5 duyệt theo chủ nhà, v6 lượt xem và lịch từ tin, v7 live chat/transcript, v8 thông báo/job, v9 PMS & CRM); DB v1/v2 được tiếp nhận, bootstrap tạo đơn vị mặc định và membership cho staff seed đã tồn tại, không xóa/sửa bản ghi cũ. Backend từ chối DB có schema mới hơn code.
+Manager diagnostics bổ sung `ranking_version,ranking_config,profile_hash,query_text_hash,catalog_version,requested_method`. Các metadata này lưu trong snapshot run, không mở thêm đường đọc cho renter. Migration ledger tự chạy khi startup, hoặc chủ động dùng `python -m backend.manage migrate`. Schema hiện tại là v13 (v4 memory/cache embedding, v5 duyệt theo chủ nhà, v6 lượt xem và lịch từ tin, v7 live chat/transcript, v8 thông báo/job, v9 PMS & CRM, v10 trạng thái duyệt chủ nhà, v11 vòng đời ticket hỗ trợ, v12 ảnh tin/ảnh sự cố, v13 ưu đãi chủ nhà); DB v1/v2 được tiếp nhận, bootstrap tạo đơn vị mặc định và membership cho staff seed đã tồn tại, không xóa/sửa bản ghi cũ. Backend từ chối DB có schema mới hơn code.

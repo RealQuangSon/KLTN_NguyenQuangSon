@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 
 from .costs import calculate_cost
 from .models import Scenario
 from .notifications import notify
+from . import promotions
 
 REENGAGE_AFTER_HOURS = int(os.getenv("HOMEMATCH_REENGAGE_AFTER_HOURS", "24"))
 SIMILAR_PRICE_BAND = 0.2
@@ -71,7 +72,17 @@ def lead_reengagement(service, now: datetime) -> int:
         suggestions = similar_rooms(list(rooms.values()), room)
         if not suggestions:
             continue
-        lines = "; ".join(f"{other.title.split('. ')[0]} ({_money(monthly)}/tháng)" for other, monthly in suggestions)
+
+        def line(other, monthly) -> str:
+            # A valid landlord promotion is appended verbatim; the dedup key below stays unchanged.
+            text = f"{other.title.split('. ')[0]} ({_money(monthly)}/tháng)"
+            promo = promotions.active(service.repo, other.id, now.astimezone(timezone(timedelta(hours=7))).date())
+            if promo:
+                due = date.fromisoformat(promo["valid_until"])
+                text += f" — Ưu đãi: {promo['text']} (đến {due:%d/%m})"
+            return text
+
+        lines = "; ".join(line(other, monthly) for other, monthly in suggestions)
         sent += notify(service.repo, row["user_id"], "lead_reengagement", "Phòng tương tự bạn có thể quan tâm",
                        f"Bạn đã xem {room.title.split('. ')[0]} nhưng chưa đặt lịch. Gợi ý tương đương: {lines}.",
                        f"reengage:{row['user_id']}:{row['room_id']}", "/tim-kiem")

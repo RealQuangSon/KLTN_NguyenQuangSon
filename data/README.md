@@ -1,6 +1,6 @@
 # Dữ liệu tổng hợp HomeMatch
 
-**Phạm vi 05/10/2026:** dữ liệu hiện hành là **dataset v2** (`homematch-synthetic-v2`), mô tả ở [PLAN](PLAN.md). Các mục bên dưới đã cập nhật theo v2. `fixtures/v1` (hợp đồng, hóa đơn, công tơ, sửa chữa) thuộc phạm vi cũ 04/10, ngoài đề tài, giữ lại nhưng không dùng.
+**Phạm vi 05/10/2026:** dữ liệu hiện hành là **dataset v2** (`homematch-synthetic-v2`), mô tả ở [PLAN](PLAN.md). Các mục bên dưới đã cập nhật theo v2. `fixtures/v1` của phạm vi cũ 04/10 và crawler Chợ Tốt đã **xóa khỏi repo ngày 28/10/2026** (ngoài đề tài, chưa có quyền dùng dữ liệu). Quyết định 30/10/2026 đưa crawler trở lại dưới dạng **catalog demo riêng** lưu trên Postgres online, không vào repo; xem [PLAN §1](PLAN.md). **31/10/2026 (crawler 2.2):** tin demo có thêm nội dung tin đã che, ngày đăng, loại người đăng, phường cũ/mới, tên đường, điều khoản thuê và 19 khóa tiện ích; chi tiết ở [PLAN §1](PLAN.md). Cần cào lại để có trường mới; lượt cào đầy đủ chưa chạy. **31/10/2026 (crawler 2.3, FC-02/03):** cào theo hạn mức `--per-city` (mặc định 2.500 tin mỗi thành phố, hai thành phố luôn bằng nhau), ưu tiên tin cá nhân (`f=p`), thiếu thì bù tin môi giới (`f=c`); ba lớp lọc trùng và tin "nhiều phòng/giá từ" chạy trước khi chọn theo hạn mức; `poster_kind` theo bộ lọc nguồn. **Đã chạy thật 01/11/2026**: snapshot `chotot-2026-11-01` — 2.446 tin cân bằng 1.223/thành phố, 76% cá nhân, đã lên Neon cạnh snapshot 2.1 cũ; chi tiết ở [PLAN §1](PLAN.md).
 
 Kho này do dự án tự tạo, **không phải dữ liệu xuất từ HubHome, phòng thật hoặc biểu giá thị trường**. Chỉ dùng để phát triển và thử nghiệm KLTN. Tọa độ là fixture, không định danh địa chỉ thật; không có tài chính hay liên hệ khách thật.
 
@@ -11,8 +11,10 @@ Kho này do dự án tự tạo, **không phải dữ liệu xuất từ HubHome
 - `catalog/source_register.json`: nguồn, tỷ lệ tổng hợp và phạm vi sử dụng.
 - `profiles/{dev,test}/profiles.jsonl`: 45 hồ sơ gốc, 15 dev/30 test (30 hồ sơ v1 + 15 hồ sơ v2: Hà Nội, căn hộ, alias khu vực, thu nhập, vay); paraphrase giữ cùng group/split.
 - `oracles/cost_cases.json`: 22 ca tính tay độc lập: 15 ca chi phí `C01`–`C15` và 7 ca khả năng chi trả/vay `L01`–`L07`. Mỗi ca có số học và hằng số kỳ vọng; cần người kiểm tra chéo trước khi dùng cho nghiên cứu.
-- `manifests/development_manifest.json`: hash đầu vào; `frozen=false`. G4 là tên guard lịch sử trong CLI hiện có; protocol/freeze nghiên cứu mới phải đối chiếu P5, không suy sản phẩm v1 đã đạt P4.
-- `fixtures/v1/`: fixture packs vận hành soạn 05/10/2026 cho HM-01 (identity/access matrix 28 ca allow/deny), HM-02 (listing lifecycle: 7 listings/9 versions, draft→published→changes_requested→suspended→archived, stale review, alias dedup), HM-07 (9 contracts/12 versions/14 acceptances, 5 tenancies, sổ cọc), HM-08 (7 meters/26 readings/8 tariffs/9 invoices + oracle độc lập 10 ca BILL, 8 ca đối soát), HM-09 (4 tickets, 5 cost events). Toàn bộ `synthetic=true`, không credential thật. Chi tiết bố cục và hợp đồng dữ liệu xem [fixtures/v1/README.md](fixtures/v1/README.md).
+- `profiles/intent_cases.json`: 38 ca gold ý định chat cho bộ định tuyến (`I001`–`I038`; handbook 8, human_support 6, calculate_cost 6, simulate_finance 8, find_room 6, unknown 4; dev 15 / test 23), đo bằng `eval intents`. Gold là nhãn người soạn; `simulate_finance` dự kiến bị đoán sai cho tới khi AG-02 thêm ý định này — sai được ghi lại, không sửa nhãn.
+- `oracles/loan_parse_cases.json`: 19 ca oracle parse câu hỏi vay `LP01`–`LP19` cho `interpreter.parse_loan_terms` (AG-02), kèm trường `rules` (kỳ hạn 1–60 tháng, lãi 0–50%, dấu phẩy thập phân, hai số thì lấy số đầu, đơn vị triệu/tr). Tính tay độc lập với code backend.
+- `oracles/invoice_cases.json`: 12 ca oracle hóa đơn PMS `INV-01`–`INV-12` tính tay (kwh lẻ làm tròn, nước m³/người, phí gồm trong thuê, chỉ số giảm, thiếu đơn giá, 0 kWh, nhiều xe, căn hộ 2PN), kiểm bằng `eval invoices` trên DB tạm; lệch thì ghi lại để BE rà `pms.py`, không sửa oracle cho khớp code.
+- `manifests/development_manifest.json`: hash đầu vào; `frozen=false`. G4 là tên guard lịch sử trong CLI hiện có; protocol/freeze nghiên cứu mới phải đối chiếu P5, không suy sản phẩm v1 đã đạt P4. Quy trình chốt dữ liệu xem [eval/FREEZE.md](../eval/FREEZE.md).
 
 ## Lệnh
 
@@ -20,8 +22,9 @@ Từ root repository, không gọi provider:
 
 ```bash
 .venv/bin/python -m eval validate
-.venv/bin/python data/validate_fixtures.py
 .venv/bin/python -m data.generate --output .local/regenerated-data
+.venv/bin/python -m eval intents --split dev
+.venv/bin/python -m eval invoices
 ```
 
 Generator có seed `20261001` (phòng v1) và `20261005` (căn v2). Không ghi đè dataset đã freeze; tạo version/output mới. Bộ gold extraction là các tình huống tổng hợp được soạn trước, chưa được kiểm chứng bằng người dùng thật. Nhãn relevance phòng vẫn để trống để người đánh giá chấm độc lập.

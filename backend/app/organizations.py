@@ -219,6 +219,33 @@ def _require_grantable_account(repo, user_id: str) -> None:
         raise DomainError("account_unverified", "Tài khoản chưa kích hoạt, không thể cấp quyền.", 409)
 
 
+def ensure_membership(repo, organization_id: str, user_id: str, role: str) -> dict:
+    """Idempotent server-side membership creation (bootstrap, admin approvals).
+
+    Unlike grant_membership there is no organization-owner permission chain and
+    no self-grant rule: callers are trusted server code. Re-running never
+    duplicates; a revoked membership is reactivated with a new revision.
+    """
+    now = utc_now()
+    with repo.db:
+        existing = repo.db.execute(
+            "SELECT * FROM hm_memberships WHERE organization_id=? AND user_id=?",
+            (organization_id, user_id)).fetchone()
+        if existing is None:
+            membership_id = str(uuid4())
+            repo.db.execute(
+                "INSERT INTO hm_memberships(id,organization_id,user_id,role,status,revision,"
+                "created_at,updated_at) VALUES(?,?,?,?,'active',1,?,?)",
+                (membership_id, organization_id, user_id, role, now, now))
+        else:
+            membership_id = existing["id"]
+            if existing["status"] != "active" or existing["role"] != role:
+                repo.db.execute(
+                    "UPDATE hm_memberships SET role=?,status='active',revision=revision+1,updated_at=? "
+                    "WHERE id=?", (role, now, membership_id))
+    return membership_by_id(repo, organization_id, membership_id)
+
+
 def grant_membership(repo, actor: Actor, organization_id: str, user_id: str, role: str) -> dict:
     organization_row(repo, organization_id)
     require_org_role(repo, actor, organization_id, roles=("owner",))

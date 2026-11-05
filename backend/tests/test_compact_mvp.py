@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from backend.app.catalog import Catalog
 from backend.app.interpreter import OpenAIInterpreter
 from backend.app.main import create_app
-from backend.app.models import CatalogStatus, DomainError, DraftPatch, Review
+from backend.app.models import Actor, CatalogStatus, DomainError, DraftPatch, Review
 from backend.app.semantic import OpenAIEmbeddings
 from backend.app.service import HomeMatchService
 
@@ -22,7 +22,8 @@ def test_seed_auth_password_hash_expiry_logout_and_safe_errors(tmp_path, monkeyp
         login = client.post("/auth/login", json={"username": "renter-a", "password": "local-renter-a-password"}).json()
         token = login["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
-        assert client.get("/auth/me", headers=headers).json() == {"id": "renter-a", "role": "renter"}
+        assert client.get("/auth/me", headers=headers).json() == {"id": "renter-a", "role": "renter",
+                                                                 "landlord_status": None}
         user = service.repo.db.execute("SELECT password_hash FROM hm_users WHERE id='renter-a'").fetchone()
         assert user["password_hash"].startswith("scrypt$") and "local-renter" not in user["password_hash"]
         assert token not in str([dict(row) for row in service.repo.db.execute("SELECT * FROM hm_tokens")])
@@ -162,8 +163,82 @@ def test_no_match_offers_soft_suggestions_and_never_relaxes_automatically(servic
     empty = service.results(elsewhere, renter)
     assert empty["status"] == "no_match" and empty["results"] == []
     assert any("khu vực" in text for text in empty["suggestions"])
+    # Transparency: aggregate hard-filter counts + the real pipeline steps, no room identity.
+    summary = empty["diagnostics_summary"]
+    assert summary["kept"] == 0 and summary["scanned"] > 0
+    assert summary["scanned"] == summary["kept"] + sum(summary["rejected"].values()) \
+        + sum(summary["verification"].values())
+    assert summary["rejected"], "phải nói rõ bị loại vì tiêu chí nào"
+    assert empty["steps"] and empty["steps"][0].startswith("Quét")
+    assert any("nới một tiêu chí" in step for step in empty["steps"])
 
     other = service.create_session(renter)["session_id"]
     service.confirm(other, renter, profile, 0)
     normal = service.results(other, renter)
     assert normal["status"] == "pending_review" and "suggestions" not in normal
+    # Pending runs still expose the pipeline steps for process transparency.
+    assert normal["steps"] and any("Chờ chủ nhà duyệt" in step for step in normal["steps"])
+    assert normal["diagnostics_summary"]["kept"] >= 1
+
+
+def test_auto_publish_puts_rooms_in_front_of_the_renter_without_a_human(monkeypatch, tmp_path, renter, profile):
+    # Chế độ auto-publish (demo): renter không phải chờ ai duyệt — phòng qua bộ
+    # lọc là công bố ngay; quyết định tự động vẫn ghi sổ với lý do nói rõ.
+    monkeypatch.setenv("HOMEMATCH_AUTO_PUBLISH", "1")
+    agent = HomeMatchService(tmp_path / "auto.sqlite")
+    try:
+        session_id = agent.create_session(renter)["session_id"]
+        agent.confirm(session_id, renter, profile, 0)
+        result = agent.results(session_id, renter)
+        assert result["status"] == "published" and result["results"], "tự công bố ngay, không chờ duyệt"
+        # Sổ audit ghi đủ quyết định tự động, lý do nói rõ không phải người duyệt tay.
+        reviews = agent.repo.reviews(result["run_id"])
+        assert reviews and "auto-publish" in reviews["owner-a"]["payload"]["reason"]
+        # Hàng đợi duyệt của chủ nhà trống: không còn việc nào cần người làm.
+        assert agent.drafts(Actor(id="owner-a", role="owner")) == []
+    finally:
+        agent.close()
+
+
+def test_fee_assumptions_are_explicit_opt_in_unlocks_crawled_rooms(tmp_path, renter):
+    from pathlib import Path
+    from backend.app.costs import REQUIRED_FEES, calculate_cost
+    from backend.app.models import Fee, Profile, Quote, Scenario
+    root = Path(__file__).resolve().parents[2]
+    # Phí có trong tin nhưng không ghi giá: bật giả định cũng không được đặt giá hộ.
+    partial = calculate_cost(Quote(rent_vnd=3_500_000, fees=[Fee(name="service", source="tin đăng")]),
+                             Scenario(), accept_estimated_fees=True)
+    assert partial.monthly_total_vnd is None and "service" in partial.missing_monthly
+    assert "service" not in partial.assumed_fees
+    # Phí hoàn toàn vắng: mặc định giữ unknown; bật giả định thì tính được và ghi rõ.
+    quote = Quote(rent_vnd=3_500_000, fees=[])
+    strict = calculate_cost(quote, Scenario())
+    assert strict.monthly_total_vnd is None and strict.assumed_fees == []
+    eager = calculate_cost(quote, Scenario(), accept_estimated_fees=True)
+    assert eager.monthly_total_vnd is not None
+    assert set(eager.assumed_fees) == set(REQUIRED_FEES)
+    lines = {line.name: line for line in eager.lines if line.period == "monthly"}
+    assert "giả định" in lines["electricity"].source
+
+    # Phòng kiểu tin crawl (không bảng phí): mặc định bị giữ, bật cờ thì vào danh
+    # sách kèm nhãn fee_assumed + tradeoff nói rõ giả định.
+    base = json.loads((root / "data" / "catalog" / "rooms.json").read_text(encoding="utf-8"))["rooms"][0]
+    base.update({"id": "crawl-001", "title": "Phòng trọ Quận Bình Thạnh", "capacity": None,
+        "quote": {"rent_vnd": 3_500_000, "deposit_vnd": None, "advance_months": None,
+                  "payment_cycle_months": None, "min_lease_months": None, "fees": [], "one_time_vnd": None}})
+    path = tmp_path / "catalog.json"
+    path.write_text(json.dumps({"rooms": [base]}, ensure_ascii=False), encoding="utf-8")
+    catalog = Catalog(path)
+    profile = Profile(city="TP.HCM", max_monthly_cost_vnd=5_000_000,
+                      scenario=Scenario(people=1))
+    held, diagnostics = catalog.eligible_candidates(profile)
+    assert held == [] and diagnostics["verification"]["availability_or_capacity"] == 1
+    eager_profile = profile.model_copy(update={"accept_estimated_data": True})
+    matched, _ = catalog.eligible_candidates(eager_profile)
+    assert len(matched) == 1
+    item = matched[0]
+    assert item.cost.monthly_total_vnd is not None
+    assert set(item.cost.assumed_fees) == set(REQUIRED_FEES)
+    assert any(code.startswith("fee_assumed:") for code in item.verification)
+    assert "capacity_unknown" in item.verification
+    assert any("giả định chuẩn" in line for line in item.tradeoffs)

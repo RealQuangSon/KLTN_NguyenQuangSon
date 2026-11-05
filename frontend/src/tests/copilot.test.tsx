@@ -58,13 +58,16 @@ it("opens a public listing link without logging in", async () => {
         new Response(
           JSON.stringify({
             id: "demo-01",
+            revision: 1,
             title: "Phòng 01. mô tả",
             city: "TP.HCM",
             area: "Quận 7",
             room_type: "room",
             area_m2: 21,
             amenities: { window: true },
+            quote: { rent_vnd: 4500000, deposit_vnd: null, fees: [] },
             synthetic: true,
+            photos: [],
             cost,
             house_rules: "Cổng đóng 23:00.",
           }),

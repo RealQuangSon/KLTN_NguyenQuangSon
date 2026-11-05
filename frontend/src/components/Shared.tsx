@@ -1,9 +1,18 @@
 import { useState } from "react";
-import type { Affordability, Candidate, Cost, Results } from "../types";
+import type {
+  ListingContact,
+  Affordability,
+  Candidate,
+  Cost,
+  Promotion,
+  Results,
+  Room,
+} from "../types";
 import {
   amenities,
   bandLabels,
   fees,
+  posterLabels,
   roomTypeLabels,
   statusLabels,
   verificationText,
@@ -16,9 +25,184 @@ export const money = (amount: number | null | undefined) =>
     ? "Chưa xác định"
     : `${new Intl.NumberFormat("vi-VN").format(amount)} ₫`;
 export const roomTitle = (title: string) => title.split(". ")[0];
+// FE-06: valid_until là "YYYY-MM-DD"; hiển thị ngày/tháng không phụ thuộc múi giờ.
+export const dayMonth = (isoDate: string) => {
+  const parts = isoDate.split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : isoDate;
+};
+// Nhãn "Ưu đãi" chỉ mô tả ưu đãi của chủ nhà, không ngụ ý xếp hạng ưu tiên và
+// không đổi giá hiển thị; chỉ xuất hiện khi promotion khác null.
+export function PromotionBadge({
+  promotion,
+  withText = false,
+}: {
+  promotion: Promotion;
+  withText?: boolean;
+}) {
+  return (
+    <span
+      className="promo-chip"
+      title={`Ưu đãi của chủ nhà: ${promotion.text}`}
+    >
+      <span className="badge promo">Ưu đãi</span>
+      <small>đến {dayMonth(promotion.valid_until)}</small>
+      {withText && <span className="promo-text">{promotion.text}</span>}
+    </span>
+  );
+}
+// LF-05: nhãn người đăng tin. Chỉ hiện khi máy chủ trả giá trị; null thì
+// không hiện gì (không suy ra "Chính chủ" — tin có thể do môi giới đăng).
+export function PosterBadge({
+  posterKind,
+}: {
+  posterKind?: "broker" | "individual" | null;
+}) {
+  if (!posterKind) return null;
+  return (
+    <span
+      className={`badge ${posterKind === "broker" ? "broker" : "owner"}`}
+      title={
+        posterKind === "broker"
+          ? "Tin do môi giới đăng"
+          : "Tin do cá nhân chủ nhà đăng"
+      }
+    >
+      {posterLabels[posterKind]}
+    </span>
+  );
+}
+// LF-05: khối "Điều khoản thuê". Mục tin không ghi hiện "Chưa rõ", không bao
+// giờ suy ra 0 hay giá trị mặc định.
+export function TermsBlock({ room }: { room: Room }) {
+  const rows: [string, string | null][] = [
+    ["Giá thuê", `${money(room.quote.rent_vnd)}/tháng`],
+    ["Diện tích", `${room.area_m2} m²`],
+    [
+      "Tiền cọc",
+      room.quote.deposit_vnd == null ? null : money(room.quote.deposit_vnd),
+    ],
+    [
+      "Kỳ thanh toán",
+      room.quote.payment_cycle_months == null
+        ? null
+        : `${room.quote.payment_cycle_months} tháng/lần`,
+    ],
+    [
+      "Thời hạn hợp đồng tối thiểu",
+      room.quote.min_lease_months == null
+        ? null
+        : `${room.quote.min_lease_months} tháng`,
+    ],
+    [
+      "Trống từ",
+      room.available_from == null ? null : dayMonth(room.available_from),
+    ],
+  ];
+  return (
+    <div>
+      <h3>Điều khoản thuê</h3>
+      <ul className="catalog-fees">
+        {rows.map(([label, value]) => (
+          <li key={label}>
+            {label}: {value ?? "Chưa rõ"}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+// LF-05: chip tiện ích — true hiện bình thường, false gạch ngang, null không hiện.
+export function AmenityChips({
+  amenities: values,
+}: {
+  amenities: Record<string, boolean | null>;
+}) {
+  const known = Object.entries(values).filter(
+    ([, value]) => value === true || value === false,
+  );
+  if (!known.length) return null;
+  return (
+    <div className="chip-row" role="list" aria-label="Tiện ích của phòng">
+      {known.map(([key, value]) => (
+        <span role="listitem" key={key} className="choice">
+          {value === true ? (
+            amenities[key] || key
+          ) : (
+            <s title="Tin ghi rõ không có tiện ích này">
+              {amenities[key] || key}
+            </s>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+// LF-05: nội dung tin (đã che SĐT/email ở máy chủ), thu gọn kèm "Xem thêm".
+const DESCRIPTION_PREVIEW = 220;
+export function DescriptionText({
+  description,
+}: {
+  description?: string | null;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (!description) return null;
+  const short = description.length <= DESCRIPTION_PREVIEW;
+  const shown =
+    expanded || short
+      ? description
+      : `${description.slice(0, DESCRIPTION_PREVIEW).trimEnd()}…`;
+  return (
+    <p className="listing-description">
+      {shown}
+      {!short && (
+        <>
+          {" "}
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setExpanded((value) => !value)}
+          >
+            {expanded ? "Thu gọn" : "Xem thêm"}
+          </button>
+        </>
+      )}
+    </p>
+  );
+}
+// Liên hệ người đăng: tin cào trỏ về tin gốc (chủ nhà trong app là tài khoản
+// demo); tin của chủ nhà có tài khoản hiện SĐT họ tự khai.
+export function ContactInfo({ contact }: { contact?: ListingContact }) {
+  if (!contact) return null;
+  if (contact.kind === "external")
+    return contact.original_url ? (
+      <p className="contact-info">
+        <a
+          href={contact.original_url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Xem tin gốc trên Chợ Tốt
+        </a>
+        <small> · Tin tham khảo; liên hệ người đăng tại tin gốc.</small>
+      </p>
+    ) : null;
+  if (contact.phone)
+    return (
+      <p className="contact-info">
+        SĐT chủ nhà: <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+      </p>
+    );
+  if (contact.phone_requires_login)
+    return (
+      <p className="contact-info">
+        <small>Đăng nhập để xem số điện thoại chủ nhà.</small>
+      </p>
+    );
+  return null;
+}
 export const evidenceText = (text: string) =>
   text.replace(
-    /\b(window|quiet|private_bathroom|parking|air_conditioning|washing_machine|balcony|furniture|pets_allowed)\b/g,
+    /\b(window|quiet|private_bathroom|parking|air_conditioning|washing_machine|balcony|furniture|pets_allowed|kitchen|wifi|elevator|security_24h|camera|loft|flexible_hours|no_shared_landlord|water_heater|fridge)\b/g,
     (key) => amenities[key] || key,
   );
 export function Icon({
@@ -50,6 +234,23 @@ export function Icon({
     leaf: "M5 20l14-14M4 17C1 5 10 3 21 3c0 11-2 18-13 16",
     sparkles:
       "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3zm7-1v4m-2-2h4",
+    cap: "M12 4l10 5-10 5L2 9l10-5zm-6 8.5V17c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5",
+    work: "M4 8h16v12H4V8zm5 0V5h6v3m-11 6h16",
+    sofa: "M6 11V8a2 2 0 012-2h8a2 2 0 012 2v3M4 18v-4a2 2 0 012-2h12a2 2 0 012 2v4M4 18h16M6 15v3m12-3v3",
+    wallet: "M3 6h18v12H3V6zm0 4h18m-5 4h2",
+    mail: "M3 5h18v14H3V5zm0 3l9 6 9-6",
+    send: "M4 12l16-8-6 16-3-6-7-2zm7 2l9-10",
+    mic: "M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3zM19 11a7 7 0 01-14 0M12 18v4",
+    heart:
+      "M12 20.5C7.5 16.9 3.5 13.6 3.5 9.8A4.6 4.6 0 0112 7a4.6 4.6 0 018.5 2.8c0 3.8-4 7.1-8.5 10.7z",
+    layers:
+      "M12 3l9 5-9 5-9-5 9-5zm9 10l-9 5-9-5m18 5l-9 5-9-5",
+    expand: "M4 9V4h5m11 11v5h-5m0-16h5v5M9 20H4v-5",
+    user: "M12 11a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 0116 0",
+    thumbUp:
+      "M7 11v9H4a1 1 0 01-1-1v-7a1 1 0 011-1h3zm3 9h7a2 2 0 002-1.7l1-5A2 2 0 0018 11h-4l1-4.1A2 2 0 0013 5l-3 6v9z",
+    thumbDown:
+      "M17 13V4h3a1 1 0 011 1v7a1 1 0 01-1 1h-3zm-3-9H7a2 2 0 00-2 1.7l-1 5A2 2 0 006 13h4l-1 4.1A2 2 0 0011 19l3-6V4z",
   };
   return (
     <svg
@@ -243,6 +444,8 @@ export function RoomCard({
   onViewing,
   onSimulate,
   onChat,
+  saved,
+  onToggleSave,
 }: {
   item: Candidate;
   selected?: boolean;
@@ -250,6 +453,9 @@ export function RoomCard({
   onViewing?: () => void;
   onSimulate?: () => void;
   onChat?: () => void;
+  // "Căn đã lưu" cá nhân của người thuê (trang cá nhân, tham chiếu Tin đã lưu).
+  saved?: boolean;
+  onToggleSave?: () => void;
 }) {
   const [details, setDetails] = useState(false);
   return (
@@ -313,6 +519,17 @@ export function RoomCard({
           >
             {details ? "Thu gọn phí" : "Xem bảng phí"}
           </button>
+          {onToggleSave && (
+            <button
+              className={`button small outline save-room${saved ? " saved" : ""}`}
+              onClick={onToggleSave}
+              aria-pressed={Boolean(saved)}
+              aria-label={saved ? "Bỏ lưu căn này" : "Lưu căn này"}
+            >
+              <Icon name="heart" size={16} />
+              {saved ? "Đã lưu" : "Lưu"}
+            </button>
+          )}
           {onSelect && (
             <button
               className={`button small ${selected ? "secondary" : "outline"}`}
@@ -354,6 +571,10 @@ export function PublishedResults({
   onViewing,
   onSimulate,
   onChat,
+  onAskFollowUp,
+  savedIds,
+  onToggleSave,
+  autoPublish = false,
 }: {
   result: Results | null;
   selected: string[];
@@ -361,6 +582,14 @@ export function PublishedResults({
   onViewing: (item: Candidate) => void;
   onSimulate?: (item: Candidate) => void;
   onChat?: (item: Candidate) => void;
+  // Điền câu hỏi tiếp theo vào ô chat; chỉ điền — người dùng tự quyết định gửi,
+  // hệ thống không tự nới điều kiện cứng.
+  onAskFollowUp?: (text: string) => void;
+  // Căn đã lưu của người thuê: bộ id hiện trạng + bật/tắt lưu ngay trên thẻ.
+  savedIds?: string[];
+  onToggleSave?: (roomId: string) => void;
+  // Chế độ tự công bố: không có bước chủ nhà duyệt nên không gọi là "đã duyệt".
+  autoPublish?: boolean;
 }) {
   if (!result)
     return (
@@ -415,11 +644,84 @@ export function PublishedResults({
             </small>
           </div>
         )}
+        {Object.values(result.diagnostics_summary?.verification ?? {}).some((count) => count > 0) &&
+          onAskFollowUp && (
+          <div className="suggestion-list">
+            <span className="eyebrow">PHÒNG THIẾU DỮ LIỆU</span>
+            <div className="relax-chips">
+              <button
+                type="button"
+                className="button small outline"
+                onClick={() =>
+                  onAskFollowUp(
+                    "Chấp nhận dữ liệu ước tính — cho mình xem cả phòng thiếu bảng phí hoặc sức chứa, dữ liệu theo giả định chuẩn có nhãn ước tính nhé.",
+                  )
+                }
+              >
+                Chấp nhận dữ liệu ước tính
+              </button>
+            </div>
+            <small>
+              Dữ liệu thiếu trong tin (phí điện/nước, sức chứa…) được thay bằng giả
+              định chuẩn kèm nhãn ước tính; bạn kiểm tra lại khi xem phòng.
+            </small>
+          </div>
+        )}
+        {result.status === "no_match" && onAskFollowUp && (
+          <div className="suggestion-list">
+            <span className="eyebrow">NỚI MỘT TIÊU CHÍ ĐỂ TÌM LẠI</span>
+            <div className="relax-chips">
+              <button
+                type="button"
+                className="button small outline"
+                onClick={() =>
+                  onAskFollowUp(
+                    "Hãy nới ngân sách tổng tháng lên thêm 1 triệu và tìm lại.",
+                  )
+                }
+              >
+                Nới ngân sách
+              </button>
+              <button
+                type="button"
+                className="button small outline"
+                onClick={() =>
+                  onAskFollowUp(
+                    "Cho mình xem căn ở khu vực lân cận, không giới hạn quận.",
+                  )
+                }
+              >
+                Nới khu vực
+              </button>
+              <button
+                type="button"
+                className="button small outline"
+                onClick={() =>
+                  onAskFollowUp(
+                    "Nới khoảng cách tới điểm đến của mình thêm 1 km và tìm lại.",
+                  )
+                }
+              >
+                Nới khoảng cách
+              </button>
+            </div>
+            <small>
+              Nút chỉ điền câu nhắn vào ô trò chuyện; bạn kiểm tra rồi tự gửi.
+            </small>
+          </div>
+        )}
       </>
     );
   }
   return (
     <div className="room-list">
+      {/* Đếm hiển thị kiểu workspace tham chiếu: người dùng biết số căn duyệt
+          qua và số căn đang hiện (danh sách giới hạn 5 căn đầu). */}
+      <p className="results-count">
+        {autoPublish ? "Kết quả phù hợp" : "Kết quả đã duyệt"}: <strong>{result.results.length}</strong> căn
+        {result.results.length > 5 &&
+          ` · đang hiện 5 căn đầu, dùng tìm theo bộ lọc để xem thêm`}
+      </p>
       {result.results.slice(0, 5).map((item) => (
         <RoomCard
           key={item.room_id}
@@ -429,6 +731,10 @@ export function PublishedResults({
           onViewing={() => onViewing(item)}
           onSimulate={onSimulate ? () => onSimulate(item) : undefined}
           onChat={onChat ? () => onChat(item) : undefined}
+          saved={savedIds?.includes(item.room_id)}
+          onToggleSave={
+            onToggleSave ? () => onToggleSave(item.room_id) : undefined
+          }
         />
       ))}
     </div>

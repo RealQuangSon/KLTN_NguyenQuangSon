@@ -63,6 +63,46 @@ def test_openai_error_is_safe_and_explicit():
     assert "private" not in str(error.value)
 
 
+def test_chat_completions_gateway_masks_money_and_uses_structured_output(monkeypatch):
+    monkeypatch.setenv("HOMEMATCH_LLM_API", "chat_completions")
+    captured = {}
+
+    def parse(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(parsed=Extraction(intent="find_room", city=None,
+                area=None, people=None, preferences=[], needs_destination=False)))],
+            usage=SimpleNamespace(prompt_tokens=12, completion_tokens=7, total_tokens=19))
+
+    adapter = OpenAIInterpreter(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(parse=parse))))
+    result = adapter.extract("Tìm phòng 3,5 triệu, số 0901234567, email son@example.com")
+    assert result.intent == "find_room"
+    assert captured["response_format"] is Extraction
+    assert captured["max_completion_tokens"] == 600
+    text = captured["messages"][1]["content"]
+    assert "3,5" not in text and "0901234567" not in text and "son@example.com" not in text
+    assert adapter.last_usage == {"logical_calls": 1, "tokens": 19, "model": adapter.model,
+                                  "input_tokens": 12, "output_tokens": 7}
+
+
+def test_chat_completions_unparsed_reply_is_unavailable(monkeypatch):
+    monkeypatch.setenv("HOMEMATCH_LLM_API", "chat_completions")
+
+    def parse(**kwargs):
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(parsed=None))], usage=None)
+
+    adapter = OpenAIInterpreter(client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(parse=parse))))
+    with pytest.raises(DomainError) as error:
+        adapter.extract("Tìm phòng")
+    assert error.value.code == "ai_unavailable"
+
+
+def test_unknown_llm_api_value_is_rejected(monkeypatch):
+    monkeypatch.setenv("HOMEMATCH_LLM_API", "graphql")
+    with pytest.raises(ValueError):
+        OpenAIInterpreter(client=SimpleNamespace())
+
+
 def test_api_authorization_and_hitl_end_to_end(tmp_path, profile):
     app = create_app(lambda: HomeMatchService(tmp_path / "api.sqlite"))
     renter_headers = {"Authorization": "Bearer demo-renter-a"}

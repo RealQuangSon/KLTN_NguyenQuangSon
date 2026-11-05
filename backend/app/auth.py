@@ -12,7 +12,8 @@ from datetime import datetime, timezone
 
 from .capabilities import CONSENT_TYPES
 from .models import Actor, DomainError
-from .organizations import ensure_bootstrap, record_audit, utc_now
+from .notifications import notify
+from .organizations import DEFAULT_ORGANIZATION_ID, ensure_bootstrap, ensure_membership, record_audit, utc_now
 
 logger = logging.getLogger("homematch.api")
 
@@ -73,6 +74,31 @@ def _account_profile(repo, user_id: str) -> dict | None:
     return dict(row) if row else None
 
 
+def normalize_phone(value: str) -> str:
+    """Vietnamese phone in national form ("0" + 9 digits); "+84"/"84" and
+    spaces, dots, dashes are accepted. Anything else is rejected."""
+    digits = re.sub(r"[\s.\-()]", "", value)
+    if digits.startswith("+84"):
+        digits = "0" + digits[3:]
+    elif digits.startswith("84") and len(digits) == 11:
+        digits = "0" + digits[2:]
+    if not re.fullmatch(r"0\d{9}", digits):
+        raise DomainError("invalid_phone", "Số điện thoại cần 10 chữ số, bắt đầu bằng 0 hoặc +84.", 422)
+    return digits
+
+
+def landlord_phone(repo, user_id: str) -> str | None:
+    row = repo.db.execute("SELECT contact_phone FROM hm_account_profiles WHERE user_id=?",
+                          (user_id,)).fetchone()
+    return row["contact_phone"] if row else None
+
+
+def _user_role(repo, user_id: str) -> str:
+    """Actual account role for audit records; audit never hard-codes 'renter'."""
+    row = repo.db.execute("SELECT role FROM hm_users WHERE id=?", (user_id,)).fetchone()
+    return row["role"] if row else "renter"
+
+
 def _hash_token(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
@@ -117,8 +143,15 @@ def _consume_token(repo, user_id: str, raw_token: str, purpose: str) -> None:
 
 
 def register_account(repo, username: str, password: str, email: str,
-                     display_name: str | None = None, delivery: DevDeliveryStub | None = None) -> dict:
-    """Self-registration always creates an unverified renter account."""
+                     display_name: str | None = None, delivery: DevDeliveryStub | None = None,
+                     account_type: str = "renter") -> dict:
+    """Self-registration creates an unverified renter, or an unverified landlord
+    (account_type="owner") that stays landlord_status='pending' until an admin
+    approves the account. Staff roles are never self-serviceable."""
+    if account_type not in ("renter", "owner"):
+        raise DomainError("invalid_account_type",
+                          "Loại tài khoản chỉ có thể là người thuê hoặc chủ nhà.", 422)
+    role = "owner" if account_type == "owner" else "renter"
     _validate_registration(username, password, email)
     with repo.db:
         if repo.db.execute("SELECT id FROM hm_users WHERE id=?", (username,)).fetchone():
@@ -126,14 +159,14 @@ def register_account(repo, username: str, password: str, email: str,
         if repo.db.execute("SELECT user_id FROM hm_account_profiles WHERE email=?",
                            (email,)).fetchone():
             raise DomainError("email_in_use", "Địa chỉ email đã được dùng cho tài khoản khác.", 409)
-        repo.db.execute("INSERT INTO hm_users(id,role,password_hash) VALUES(?,'renter',?)",
-                        (username, password_hash(password)))
+        repo.db.execute("INSERT INTO hm_users(id,role,password_hash) VALUES(?,?,?)",
+                        (username, role, password_hash(password)))
         now = utc_now()
         repo.db.execute(
             "INSERT INTO hm_account_profiles(user_id,email,display_name,status,email_verified,"
-            "consents_json,created_at,updated_at) VALUES(?,?,?,'unverified',0,'{}',?,?)",
-            (username, email, display_name, now, now))
-        actor = Actor(id=username, role="renter")
+            "consents_json,landlord_status,created_at,updated_at) VALUES(?,?,?,'unverified',0,'{}',?,?,?)",
+            (username, email, display_name, "pending" if role == "owner" else None, now, now))
+        actor = Actor(id=username, role=role)
         record_audit(repo, actor, "account.registered", "account", username)
         token = _issue_verification_token(repo, username, "email_verification",
                                           VERIFICATION_TTL_SECONDS)
@@ -151,7 +184,8 @@ def verify_account(repo, username: str, token: str) -> dict:
         _consume_token(repo, username, token, "email_verification")
         repo.db.execute("UPDATE hm_account_profiles SET status='active',email_verified=1,updated_at=? "
                         "WHERE user_id=?", (utc_now(), username))
-        record_audit(repo, Actor(id=username, role="renter"), "account.verified", "account", username)
+        record_audit(repo, Actor(id=username, role=_user_role(repo, username)),
+                     "account.verified", "account", username)
     return {"status": "verified"}
 
 
@@ -185,8 +219,8 @@ def confirm_password_reset(repo, username: str, token: str, new_password: str,
         repo.db.execute("UPDATE hm_account_profiles SET status='active',email_verified=1,updated_at=? "
                         "WHERE user_id=?", (utc_now(), username))
         repo.db.execute("UPDATE hm_tokens SET revoked=1 WHERE user_id=?", (username,))
-        record_audit(repo, Actor(id=username, role="renter"), "account.password_reset",
-                     "account", username)
+        record_audit(repo, Actor(id=username, role=_user_role(repo, username)),
+                     "account.password_reset", "account", username)
     return {"status": "password_reset"}
 
 
@@ -209,13 +243,15 @@ def account_profile(repo, user_id: str) -> dict:
             "email_verified": (bool(profile["email_verified"]) if profile["email"] else None)
                               if profile else None,
             "status": profile["status"] if profile else "active",
+            "contact_phone": profile.get("contact_phone") if profile else None,
             "consents": consents,
             "organizations": [dict(row) for row in memberships]}
 
 
 def update_account_profile(repo, user_id: str, updates: dict,
                            delivery: DevDeliveryStub | None = None) -> dict:
-    """Patch display_name/email/consents. Role and organization are not patchable."""
+    """Patch display_name/email/consents (and contact_phone for landlords).
+    Role and organization are not patchable."""
     unknown = set(updates.get("consents", {})) - set(CONSENT_TYPES)
     if unknown:
         raise DomainError("invalid_consent", "Tùy chọn lưu trữ không được hỗ trợ.", 422)
@@ -224,6 +260,12 @@ def update_account_profile(repo, user_id: str, updates: dict,
     user = repo.db.execute("SELECT id,role FROM hm_users WHERE id=?", (user_id,)).fetchone()
     if user is None:
         raise DomainError("not_found", "Không tìm thấy tài khoản.", 404)
+    phone_update = "contact_phone" in updates
+    if phone_update and user["role"] != "owner":
+        raise DomainError("invalid_request", "Chỉ chủ nhà mới khai báo số điện thoại liên hệ.", 422)
+    # An empty value (or null) clears the phone.
+    phone = normalize_phone(updates["contact_phone"]) if phone_update and (updates["contact_phone"] or "").strip() \
+        else None
     new_token = None
     with repo.db:
         current = _account_profile(repo, user_id)
@@ -254,6 +296,9 @@ def update_account_profile(repo, user_id: str, updates: dict,
                 "consents_json=?,updated_at=? WHERE user_id=?",
                 (email, display_name, status, email_verified,
                  json.dumps(merged, ensure_ascii=False), now, user_id))
+        if phone_update:
+            repo.db.execute("UPDATE hm_account_profiles SET contact_phone=? WHERE user_id=?",
+                            (phone, user_id))
         if needs_verification:
             new_token = _issue_verification_token(repo, user_id, "email_verification",
                                                   VERIFICATION_TTL_SECONDS)
@@ -263,6 +308,74 @@ def update_account_profile(repo, user_id: str, updates: dict,
     if new_token and delivery is not None:
         delivery.deliver("email_verification", user_id, new_token)
     return account_profile(repo, user_id)
+
+
+def landlord_status(repo, user_id: str, role: str) -> str | None:
+    """Review state of a landlord account: None for renters, else
+    'pending'/'approved'/'rejected'. Seed owners have no profile row (or a NULL
+    value from a later profile patch) and always count as approved, because
+    they were provisioned by the platform, not self-registered."""
+    if role != "owner":
+        return None
+    row = repo.db.execute("SELECT landlord_status FROM hm_account_profiles WHERE user_id=?",
+                          (user_id,)).fetchone()
+    if row is None or row["landlord_status"] is None:
+        return "approved"
+    return row["landlord_status"]
+
+
+def landlord_applications(repo, status: str | None = "pending") -> list[dict]:
+    """Admin listing of self-registered landlord applications.
+
+    Seed owners carry no landlord_status value, so they never appear here.
+    """
+    query = ("SELECT p.user_id, p.email, p.display_name, p.landlord_status, p.status AS account_status, "
+             "p.email_verified, p.created_at FROM hm_account_profiles p "
+             "JOIN hm_users u ON u.id=p.user_id "
+             "WHERE u.role='owner' AND p.landlord_status IS NOT NULL")
+    params: list[str] = []
+    if status is not None:
+        query += " AND p.landlord_status=?"
+        params.append(status)
+    query += " ORDER BY p.created_at,p.user_id"
+    return [{"user_id": row["user_id"], "email": row["email"], "display_name": row["display_name"],
+             "landlord_status": row["landlord_status"], "created_at": row["created_at"],
+             "verified": row["account_status"] == "active" and bool(row["email_verified"])}
+            for row in repo.db.execute(query, tuple(params)).fetchall()]
+
+
+def review_landlord(repo, actor: Actor, user_id: str, decision: str,
+                    reason: str | None = None) -> dict:
+    """Admin decision on a landlord application: 'approved' or 'rejected'.
+
+    Approval also grants the default-organization owner membership, writes an
+    audit entry and notifies the landlord; notification dedup keys make a
+    repeated decision side-effect-free for the inbox.
+    """
+    if decision not in ("approved", "rejected"):
+        raise DomainError("invalid_decision", "Quyết định chỉ có thể là duyệt hoặc từ chối.", 422)
+    if decision == "rejected":
+        if not reason or not 1 <= len(reason.strip()) <= 500:
+            raise DomainError("invalid_request", "Cần ghi lý do từ chối (1–500 ký tự).", 422)
+    user = repo.db.execute("SELECT id,role FROM hm_users WHERE id=?", (user_id,)).fetchone()
+    profile = _account_profile(repo, user_id)
+    if user is None or user["role"] != "owner" or profile is None or not profile["landlord_status"]:
+        raise DomainError("not_found", "Không tìm thấy hồ sơ chủ nhà.", 404)
+    with repo.db:
+        repo.db.execute("UPDATE hm_account_profiles SET landlord_status=?,updated_at=? WHERE user_id=?",
+                        (decision, utc_now(), user_id))
+        if decision == "approved":
+            ensure_membership(repo, DEFAULT_ORGANIZATION_ID, user_id, "owner")
+        # Audit stores the decision and reason length, never the reason text (no PII in the audit log).
+        record_audit(repo, actor, f"account.landlord_{decision}", "account", user_id,
+                     detail={"landlord_status": decision, "reason_length": len(reason) if reason else 0})
+    notify(repo, user_id, "landlord_review",
+                         "Hồ sơ chủ nhà đã được duyệt" if decision == "approved"
+                         else "Hồ sơ chủ nhà chưa được duyệt",
+                         "Tài khoản của bạn đã được quản trị viên duyệt; bạn có thể công khai tin đăng."
+                         if decision == "approved" else f"Hồ sơ của bạn chưa được duyệt. Lý do: {reason}",
+                         dedup_key=f"landlord:{user_id}:{decision}", link="/chu-nha")
+    return {"user_id": user_id, "landlord_status": decision}
 
 
 def list_sessions(repo, user_id: str) -> list[dict]:
@@ -284,7 +397,8 @@ def revoke_session(repo, user_id: str, token_id: str) -> dict:
     with repo.db:
         repo.db.execute("UPDATE hm_tokens SET revoked=1 WHERE token_hash=?",
                         (match["token_hash"],))
-        record_audit(repo, Actor(id=user_id, role="renter"), "session.revoked", "session", token_id)
+        record_audit(repo, Actor(id=user_id, role=_user_role(repo, user_id)),
+                     "session.revoked", "session", token_id)
     return {"status": "revoked"}
 
 

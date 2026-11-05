@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 
 from .common import DEFAULT_DATA, ROOT, EvaluationError, validate_dataset
+from .intents import intents_report
+from .invoices import invoice_oracle_report
+from .labeling import label_report, label_sheet, survey_report
 from .measurement import measurement_report
 from .pipeline import evaluate_rankings, extraction_report, freeze_inputs, oracle_report, ranking_run
 from .reporting import development_report
@@ -44,6 +47,11 @@ def main() -> int:
     invariants = sub.add_parser("invariants")
     invariants.add_argument("--split", choices=("dev", "test"), default="dev")
     invariants.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/invariants.json")
+    intents = sub.add_parser("intents")
+    intents.add_argument("--split", choices=("dev", "test"), default="dev")
+    intents.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/intents.json")
+    invoices = sub.add_parser("invoices")
+    invoices.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/invoices.json")
     grounding = sub.add_parser("grounding")
     grounding.add_argument("--run-dir", type=Path, default=ROOT / "eval/runs/development")
     grounding.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/grounding.json")
@@ -52,6 +60,17 @@ def main() -> int:
     measure.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/measurements.json")
     report = sub.add_parser("report")
     report.add_argument("--run-dir", type=Path, default=ROOT / "eval/runs/development")
+    sheet = sub.add_parser("label-sheet")
+    sheet.add_argument("--split", choices=("dev", "test"), default="test")
+    sheet.add_argument("--method", choices=("B1", "P"), required=True)
+    sheet.add_argument("--run-dir", type=Path, default=ROOT / "eval/runs/development")
+    sheet.add_argument("--labels-dir", type=Path, default=ROOT / "eval/labels")
+    labeling = sub.add_parser("label-report")
+    labeling.add_argument("--labels-dir", type=Path, default=ROOT / "eval/labels")
+    labeling.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/label_report.json")
+    survey = sub.add_parser("survey-report")
+    survey.add_argument("--csv", type=Path, required=True)
+    survey.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/survey_report.json")
     args = parser.parse_args()
     try:
         if args.command == "validate":
@@ -85,12 +104,22 @@ def main() -> int:
                                         args.human_declared, args.allow_development)
         elif args.command == "invariants":
             report = invariants_report(args.data_dir, args.split, args.output)
+        elif args.command == "intents":
+            report = intents_report(args.data_dir, args.split, args.output)
+        elif args.command == "invoices":
+            report = invoice_oracle_report(args.data_dir, args.output)
         elif args.command == "grounding":
             report = grounding_report(args.data_dir, args.run_dir, args.output)
         elif args.command == "measure":
             report = measurement_report(args.run_dir, args.output)
         elif args.command == "report":
             report = development_report(args.data_dir, args.run_dir)
+        elif args.command == "label-sheet":
+            report = label_sheet(args.data_dir, args.split, args.method, args.run_dir, args.labels_dir)
+        elif args.command == "label-report":
+            report = label_report(args.labels_dir, args.output)
+        elif args.command == "survey-report":
+            report = survey_report(args.csv, args.output)
         else:
             report = freeze_inputs(args.data_dir, args.config, args.ack_g4)
     except (EvaluationError, FileNotFoundError, json.JSONDecodeError) as exc:

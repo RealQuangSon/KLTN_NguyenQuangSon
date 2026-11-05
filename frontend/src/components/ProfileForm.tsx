@@ -181,6 +181,9 @@ export function ProfileForm({
       : null,
     must_amenities: values.must,
     preferences: values.preferences,
+    // Đồng ý dữ liệu ước tính đến từ chat (nháp); form không có ô riêng nên
+    // phải mang theo, nếu không xác nhận lại sẽ giữ hết phòng thiếu sức chứa.
+    accept_estimated_data: draft.accept_estimated_data ?? false,
     soft_description: values.soft.trim() || null,
     scenario: {
       people: Number(values.people),

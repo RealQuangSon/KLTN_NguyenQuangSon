@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 HomeMatch is a thesis project (KLTN): **"HomeMatch AI Agent"**, a rental platform (rooms, studios, apartments in **TP.HCM and Hà Nội**) with an AI assistant that recommends units by the renter's needs and financial capacity. **Each landlord (role `owner`, `Room.landlord_id`) approves their own rooms** in a shortlist before the renter (`renter`) sees them; `admin` runs the Admin Console. The old `manager` (sale) role still logs in but has no business permissions. The original topic was about buying apartments; the project narrowed it to rentals (decisions D-01..D-08 in `docs/ke-hoach-kltn-homematch.md`, confirmed by the user 05/10/2026). Most docs are in Vietnamese.
 
-The code (schema v9) implements the AI assistant plus five platform modules added 05/10 (E1–E6):
+The code (schema v14) implements the AI assistant plus five platform modules added 05/10 (E1–E6), extended 08/10 with landlord self-signup + admin approval (v10), support-ticket lifecycle (v11), listing/maintenance photos (v12), landlord promotions (v13), landlord contact phone (v14), the chat `simulate_finance` intent and VND cost metrics on `/admin/metrics`. Listing payloads (LF, 31/10/2026) carry the masked post body, posting time, poster kind, ward (old/new), street, move-in date, payment cycle, minimum lease and 19 amenity keys (`AMENITY_KEYS` in `models.py`); every new field is `null` when the post does not say:
 - **Tenant portal:** filter search, quick view, Leaflet/OSM map, AI comparison advice, live chat with handover context, offline/online (Jitsi) viewings, handbook.
 - **Automation:** in-app notifications with dedup keys; background jobs (viewing/payment/renewal reminders, lead re-engagement, chat retention); room status/price change sync.
 - **Admin Console:** PII-masked AI transcripts (90 days, audited views), handover metrics, users, listing moderation, jobs.
 - **Landlord PMS & CRM:** dashboard, room CRUD, versioned click-accept leases, meter readings, immutable invoices, payments/claims/receipts, maintenance, leads, analytics.
 - **Landlord co-pilot:** channel-specific marketing posts, share links, public listing page `/tin/:id`, comparable-based price advice, rule-routed assistant with Web Speech voice input.
 
-External integrations are substituted (D-07): no payment gateway, real email/SMS, social auto-posting, or legal e-signature (D-08).
+External integrations are substituted (D-07): no payment gateway, real email/SMS, social auto-posting, or legal e-signature (D-08). The project runs on localhost only (D-09, 28/10/2026): Railway deployment and the Docker build are out of scope, and their configuration files were removed from the repository on 28/10/2026.
 
 Still missing:
-- Railway deployment and live GPT-4o/pgvector runs (need the user's accounts and keys);
-- browser E2E demo; PostgreSQL run of schema v9;
-- photo/media upload, landlord promotions, the chat `simulate_finance` intent, VND cost metrics;
-- research evaluation (labels, user study).
+- live GPT-4o/pgvector runs on the local machine (`infra/live_run.sh`; needs the user's OpenAI key and budget);
+- browser E2E demo on localhost (script in `docs/kich-ban-demo.md`, not yet recorded);
+- social auto-posting (FR-47 is share-only);
+- research evaluation: labelling and survey tools exist (`eval label-sheet|label-report|survey-report`), the labels and answers do not.
 
 Where to look in `docs/`:
 - `README.md`: the doc index;
@@ -57,6 +57,7 @@ Run locally. The backend does **not** load `.env`, so export the variables yours
 export HOMEMATCH_DB_PATH=.local/homematch-v2.sqlite HOMEMATCH_CATALOG_PATH=data/catalog/rooms.json \
        HOMEMATCH_AUTH_MODE=seed HOMEMATCH_LLM_MODE=demo HOMEMATCH_MATCHING_METHOD=B1 HOMEMATCH_EMBEDDING_MODE=disabled
 .venv/bin/python -m backend.manage setup && .venv/bin/python -m backend.manage seed-users
+.venv/bin/python -m backend.manage seed-demo   # optional [DEMO]-tagged PMS data for owner-a/renter-a; idempotent, refuses HOMEMATCH_PUBLIC=true
 .venv/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --workers 1 --no-access-log --log-config backend/logging.json
 npm --prefix frontend run dev           # http://127.0.0.1:5173; Vite proxies /api → :8000 (prefix stripped)
 ```
@@ -64,6 +65,8 @@ npm --prefix frontend run dev           # http://127.0.0.1:5173; Vite proxies /a
 Seed logins: `renter-a`, `renter-b`; landlords `owner-a`, `owner-b` (TP.HCM), `owner-c`, `owner-d` (Hà Nội); `admin-a`. Each password is `local-<username>-password`. The catalog loads from JSON only into an empty DB, so use a fresh DB path after regenerating data.
 
 Background jobs run inside the API process every `HOMEMATCH_JOBS_INTERVAL_SECONDS` (default 300; tests set 0). Run them once with `.venv/bin/python -m backend.manage jobs`.
+
+**Day-to-day app DB is Neon (decision 31/10/2026).** `bash infra/run-neon.sh [port]` sources `.env` then `.local/neon.env` (`HOMEMATCH_DATABASE_URL` = Neon database `homematch`, `HOMEMATCH_CRAWL_DATABASE_URL` = `neondb` with the Chợ Tốt snapshots; project `kltn`, id `snowy-shadow-49494187`, aws-ap-southeast-1), restores the catalog snapshot from Neon if missing, runs `setup` and starts uvicorn. Use the direct (non-`-pooler`) URL. Neon suspends idle compute after 5 minutes, so `Database` reconnects a dead session outside a transaction and checkpoints use a checked `ConnectionPool`. Round trips are ~50–400 ms, so avoid per-row queries on list endpoints. With the Chợ Tốt catalog most rooms lack fees, so confirmations often end `needs_verification`. Never commit `.local/neon.env`.
 
 PostgreSQL is optional. `bash infra/local-pg.sh start` starts a cluster in `.local/` on 127.0.0.1:55432. PG tests are skipped unless `HOMEMATCH_TEST_DATABASE_URL` is set, for example `postgresql://homematch@127.0.0.1:55432/homematch_test`. When it is set, the `storage` fixture parametrizes the tests over both SQLite and PG, with one throwaway schema per test.
 
@@ -73,13 +76,13 @@ Eval CLI: `.venv/bin/python -m eval <validate|oracle|extraction|ranking --split 
 
 **Request path:** React SPA (`frontend/src`) → FastAPI (`backend/app/main.py`, `create_app`) → `HomeMatchService` (`backend/app/service.py`) → repository/`Database` → SQLite or PostgreSQL.
 
-- `locations.py` canonicalizes city/area names and aliases ("Sài Gòn", "Q7", "Bình Thạnh", "Cầu Giấy"). The demo interpreter uses it to extract them, and the hard filter uses it to compare them. City is never defaulted.
+- `locations.py` canonicalizes city/area names and aliases ("Sài Gòn", "Q7", "Bình Thạnh", "Cầu Giấy"). The demo interpreter uses it to extract them, and the hard filter uses it to compare them. City is never defaulted: when the renter names a district, the interview node pins its single city via `locations.city_for_area` (deterministic alias resolution, marked `inferred`); `_questions` only asks what blocks the run (meaning of a mentioned amount, occupants, unpinned city, destination details) — room type stays a form field.
 - `main.py` resolves the actor from a server-side bearer token (`auth.py`: scrypt password hashes, random tokens stored as SHA-256 hashes, revocable; no JWT). Response DTOs live in `schemas.py`, domain models in `models.py`.
 - `database.py` is a thin SQL boundary for both backends. Write SQL with `?` placeholders; they are rewritten to `%s` for psycopg. `migrations.py` keeps a migration ledger (`hm_schema_migrations`). The `hm_*` tables are listed in `docs/kien-truc-trien-khai.md`.
 - Storage is selected by `HOMEMATCH_DATABASE_URL` (PG) if set, otherwise `HOMEMATCH_DB_PATH` (SQLite). LangGraph checkpoints go to the same PG database, or to a sibling `*.checkpoints.sqlite` file.
 
 **Two LangGraph graphs, both in `service.py`:**
-1. **Chat graph** (`ChatState`): intent → extract → draft-profile update, or finance/support/handbook answers. Extraction is done by `interpreter.py`: a rule-based demo mode by default, or GPT structured output when `HOMEMATCH_LLM_MODE=openai`. Money mentioned in chat is only a hint; the profile becomes authoritative only when the renter confirms it with `expected_draft_revision`.
+1. **Chat graph** (`ChatState`): intent → extract → draft-profile update, or finance/support/handbook answers. Extraction is done by `interpreter.py`: a rule-based demo mode by default, or GPT structured output when `HOMEMATCH_LLM_MODE=openai` — through the OpenAI Responses API, or through any `/chat/completions`-only gateway such as OpenRouter when `HOMEMATCH_LLM_API=chat_completions` (gateways like OpenRouter serve no embeddings, so keep `HOMEMATCH_EMBEDDING_MODE=disabled` and B1 matching there). Money mentioned in chat is only a hint; the profile becomes authoritative only when the renter confirms it with `expected_draft_revision`.
 2. **Recommendation graph** (`RecommendationState`): rank → save `pending_review` draft → `interrupt()` → **each landlord reviews their own rooms** (`hm_run_reviews`; subset/order within their own slots, version and idempotency key). After the first approval the run is `partially_published` and `repository.visible_items` shows approved rooms in agent order. When every landlord has decided, the final `decision` event is written and the graph resumes with the ledger `event_id` → finalize. Nodes before the interrupt must have **no write side effects**, because LangGraph reruns the node on resume.
 
 LangGraph only orchestrates. Finance (`costs.py`), hard filters and ranking (`catalog.py`: B1 lexical/rule, optional P = B1 + pgvector semantic via `semantic.py`), permissions and publication are deterministic code, not model decisions. If P is unavailable the app falls back to B1 and records which algorithm it used. The eval never counts that fallback as P.
@@ -88,6 +91,7 @@ LangGraph only orchestrates. Finance (`costs.py`), hard filters and ranking (`ca
 - Renters see only landlord-approved recommendations for their *current* profile version and catalog version. A pending run shows `results=[]`. A new profile confirmation or a catalog change invalidates old results, compares and viewings.
 - Unknown costs stay `null`, never 0. A known subtotal is not a full total. Move-in cost = deposit + prepaid rent + one-time fees + moving + furnishing; it does not add the first month again. Money is `Decimal` with VND rounding, and only `costs.py` handles it.
 - Hard constraints are never relaxed automatically. The system only suggests soft relaxations, which the renter must confirm.
+- The AI ranking never reads `posted_at` or `poster_kind` (F2); `eval invariants` mutates both and checks the ranking does not move. "Newest" sorting exists only in filter search (`GET /listings`), chosen by the user. The public projection may show `description` only in its PII-masked form, which the crawler applies before storing.
 - Record-level permissions: landlords only see/edit their own rooms, review slots, viewings, conversations, leases, invoices, maintenance and leads; renters only their own. Role capabilities live in `agent_capability.py` and `capabilities.py`.
 - Issued invoices are immutable; payments are append-only and cannot exceed the balance; a payment claim is not a payment until the landlord confirms it. Editing a sent lease bumps its version and requires re-acceptance.
 - AI chat turns are stored PII-masked (`conversations.mask_pii`) and purged after `HOMEMATCH_CHAT_RETENTION_DAYS`; admin views are audited.

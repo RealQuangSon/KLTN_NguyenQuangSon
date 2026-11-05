@@ -86,6 +86,17 @@ def find_area(text: str, city: str | None = None) -> str | None:
     return None
 
 
+def city_for_area(area: str | None) -> str | None:
+    """The single city a known area belongs to ("Bình Thạnh"/"Quận Bình Thạnh" → TP.HCM).
+    None for anything unrecognised, so the city is never guessed from vague text."""
+    if area is None:
+        return None
+    value = fold(area)
+    matches = {area_city for area_city, area_name, alias, _ in _AREA_PATTERNS
+               if value == fold(area_name) or value == alias}
+    return matches.pop() if len(matches) == 1 else None
+
+
 def canonical_city(value: str | None) -> str | None:
     if value is None:
         return None

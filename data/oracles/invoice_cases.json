@@ -1,0 +1,1173 @@
+{
+  "cases": [
+    {
+      "calculation_note": "2500000+150*3000+2*80000+100000+1*100000+50000=3360000",
+      "case_id": "INV-01-reference",
+      "description": "Ví dụ có sẵn trong test_pms.py: 150 kWh, 2 người, 1 xe.",
+      "expected_error": null,
+      "expected_total_vnd": 3360000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 2,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 450000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "150",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 160000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "2",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-01/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-01/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-01/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-01/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-01/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "1350",
+        "electricity_start": "1200",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "100.5*3000.5=301550.25→HALF_UP 301550; 2500000+301550+80000+100000+100000+50000=3131550",
+      "case_id": "INV-02-electricity-rounding",
+      "description": "Điện số lẻ cần làm tròn HALF_UP.",
+      "expected_error": null,
+      "expected_total_vnd": 3131550,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 301550,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "100.5",
+          "unit_price": "3000.5"
+        },
+        {
+          "amount_vnd": 80000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "1",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": "3000.5",
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-02/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-02/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-02/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-02/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-02/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "200.5",
+        "electricity_start": "100",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "120*3000=360000; 52.5-45.5=7.0 m3*20000=140000; 0 xe*100000=0; tổng 3150000",
+      "case_id": "INV-03-water-m3",
+      "description": "Nước theo m³ với chỉ số lẻ, xe bằng 0.",
+      "expected_error": null,
+      "expected_total_vnd": 3150000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 2,
+        "rent_vnd": 2500000,
+        "vehicles": 0
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 360000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "120",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 140000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "7.0",
+          "unit_price": "20000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "0",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-03/electricity"
+          },
+          {
+            "amount_vnd": 20000,
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-03/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-03/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-03/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-03/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "632",
+        "electricity_start": "512",
+        "period": "2026-10",
+        "water_end": "52.5",
+        "water_start": "45.5"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "200*3000=600000; 3*80000=240000; tổng 3590000",
+      "case_id": "INV-04-water-person",
+      "description": "Nước theo người với 3 người ở.",
+      "expected_error": null,
+      "expected_total_vnd": 3590000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 3,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 600000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "200",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 240000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "3",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-04/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-04/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-04/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-04/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-04/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "200",
+        "electricity_start": "0",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "50*3000=150000; 3*100000=300000; tổng 3180000",
+      "case_id": "INV-05-many-vehicles",
+      "description": "Nhiều xe (3 xe gửi).",
+      "expected_error": null,
+      "expected_total_vnd": 3180000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 3
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 150000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "50",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 80000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "1",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 300000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "3",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-05/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-05/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-05/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-05/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-05/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "60",
+        "electricity_start": "10",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "Internet included→0; 2500000+300000+80000+100000+50000=3030000",
+      "case_id": "INV-06-included-internet",
+      "description": "Internet đã gồm trong tiền thuê, không cộng.",
+      "expected_error": null,
+      "expected_total_vnd": 3030000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 300000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "100",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 80000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "1",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Internet (đã gồm trong thuê)",
+          "name": "internet",
+          "quantity": "0",
+          "unit_price": "0"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-06/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-06/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-06/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-06/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-06/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "100",
+        "electricity_start": "0",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "480<500 → từ chối ghi chỉ số, không lập hóa đơn",
+      "case_id": "INV-07-reading-decreased",
+      "description": "Chỉ số điện cuối nhỏ hơn đầu.",
+      "expected_error": "reading_decreased",
+      "expected_total_vnd": null,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": null,
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-07/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-07/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-07/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-07/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-07/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "480",
+        "electricity_start": "500",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "Đơn giá nước null → từ chối lập hóa đơn, không bao giờ tính 0",
+      "case_id": "INV-08-missing-rate",
+      "description": "Thiếu đơn giá nước (amount null).",
+      "expected_error": "invoice_incomplete",
+      "expected_total_vnd": null,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": null,
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-08/electricity"
+          },
+          {
+            "amount_vnd": null,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-08/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-08/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-08/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-08/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "50",
+        "electricity_start": "0",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "0*3000=0; 2500000+80000+100000+100000+50000=2830000",
+      "case_id": "INV-09-zero-kwh",
+      "description": "Điện 0 kWh (chỉ số không đổi).",
+      "expected_error": null,
+      "expected_total_vnd": 2830000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "0",
+          "unit_price": "3000"
+        },
+        {
+          "amount_vnd": 80000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "1",
+          "unit_price": "80000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 100000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "1",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 50000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "50000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-09/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-09/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-09/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-09/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-09/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "700",
+        "electricity_start": "700",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "180*3500=630000; 2*100000=200000; 2*150000=300000; tổng 18630000",
+      "case_id": "INV-10-large-apartment",
+      "description": "Tiền thuê lớn: căn hộ 2 phòng ngủ.",
+      "expected_error": null,
+      "expected_total_vnd": 18630000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 2,
+        "rent_vnd": 16500000,
+        "vehicles": 2
+      },
+      "lines": [
+        {
+          "amount_vnd": 16500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "16500000"
+        },
+        {
+          "amount_vnd": 630000,
+          "label": "Điện",
+          "name": "electricity",
+          "quantity": "180",
+          "unit_price": "3500"
+        },
+        {
+          "amount_vnd": 200000,
+          "label": "Nước",
+          "name": "water",
+          "quantity": "2",
+          "unit_price": "100000"
+        },
+        {
+          "amount_vnd": 200000,
+          "label": "Internet",
+          "name": "internet",
+          "quantity": "1",
+          "unit_price": "200000"
+        },
+        {
+          "amount_vnd": 300000,
+          "label": "Gửi xe",
+          "name": "parking",
+          "quantity": "2",
+          "unit_price": "150000"
+        },
+        {
+          "amount_vnd": 800000,
+          "label": "Dịch vụ",
+          "name": "service",
+          "quantity": "1",
+          "unit_price": "800000"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 16500000,
+        "fees": [
+          {
+            "amount_vnd": 3500,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-10/electricity"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-10/water"
+          },
+          {
+            "amount_vnd": 200000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-10/internet"
+          },
+          {
+            "amount_vnd": 150000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-10/parking"
+          },
+          {
+            "amount_vnd": 800000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-10/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 16500000
+      },
+      "reading": {
+        "electricity_end": "1180",
+        "electricity_start": "1000",
+        "period": "2026-10"
+      },
+      "room_type": "apartment",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "Thiếu chỉ số nước → từ chối lập hóa đơn, không đoán số nước",
+      "case_id": "INV-11-water-reading-missing",
+      "description": "Nước theo m³ nhưng thiếu chỉ số nước.",
+      "expected_error": "invoice_incomplete",
+      "expected_total_vnd": null,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 1,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": null,
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": false,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-11/electricity"
+          },
+          {
+            "amount_vnd": 20000,
+            "included_in_rent": false,
+            "mode": "m3",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-11/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-11/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": false,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-11/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": false,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-11/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": {
+        "electricity_end": "100",
+        "electricity_start": "0",
+        "period": "2026-10"
+      },
+      "room_type": "room",
+      "synthetic": true
+    },
+    {
+      "calculation_note": "Mọi phí included→0; tổng bằng tiền thuê 2500000",
+      "case_id": "INV-12-all-included",
+      "description": "Mọi phí đã gồm trong tiền thuê, không cần chỉ số.",
+      "expected_error": null,
+      "expected_total_vnd": 2500000,
+      "human_cross_check_status": "pending",
+      "lease": {
+        "occupants": 2,
+        "rent_vnd": 2500000,
+        "vehicles": 1
+      },
+      "lines": [
+        {
+          "amount_vnd": 2500000,
+          "label": "Tiền thuê",
+          "name": "rent",
+          "quantity": "1",
+          "unit_price": "2500000"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Điện (đã gồm trong thuê)",
+          "name": "electricity",
+          "quantity": "0",
+          "unit_price": "0"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Nước (đã gồm trong thuê)",
+          "name": "water",
+          "quantity": "0",
+          "unit_price": "0"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Internet (đã gồm trong thuê)",
+          "name": "internet",
+          "quantity": "0",
+          "unit_price": "0"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Gửi xe (đã gồm trong thuê)",
+          "name": "parking",
+          "quantity": "0",
+          "unit_price": "0"
+        },
+        {
+          "amount_vnd": 0,
+          "label": "Dịch vụ (đã gồm trong thuê)",
+          "name": "service",
+          "quantity": "0",
+          "unit_price": "0"
+        }
+      ],
+      "origin": "authored_independent_arithmetic_constants",
+      "quote": {
+        "advance_months": 1,
+        "deposit_vnd": 2500000,
+        "fees": [
+          {
+            "amount_vnd": 3000,
+            "included_in_rent": true,
+            "mode": "kwh",
+            "name": "electricity",
+            "source": "synthetic://oracle-invoices/INV-12/electricity"
+          },
+          {
+            "amount_vnd": 80000,
+            "included_in_rent": true,
+            "mode": "person",
+            "name": "water",
+            "source": "synthetic://oracle-invoices/INV-12/water"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "internet",
+            "source": "synthetic://oracle-invoices/INV-12/internet"
+          },
+          {
+            "amount_vnd": 100000,
+            "included_in_rent": true,
+            "mode": "vehicle",
+            "name": "parking",
+            "source": "synthetic://oracle-invoices/INV-12/parking"
+          },
+          {
+            "amount_vnd": 50000,
+            "included_in_rent": true,
+            "mode": "fixed",
+            "name": "service",
+            "source": "synthetic://oracle-invoices/INV-12/service"
+          }
+        ],
+        "one_time_vnd": 0,
+        "rent_vnd": 2500000
+      },
+      "reading": null,
+      "room_type": "room",
+      "synthetic": true
+    }
+  ],
+  "expected_shape": "mỗi ca có expected_total_vnd hoặc expected_error; lines theo thứ tự dòng hóa đơn (rent trước, phí theo thứ tự quote); label chỉ để đọc, suite so tên khoản, số lượng, đơn giá và thành tiền.",
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "purpose": "Hand-computed PMS invoice oracle; inputs mirror the lease quote snapshot, meter readings, occupants and vehicles that pms.invoice_lines consumes.",
+  "rounding": "mỗi dòng nhân số lượng × đơn giá rồi làm tròn HALF_UP sang VND nguyên; phí included_in_rent ra dòng 0; đơn giá/chỉ số thiếu thì từ chối lập, không tính 0."
+}

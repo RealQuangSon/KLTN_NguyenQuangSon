@@ -18,17 +18,26 @@ export class Api {
     path: string,
     options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
   ): Promise<T> {
+    // FE-05: multipart upload (FormData) không đặt Content-Type thủ công —
+    // trình duyệt tự thêm boundary; các lời gọi khác vẫn là JSON.
+    const isForm =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
     let response: Response;
     try {
       response = await fetch(`${this.base}${path}`, {
         method: options.method || "GET",
         signal: options.signal,
         headers: {
-          "Content-Type": "application/json",
+          ...(isForm ? {} : { "Content-Type": "application/json" }),
           ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
         },
         ...(options.body !== undefined
-          ? { body: JSON.stringify(options.body) }
+          ? {
+              body:
+                isForm || typeof options.body === "string"
+                  ? (options.body as FormData | string)
+                  : JSON.stringify(options.body),
+            }
           : {}),
       });
     } catch (error) {
@@ -77,9 +86,44 @@ export class Api {
   delete<T>(path: string) {
     return this.request<T>(path, { method: "DELETE" });
   }
+  // FE-05: tải ảnh lên đúng hợp đồng multipart (README §7.5), field "file".
+  upload<T>(path: string, file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    return this.request<T>(path, { method: "POST", body: form });
+  }
+  // Ảnh sự cố không công khai: cần bearer token nên phải fetch thủ công rồi
+  // trả object URL; component gọi phải URL.revokeObjectURL khi unmount.
+  async blobUrl(path: string): Promise<string> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.base}${path}`, {
+        headers: this.token ? { Authorization: `Bearer ${this.token}` } : {},
+      });
+    } catch {
+      throw new ApiError(
+        0,
+        "network_error",
+        "Không kết nối được máy chủ. Kiểm tra kết nối rồi đọc lại trạng thái; yêu cầu chưa được tự gửi lại.",
+      );
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new ApiError(
+        response.status,
+        data?.error?.code || "media_failed",
+        data?.error?.message || `Không tải được ảnh (${response.status}).`,
+      );
+    }
+    return URL.createObjectURL(await response.blob());
+  }
 }
 // No automatic mutation retries. Keyed actions must retain the exact payload/key.
 export const mutationKey = () => crypto.randomUUID();
+// FE-05: url ảnh trả về từ máy chủ là "/media/{id}"; hiển thị cần tiền tố API
+// giống mọi lời gọi khác (VITE_API_BASE_URL, mặc định "/api").
+export const apiBase = () => import.meta.env.VITE_API_BASE_URL || "/api";
+export const mediaSrc = (url: string) => `${apiBase()}${url}`;
 // Namespace v1 mục tiêu (docs/api-san-pham-v1.md) chưa được khóa ở P0: backend
 // 0.4.0 phục vụ các endpoint tài khoản ở đường gốc (/auth/register, /me/...),
 // không có tiền tố /v1. Helper giữ lại cho lúc BE mount /v1; UI bắt buộc hiển thị
@@ -91,9 +135,13 @@ export interface RegisterPayload {
   password: string;
   email: string;
   display_name?: string;
+  // Hợp đồng đăng ký (docs/coding-plan/README.md §7.1): mặc định "renter";
+  // "owner" tạo hồ sơ chủ nhà chờ quản trị viên duyệt.
+  account_type?: "renter" | "owner";
 }
-// Contract 0.4.0 (docs/api-contract.md): đăng ký luôn tạo tài khoản renter
-// chưa xác minh; mã xác minh chỉ xuất hiện trong log dev-stub của máy chủ.
+// Đăng ký tạo tài khoản chưa xác minh (pending_verification); mã xác minh chỉ
+// xuất hiện trong log dev-stub của máy chủ. Hồ sơ chủ nhà bắt đầu ở trạng thái
+// landlord_status "pending" cho tới khi quản trị viên duyệt.
 export interface RegisterResult {
   status?: string;
   user?: { id: string; role: string };

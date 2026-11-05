@@ -6,10 +6,14 @@
 
 | Vai trò | Được làm | Không được làm |
 |---|---|---|
-| Người thuê | Chat, xác nhận hồ sơ, tìm bằng bộ lọc, xem phòng đã duyệt, so sánh, mô phỏng, chat với chủ nhà, đặt lịch, chấp thuận hợp đồng, báo chuyển tiền, báo hỏng, quản lý memory | Thấy nháp chưa duyệt; thấy dữ liệu của người khác |
-| Chủ nhà | Duyệt phòng của mình trong danh sách AI; quản lý tin, lịch xem, hộp thư, khách tiềm năng, hợp đồng, công tơ, hóa đơn, thu tiền, sửa chữa; dùng trợ lý AI | Thấy thu nhập hay tỷ lệ thu nhập của khách; thấy hay sửa phòng của chủ khác; đẩy phòng mình lên trước phòng chủ khác |
-| Quản trị viên | Xem hội thoại AI (có audit), số liệu chuyển giao, người dùng, ẩn/hiện tin, chạy job, khởi tạo lại bản gợi ý lỗi | Sửa hợp đồng hay hóa đơn thay các bên |
-| Agent | Hỏi, trích xuất, gọi tool trong danh sách cho phép, soạn lý do, trả lời cẩm nang | Xác nhận hồ sơ, duyệt, tính tiền bằng LLM, tự nới điều kiện |
+| Người thuê | Chat, xác nhận hồ sơ, tìm bằng bộ lọc, xem phòng đã duyệt, so sánh, mô phỏng, chat với chủ nhà, đặt lịch, chấp thuận hợp đồng, báo chuyển tiền, báo hỏng, quản lý memory, yêu cầu gặp nhân viên từ chat | Thấy nháp chưa duyệt; thấy dữ liệu của người khác |
+| Chủ nhà | Tự đăng ký (xác minh email, chờ duyệt); duyệt phòng của mình trong danh sách AI; quản lý tin, lịch xem, hộp thư, khách tiềm năng, hợp đồng, công tơ, hóa đơn, thu tiền, sửa chữa; dùng trợ lý AI | Công khai tin khi tài khoản chưa được duyệt; thấy thu nhập hay tỷ lệ thu nhập của khách; thấy hay sửa phòng của chủ khác; đẩy phòng mình lên trước phòng chủ khác |
+| Quản trị viên | Xem hội thoại AI (có audit), số liệu chuyển giao, người dùng, ẩn/hiện tin, chạy job, khởi tạo lại bản gợi ý lỗi, duyệt/từ chối hồ sơ chủ nhà tự đăng ký, xử lý ticket hỗ trợ | Sửa hợp đồng hay hóa đơn thay các bên |
+| Agent | Hỏi, trích xuất, gọi tool trong danh sách cho phép, soạn lý do, trả lời cẩm nang | Xác nhận hồ sơ, duyệt, tính tiền bằng LLM, tự nới điều kiện, tự duyệt hồ sơ chủ nhà |
+
+Luồng đăng ký chủ nhà (08/10): đăng ký `account_type:"owner"` → xác minh email → `landlord_status='pending'` (đăng nhập và tạo/sửa tin nháp được, nhưng công khai tin bị chặn 403 `landlord_not_approved`) → quản trị viên duyệt (`approved`, được cấp membership `owner` trong `org-demo`) hoặc từ chối (`rejected`, bắt buộc ghi lý do 1–500 ký tự). Owner seed (`owner-a`…`owner-d`) luôn coi như đã duyệt.
+
+Vòng đời ticket hỗ trợ (08/10): khách nhắn muốn gặp người thật trong chat tạo ticket `requested` → quản trị viên chuyển `in_progress` (người nhận việc là admin thực hiện) → `resolved` (bắt buộc kèm ghi chú); ticket `resolved` có thể mở lại về `in_progress`. Sai chuyển trạng thái bị chặn 409 `ticket_state`; mỗi lần đổi trạng thái khách nhận đúng một thông báo theo trạng thái.
 
 ## 2. Từ nhu cầu đến phòng được duyệt
 

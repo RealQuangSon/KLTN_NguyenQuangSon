@@ -87,6 +87,16 @@ def room_reference(text: str) -> str | None:
     return f"demo-{int(match.group(1)):02d}" if match else None
 
 
+# Finance chat (AG-02): room ids a renter may name inside a simulate_finance
+# utterance. Only ids in the currently approved shortlist are ever simulated.
+FINANCE_ROOM_REFERENCE = re.compile(r"\b(?:synthetic-room-\d{3}|room-[0-9a-f]{10}|demo-\d{2})\b")
+
+
+def finance_room_reference(text: str) -> str | None:
+    match = FINANCE_ROOM_REFERENCE.search(folded(text))
+    return match.group(0) if match else None
+
+
 # Provider failures keep their taxonomy codes. At the chat boundary they turn
 # into this deterministic guided-form fallback; nothing is ever fabricated to
 # replace the missing extraction. Budget exhaustion (budget_exceeded) is always

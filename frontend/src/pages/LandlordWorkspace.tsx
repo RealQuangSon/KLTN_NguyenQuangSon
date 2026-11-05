@@ -14,7 +14,16 @@ import { ViewingList } from "../components/ViewingPanel";
 import { RoomEditor } from "../components/RoomEditor";
 import { LoadingState } from "../components/LoadingState";
 import { amenities, fees, occupancyLabels } from "../types";
-export function LandlordWorkspace({ api, tab }: { api: Api; tab: string }) {
+export function LandlordWorkspace({
+  api,
+  tab,
+  publishLocked = false,
+}: {
+  api: Api;
+  tab: string;
+  // FE-02: chủ nhà chưa được duyệt chỉ soạn tin được, không bật công khai.
+  publishLocked?: boolean;
+}) {
   const [queue, setQueue] = useState<Recommendation[]>([]),
     [detail, setDetail] = useState<Recommendation | null>(null),
     [rooms, setRooms] = useState<Room[]>([]),
@@ -404,9 +413,11 @@ export function LandlordWorkspace({ api, tab }: { api: Api; tab: string }) {
               key={
                 editing === "new" ? "new" : `${editing.id}:${editing.revision}`
               }
+              api={api}
               room={editing === "new" ? null : editing}
               onSubmit={saveRoom}
               onCancel={() => setEditing(null)}
+              publishLocked={publishLocked}
             />
           )}
           <div className="section-heading">

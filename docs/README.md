@@ -12,12 +12,13 @@
 | Khi nào gọi là đạt | [Tiêu chí nghiệm thu](tieu-chi-nghiem-thu.md) |
 | Vai trò, luồng, ai thấy gì | [Quy trình nghiệp vụ](quy-trinh-nghiep-vu.md), [trạng thái và lỗi](status-dictionary.md) |
 | Cách tính chi phí, khả năng chi trả, khoản vay | [Engine tài chính thuê](tai-chinh-thue.md) |
+| **Tổng quan hiện tại (31/10): nghiệp vụ + harness agent** | [Nghiệp vụ và harness](nghiep-vu-va-harness.md) |
 | Agent, multi-agent, memory, tối ưu semantic | [Thiết kế agent](thiet-ke-agent.md) |
 | Kiến trúc đích, kiến trúc đang chạy | [Kiến trúc đích](kien-truc-homematch.md), [bản 0.4.0](kien-truc-trien-khai.md) |
 | API đang chạy, API cần bổ sung | [API 0.4.0](api-contract.md) + [OpenAPI](openapi.json), [API đích](api-san-pham-v1.md) |
 | Việc cần làm, thứ tự | [Kế hoạch triển khai](ke-hoach-trien-khai.md); [coding plan cho AI agent](coding-plan/README.md), chia BE, FE, Agent, Data |
 | Code đang ở đâu, bằng chứng | [Trạng thái](trang-thai-trien-khai.md) |
-| Tham khảo HubHome | [Nghiên cứu](nghien-cuu-hubhome.md), [khảo sát đăng nhập 01/10](khao-sat-hubhome-da-dang-nhap.md) |
+| Tham khảo HubHome | [Nghiên cứu](nghien-cuu-hubhome.md), [khảo sát đăng nhập 01/10](khao-sat-hubhome-da-dang-nhap.md), [khảo sát bổ sung chủ nhà + người thuê 03/11](khao-sat-hubhome-dashboard-chu-nha.md), [khảo sát giao diện & UX 03/11](khao-sat-hubhome-giao-dien-ux.md) |
 | Lần căn chỉnh docs 05/10 | [Rà soát](ra-soat-tai-lieu.md) |
 
 ## Quy ước

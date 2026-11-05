@@ -20,15 +20,22 @@ def semantic_text(room) -> str:
 
 
 class OpenAIEmbeddings:
-    def __init__(self, client=None, model: str | None = None, dimensions: int = 1536):
+    def __init__(self, client=None, model: str | None = None, dimensions: int = 1536, on_usage=None):
         from openai import OpenAI
         self.client = client or OpenAI(timeout=20, max_retries=1)
         self.model = model or os.getenv("HOMEMATCH_EMBEDDING_MODEL", "text-embedding-3-small")
         self.dimensions = dimensions
+        # Optional per-call usage sink (e.g. Metrics.embedding_usage); called with
+        # {"model", "embedding_tokens"} where tokens is None when usage was not reported.
+        self.on_usage = on_usage
         self.cache: dict[str, list[float]] = {}
         self.calls = 0
         self.tokens = 0
         self.usage_missing_calls = 0
+
+    def _report_usage(self, tokens: int | None):
+        if self.on_usage:
+            self.on_usage({"model": self.model, "embedding_tokens": tokens})
 
     def embed(self, text: str) -> list[float]:
         if redact(text) != text:
@@ -45,11 +52,14 @@ class OpenAIEmbeddings:
                 self.cache[key] = values
                 tokens = getattr(getattr(response, "usage", None), "total_tokens", None)
                 if tokens is None:
+                    # Never estimate embedding tokens from text length.
                     self.usage_missing_calls += 1
                 else:
                     self.tokens += tokens
+                self._report_usage(tokens)
             except Exception:
                 self.usage_missing_calls += 1
+                self._report_usage(None)
                 raise DomainError("semantic_unavailable", "Dịch vụ embedding chưa sẵn sàng.", 503) from None
         return self.cache[key]
 
