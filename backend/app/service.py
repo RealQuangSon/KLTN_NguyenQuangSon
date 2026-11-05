@@ -29,7 +29,8 @@ from .agents import ToolBox
 from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
 from .catalog import Catalog, StoredCatalog
 from .costs import estimate_cost, estimate_with_affordability
-from .interpreter import DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, rent_budget_hint, fixed_intent, make_interpreter, redact
+from .interpreter import (DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, fixed_intent,
+                          make_interpreter, redact, relative_budget, rent_budget_hint)
 from .locations import city_for_area, resolve_place
 from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination, DomainError, DraftPatch,
                      DraftProfile, Profile, RoomInput, RoomUpdate, Scenario, SimulationRequest)
@@ -65,6 +66,9 @@ class ChatState(TypedDict, total=False):
     intent: str | None
     extraction: dict
     budget_hint: int | None
+    # AG-02: tiền tương đối parse từ câu GỐC (trước redact) — key phải khai
+    # báo trong schema, LangGraph mới giữ lại khi invoke.
+    relative_budget: dict | None
     cost_input: dict | None
     response: dict
     provenance: dict
@@ -312,7 +316,10 @@ class HomeMatchService:
             # count even when the provider fails.
             self.budget.spend(session["id"])
         state = self.chat_graph.invoke({"session_id": session["id"], "actor": actor, "text": redact(text),
-            "intent": explicit_route, "budget_hint": rent_budget_hint(text), "toolbox": ToolBox(),
+            "intent": explicit_route, "budget_hint": rent_budget_hint(text),
+            # AG-02: parse tiền tương đối từ câu GỐC (trước redact — placeholder
+            # đã tách số nên không đọc được trên state["text"]).
+            "relative_budget": relative_budget(text), "toolbox": ToolBox(),
             "cost_input": cost_input.model_dump(mode="json") if cost_input else None})
         return dict(state["response"]), dict(state.get("provenance") or {})
 
@@ -1614,9 +1621,33 @@ class HomeMatchService:
             if extracted.get("accept_estimated_data"):
                 draft.accept_estimated_data = True
                 touched.add("accept_estimated_data")
-            if state.get("budget_hint"):
+            # Cờ chỉ True khi lượt này THỰC SỰ áp được một mức tiền (tuyệt đối
+            # hoặc tương đối đã tính) — FE chỉ được đưa hint vào trần khi thấy cờ.
+            budget_explicit = False
+            needs_budget_baseline = False
+            # AG-02: tiền TƯƠNG ĐỐI ưu tiên trước số tuyệt đối trong cùng câu —
+            # "nới thêm 1 triệu" KHÔNG được đọc thành trần 1 triệu. Parse từ câu
+            # GỐC (state["relative_budget"], state["text"] đã redact mất số);
+            # cộng/trừ vào mức cũ đã nêu, chưa có mức cũ thì hỏi lại, không đoán.
+            change = state.get("relative_budget")
+            if change:
+                # Câu nới/giảm: chỉ áp khi có mức cũ hoặc là mức mới rõ ("xuống N");
+                # chưa có mức cũ thì hỏi lại — tuyệt đối không dùng số trong câu
+                # làm trần (chính là bug "nới thêm 1 triệu" đọc thành trần 1 triệu).
+                if change["direction"] == "set" or draft.budget_hint_vnd:
+                    if change["direction"] == "set":
+                        draft.budget_hint_vnd = change["amount_vnd"]
+                    else:
+                        delta = change["amount_vnd"] * (1 if change["direction"] == "up" else -1)
+                        draft.budget_hint_vnd = max(1, draft.budget_hint_vnd + delta)
+                    touched.add("budget_hint")
+                    budget_explicit = True
+                else:
+                    needs_budget_baseline = True
+            elif state.get("budget_hint"):
                 draft.budget_hint_vnd = state["budget_hint"]
                 touched.add("budget_hint")
+                budget_explicit = True
             # Revalidate model output before saving. A hint never becomes a confirmed budget.
             draft = DraftProfile.model_validate(draft.model_dump())
             evidence = f"chat:r{session['draft_revision'] + 1}"
@@ -1626,8 +1657,13 @@ class HomeMatchService:
             state["toolbox"].call("needs", "update_draft", self.repo.update_draft,
                                   session["id"], draft, session["draft_revision"])
             questions = self._questions(session["id"])
+            if needs_budget_baseline:
+                # Không có mức cũ để nới/giảm: hỏi rõ, không đoán (AG-02).
+                questions = ["Mình chưa nắm mức tổng tháng hiện tại của bạn; cho mình biết mức muốn áp "
+                             "(ví dụ “tổng tháng 4,5 triệu”) rồi mình nới/giảm theo."]
             return {"response": {"intent": "find_room", "status": "needs_clarification",
-                    "interpreter_mode": self.interpreter.mode, "questions": questions},
+                    "interpreter_mode": self.interpreter.mode, "questions": questions,
+                    "budget_explicit": budget_explicit or None},
                     "provenance": stamp("interpreter", "interview", interpreter_mode=self.interpreter.mode,
                                         **state["toolbox"].summary("needs"))}
 

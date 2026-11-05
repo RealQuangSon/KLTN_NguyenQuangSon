@@ -67,6 +67,9 @@ class MessageResult(SessionResult):
     # chế độ chạy ("loop" | "graph_fallback", chỉ có ở chế độ openai).
     steps: list[str] | None = None
     agent_mode: str | None = None
+    # AG-02: true khi lượt này chứa mức tiền tuyệt đối/tương đối đã tính — FE chỉ
+    # áp budget_hint vào trần khi thấy cờ này (chặn bug "nới thêm 1 triệu").
+    budget_explicit: bool | None = None
     # WS-01: agent điều khiển workspace — view được chọn và payload kèm theo.
     # View lạ client tự bỏ qua (giữ view cũ); "keep" giữ nguyên; "clear" dọn workspace.
     view: Literal["map", "list", "detail", "gallery", "compare", "cost", "route", "nearby",

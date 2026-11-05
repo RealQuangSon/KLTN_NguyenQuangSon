@@ -136,3 +136,23 @@ it("re-runs the search after a chat turn accepts estimated data on a confirmed s
   );
   expect(await screen.findByText("Phòng riêng room-1")).toBeInTheDocument();
 });
+
+it("AG-02: chỉ áp budget_hint vào trần khi máy chủ trả budget_explicit", () => {
+  const withBudget = (evidence: string): Draft => ({
+    ...base,
+    budget_hint_vnd: 4500000,
+    evidence_ref: { ...base.evidence_ref, budget_hint: evidence },
+  });
+  // Có cờ + evidence chat + mức đổi → áp vào trần tổng tháng.
+  expect(
+    profileUpdateFromChat(profile, base, withBudget("chat:r4"), true),
+  ).toEqual({ ...profile, max_monthly_cost_vnd: 4500000 });
+  // Không có cờ (bug cũ "nới thêm 1 triệu") → không đổi gì.
+  expect(
+    profileUpdateFromChat(profile, base, withBudget("chat:r4"), false),
+  ).toBeNull();
+  // Mức tiền nhập form (evidence form:) không bao giờ tự áp qua chat.
+  expect(
+    profileUpdateFromChat(profile, base, withBudget("form:r4"), true),
+  ).toBeNull();
+});

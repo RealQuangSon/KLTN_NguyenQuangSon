@@ -1,0 +1,103 @@
+{
+  "kind": "relative_budget_oracle",
+  "note": "AG-02: tiền tương đối trong chat. 'new_vnd' là kết quả sau khi áp lên 'old_vnd'; None khi chưa có mức cũ (hỏi lại) hoặc giữ nguyên.",
+  "cases": [
+    {
+      "case_id": "RB01",
+      "text": "Hãy nới ngân sách tổng tháng lên thêm 1 triệu và tìm lại.",
+      "old_vnd": 3500000,
+      "direction": "up",
+      "amount_vnd": 1000000,
+      "new_vnd": 4500000
+    },
+    {
+      "case_id": "RB02",
+      "text": "nới thêm 0,5 tr cho mình nhé",
+      "old_vnd": 4000000,
+      "direction": "up",
+      "amount_vnd": 500000,
+      "new_vnd": 4500000
+    },
+    {
+      "case_id": "RB03",
+      "text": "tăng 1,5 tr xem sao",
+      "old_vnd": 3000000,
+      "direction": "up",
+      "amount_vnd": 1500000,
+      "new_vnd": 4500000
+    },
+    {
+      "case_id": "RB04",
+      "text": "nâng lên 2 triệu được không",
+      "old_vnd": 2500000,
+      "direction": "up",
+      "amount_vnd": 2000000,
+      "new_vnd": 4500000
+    },
+    {
+      "case_id": "RB05",
+      "text": "cho ngân sách lên thêm 2 tr",
+      "old_vnd": 2000000,
+      "direction": "up",
+      "amount_vnd": 2000000,
+      "new_vnd": 4000000
+    },
+    {
+      "case_id": "RB06",
+      "text": "giảm 1 triệu rồi tìm lại",
+      "old_vnd": 3500000,
+      "direction": "down",
+      "amount_vnd": 1000000,
+      "new_vnd": 2500000
+    },
+    {
+      "case_id": "RB07",
+      "text": "giảm ngân sách xuống 3 triệu",
+      "old_vnd": 4500000,
+      "direction": "set",
+      "amount_vnd": 3000000,
+      "new_vnd": 3000000
+    },
+    {
+      "case_id": "RB08",
+      "text": "hạ xuống 2,5 tr nhé",
+      "old_vnd": 4000000,
+      "direction": "set",
+      "amount_vnd": 2500000,
+      "new_vnd": 2500000
+    },
+    {
+      "case_id": "RB09",
+      "text": "nới thêm 300 nghìn thôi",
+      "old_vnd": 3700000,
+      "direction": "up",
+      "amount_vnd": 300000,
+      "new_vnd": 4000000
+    },
+    {
+      "case_id": "RB10",
+      "text": "phòng 3,5 triệu quanh đây",
+      "old_vnd": null,
+      "direction": null,
+      "amount_vnd": null,
+      "new_vnd": null
+    },
+    {
+      "case_id": "RB11",
+      "text": "nới thêm 1 triệu",
+      "old_vnd": null,
+      "direction": "up",
+      "amount_vnd": 1000000,
+      "new_vnd": null
+    },
+    {
+      "case_id": "RB12",
+      "text": "giảm 500k cho nhẹ túi",
+      "old_vnd": null,
+      "direction": "down",
+      "amount_vnd": 500000,
+      "new_vnd": null,
+      "note": "chưa có mức cũ → hỏi lại, không đoán"
+    }
+  ]
+}

@@ -42,6 +42,7 @@ export function profileUpdateFromChat(
   confirmed: Profile,
   before: Draft,
   after: Draft,
+  budgetExplicit = false,
 ): Profile | null {
   const changed = (key: keyof Draft) =>
     Boolean(after.evidence_ref?.[key]?.startsWith("chat:")) &&
@@ -62,6 +63,16 @@ export function profileUpdateFromChat(
   if (changed("accept_estimated_data") && after.accept_estimated_data)
     next.accept_estimated_data = true;
   if (changed("destination")) next.destination = after.destination ?? null;
+  // AG-02: chỉ áp mức tiền khi máy chủ xác nhận lượt này chứa mức tuyệt đối
+  // hoặc tương đối đã tính (budget_explicit) — chặn bug đọc "nới thêm 1 triệu"
+  // thành trần 1 triệu. Evidence key là "budget_hint", giá trị là budget_hint_vnd.
+  const budgetChanged =
+    Boolean(
+      after.evidence_ref?.["budget_hint"]?.startsWith("chat:") ||
+        after.evidence_ref?.["budget_hint"]?.startsWith("agent:"),
+    ) && before.budget_hint_vnd !== after.budget_hint_vnd;
+  if (budgetExplicit && budgetChanged && after.budget_hint_vnd != null)
+    next.max_monthly_cost_vnd = after.budget_hint_vnd;
   if (changed("soft_description"))
     next.soft_description = after.soft_description ?? null;
   return JSON.stringify(next) === JSON.stringify(confirmed) ? null : next;

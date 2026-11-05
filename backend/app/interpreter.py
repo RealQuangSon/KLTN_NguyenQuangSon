@@ -42,6 +42,42 @@ def budget_hint(text: str) -> int | None:
     return amount if amount > 0 else None
 
 
+# AG-02: tiền TƯƠNG ĐỐI trong chat — "nới/lên/thêm N" cộng vào mức cũ, "giảm …
+# xuống N" trừ; không có mức cũ thì hỏi lại, không đoán. Đọc trên văn bản GỐC
+# để giữ dấu tiếng Việt; đơn vị như budget_hint (triệu/tr, nghìn/ngan/k).
+RELATIVE_BUDGET_UP = re.compile(
+    r"(nới|nơi|lên|len|tăng|tang|nâng|nang)(?:\s*(?:thêm|them|cộng))?\s*"
+    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+RELATIVE_BUDGET_DOWN_DELTA = re.compile(
+    r"(giảm|giam|hạ|ha)(?!\s*(?:xuống|xuong))[^\d]{0,16}?"
+    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+RELATIVE_BUDGET_DOWN_SET = re.compile(
+    r"(giảm|giam|hạ|ha)[^\d]{0,16}?(?:xuống|xuong)\s*"
+    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+
+
+def _relative_amount(raw: str, unit: str) -> int:
+    from decimal import Decimal
+    factor = 1_000 if unit.lower() in {"nghìn", "nghin", "ngan", "k"} else 1_000_000
+    return int(Decimal(raw.replace(",", ".")) * factor)
+
+
+def relative_budget(text: str) -> dict | None:
+    """Đọc mức tiền tương đối từ câu gốc. Trả {"direction": "up"|"down",
+    "amount_vnd": delta} hoặc None khi câu không nói nới/giảm."""
+    match = RELATIVE_BUDGET_UP.search(text)
+    if match:
+        return {"direction": "up", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+    match = RELATIVE_BUDGET_DOWN_SET.search(text)
+    if match:
+        # "giảm ... xuống 4 triệu" là mức mới, không phải delta.
+        return {"direction": "set", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+    match = RELATIVE_BUDGET_DOWN_DELTA.search(text)
+    if match:
+        return {"direction": "down", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+    return None
+
+
 def rent_budget_hint(text: str) -> int | None:
     """Trần tiền THUÊ đọc được cả mốc dưới 1 triệu ("500 nghìn", "800k").
 

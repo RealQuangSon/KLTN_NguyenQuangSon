@@ -255,8 +255,20 @@ def run_turn(service, session: dict, actor, text: str,
     interpreter = service.interpreter
     # Mức tiền trong CÂU CỦA KHÁCH được đọc tất định (như graph cũ), không qua LLM:
     # model không được tự ghi trường tiền nào khác qua update_needs.
-    from .interpreter import rent_budget_hint
-    hint = rent_budget_hint(text)
+    from .interpreter import relative_budget, rent_budget_hint
+    # AG-02: tiền TƯƠNG ĐỐI ưu tiên trước số tuyệt đối trong cùng câu
+    # ("nới thêm 1 triệu" không được đọc thành trần 1 triệu).
+    change = relative_budget(text)
+    old_hint = service._draft(session["id"]).budget_hint_vnd
+    hint = None
+    if change and (change["direction"] == "set" or old_hint):
+        if change["direction"] == "set":
+            hint = change["amount_vnd"]
+        else:
+            delta = change["amount_vnd"] * (1 if change["direction"] == "up" else -1)
+            hint = max(1, old_hint + delta)
+    if hint is None:
+        hint = rent_budget_hint(text)
     if hint:
         service._apply_chat_budget_hint(session["id"], hint, session["draft_revision"])
         session = service.repo.session(session["id"])

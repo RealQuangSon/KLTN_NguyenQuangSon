@@ -535,6 +535,10 @@ export function RenterWorkspace({
       );
       if (live.current && current.current === sid) {
         setTurnStep(null);
+        lastBudgetExplicit.current =
+          (response as { budget_explicit?: boolean }).budget_explicit === true
+            ? response.draft_revision
+            : null;
         // WS-01: view do agent chọn — map/list/detail/cost áp dụng, keep giữ,
         // clear dọn workspace; view lạ bỏ qua giữ view cũ (an toàn theo hợp đồng).
         const nextView = (response as { view?: string }).view;
@@ -599,6 +603,9 @@ export function RenterWorkspace({
   // Nháp đã xử lý gần nhất của phiên: so với nháp mới để biết lượt chat vừa
   // đổi trường nào. Phiên vừa khôi phục chỉ lấy làm mốc, không tự chạy lại.
   const seenDraft = useRef<{ sid: string; draft: Draft } | null>(null);
+  // AG-02: revision mà lượt chat vừa ghi mức tiền tuyệt đối/tương đối — chỉ
+  // revision đó được phép đưa budget_hint vào trần khi tự xác nhận.
+  const lastBudgetExplicit = useRef<number | null>(null);
   const createAndSend = async (content: string) => {
     const value = content.trim();
     if (!value || busy) return;
@@ -623,7 +630,12 @@ export function RenterWorkspace({
     const profile = !session.confirmed_profile
       ? profileFromDraft(draft)
       : before
-        ? profileUpdateFromChat(session.confirmed_profile, before, draft)
+        ? profileUpdateFromChat(
+            session.confirmed_profile,
+            before,
+            draft,
+            lastBudgetExplicit.current === session.draft_revision,
+          )
         : null;
     if (!profile) {
       seenDraft.current = { sid, draft };
