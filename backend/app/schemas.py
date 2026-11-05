@@ -67,6 +67,17 @@ class MessageResult(SessionResult):
     # chế độ chạy ("loop" | "graph_fallback", chỉ có ở chế độ openai).
     steps: list[str] | None = None
     agent_mode: str | None = None
+    # WS-01: agent điều khiển workspace — view được chọn và payload kèm theo.
+    # View lạ client tự bỏ qua (giữ view cũ); "keep" giữ nguyên; "clear" dọn workspace.
+    view: Literal["map", "list", "detail", "gallery", "compare", "cost", "route", "nearby",
+                  "area", "trust", "contract", "booking", "visit", "saved", "keep", "clear"] | None = None
+    view_payload: dict | None = None
+    # Mốc đã tra được (find_place) để FE ghim bản đồ; không chứa PII.
+    anchor: dict | None = None
+    # Tiêu chí server đang giữ (băng giá, loại, khu, tiện ích) để FE vẽ chip gỡ được.
+    criteria: dict | None = None
+    suggested_prompts: list[str] | None = None
+    turn_id: str | None = None
     # Where this turn's content came from (user/deterministic-engine/interpreter + node).
     provenance: dict | None = None
     # Injection/privacy screening outcome for the turn (flag, patterns, redactions).

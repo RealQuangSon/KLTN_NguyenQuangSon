@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from uuid import uuid4
 
 from pydantic import ValidationError
 
@@ -106,9 +107,18 @@ def check_numbers(answer: str, user_text: str, tool_payloads: list[str]) -> str:
 
 
 def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> dict:
-    """Bộ tool của lượt: hàm tất định + agent cho phép, bó vào phiên hiện tại."""
+    """Bộ tool của lượt: hàm tất định + agent cho phép, bó vào phiên hiện tại.
+    Visible = kết quả hiện tại + căn trong ngữ cảnh workspace FE đang hiển thị."""
     results_guard = service.results(session["id"], actor)
     visible = {item["room_id"]: item for item in results_guard["results"]}
+    workspace = service._workspace.get(session["id"]) or {}
+    for room_id in workspace.get("visible_room_ids", []):
+        if room_id in visible:
+            continue
+        room = next((r for r in service.catalog.rooms() if r.id == room_id and r.published), None)
+        if room is not None:
+            visible[room.id] = {"room_id": room.id, "title": room.title.split(". ")[0],
+                                "landlord_id": room.landlord, "cost": {}}
 
     def find_place(query: str, city_hint: str | None = None):
         draft = service._draft(session["id"])
@@ -166,6 +176,12 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
         return {"question": str(question), "options": [str(item) for item in (options or [])][:4]}
 
     def _visible_room(ref: str):
+        lowered = str(ref).strip().lower()
+        if lowered in {"căn này", "can nay", "căn đang chọn", "căn được chọn"}:
+            selected = (service._workspace.get(session["id"]) or {}).get("selected_room_id")
+            if selected and selected in visible:
+                return visible[selected]
+            raise DomainError("not_visible", "Bạn chưa chọn căn nào trên workspace.", 403)
         room_id = service.room_reference_in(str(ref), visible)
         if room_id is None:
             raise DomainError("not_visible",
@@ -216,6 +232,20 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
     }
 
 
+def pick_view(tool_names: list[str], draft) -> tuple[str, dict | None]:
+    """WS-01: agent điều khiển workspace — view chọn TẤT ĐỊNH theo tool của lượt
+    (LLM không tự chọn view). Không tool liên quan → "keep" (giữ view hiện tại)."""
+    if tool_names:
+        last = tool_names[-1]
+        if "confirm_and_search" in tool_names:
+            return ("map" if draft.destination else "list"), {"sorted_by": "distance" if draft.destination else "match"}
+        if last == "room_details":
+            return "detail", None
+        if last == "estimate_cost":
+            return "cost", None
+    return "keep", None
+
+
 def run_turn(service, session: dict, actor, text: str,
              emit=None) -> tuple[dict, dict]:
     """Một lượt chat chạy bằng vòng lặp tool. Trả về (response, provenance).
@@ -246,10 +276,17 @@ def run_turn(service, session: dict, actor, text: str,
     if emit is not None:
         emit({"name": "route", "kind": "router", "detail": "AI phân tích nhu cầu"})
 
-    def finalize(answer: str, questions: list[str] | None, mode_note: str | None = None):
+    def finalize(answer: str, questions: list[str] | None):
+        draft = service._draft(session["id"])
+        view, view_payload = pick_view([entry["tool"] for entry in steps], draft)
         return {"intent": "find_room", "status": "needs_clarification", "message": answer,
                 "questions": questions or None, "interpreter_mode": "openai", "agent_mode": "loop",
-                "steps": [f"{entry['tool']}: {entry['detail']}" for entry in steps] or None}
+                "steps": [f"{entry['tool']}: {entry['detail']}" for entry in steps] or None,
+                "view": view, "view_payload": view_payload,
+                "anchor": ({"label": draft.destination.label, "latitude": draft.destination.latitude,
+                            "longitude": draft.destination.longitude,
+                            "uncertainty_m": draft.destination.uncertainty_m} if draft.destination else None),
+                "turn_id": str(uuid4())}
 
     for _ in range(MAX_AGENT_STEPS):
         if time.monotonic() - turn_started > 55:
@@ -326,6 +363,8 @@ def run_turn(service, session: dict, actor, text: str,
             break
     if response_dict is None:
         response_dict = finalize(SAFE_REPLY, None)
+    response_dict["suggested_prompts"] = service._suggested_prompts(session["id"])
+    response_dict["criteria"] = service._criteria_projection(session["id"])
     service.interpreter.last_usage = {"logical_calls": usage_total["logical_calls"],
                                       "tokens": None if usage_total["saw_none"] else usage_total["tokens"]}
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",

@@ -67,9 +67,19 @@ class LoginRequest(Model):
     password: str = Field(min_length=1, max_length=200)
 
 
+class WorkspaceContext(Model):
+    """WS-01: ngữ cảnh workspace FE gửi kèm mỗi lượt chat — căn đang chọn, ≤30
+    căn đang hiển thị, ≤4 căn đang chú ý. Chỉ để agent tham chiếu 'căn này'."""
+    view: str | None = Field(default=None, max_length=20)
+    selected_room_id: str | None = Field(default=None, max_length=100)
+    visible_room_ids: list[str] = Field(default_factory=list, max_length=30)
+    focus_room_ids: list[str] = Field(default_factory=list, max_length=4)
+
+
 class MessageRequest(Model):
     text: str = Field(min_length=1, max_length=2000)
     cost_input: CostRequest | None = None
+    workspace: WorkspaceContext | None = None
 
 
 class CompareRequest(Model):
@@ -328,7 +338,8 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
     @app.post("/sessions/{session_id}/messages", response_model=MessageResult, response_model_exclude_unset=True)
     def message(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
-        return agent.message(session_id, actor, body.text, body.cost_input)
+        return agent.message(session_id, actor, body.text, body.cost_input,
+                             workspace=body.workspace.model_dump() if body.workspace else None)
 
     @app.post("/sessions/{session_id}/messages/stream", responses={200: {"content": {
         "application/x-ndjson": {"schema": {"type": "string",
@@ -346,7 +357,8 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
             def worker():
                 try:
                     result = agent.message(session_id, actor, body.text, body.cost_input,
-                                           emit=lambda step: events.put(("step", step)))
+                                           emit=lambda step: events.put(("step", step)),
+                                           workspace=body.workspace.model_dump() if body.workspace else None)
                     events.put(("done", result))
                 except DomainError as error:
                     events.put(("error", {"code": error.code, "message": str(error)}))

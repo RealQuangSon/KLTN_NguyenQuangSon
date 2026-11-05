@@ -5,6 +5,7 @@ import os
 import re
 import sqlite3
 import time
+from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from pathlib import Path
@@ -136,6 +137,8 @@ class HomeMatchService:
         # In-memory diagnostics of the last chat turn / result read per session.
         # Redacted at write time; never persisted and never returned to the model.
         self._traces: dict[str, dict] = {}
+        # WS-01: ngữ cảnh workspace hiện tại của từng phiên (ephemeral, một worker).
+        self._workspace: dict[str, dict] = {}
         self.chat_graph = self._build_chat_graph()
         self.recommendation_graph = self._build_recommendation_graph()
 
@@ -195,7 +198,7 @@ class HomeMatchService:
             return self._session_projection(self._session_for(session_id, actor, "renter"))
 
     def message(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
-                emit=None) -> dict:
+                emit=None, workspace: dict | None = None) -> dict:
         """Một lượt chat. `emit` (WS-02) nhận từng sự kiện bước ngay khi chạy:
         {"name", "kind": router|tool|guardrail|system, "detail"} — không PII."""
         with self.lock:
@@ -203,6 +206,16 @@ class HomeMatchService:
             require("chat:message", actor, Resource.for_session(session))
             if not text.strip() or len(text) > 2000:
                 raise DomainError("invalid_message", "Tin nhắn cần có 1–2000 ký tự.", 422)
+            if workspace is not None:
+                # WS-01: ngữ cảnh workspace FE gửi lên (view, căn chọn, ≤30 căn đang
+                # hiện, ≤4 căn đang chú ý) — giữ trong bộ nhớ tiến trình để hiểu
+                # "căn này"/"căn thứ 2"; không bao giờ vào DTO chủ nhà hay prompt thu nhập.
+                self._workspace[session_id] = {
+                    "view": workspace.get("view"),
+                    "selected_room_id": workspace.get("selected_room_id"),
+                    "visible_room_ids": list(workspace.get("visible_room_ids") or [])[:30],
+                    "focus_room_ids": list(workspace.get("focus_room_ids") or [])[:4],
+                }
             scan = screen_injection(text)
             explicit_route = fixed_intent(text)
             usage = {"logical_calls": 0, "tokens": None, "mode": self.interpreter.mode}
@@ -426,6 +439,26 @@ class HomeMatchService:
         if re.search(r"căn\s*(cuối|cuối cùng)", ref, re.I) and ids:
             return ids[-1]
         return None
+
+    def _suggested_prompts(self, session_id: str) -> list[str]:
+        """WS-01: gợi ý tiếp theo tất định theo trạng thái phiên (không LLM, không số lạ)."""
+        try:
+            owner = self.repo.session(session_id)["owner_id"]
+            result = self.results(session_id, Actor(id=owner, role="renter"))
+        except DomainError:
+            return []
+        if result["results"]:
+            return ["Đặt lịch xem căn này", "Tính tổng chi phí căn đầu tiên", "Còn căn nào rẻ hơn khu này?"]
+        if result["status"] == "no_match":
+            return ["Nới khu vực lân cận", "Cho mình xem căn thiếu bảng phí"]
+        return []
+
+    def _criteria_projection(self, session_id: str) -> dict:
+        """WS-01: tiêu chí server đang giữ — không thu nhập; số tiền là gợi ý nháp."""
+        draft = self._draft(session_id)
+        return {"city": draft.city, "area": draft.area, "room_type": draft.room_type,
+                "budget_hint_vnd": draft.budget_hint_vnd,
+                "destination": draft.destination.label if draft.destination else None}
 
     def _agent_context(self, session: dict) -> dict:
         """Ngữ cảnh lượt agent: nháp + hồ sơ đã xác nhận (bỏ thu nhập) + 6 lượt

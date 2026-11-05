@@ -13,10 +13,12 @@ import type {
 } from "../types";
 import {
   Comparison,
+  CostBreakdown,
   ErrorNotice,
   Icon,
   money,
   PublishedResults,
+  RoomCard,
   roomTitle,
 } from "../components/Shared";
 import { ProfileForm } from "../components/ProfileForm";
@@ -230,6 +232,14 @@ export function RenterWorkspace({
   const [feedback, setFeedback] = useState<null | "up" | "down">(null);
   // WS-02: bước xử lý đang chạy theo sự kiện thật từ stream ("tên — mô tả").
   const [turnStep, setTurnStep] = useState<string | null>(null);
+  // WS-01: view do agent chọn (map/list/detail/cost); null = bố cục kết hợp mặc định.
+  const [agentView, setAgentView] = useState<
+    null | "map" | "list" | "detail" | "cost"
+  >(null);
+  const [viewPayload, setViewPayload] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   // Căn đã lưu của người thuê: nạp một lần khi vào workspace, tối ưu trên thẻ.
   const [savedIds, setSavedIds] = useState<string[]>([]);
   useEffect(() => {
@@ -472,7 +482,18 @@ export function RenterWorkspace({
       // WS-02: ưu tiên stream bước xử lý; đứt luồng → thử lại ≤2 lần → fallback POST.
       const response = await api.turn<Session & { steps?: string[] }>(
         `/sessions/${sid}/messages`,
-        { text: value },
+        {
+          text: value,
+          // WS-01: ngữ cảnh workspace để agent hiểu "căn này"/"căn thứ 2".
+          workspace: {
+            view: agentView,
+            selected_room_id: selected[0] ?? null,
+            visible_room_ids: resultList
+              .map((item) => item.room_id)
+              .slice(0, 30),
+            focus_room_ids: selected.slice(0, 4),
+          },
+        },
         (step) => {
           if (live.current && current.current === sid)
             setTurnStep(`${step.name} — ${step.detail}`);
@@ -480,6 +501,25 @@ export function RenterWorkspace({
       );
       if (live.current && current.current === sid) {
         setTurnStep(null);
+        // WS-01: view do agent chọn — map/list/detail/cost áp dụng, keep giữ,
+        // clear dọn workspace; view lạ bỏ qua giữ view cũ (an toàn theo hợp đồng).
+        const nextView = (response as { view?: string }).view;
+        if (
+          nextView === "map" ||
+          nextView === "list" ||
+          nextView === "detail" ||
+          nextView === "cost"
+        )
+          setAgentView(nextView);
+        else if (nextView === "clear") {
+          setAgentView(null);
+          setSelected([]);
+          setViewPayload(null);
+        }
+        setViewPayload(
+          ((response as { view_payload?: Record<string, unknown> })
+            .view_payload ?? null) as Record<string, unknown> | null,
+        );
         apply(response);
         putMessages((m) => [
           ...m,
@@ -1214,7 +1254,7 @@ export function RenterWorkspace({
               </div>
             ) : (
               <div className="agent-results">
-                {showMap && (
+                {showMap && agentView !== "list" && (
                   <div className="agent-map">
                     <span className="agent-map-chip">
                       {resultList.length} căn phù hợp
@@ -1222,67 +1262,124 @@ export function RenterWorkspace({
                     <MapView pins={pins} />
                   </div>
                 )}
-                <div className="agent-suggest">
-                  <div className="agent-suggest-head">
-                    <span>SẮP XẾP:</span>
-                    <select
-                      value={sort}
-                      aria-label="Sắp xếp danh sách"
-                      onChange={(e) =>
-                        setSort(
-                          e.target.value as
-                            | "match"
-                            | "price_asc"
-                            | "price_desc",
-                        )
-                      }
-                    >
-                      <option value="match">Phù hợp nhất</option>
-                      <option value="price_asc">Giá thấp trước</option>
-                      <option value="price_desc">Giá cao trước</option>
-                    </select>
+                {(agentView === "detail" || agentView === "cost") && (
+                  <div
+                    className="agent-focus-view"
+                    aria-label={
+                      agentView === "detail"
+                        ? "Chi tiết căn đang chọn"
+                        : "Chi phí căn đang chọn"
+                    }
+                  >
+                    <div className="agent-suggest-head">
+                      <span>
+                        {agentView === "detail"
+                          ? "CHI TIẾT CĂN ĐANG CHỌN"
+                          : "CHI PHÍ CĂN ĐANG CHỌN"}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => setAgentView(null)}
+                      >
+                        <Icon name="refresh" size={13} /> Bố cục thường
+                      </button>
+                    </div>
+                    {(() => {
+                      const focusedId =
+                        selected[0] ??
+                        (viewPayload?.room_id as string | undefined);
+                      const focused =
+                        resultList.find((item) => item.room_id === focusedId) ??
+                        resultList[0];
+                      if (!focused) return null;
+                      return (
+                        <>
+                          <RoomCard
+                            item={focused}
+                            selected
+                            onViewing={() => setViewRoom(focused)}
+                            onSimulate={() => setSimRoom(focused)}
+                            onChat={() => void chat(focused)}
+                          />
+                          <CostBreakdown cost={focused.cost} />
+                        </>
+                      );
+                    })()}
                   </div>
-                  <div className="agent-suggest-body">
-                    {editing && resultVisible ? (
-                      <p className="subtle">
-                        Bạn đang điều chỉnh nhu cầu — xác nhận hồ sơ mới để tìm
-                        lại. Gợi ý trước thuộc kịch bản đã xác nhận.
-                      </p>
-                    ) : (
-                      <PublishedResults
-                        result={sortedResult}
-                        selected={selected}
-                        onSelect={toggle}
-                        onViewing={setViewRoom}
-                        onSimulate={setSimRoom}
-                        onChat={(item) => void chat(item)}
-                        onAskFollowUp={(text) => {
-                          setText(text);
-                          messageInput.current?.focus();
-                        }}
-                        savedIds={savedIds}
-                        onToggleSave={toggleSave}
-                      />
-                    )}
-                    {!editing &&
-                      resultVisible &&
-                      (sortedResult?.results.length ?? 0) > 1 && (
-                        <div className="compare-bar">
-                          <span>
-                            Đã chọn <strong>{selected.length}/3</strong> phòng
-                          </span>
-                          <button
-                            className="button"
-                            disabled={selected.length < 2 || busy}
-                            onClick={() => void compare()}
-                          >
-                            <Icon name="compare" size={17} />
-                            So sánh lựa chọn
-                          </button>
-                        </div>
+                )}
+                {agentView !== "map" && (
+                  <div className="agent-suggest">
+                    <div className="agent-suggest-head">
+                      <span>SẮP XẾP:</span>
+                      <select
+                        value={sort}
+                        aria-label="Sắp xếp danh sách"
+                        onChange={(e) =>
+                          setSort(
+                            e.target.value as
+                              | "match"
+                              | "price_asc"
+                              | "price_desc",
+                          )
+                        }
+                      >
+                        <option value="match">Phù hợp nhất</option>
+                        <option value="price_asc">Giá thấp trước</option>
+                        <option value="price_desc">Giá cao trước</option>
+                      </select>
+                      {agentView && (
+                        <button
+                          type="button"
+                          className="text-button"
+                          onClick={() => setAgentView(null)}
+                        >
+                          Bố cục thường
+                        </button>
                       )}
+                    </div>
+                    <div className="agent-suggest-body">
+                      {editing && resultVisible ? (
+                        <p className="subtle">
+                          Bạn đang điều chỉnh nhu cầu — xác nhận hồ sơ mới để
+                          tìm lại. Gợi ý trước thuộc kịch bản đã xác nhận.
+                        </p>
+                      ) : (
+                        <PublishedResults
+                          result={sortedResult}
+                          selected={selected}
+                          onSelect={toggle}
+                          onViewing={setViewRoom}
+                          onSimulate={setSimRoom}
+                          onChat={(item) => void chat(item)}
+                          onAskFollowUp={(text) => {
+                            setText(text);
+                            messageInput.current?.focus();
+                          }}
+                          savedIds={savedIds}
+                          onToggleSave={toggleSave}
+                        />
+                      )}
+                      {!editing &&
+                        resultVisible &&
+                        (sortedResult?.results.length ?? 0) > 1 && (
+                          <div className="compare-bar">
+                            <span>
+                              Đã chọn <strong>{selected.length}/3</strong> phòng
+                            </span>
+                            <button
+                              className="button"
+                              disabled={selected.length < 2 || busy}
+                              onClick={() => void compare()}
+                            >
+                              <Icon name="compare" size={17} />
+                              So sánh lựa chọn
+                            </button>
+                          </div>
+                        )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>

@@ -64,9 +64,10 @@ it("renders the loan simulation card with the server numbers in the chat flow", 
   render(<RenterWorkspace api={api} actor={actor} tab="search" />);
   await ask("nếu vay 12 tháng thì sao");
   await waitFor(() =>
-    expect(post).toHaveBeenCalledWith("/sessions/session-1/messages", {
-      text: "nếu vay 12 tháng thì sao",
-    }),
+    expect(post).toHaveBeenCalledWith(
+      "/sessions/session-1/messages",
+      expect.objectContaining({ text: "nếu vay 12 tháng thì sao" }),
+    ),
   );
   const card = await screen.findByLabelText("Thẻ mô phỏng vay");
   expect(card).toHaveTextContent("Studio Q7");

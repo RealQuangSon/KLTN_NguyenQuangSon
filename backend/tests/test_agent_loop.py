@@ -156,3 +156,38 @@ def test_demo_mode_never_enters_the_loop(storage, renter):
         assert reply["intent"] == "find_room" and reply["questions"]
     finally:
         agent.close()
+
+
+def test_loop_controls_workspace_view_and_understands_selection(service, renter):
+    client = FakeClient([
+        message(tool_calls=[call("c1", "find_place", query="Phú Mỹ Hưng")]),
+        message(tool_calls=[call("c2", "update_needs",
+                                 patch={"city": "TP.HCM", "destination_text": "Phú Mỹ Hưng"})]),
+        message(tool_calls=[call("c3", "confirm_and_search")]),
+        message(content="Đã xếp theo khoảng cách tới Phú Mỹ Hưng."),
+    ])
+    service.interpreter.client = client
+    sid = service.create_session(renter)["session_id"]
+    reply = service.message(sid, renter, "Tìm phòng dưới 4 triệu gần Phú Mỹ Hưng",
+                            workspace={"view": None, "selected_room_id": None,
+                                       "visible_room_ids": [], "focus_room_ids": []})
+    # confirm_and_search → bản đồ khi có điểm đến; anchor + tiêu chí cho FE.
+    assert reply["view"] == "map"
+    assert reply["anchor"]["label"] == "Khu đô thị Phú Mỹ Hưng"
+    assert reply["criteria"]["city"] == "TP.HCM"
+    assert reply["turn_id"] and reply["suggested_prompts"]
+
+    # Lượt sau: "căn này" theo selection của workspace, tool cuối room_details → view detail.
+    result = service.results(sid, renter)
+    selected = result["results"][0]["room_id"]
+    client2 = FakeClient([
+        message(tool_calls=[call("d1", "room_details", room_ref="căn này")]),
+        message(content="Đây là căn bạn đang chọn."),
+    ])
+    service.interpreter.client = client2
+    reply = service.message(sid, renter, "căn này ở khu nào?",
+                            workspace={"view": "list", "selected_room_id": selected,
+                                       "visible_room_ids": [item["room_id"] for item in result["results"]],
+                                       "focus_room_ids": [selected]})
+    assert reply["view"] == "detail"
+    assert reply["steps"] and "room_details" in reply["steps"][0]

@@ -15451,6 +15451,16 @@
                 "type": "null"
               }
             ]
+          },
+          "workspace": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -15658,6 +15668,96 @@
               }
             ],
             "title": "Agent Mode"
+          },
+          "view": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "map",
+                  "list",
+                  "detail",
+                  "gallery",
+                  "compare",
+                  "cost",
+                  "route",
+                  "nearby",
+                  "area",
+                  "trust",
+                  "contract",
+                  "booking",
+                  "visit",
+                  "saved",
+                  "keep",
+                  "clear"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View"
+          },
+          "view_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Payload"
+          },
+          "anchor": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor"
+          },
+          "criteria": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criteria"
+          },
+          "suggested_prompts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Prompts"
+          },
+          "turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn Id"
           },
           "provenance": {
             "anyOf": [
@@ -18718,6 +18818,54 @@
           "status"
         ],
         "title": "ViewingResult"
+      },
+      "WorkspaceContext": {
+        "properties": {
+          "view": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View"
+          },
+          "selected_room_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Room Id"
+          },
+          "visible_room_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Visible Room Ids"
+          },
+          "focus_room_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Focus Room Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "WorkspaceContext",
+        "description": "WS-01: ngữ cảnh workspace FE gửi kèm mỗi lượt chat — căn đang chọn, ≤30\ncăn đang hiển thị, ≤4 căn đang chú ý. Chỉ để agent tham chiếu 'căn này'."
       }
     },
     "securitySchemes": {

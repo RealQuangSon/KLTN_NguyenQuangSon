@@ -1,11 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Api, ApiError } from "../api";
 import { RenterWorkspace } from "../pages/RenterWorkspace";
 import { RouterProvider } from "../router";
 import type { Session } from "../types";
-import { session } from "./fixtures";
+import { cost, room, session } from "./fixtures";
 
 // WS-02: luồng chat ưu tiên stream bước xử lý (NDJSON); hiển thị "Đã xử lý qua
 // N bước" theo bước thật; đứt luồng → thử lại → fallback endpoint cũ.
@@ -24,7 +24,8 @@ const doneData = {
   intent: "find_room",
   status: "needs_clarification",
   questions: null,
-  message: "Mình hiểu HUST ở Đại Cồ Việt, Hai Bà Trưng; kết quả đã hiện bên phải.",
+  message:
+    "Mình hiểu HUST ở Đại Cồ Việt, Hai Bà Trưng; kết quả đã hiện bên phải.",
   usage: { logical_calls: 2, tokens: 10, mode: "openai" },
   steps: [
     "find_place: điểm mốc Đại học Bách Khoa Hà Nội (Hà Nội)",
@@ -176,3 +177,82 @@ async function expectAsyncError(promise: Promise<unknown>) {
       ["stream_broken", "budget_exceeded"].includes(error.code),
   );
 }
+
+it("sends the workspace context and applies the agent-selected view", async () => {
+  const api = new Api("token");
+  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  vi.spyOn(api, "get").mockImplementation(
+    async (path) =>
+      (path.endsWith("/results")
+        ? {
+            session_id: "session-1",
+            run_id: "run-1",
+            status: "published",
+            profile_version: 1,
+            results: [
+              {
+                ...room("room-1"),
+                cost: { ...cost, monthly_total_vnd: 3230000 },
+                components: { location: 0.4 },
+              },
+            ],
+          }
+        : baseSession) as never,
+  );
+  const turnSpy = vi
+    .spyOn(api, "turn")
+    .mockImplementation(async (_path, body, onStep) => {
+      onStep?.({
+        name: "confirm_and_search",
+        kind: "tool",
+        detail: "3 căn khớp",
+      });
+      return {
+        ...doneData,
+        message: "Kết quả đã hiện ở khung bên phải.",
+        view: "detail",
+        view_payload: { room_id: "room-1" },
+        anchor: {
+          label: "Đại học Bách Khoa Hà Nội",
+          latitude: 21.004,
+          longitude: 105.8431,
+          uncertainty_m: 300,
+        },
+        turn_id: "turn-1",
+      } as unknown as never;
+    });
+  render(
+    <RouterProvider>
+      <RenterWorkspace
+        api={api}
+        actor={{ id: "renter-a", role: "renter" }}
+        tab="search"
+      />
+    </RouterProvider>,
+  );
+  const composer = await screen.findByPlaceholderText(
+    "Nhắn cho HomeMatch Agent…",
+  );
+  const user = userEvent.setup();
+  await user.type(composer, "căn này thế nào");
+  await user.keyboard("{Enter}");
+  // Workspace context gửi kèm mỗi lượt (căn chọn/≤30 căn hiện/≤4 căn chú ý).
+  expect(turnSpy.mock.calls[0][1]).toMatchObject({
+    text: "căn này thế nào",
+    workspace: {
+      view: null,
+      visible_room_ids: ["room-1"],
+      focus_room_ids: [],
+    },
+  });
+  // View do agent chọn: detail → panel chi tiết căn xuất hiện, nút về bố cục thường.
+  const panel = await screen.findByLabelText("Chi tiết căn đang chọn");
+  await user.click(
+    within(panel).getByRole("button", { name: /Bố cục thường/ }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByText("CHI TIẾT CĂN ĐANG CHỌN"),
+    ).not.toBeInTheDocument(),
+  );
+}, 20000);

@@ -76,7 +76,7 @@ it("carries the landing need through the login bounce into a fresh consultation"
   expect(
     posts.find((call) => call.url.endsWith("/sessions/session-9/messages"))
       ?.body,
-  ).toEqual({ text: followUp });
+  ).toMatchObject({ text: followUp });
   expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
     "session-9",
   );
