@@ -104,8 +104,12 @@ def fixed_intent(text: str) -> str | None:
         return "simulate_finance"
     if any(term in value for term in ("tinh chi phi", "tinh tien", "tien vao o", "mo phong chi phi")):
         return "calculate_cost"
-    if any(term in value for term in ("nguoi that", "nhan vien tu van", "gap quan ly", "gap chu nha",
-                                      "chat voi chu nha", "noi chuyen voi chu nha")):
+    # AG-09: muốn nói chuyện với CHỦ NHÀ của một căn → handover sang chủ nhà;
+    # "người thật/nhân viên/quản trị" mới là ticket hỗ trợ admin.
+    if any(term in value for term in ("chat voi chu nha", "noi chuyen voi chu nha",
+                                      "nhan tin cho chu nha", "gap chu nha")):
+        return "landlord_handover"
+    if any(term in value for term in ("nguoi that", "nhan vien tu van", "gap quan ly")):
         return "human_support"
     if any(term in value for term in ("noi quy", "quy dinh", "tam tru", "hoan coc", "lay lai coc", "quyen loi",
                                       "dieu khoan", "phap ly", "cam nang")):
@@ -218,6 +222,8 @@ handbook là câu hỏi về cẩm nang thuê nhà: nội quy, quy định, tạ
 quyền lợi, điều khoản, pháp lý; không phải yêu cầu tìm phòng hay tính chi phí.
 simulate_finance là câu hỏi mô phỏng khoản vay/trả góp cho phòng (ví dụ "nếu vay 12 tháng",
 "trả góp 24 tháng lãi suất 12,5%"); tiền đã được tách khỏi văn bản, không đoán lại số tiền.
+landlord_handover là yêu cầu nói chuyện/nhắn tin với CHỦ NHÀ của một căn (ví dụ "chat với chủ nhà");
+còn "người thật/nhân viên tư vấn/quản trị" là human_support (ticket admin).
 Giữ null khi người dùng chưa nói thành phố, quận hoặc số người; không mặc định TP.HCM.
 room_type chỉ nhận room (phòng trọ/phòng riêng), studio hoặc apartment (căn hộ/chung cư) khi người dùng nêu rõ; chưa nêu thì để null.
 bedrooms là số phòng ngủ khi người dùng nói rõ (ví dụ "1PN", "2 phòng ngủ"), ngược lại null.

@@ -48,9 +48,10 @@ class Usage(Model):
 
 
 class MessageResult(SessionResult):
-    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support", "handbook", "unknown"]
+    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support",
+                    "landlord_handover", "handbook", "unknown"]
     status: Literal["needs_clarification", "cost_estimate", "support_requested", "handbook_answer",
-                    "simulation", "needs_results"]
+                    "simulation", "needs_results", "handover"]
     questions: list[str] | None = None
     interpreter_mode: str | None = None
     cost: CostResult | None = None
@@ -58,6 +59,8 @@ class MessageResult(SessionResult):
     # {room_id, room_title, scenario:{annual_rate, term_months, principal_vnd}, result}.
     simulation: dict | None = None
     ticket_id: str | None = None
+    # AG-09: id hội thoại khi intent = landlord_handover (FE mở /tin-nhan đúng phòng).
+    conversation_id: str | None = None
     message: str | None = None
     answers: list[dict] | None = None
     house_rules: list[str] | None = None

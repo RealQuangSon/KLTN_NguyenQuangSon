@@ -210,6 +210,7 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
     def open_landlord_chat(room_ref: str):
         item = _visible_room(room_ref)
         conversation = service.start_conversation(actor, item["room_id"], session["id"])
+        toolbox.conversation_id = conversation["conversation_id"]
         return {"conversation_id": conversation["conversation_id"],
                 "note": "Đã mở hội thoại; ngữ cảnh chuyển kèm cho chủ nhà (chỉ băng tài chính, không thu nhập)."}
 
@@ -228,6 +229,7 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
         "estimate_cost": {"agent": "finance", "fn": estimate_cost},
         "search_handbook": {"agent": "handbook", "fn": search_handbook},
         "open_landlord_chat": {"agent": "support", "fn": open_landlord_chat},
+        "open_conversation": {"agent": "support", "fn": open_landlord_chat},
         "prepare_viewing": {"agent": "needs", "fn": prepare_viewing},
     }
 
@@ -290,8 +292,15 @@ def run_turn(service, session: dict, actor, text: str,
 
     def finalize(answer: str, questions: list[str] | None):
         draft = service._draft(session["id"])
-        view, view_payload = pick_view([entry["tool"] for entry in steps], draft)
-        return {"intent": "find_room", "status": "needs_clarification", "message": answer,
+        tool_names = [entry["tool"] for entry in steps]
+        view, view_payload = pick_view(tool_names, draft)
+        # AG-09: lượt mở hội thoại chủ nhà → intent landlord_handover để FE chuyển /tin-nhan.
+        intent = "landlord_handover" if tool_names and tool_names[-1] in {"open_landlord_chat", "open_conversation"} else "find_room"
+        conversation_id = getattr(toolbox, "conversation_id", None) \
+            if intent == "landlord_handover" else None
+        return {"intent": intent, "status": "needs_clarification" if intent == "find_room" else "handover",
+                "conversation_id": conversation_id,
+                "message": answer,
                 "questions": questions or None, "interpreter_mode": "openai", "agent_mode": "loop",
                 "steps": [f"{entry['tool']}: {entry['detail']}" for entry in steps] or None,
                 "view": view, "view_payload": view_payload,

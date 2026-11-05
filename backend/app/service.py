@@ -1782,6 +1782,31 @@ class HomeMatchService:
                                "phòng, bấm “Chat với chủ nhà” ở phòng đó để chuyển kèm ngữ cảnh."},
                     "provenance": stamp("deterministic-engine", "support", **state["toolbox"].summary("support"))}
 
+        def handover(state: ChatState):
+            """AG-09: handover sang chủ nhà của một căn trong kết quả hiện tại.
+            Ngữ cảnh chuyển kèm chỉ gồm band tài chính, không bao giờ thu nhập;
+            không rõ căn → hỏi lại kèm danh sách căn đang hiển thị."""
+            session = self.repo.session(state["session_id"])
+            require("support:handoff", state["actor"], Resource.for_session(session))
+            visible = self.results(state["session_id"], state["actor"])["results"]
+            room_id = resolve_room_reference(state["text"], visible)
+            if room_id is None:
+                if mention_room_id(state["text"]):
+                    raise DomainError("not_visible", "Chỉ mở hội thoại cho căn trong kết quả hiện tại.", 403)
+                options = [f"Căn {index + 1}: {item['title'].split('. ')[0]} ({item['room_id']})"
+                           for index, item in enumerate(visible[:5])]
+                return {"response": {"intent": "landlord_handover", "status": "needs_clarification",
+                                     "questions": (["Bạn muốn chat với chủ nhà của căn nào?"] + options) or None},
+                        "provenance": stamp("deterministic-engine", "handover",
+                                            outcome="missing_room_reference")}
+            conversation = state["toolbox"].call("support", "open_conversation", self.start_conversation,
+                                                 state["actor"], room_id, state["session_id"])
+            return {"response": {"intent": "landlord_handover", "status": "handover",
+                                 "conversation_id": conversation["id"],
+                                 "message": f"Đã mở hội thoại với chủ nhà căn {room_id}; "
+                                            "ngữ cảnh đã được chuyển kèm (chỉ băng tài chính, không thu nhập)."},
+                    "provenance": stamp("deterministic-engine", "handover", room_id=room_id)}
+
         def handbook_node(state: ChatState):
             # Retrieval only: platform entries and, when a listing is named, that landlord's house rules.
             visible = self.results(state["session_id"], state["actor"])["results"]
@@ -1802,11 +1827,13 @@ class HomeMatchService:
         graph.add_node("interview", interview)
         graph.add_node("finance", finance)
         graph.add_node("support", support)
+        graph.add_node("handover", handover)
         graph.add_edge(START, "route")
         graph.add_conditional_edges("route", lambda state: state["intent"],
             {"find_room": "interview", "unknown": "interview", "calculate_cost": "finance",
-             "simulate_finance": "finance", "human_support": "support", "handbook": "handbook"})
-        for node in ("interview", "finance", "support", "handbook"):
+             "simulate_finance": "finance", "human_support": "support",
+             "landlord_handover": "handover", "handbook": "handbook"})
+        for node in ("interview", "finance", "support", "handover", "handbook"):
             graph.add_edge(node, END)
         # Raw chat history is not checkpointed in this scaffold.
         return graph.compile()

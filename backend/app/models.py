@@ -290,7 +290,8 @@ class Candidate(Model):
 
 class Extraction(Model):
     # Required nullable fields make the OpenAI output schema explicit.
-    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support", "handbook", "unknown"]
+    intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support",
+                    "landlord_handover", "handbook", "unknown"]
     city: str | None
     area: str | None
     room_type: RoomType | None = None

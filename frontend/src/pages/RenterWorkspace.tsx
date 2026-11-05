@@ -559,6 +559,13 @@ export function RenterWorkspace({
             .view_payload ?? null) as Record<string, unknown> | null,
         );
         apply(response);
+        // AG-09: handover chủ nhà → chuyển sang Tin nhắn mở đúng hội thoại.
+        const handover = response as {
+          intent?: string;
+          conversation_id?: string;
+        };
+        if (handover.intent === "landlord_handover" && handover.conversation_id)
+          openConversation(handover.conversation_id, "/tin-nhan");
         putMessages((m) => [
           ...m,
           { role: "user", text: value },

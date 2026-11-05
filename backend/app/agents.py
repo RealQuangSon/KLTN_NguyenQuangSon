@@ -24,7 +24,7 @@ AGENT_TOOLS: dict[str, frozenset[str]] = {
     "finance": frozenset({"calculate_cost", "assess_affordability", "estimate_loan", "simulate_scenarios",
                           "estimate_cost"}),
     "ranking": frozenset({"match_catalog", "semantic_scores", "explain_candidate"}),
-    "support": frozenset({"request_support", "open_landlord_chat"}),
+    "support": frozenset({"request_support", "open_landlord_chat", "open_conversation"}),
     "handbook": frozenset({"search_handbook"}),
 }
 MAX_STEPS = 4
