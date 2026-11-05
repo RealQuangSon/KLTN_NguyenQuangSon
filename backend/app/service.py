@@ -385,21 +385,29 @@ class HomeMatchService:
             raise DomainError("no_profile", "Chưa có hồ sơ đã xác nhận.", 409)
         return Profile.model_validate_json(session["profile_json"])
 
-    def _profile_from_draft(self, session_id: str) -> Profile | None:
+    def _profile_from_draft(self, session_id: str, session_row: dict | None = None) -> Profile | None:
         """Hồ sơ từ nháp (chưa ghi gì): lần đầu dùng mức tiền nháp làm trần như
         auto-confirm ở FE; sau khi đã xác nhận chỉ áp trường nháp có bằng chứng
         (chat/agent/form), KHÔNG đổi trần tiền — tiền chỉ là gợi ý tới khi khách
-        xác nhận qua form. None khi chưa đủ dữ liệu tối thiểu."""
-        session = self.repo.session(session_id)
+        xác nhận qua form. None khi chưa đủ dữ liệu tối thiểu. `session_row` cho
+        phép clarify dựng hồ sơ tạm với biến thể nháp không ghi."""
+        session = session_row or self.repo.session(session_id)
         draft = DraftProfile.model_validate_json(session["draft_json"])
         scenario = Scenario(people=draft.people or 1, vehicles=1, electricity_kwh="140",
                             water_m3="3", moving_vnd=300_000, setup_vnd=200_000)
         if not session["profile_json"]:
             if not draft.city or draft.budget_hint_vnd is None:
                 return None
+            # AG-11: budget_scope "rent" → hint là trần THUÊ (max_rent_vnd), trần
+            # tổng tạm bằng hint (thận trọng, không bịa hệ số phí); total/None →
+            # hint là trần tổng tháng (hành vi cũ).
+            if draft.budget_scope == "rent":
+                rent_cap, monthly_cap = draft.budget_hint_vnd, draft.budget_hint_vnd
+            else:
+                rent_cap, monthly_cap = None, draft.budget_hint_vnd
             return Profile(city=draft.city, area=draft.area, room_type=draft.room_type or "room",
                            min_bedrooms=draft.bedrooms if (draft.room_type == "apartment" and draft.bedrooms) else None,
-                           max_monthly_cost_vnd=draft.budget_hint_vnd, scenario=scenario,
+                           max_monthly_cost_vnd=monthly_cap, max_rent_vnd=rent_cap, scenario=scenario,
                            preferences=list(draft.preferences), destination=draft.destination,
                            soft_description=draft.soft_description,
                            accept_estimated_data=draft.accept_estimated_data)
@@ -428,11 +436,63 @@ class HomeMatchService:
             updates["soft_description"] = draft.soft_description
         if scenario_update:
             updates["scenario"] = base.scenario.model_copy(update=scenario_update)
+        # AG-11: chip đổi budget_scope trên hồ sơ đã xác nhận.
+        if evidence.get("budget_scope") and draft.budget_scope == "rent" and draft.budget_hint_vnd:
+            updates["max_rent_vnd"] = draft.budget_hint_vnd
+        elif evidence.get("budget_scope") and draft.budget_scope == "total" and draft.budget_hint_vnd:
+            updates["max_monthly_cost_vnd"] = draft.budget_hint_vnd
         return base.model_copy(update=updates) if updates else base
 
     def room_reference_in(self, ref: str, visible: dict) -> str | None:
         """AG-05: resolver đầy đủ trong agent_guard, bó trong danh sách đang có."""
         return resolve_room_reference(ref, [{"room_id": room_id} for room_id in visible])
+
+    def _strip_money_for_decision(self, context: dict) -> dict:
+        """Ngữ cảnh gửi Jev: không tiền tuyệt đối, không thu nhập (PLAN AG-11)."""
+        draft = context.get("draft")
+        if draft:
+            draft.pop("budget_hint_vnd", None)
+        confirmed = context.get("confirmed_profile")
+        if confirmed:
+            for key in ("max_monthly_cost_vnd", "max_rent_vnd", "max_initial_cash_vnd", "monthly_income_vnd"):
+                confirmed.pop(key, None)
+        return context
+
+    def _apply_clarification_choice(self, session_id: str, best: dict):
+        """Tự chấp nhận cách hiểu phổ biến nhất (p_max ≥ ngưỡng): áp vào nháp ở
+        trạng thái inferred kèm nhãn clarify:auto — khách vẫn sửa được."""
+        interpretation = best["interpretation"]
+        session = self.repo.session(session_id)
+        draft = self._draft(session_id)
+        evidence = f"clarify:auto-r{session['draft_revision'] + 1}"
+        if interpretation["field"] == "destination" and draft.destination:
+            draft.destination = draft.destination.model_copy(
+                update={"max_distance_m": interpretation["radius_m"]})
+            draft.field_status["destination"] = "inferred"
+            draft.evidence_ref["destination"] = evidence
+        elif interpretation["field"] == "budget":
+            draft.budget_scope = interpretation["scope"]
+            draft.field_status["budget_scope"] = "inferred"
+            draft.evidence_ref["budget_scope"] = evidence
+        else:
+            return None
+        self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
+                               session["draft_revision"])
+        return best["label"]
+
+    def _clarification_payload(self, session_id: str) -> dict | None:
+        """AG-11: dựng lựa chọn từ kho thật, Jev/luật quyết định hỏi hay tự chấp nhận."""
+        from . import clarify as clarify_layer, decisions as decisions_layer
+        clarification = clarify_layer.build_clarification(self, session_id)
+        if clarification is None:
+            return None
+        context = self._strip_money_for_decision(self._agent_context(self.repo.session(session_id)))
+        mode = "rules" if self.interpreter.mode != "openai" else None
+        decision, best, decided_by, _ = decisions_layer.decide(clarification, context, mode=mode)
+        if decision == "accept" and best is not None:
+            self._apply_clarification_choice(session_id, best)
+            return {"assumed": clarify_layer.option_label(best)}
+        return clarify_layer.to_dto(clarification, decided_by)
 
     def _suggested_prompts(self, session_id: str) -> list[str]:
         """WS-01: gợi ý tiếp theo tất định theo trạng thái phiên (không LLM, không số lạ)."""
@@ -514,10 +574,25 @@ class HomeMatchService:
             session = self._session_for(session_id, actor, "renter")
             require("draft:patch", actor, Resource.for_session(session))
             fields = {"city", "area", "people", "preferences", "room_type", "bedrooms",
-                      "needs_destination", "accept_estimated_data", "soft_description", "destination"}
+                      "needs_destination", "accept_estimated_data", "soft_description", "destination",
+                      "budget_scope", "destination_radius_m"}
             if set(patch.set) - fields or set(patch.clear_fields) - fields:
                 raise DomainError("invalid_patch", "Chỉ sửa trường nhu cầu nháp được hỗ trợ.", 422)
+            if "budget_scope" in patch.set and patch.set["budget_scope"] not in {"rent", "total"}:
+                raise DomainError("invalid_patch", "budget_scope chỉ là rent hoặc total.", 422)
+            # AG-11: chip bán kính điểm đến — key ảo dịch thành max_distance_m của
+            # destination hiện có (không tạo destination khi chưa có).
+            radius = patch.set.pop("destination_radius_m", None)
             values = json.loads(session["draft_json"])
+            if radius is not None:
+                if not values.get("destination"):
+                    raise DomainError("invalid_patch", "Chưa có điểm đến để đổi bán kính.", 422)
+                if not isinstance(radius, int) or not 500 <= radius <= 20000:
+                    raise DomainError("invalid_patch", "Bán kính cần 500–20000 m.", 422)
+                values["destination"]["max_distance_m"] = radius
+                touched_radius = True
+            else:
+                touched_radius = False
             values.update(patch.set)
             for field in patch.clear_fields:
                 values[field] = ([] if field == "preferences"
@@ -532,7 +607,13 @@ class HomeMatchService:
                 raise DomainError("invalid_amenity", "Chọn tiện ích trong từ điển được hỗ trợ.", 422)
             draft.preferences = [item for item in draft.preferences if item not in patch.remove_preferences]
             touched = set(patch.set) | ({"preferences"} if patch.remove_preferences else set())
-            evidence = f"form:r{patch.expected_draft_revision + 1}"
+            # AG-11: chip làm rõ gửi evidence `clarify:rN` và trạng thái confirmed;
+            # FE thấy tiền tố clarify: là lượt vừa chọn cách hiểu → tự chạy vòng tìm.
+            source_prefix = "clarify" if getattr(patch, "source", "form") == "clarify" else "form"
+            evidence = f"{source_prefix}:r{patch.expected_draft_revision + 1}"
+            if touched_radius:
+                draft.field_status["destination"] = "confirmed"
+                draft.evidence_ref["destination"] = evidence
             for field in patch.clear_fields:
                 draft.field_status[field] = "unknown"
                 draft.evidence_ref.pop(field, None)
@@ -1680,8 +1761,21 @@ class HomeMatchService:
                 # Không có mức cũ để nới/giảm: hỏi rõ, không đoán (AG-02).
                 questions = ["Mình chưa nắm mức tổng tháng hiện tại của bạn; cho mình biết mức muốn áp "
                              "(ví dụ “tổng tháng 4,5 triệu”) rồi mình nới/giảm theo."]
+            # AG-11: tối đa 1 câu làm rõ/lượt; tự chấp nhận khi p_max đủ cao thì
+            # nói rõ giả định thay vì hỏi.
+            clarification = None
+            if not needs_budget_baseline:
+                payload = self._clarification_payload(session["id"])
+                if payload and payload.get("assumed"):
+                    questions.append(f"Mình đang hiểu: {payload['assumed']} — sai thì bấm sửa.")
+                    questions = questions[-2:]
+                elif payload:
+                    # Chip làm rõ render TRÊN ĐẦU câu trả lời ở FE; câu hỏi thường
+                    # vẫn giữ nguyên bên dưới (không thay thế).
+                    clarification = payload
             return {"response": {"intent": "find_room", "status": "needs_clarification",
                     "interpreter_mode": self.interpreter.mode, "questions": questions,
+                    "clarification": clarification,
                     "budget_explicit": budget_explicit or None},
                     "provenance": stamp("interpreter", "interview", interpreter_mode=self.interpreter.mode,
                                         **state["toolbox"].summary("needs"))}

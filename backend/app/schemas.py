@@ -73,6 +73,9 @@ class MessageResult(SessionResult):
     # AG-02: true khi lượt này chứa mức tiền tuyệt đối/tương đối đã tính — FE chỉ
     # áp budget_hint vào trần khi thấy cờ này (chặn bug "nới thêm 1 triệu").
     budget_explicit: bool | None = None
+    # AG-11: câu hỏi làm rõ kèm chip có patch cấu trúc; FE render TRÊN ĐẦU câu
+    # trả lời, bấm chip gửi PATCH draft (source=clarify) rồi tự chạy vòng tìm.
+    clarification: dict | None = None
     # WS-01: agent điều khiển workspace — view được chọn và payload kèm theo.
     # View lạ client tự bỏ qua (giữ view cũ); "keep" giữ nguyên; "clear" dọn workspace.
     view: Literal["map", "list", "detail", "gallery", "compare", "cost", "route", "nearby",

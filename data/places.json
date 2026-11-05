@@ -29,7 +29,9 @@
         "dhqg hn",
         "vnu",
         "dai hoc quoc gia ha noi",
-        "xuan thuy"
+        "xuan thuy",
+        "dh quoc gia",
+        "dai hoc quoc gia"
       ],
       "city": "Hà Nội",
       "latitude": 21.0075,
@@ -496,7 +498,8 @@
         "bach khoa hcm",
         "dh bach khoa tp hcm",
         "bach khoa quan 10",
-        "bach khoa"
+        "bach khoa",
+        "bach khoa tp hcm"
       ],
       "city": "TP.HCM",
       "latitude": 10.774,
@@ -711,7 +714,8 @@
       ],
       "aliases": [
         "bv cho ray",
-        "benh vien cho ray"
+        "benh vien cho ray",
+        "cho ray"
       ],
       "city": "TP.HCM",
       "latitude": 10.755,

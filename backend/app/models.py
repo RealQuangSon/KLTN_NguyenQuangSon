@@ -147,7 +147,7 @@ class Room(Model):
 FieldStatus = Literal["unknown", "inferred", "confirmed"]
 DRAFT_TRACKED_FIELDS = ("city", "area", "people", "preferences", "room_type", "bedrooms",
                         "needs_destination", "accept_estimated_data", "soft_description", "budget_hint",
-                        "destination")
+                        "destination", "budget_scope")
 
 
 class DraftProfile(Model):
@@ -160,6 +160,9 @@ class DraftProfile(Model):
     # AG-01: điểm đến có tọa độ từ danh mục places.json (inferred từ chat hoặc
     # confirmed qua form); xếp hạng theo khoảng cách dùng đúng trường này.
     destination: Destination | None = None
+    # AG-11: cách hiểu mức tiền do chip làm rõ ("rent" = chỉ trần thuê,
+    # "total" = trần tổng tháng); None coi như total (hành vi cũ).
+    budget_scope: Literal["rent", "total"] | None = None
     needs_destination: bool = False
     # Bật chấp nhận dữ liệu ước tính từ hội thoại ("chấp nhận phí/dữ liệu ước tính").
     accept_estimated_data: bool = False
@@ -344,6 +347,9 @@ class DraftPatch(Model):
     set: dict = Field(default_factory=dict)
     clear_fields: list[str] = Field(default_factory=list)
     remove_preferences: list[str] = Field(default_factory=list)
+    # AG-11: nguồn patch — "clarify" khi chip làm rõ được bấm (evidence clarify:rN,
+    # FE tự xác nhận và chạy vòng tìm); mặc định "form".
+    source: Literal["form", "clarify"] = "form"
 
 
 class CatalogStatus(Model):

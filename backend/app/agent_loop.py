@@ -386,6 +386,9 @@ def run_turn(service, session: dict, actor, text: str,
         response_dict = finalize(SAFE_REPLY, None)
     response_dict["suggested_prompts"] = service._suggested_prompts(session["id"])
     response_dict["criteria"] = service._criteria_projection(session["id"])
+    # AG-11: không có chip ask_user từ model thì vẫn có thể có làm rõ từ kho thật.
+    if not response_dict.get("questions"):
+        response_dict["clarification"] = service._clarification_payload(session["id"])
     service.interpreter.last_usage = {"logical_calls": usage_total["logical_calls"],
                                       "tokens": None if usage_total["saw_none"] else usage_total["tokens"]}
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",

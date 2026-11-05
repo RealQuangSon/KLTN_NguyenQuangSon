@@ -1,0 +1,327 @@
+{
+  "kind": "clarify_gold",
+  "version": 1,
+  "note": "AG-11 gold: nhãn 'nên hỏi?' và lựa chọn đúng. Nhãn do tác giả đặt (chưa có nhãn người độc lập); dùng hiệu chỉnh ngưỡng 0,80/0,40/0,2 và đo precision/recall của quyết định hỏi.",
+  "cases": [
+    {
+      "case_id": "CL01",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần HUST cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL02",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần ĐH Quốc gia cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL03",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Bách Khoa TP.HCM cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL04",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Times City cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL05",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Phú Mỹ Hưng cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL06",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Chợ Rẫy cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL07",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Bệnh viện Việt Đức cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL08",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần Sân bay Tân Sơn Nhất cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL09",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần KCN Linh Trung cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL10",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng trọ gần ĐH Kinh tế Quốc dân cho 1 người",
+      "should_ask": "yes",
+      "preferred": "radius_2000",
+      "note": "điểm đến named, chưa nói bán kính → hỏi 2 km hay 5 km"
+    },
+    {
+      "case_id": "CL11",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng gần HUST trong bán kính 2 km",
+      "should_ask": "no",
+      "preferred": "radius_2000",
+      "note": "bán kính rõ hoặc không có điểm đến → không hỏi"
+    },
+    {
+      "case_id": "CL12",
+      "ambiguity": "destination_radius",
+      "text": "phòng cách ĐH Quốc gia 5 km",
+      "should_ask": "no",
+      "preferred": "radius_5000",
+      "note": "bán kính rõ hoặc không có điểm đến → không hỏi"
+    },
+    {
+      "case_id": "CL13",
+      "ambiguity": "destination_radius",
+      "text": "Tìm phòng Quận 7, không cần gần đâu",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "bán kính rõ hoặc không có điểm đến → không hỏi"
+    },
+    {
+      "case_id": "CL14",
+      "ambiguity": "destination_radius",
+      "text": "phòng Bình Thạnh gần chợ",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "bán kính rõ hoặc không có điểm đến → không hỏi"
+    },
+    {
+      "case_id": "CL15",
+      "ambiguity": "budget_scope",
+      "text": "phòng 3,5 triệu Quận 7",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL16",
+      "ambiguity": "budget_scope",
+      "text": "cần phòng dưới 4 triệu Bình Thạnh",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL17",
+      "ambiguity": "budget_scope",
+      "text": "tầm 2,5 tr Thủ Đức",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL18",
+      "ambiguity": "budget_scope",
+      "text": "phòng 4 triệu gần chợ",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL19",
+      "ambiguity": "budget_scope",
+      "text": "budget 3 triệu Hà Đông",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL20",
+      "ambiguity": "budget_scope",
+      "text": "phòng tối đa 3 triệu Cầu Giấy",
+      "should_ask": "yes",
+      "preferred": "total_cap",
+      "note": "chưa nói tổng hay thuê → hỏi; ưu tiên hiểu là trấn tổng tháng"
+    },
+    {
+      "case_id": "CL21",
+      "ambiguity": "budget_scope",
+      "text": "tổng tháng 3,5 triệu Quận 7",
+      "should_ask": "no",
+      "preferred": "total_cap",
+      "note": "từ khóa tổng/thuê làm rõ cách hiểu → không hỏi"
+    },
+    {
+      "case_id": "CL22",
+      "ambiguity": "budget_scope",
+      "text": "tiền thuê dưới 3 triệu Bình Thạnh",
+      "should_ask": "no",
+      "preferred": "rent_cap",
+      "note": "từ khóa tổng/thuê làm rõ cách hiểu → không hỏi"
+    },
+    {
+      "case_id": "CL23",
+      "ambiguity": "budget_scope",
+      "text": "rent max 2,5 tr Thủ Đức",
+      "should_ask": "no",
+      "preferred": "rent_cap",
+      "note": "từ khóa tổng/thuê làm rõ cách hiểu → không hỏi"
+    },
+    {
+      "case_id": "CL24",
+      "ambiguity": "budget_scope",
+      "text": "tổng chi phí tháng không quá 4 triệu",
+      "should_ask": "no",
+      "preferred": "total_cap",
+      "note": "từ khóa tổng/thuê làm rõ cách hiểu → không hỏi"
+    },
+    {
+      "case_id": "CL25",
+      "ambiguity": "budget_scope",
+      "text": "phòng 3,5 triệu Quận 10",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL26",
+      "ambiguity": "budget_scope",
+      "text": "phòng 2 triệu Nhà Bè",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL27",
+      "ambiguity": "budget_scope",
+      "text": "phòng 6 triệu Tân Phú",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL28",
+      "ambiguity": "budget_scope",
+      "text": "phòng 1,5 triệu Cần Giờ",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL29",
+      "ambiguity": "budget_scope",
+      "text": "phòng 7 triệu Thủ Đức",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL30",
+      "ambiguity": "budget_scope",
+      "text": "phòng 900 nghìn Ba Đình",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL31",
+      "ambiguity": "budget_scope",
+      "text": "phòng 8 triệu Tây Hồ",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL32",
+      "ambiguity": "budget_scope",
+      "text": "phòng 650 nghìn Cần Giờ",
+      "should_ask": "low_impact",
+      "preferred": null,
+      "note": "mức ngoài tầm kho hoặc quá hẹp → ảnh hưởng thấp, không hỏi"
+    },
+    {
+      "case_id": "CL33",
+      "ambiguity": "destination_radius",
+      "text": "gần Times City 3 km cho 2 người",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "bán kính đã nói rõ"
+    },
+    {
+      "case_id": "CL34",
+      "ambiguity": "destination_radius",
+      "text": "cạnh Chợ Rẫy 1,5 km",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "bán kính đã nói rõ"
+    },
+    {
+      "case_id": "CL35",
+      "ambiguity": "destination_radius",
+      "text": "gần KCN Linh Trung trong vòng 2 km",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "bán kính đã nói rõ"
+    },
+    {
+      "case_id": "CL36",
+      "ambiguity": "none",
+      "text": "Tìm phòng trọ Quận Bình Thạnh cho 2 người có máy giặt",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "nhu cầu đủ rõ"
+    },
+    {
+      "case_id": "CL37",
+      "ambiguity": "none",
+      "text": "studio Hà Đông 2PN dưới 5 triệu tổng tháng",
+      "should_ask": "no",
+      "preferred": "total_cap",
+      "note": "loại + ngân sách rõ"
+    },
+    {
+      "case_id": "CL38",
+      "ambiguity": "none",
+      "text": "cần phòng gần bệnh viện Việt Đức, chỉ tính tiền thuê 3 triệu",
+      "should_ask": "no",
+      "preferred": "rent_cap",
+      "note": "điểm đến + cách hiểu tiền rõ"
+    },
+    {
+      "case_id": "CL39",
+      "ambiguity": "destination_radius",
+      "text": "phòng gần trường đại học Knoxville",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "điểm mốc ngoài danh mục → không hỏi được bán kính"
+    },
+    {
+      "case_id": "CL40",
+      "ambiguity": "budget_scope",
+      "text": "cho mình xin phòng giá mềm khu Hoàng Mai",
+      "should_ask": "no",
+      "preferred": null,
+      "note": "không có con số → không có mơ hồ ngân sách"
+    }
+  ]
+}

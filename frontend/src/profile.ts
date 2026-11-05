@@ -45,8 +45,13 @@ export function profileUpdateFromChat(
   budgetExplicit = false,
 ): Profile | null {
   const changed = (key: keyof Draft) =>
-    Boolean(after.evidence_ref?.[key]?.startsWith("chat:")) &&
-    JSON.stringify(before[key]) !== JSON.stringify(after[key]);
+    Boolean(
+      // AG-11: evidence từ chip làm rõ (clarify:) và vòng lặp agent (agent:)
+      // cũng là lượt chat đổi nhu cầu — tự xác nhận để chạy vòng tìm mới.
+      after.evidence_ref?.[key]?.startsWith("chat:") ||
+        after.evidence_ref?.[key]?.startsWith("agent:") ||
+        after.evidence_ref?.[key]?.startsWith("clarify:"),
+    ) && JSON.stringify(before[key]) !== JSON.stringify(after[key]);
   const next: Profile = { ...confirmed, scenario: { ...confirmed.scenario } };
   if (changed("city") && after.city) next.city = after.city;
   if (changed("area")) next.area = after.area ?? null;

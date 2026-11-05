@@ -256,3 +256,73 @@ it("sends the workspace context and applies the agent-selected view", async () =
     ).not.toBeInTheDocument(),
   );
 }, 20000);
+
+it("AG-11: chip làm rõ render trên đầu câu trả lời và gửi PATCH clarify", async () => {
+  const api = new Api("token");
+  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  vi.spyOn(api, "get").mockImplementation(
+    async (path) =>
+      (path.endsWith("/results")
+        ? {
+            session_id: "session-1",
+            status: "awaiting_confirmation",
+            results: [],
+          }
+        : baseSession) as never,
+  );
+  vi.spyOn(api, "turn").mockResolvedValue({
+    ...doneData,
+    message: "Mình tìm được vài căn gần Phú Mỹ Hưng.",
+    clarification: {
+      id: "clarify-destination",
+      field: "destination",
+      question: "Bạn muốn ở gần điểm đến trong bán kính nào?",
+      options: [
+        {
+          id: "opt-0",
+          label: "2 km · 12 căn",
+          detail: "",
+          probability: 0.4,
+          patch: { set: { destination_radius_m: 2000 } },
+        },
+        {
+          id: "opt-1",
+          label: "5 km · 31 căn",
+          detail: "",
+          probability: 0.6,
+          patch: { set: { destination_radius_m: 5000 } },
+        },
+      ],
+      decided_by: "rules",
+    },
+  } as unknown as never);
+  const patch = vi.spyOn(api, "patch").mockResolvedValue({} as never);
+  render(
+    <RouterProvider>
+      <RenterWorkspace
+        api={api}
+        actor={{ id: "renter-a", role: "renter" }}
+        tab="search"
+      />
+    </RouterProvider>,
+  );
+  const composer = await screen.findByPlaceholderText(
+    "Nhắn cho HomeMatch Agent…",
+  );
+  const user = userEvent.setup();
+  await user.type(composer, "gần Phú Mỹ Hưng");
+  await user.keyboard("{Enter}");
+  const group = await screen.findByRole("group", { name: "Lựa chọn làm rõ" });
+  await user.click(
+    within(group).getByRole("button", { name: /5 km · 31 căn/ }),
+  );
+  await waitFor(() =>
+    expect(patch).toHaveBeenCalledWith(
+      "/sessions/session-1/draft",
+      expect.objectContaining({
+        set: { destination_radius_m: 5000 },
+        source: "clarify",
+      }),
+    ),
+  );
+}, 20000);

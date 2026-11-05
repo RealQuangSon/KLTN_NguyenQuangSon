@@ -32,9 +32,20 @@ import { LoadingState } from "../components/LoadingState";
 import { AgentMascot } from "../components/AgentMascot";
 import { VoiceButton } from "../components/VoiceInput";
 import { Link } from "../router";
+type ClarificationOption = {
+  id: string;
+  label: string;
+  patch: { set: Record<string, unknown> };
+};
 type Message = {
   role: "user" | "assistant";
   text: string;
+  // AG-11: câu hỏi làm rõ kèm chip — render trên đầu câu trả lời.
+  clarification?: {
+    question: string;
+    options: ClarificationOption[];
+    decided_by: string;
+  } | null;
   // FE-07: reply của intent simulate_finance kèm thẻ mô phỏng hoặc nhắc xem lại danh sách.
   simulation?: ChatSimulation | null;
   needsResults?: boolean;
@@ -592,12 +603,35 @@ export function RenterWorkspace({
                 ? (response.simulation ?? null)
                 : null,
             needsResults: response.status === "needs_results",
+            // AG-11: chip làm rõ từ kho thật (render trên đầu câu trả lời).
+            clarification:
+              (response as { clarification?: Message["clarification"] })
+                .clarification ?? null,
             // WS-02: "Đã xử lý qua N bước" bung được theo bước thật.
             steps: response.steps ?? undefined,
           },
         ]);
       }
     });
+  // AG-11: bấm chip làm rõ → PATCH nháp với patch có cấu trúc (source=clarify,
+  // server ghi confirmed kèm evidence clarify:rN); hiệu ứng tự xác nhận sẽ chạy
+  // vòng tìm mới theo cách hiểu đã chọn. Không tự nới điều kiện cứng.
+  const applyClarification = async (option: ClarificationOption) => {
+    const sid = current.current;
+    if (!sid || lock.current) return;
+    try {
+      await api.patch(`/sessions/${sid}/draft`, {
+        expected_draft_revision: session?.draft_revision ?? 0,
+        set: option.patch.set ?? {},
+        clear_fields: [],
+        remove_preferences: [],
+        source: "clarify",
+      });
+      await refresh();
+    } catch (err) {
+      if (live.current) setError((err as Error).message);
+    }
+  };
   const send = async () => {
     const content = text.trim();
     if (!content) return;
@@ -1080,6 +1114,27 @@ export function RenterWorkspace({
                     <span className="visually-hidden">
                       {m.role === "assistant" ? "Trợ lý HomeMatch" : "Bạn"}
                     </span>
+                    {m.role === "assistant" && m.clarification && (
+                      <div
+                        className="chat-clarify"
+                        role="group"
+                        aria-label="Lựa chọn làm rõ"
+                      >
+                        <strong>{m.clarification.question}</strong>
+                        <div className="relax-chips">
+                          {m.clarification.options.map((option) => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              className="button small outline"
+                              onClick={() => void applyClarification(option)}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {m.role === "assistant" ? (
                       <RoomRefText
                         text={m.text}
