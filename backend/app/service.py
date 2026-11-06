@@ -19,7 +19,7 @@ os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 
-from .agent_budget import SessionCallBudget
+from .agent_budget import SessionTurnBudget
 from .agent_capability import Resource, require, require_session_role
 from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fallback_reply,
                           quarantine_reply, redact, redact_tree, resolve_room_reference,
@@ -135,11 +135,16 @@ class HomeMatchService:
             if not 0 <= self.catalog.alpha <= 1:
                 raise ValueError("HOMEMATCH_SEMANTIC_ALPHA must be in [0,1]")
         self.interpreter = interpreter or make_interpreter()
+        # HN-06: ngân sách theo LƯỢT CHAT cần AI + trần chi phí USD của phiên.
         try:
-            budget_limit = int(os.getenv("HOMEMATCH_SESSION_LLM_BUDGET", "50"))
+            budget_limit = int(os.getenv("HOMEMATCH_SESSION_TURN_BUDGET", "60"))
         except ValueError:
-            raise ValueError("HOMEMATCH_SESSION_LLM_BUDGET must be an integer") from None
-        self.budget = SessionCallBudget(budget_limit)
+            raise ValueError("HOMEMATCH_SESSION_TURN_BUDGET must be an integer") from None
+        try:
+            cost_cap = float(os.getenv("HOMEMATCH_SESSION_COST_CAP_USD", "0.05"))
+        except ValueError:
+            raise ValueError("HOMEMATCH_SESSION_COST_CAP_USD must be a number") from None
+        self.budget = SessionTurnBudget(budget_limit, cost_cap)
         # In-memory diagnostics of the last chat turn / result read per session.
         # Redacted at write time; never persisted and never returned to the model.
         self._traces: dict[str, dict] = {}
@@ -299,8 +304,8 @@ class HomeMatchService:
                         try:
                             response, provenance = run_agent_turn(self, session, actor, text, emit=emit, turn_id=turn_id)
                         except DomainError as error:
-                            if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
-                                raise
+                            if error.code not in PROVIDER_FALLBACK_CODES:
+                                raise  # budget_exceeded đi thẳng 429 thân thiện (HN-06)
                             provider_error = error.code
                             try:
                                 response, provenance = self._chat_graph_turn(session, actor, text,
@@ -333,7 +338,9 @@ class HomeMatchService:
                 self.metrics.provider_usage(usage)
             guard = {"injection_flagged": scan.flagged, "patterns": scan.patterns,
                      "provider_error": provider_error,
-                     "budget": {"used": self.budget.used(session_id), "limit": self.budget.limit}}
+                     "budget": {"turns_used": self.budget.used(session_id),
+                                "turn_limit": self.budget.turn_limit,
+                                "spent_usd": self.budget.spent_usd(session_id)}}
             self._traces.setdefault(session_id, {})["chat"] = {
                 "provenance": provenance, "guard": guard,
                 "input_redacted": redact(text),
@@ -387,9 +394,9 @@ class HomeMatchService:
     def _chat_graph_turn(self, session: dict, actor: Actor, text: str, explicit_route: str | None,
                          cost_input: CostRequest | None, spend: bool = True) -> tuple[dict, dict]:
         if explicit_route is None and spend:
-            # One logical interpreter/provider call per extraction turn; attempts
-            # count even when the provider fails.
-            self.budget.spend(session["id"])
+            # One AI chat turn per extraction turn (HN-06); attempts count even
+            # when the provider fails.
+            self.budget.ensure_turn(session["id"])
         state = self.chat_graph.invoke({"session_id": session["id"], "actor": actor, "text": redact(text),
             "intent": explicit_route, "budget_hint": rent_budget_hint(text),
             # AG-02: parse tiền tương đối từ câu GỐC (trước redact — placeholder

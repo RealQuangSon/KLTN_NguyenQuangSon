@@ -103,7 +103,8 @@ def test_pii_never_reaches_reply_trace_or_checkpoints(tmp_path, renter, landlord
 
 
 def test_budget_limits_session_and_keeps_deterministic_routes(tmp_path, renter, monkeypatch):
-    monkeypatch.setenv("HOMEMATCH_SESSION_LLM_BUDGET", "2")
+    # HN-06: đơn vị ngân sách là LƯỢT CHAT cần AI, cộng trần chi phí phiên.
+    monkeypatch.setenv("HOMEMATCH_SESSION_TURN_BUDGET", "2")
     service = HomeMatchService(tmp_path / "budget.sqlite")
     try:
         sid = service.create_session(renter)["session_id"]
@@ -112,8 +113,9 @@ def test_budget_limits_session_and_keeps_deterministic_routes(tmp_path, renter, 
         with pytest.raises(DomainError) as error:
             service.message(sid, renter, "Tìm phòng Đà Nẵng")
         assert error.value.code == "budget_exceeded" and error.value.http_status == 429
+        assert "biểu mẫu" in str(error.value)
         trace = service.agent_trace(sid, renter)["chat"]
-        assert trace["guard"]["budget"] == {"used": 2, "limit": 2}
+        assert trace["guard"]["budget"] == {"turns_used": 2, "turn_limit": 2, "spent_usd": 0.0}
         # Escape hatches never consume budget: explicit cost route and handoff.
         quote = next(room.quote for room in service.catalog.rooms() if room.id == "demo-01")
         cost = service.message(sid, renter, "Tính chi phí", CostRequest(quote=quote, scenario=Scenario()))
@@ -141,13 +143,13 @@ def test_provider_failure_falls_back_to_guided_form(tmp_path, renter, code):
         trace = service.agent_trace(sid, renter)["chat"]
         assert trace["guard"]["provider_error"] == code
         assert trace["provenance"]["node"] == "provider_fallback"
-        assert trace["guard"]["budget"]["used"] == 1  # failed attempts still count
+        assert trace["guard"]["budget"]["turns_used"] == 1  # failed attempts still count
     finally:
         service.close()
 
 
 def test_budget_exceeded_is_not_masked_as_chat_reply(tmp_path, renter, monkeypatch):
-    monkeypatch.setenv("HOMEMATCH_SESSION_LLM_BUDGET", "1")
+    monkeypatch.setenv("HOMEMATCH_SESSION_TURN_BUDGET", "1")
     service = HomeMatchService(tmp_path / "budget-raise.sqlite", interpreter=FailingProvider())
     try:
         sid = service.create_session(renter)["session_id"]

@@ -98,7 +98,7 @@ def test_handoff_from_chat_is_deterministic_idempotent_and_honest(own_service, r
     trace = own_service.agent_trace(sid, renter)["chat"]
     assert trace["provenance"] == {"source": "deterministic-engine", "node": "support", "agent": "support",
                                    "tools": ["request_support"], "steps": 1}
-    assert trace["guard"]["budget"]["used"] == 0  # clear-intent routing skips the LLM
+    assert trace["guard"]["budget"]["turns_used"] == 0  # clear-intent routing skips the LLM
 
 
 def test_viewing_preparation_from_chat_requires_published_current_room(own_service, renter, landlord, profile):
@@ -119,7 +119,7 @@ def test_viewing_preparation_from_chat_requires_published_current_room(own_servi
     assert trace["provenance"]["node"] == "viewing_prepare"
     assert trace["provenance"]["outcome"] == "prepared"
     assert trace["provenance"]["run_id"] == run_id
-    assert trace["guard"]["budget"]["used"] == 0  # deterministic path, no LLM call
+    assert trace["guard"]["budget"]["turns_used"] == 0  # deterministic path, no LLM call
 
 
 def test_viewing_preparation_without_room_reference_asks(own_service, renter, profile):
