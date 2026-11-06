@@ -8,23 +8,23 @@
     "extraction": {
       "mode": "demo_rules",
       "model_calls": 0,
-      "p50": 0.1155,
-      "p95": 0.5806,
+      "p50": 0.1196,
+      "p95": 0.65,
       "samples": 18,
       "unit": "ms"
     },
     "finance_oracle": {
       "mode": "offline_cost_engine",
       "model_calls": 0,
-      "p50": 0.0455,
-      "p95": 0.181,
+      "p50": 0.0534,
+      "p95": 0.2921,
       "samples": 22,
       "unit": "ms"
     },
     "ranking_B1": {
       "model_calls": 0,
-      "p50": 7.144,
-      "p95": 10.6838,
+      "p50": 8.4598,
+      "p95": 39.9097,
       "provider": "unavailable",
       "samples": 15,
       "statuses": {
@@ -34,8 +34,8 @@
     },
     "ranking_P": {
       "model_calls": 0,
-      "p50": 7.3901,
-      "p95": 32.0398,
+      "p50": 8.9565,
+      "p95": 16.2767,
       "provider": "unavailable",
       "samples": 15,
       "statuses": {
@@ -44,7 +44,7 @@
       "unit": "ms"
     }
   },
-  "rankings_hash": "ee8db4c0456d61dd954046e76fc41736e982fd1ae3f2fc23254159e655f8ea73",
+  "rankings_hash": "2ec7117cf5e48a99a7b44c8cbd08bca176fb3d3a44d25decf915343b6289bc22",
   "review_waiting_time": "excluded_machine_phases_only",
   "split": "dev",
   "stage": "development",
