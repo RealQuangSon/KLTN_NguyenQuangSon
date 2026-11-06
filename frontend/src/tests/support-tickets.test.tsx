@@ -204,10 +204,23 @@ it("auto-opens the stored session once when the transcript section loads", async
   expect(sessionStorage.getItem(OPEN_ADMIN_SESSION_KEY)).toBeNull();
 });
 // FE-04: chi phí AI quy ra VND, cả hai trường hợp của hợp đồng §7.3.
-const renderOps = async (metrics: Record<string, unknown>) => {
+const renderOps = async (
+  metrics: Record<string, unknown>,
+  agentTurns?: Record<string, unknown>,
+) => {
   const api = new Api("t");
   vi.spyOn(api, "get").mockImplementation(async (path) => {
     if (path === "/admin/metrics") return metrics as never;
+    if (path === "/admin/agent-turns")
+      return (agentTurns ?? {
+        turns: [],
+        count: 0,
+        p50_ms: null,
+        p95_ms: null,
+        fallback_ratio: null,
+        cost_usd: 0,
+        cost_usd_per_day: 0,
+      }) as never;
     return [] as never;
   });
   render(<AdminWorkspace api={api} section="van-hanh" />);
@@ -238,4 +251,78 @@ it("shows what is missing instead of an amount when cost is unknown and never sh
     await screen.findByText("Chưa tính được — thiếu: token_price, usage_log"),
   ).toBeInTheDocument();
   expect(screen.queryByText(/0\s*đ/)).toBeNull();
+});
+
+// HN-05: bảng lượt agent với p50/p95, tỉ lệ fallback và chi phí phiên.
+it("shows recent agent turns with latency and cost aggregates", async () => {
+  await renderOps(
+    {
+      cost: {
+        estimated_cost_vnd: null,
+        price_effective_date: null,
+        missing: [],
+        basis: {},
+      },
+    },
+    {
+      turns: [
+        {
+          turn_id: "t1",
+          session_id: "12345678-abcdef",
+          started_at: "2026-11-06T09:30:00+00:00",
+          duration_ms: 2100,
+          agent_mode: "loop",
+          llm_calls: 2,
+          input_tokens: 900,
+          output_tokens: 210,
+          cost_usd: 0.0004,
+          decided_by: "jev",
+          outcome: "answered",
+          error_code: null,
+        },
+        {
+          turn_id: "t2",
+          session_id: "12345678-abcdef",
+          started_at: "2026-11-06T09:31:00+00:00",
+          duration_ms: 3200,
+          agent_mode: "graph_fallback",
+          llm_calls: 0,
+          input_tokens: null,
+          output_tokens: null,
+          cost_usd: null,
+          decided_by: null,
+          outcome: "error",
+          error_code: "ai_unavailable",
+        },
+      ],
+      count: 2,
+      p50_ms: 2100,
+      p95_ms: 3200,
+      fallback_ratio: 0.5,
+      cost_usd: 0.0004,
+      cost_usd_per_day: 0.0004,
+    },
+  );
+  expect(
+    await screen.findByText(
+      /2 lượt · p50 2\.100 ms · p95 3\.200 ms · fallback 50\.0%/,
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByText("loop")).toBeInTheDocument();
+  expect(screen.getByText(/answered/)).toBeInTheDocument();
+  expect(screen.getByText(/error · ai_unavailable/)).toBeInTheDocument();
+  expect(screen.getByText("chưa báo")).toBeInTheDocument();
+});
+it("shows an empty note when no agent turns exist yet", async () => {
+  await renderOps({
+    cost: {
+      estimated_cost_vnd: null,
+      price_effective_date: null,
+      missing: [],
+      basis: {},
+    },
+  });
+  expect(
+    await screen.findByText("Chưa có lượt agent nào được ghi."),
+  ).toBeInTheDocument();
 });

@@ -25,7 +25,8 @@ from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fal
                           quarantine_reply, redact, redact_tree, resolve_room_reference,
                           screen_injection, viewing_intent, viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
-from .agent_loop import SUMMARY_SYSTEM_PROMPT, fast_path_reply, run_turn as run_agent_turn
+from .agent_loop import (SUMMARY_SYSTEM_PROMPT, SAFE_REPLY, fast_path_reply,
+                         run_turn as run_agent_turn)
 from .agents import ToolBox
 from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
 from .catalog import Catalog, StoredCatalog
@@ -145,6 +146,9 @@ class HomeMatchService:
         except ValueError:
             raise ValueError("HOMEMATCH_SESSION_COST_CAP_USD must be a number") from None
         self.budget = SessionTurnBudget(budget_limit, cost_cap)
+        # HN-05: bản ghi lượt đang chạy (dưới service.lock nên an toàn);
+        # hm_agent_turns/hm_agent_steps là bản ghi bền, bộ này chỉ gom step trong lượt.
+        self._turn_recording: dict | None = None
         # In-memory diagnostics of the last chat turn / result read per session.
         # Redacted at write time; never persisted and never returned to the model.
         self._traces: dict[str, dict] = {}
@@ -276,6 +280,10 @@ class HomeMatchService:
             explicit_route = fixed_intent(text)
             usage = {"logical_calls": 0, "tokens": None, "mode": self.interpreter.mode}
             provider_error = None
+            # HN-05: mở bản ghi lượt; các điểm xảy ra sự kiện gọi _record_step,
+            # ghi bền vào hm_agent_turns/hm_agent_steps ở cuối lượt.
+            self._turn_recording = {"turn_id": turn_id, "started_at": conversations.utc_now(),
+                                    "t0": time.monotonic(), "steps": []}
             try:
                 if scan.flagged and explicit_route is None:
                     # Quarantined: the assistant path never sees this text and the
@@ -345,6 +353,8 @@ class HomeMatchService:
                 "provenance": provenance, "guard": guard,
                 "input_redacted": redact(text),
             }
+            self._write_agent_turn_record(session_id, actor, response, usage, provider_error,
+                                          provenance)
             self._limit_clarification_response(session_id, response)
             self._store_transcript(session_id, actor.id, text, response, provenance, scan.flagged)
             return {**self.session(session_id, actor), **response, "turn_id": turn_id, "usage": usage,
@@ -384,6 +394,10 @@ class HomeMatchService:
         with self.repo.db:
             self.repo.db.execute("DELETE FROM hm_agent_requests WHERE created_at<?", (cutoff,))
             self.repo.db.execute("DELETE FROM hm_agent_tool_calls WHERE created_at<?", (cutoff,))
+            # HN-05: trace lượt agent cũng theo retention hội thoại.
+            self.repo.db.execute("DELETE FROM hm_agent_steps WHERE turn_row_id IN "
+                                 "(SELECT id FROM hm_agent_turns WHERE started_at<?)", (cutoff,))
+            self.repo.db.execute("DELETE FROM hm_agent_turns WHERE started_at<?", (cutoff,))
             return self.repo.db.execute("DELETE FROM hm_chat_transcripts WHERE created_at<?", (cutoff,)).rowcount
 
     def _chat_turn(self, session: dict, actor: Actor, text: str, explicit_route: str | None,
@@ -599,7 +613,10 @@ class HomeMatchService:
             if decision_cache is not None:
                 decision_cache[cache_key] = (decision, best, decided_by, error, clarification)
         else:
-            decision, best, decided_by, _, clarification = cached
+            decision, best, decided_by, error, clarification = cached
+        self._record_step("decision", clarification.get("field") or "clarify", True,
+                          f"quyết định={decision}; decided_by={decided_by}"
+                          + (f"; lỗi provider={error}" if error else ""))
         if decision == "accept" and best is not None:
             label = self._apply_clarification_choice(session_id, best)
             if label is not None:
@@ -679,6 +696,56 @@ class HomeMatchService:
                 "recent_chat": [f"{row['speaker']}: {row['text']}" for row in reversed(rows)],
                 "notes": "draft.budget_hint_vnd là mức tiền khách nêu (gợi ý trần tổng tháng); "
                          "destination chỉ đặt qua update_needs sau khi find_place tra được."}
+
+    def _record_step(self, kind: str, name, ok: bool, summary: str, duration_ms: int = 0) -> None:
+        """HN-05: gom một sự kiện của lượt đang chạy (llm|tool|guard|decision).
+        Summary do nguồn đã redact cung cấp (registry summarize, chuỗi tĩnh)."""
+        recording = self._turn_recording
+        if recording is None or len(recording["steps"]) >= 40:
+            return  # không có lượt đang chạy (Jev ngữ cảnh) hoặc quá 40 bước
+        recording["steps"].append({"kind": kind, "name": str(name)[:60], "ok": bool(ok),
+                                   "summary": str(summary)[:200], "duration_ms": int(duration_ms)})
+
+    def _write_agent_turn_record(self, session_id: str, actor: Actor, response: dict,
+                                 usage: dict, provider_error: str | None,
+                                 provenance: dict | None = None) -> None:
+        """HN-05: ghi 1 dòng hm_agent_turns + N dòng hm_agent_steps cho lượt vừa chạy.
+        Không lưu prompt hay câu trả lời thô — transcript đã PII-mask nằm ở
+        hm_chat_transcripts với retention riêng. Chạy trong transaction của lượt."""
+        recording = self._turn_recording or {}
+        clarification = response.get("clarification") or {}
+        if provider_error:
+            outcome = "error"
+        elif response.get("intent") == "landlord_handover":
+            outcome = "handover"
+        elif clarification.get("question") or response.get("questions"):
+            outcome = "asked"
+        elif response.get("message") == SAFE_REPLY:
+            outcome = "safe_reply"
+        else:
+            outcome = "answered"
+        turn_id = recording.get("turn_id") or str(uuid4())
+        try:
+            cursor = self.repo.db.execute(
+                "INSERT INTO hm_agent_turns(turn_id,session_id,user_id,started_at,duration_ms,"
+                "agent_mode,model,llm_calls,input_tokens,output_tokens,cost_usd,decided_by,"
+                "outcome,error_code) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (turn_id, session_id, actor.id, recording.get("started_at") or conversations.utc_now(),
+                 int((time.monotonic() - recording["t0"]) * 1000) if recording.get("t0") else 0,
+                 response.get("agent_mode"), getattr(self.interpreter, "model", None)
+                 if self.interpreter.mode == "openai" else None,
+                 int(usage.get("logical_calls") or 0), usage.get("input_tokens"),
+                 usage.get("output_tokens"),
+                 (provenance or {}).get("cost_usd"),
+                 clarification.get("decided_by"), outcome, provider_error))
+            for seq, step in enumerate(recording.get("steps") or [], 1):
+                self.repo.db.execute(
+                    "INSERT INTO hm_agent_steps(turn_row_id,seq,kind,name,duration_ms,ok,summary) "
+                    "VALUES(?,?,?,?,?,?,?)",
+                    (cursor.lastrowid, seq, step["kind"], step["name"], step.get("duration_ms", 0),
+                     1 if step.get("ok", True) else 0, step.get("summary", "")))
+        finally:
+            self._turn_recording = None
 
     def _turn_context(self, session: dict, actor: Actor) -> dict:
         """HN-04: ngữ cảnh đầy đủ một lượt agent — nháp + hồ sơ (không thu nhập),
@@ -765,13 +832,22 @@ class HomeMatchService:
             return  # tóm tắt là tối ưu; lỗi provider không được phá lượt chat
 
     def agent_trace(self, session_id: str, actor: Actor) -> dict:
-        """Redacted diagnostics of the last chat turn and result read. Service-level
-        only; no HTTP endpoint exposes it in this slice."""
+        """HN-05: chẩn đoán lượt gần nhất đọc từ bảng bền (hm_agent_turns/steps);
+        chỉ chủ phiên. Không có prompt/câu trả lời thô ở đây."""
         with self.lock:
             require("results:read", actor)
             session = self._session_for(session_id, actor, "renter")
-            trace = self._traces.get(session["id"]) or {}
-            return {"chat": trace.get("chat"), "results": trace.get("results")}
+            turn = self.repo.db.execute(
+                "SELECT * FROM hm_agent_turns WHERE session_id=? ORDER BY started_at DESC LIMIT 1",
+                (session["id"],)).fetchone()
+            chat = None
+            if turn:
+                steps = [dict(row) for row in self.repo.db.execute(
+                    "SELECT seq,kind,name,duration_ms,ok,summary FROM hm_agent_steps "
+                    "WHERE turn_row_id=? ORDER BY seq", (turn["id"],))]
+                chat = {**dict(turn), "steps": steps}
+            return {"chat": chat,
+                    "results": (self._traces.get(session["id"]) or {}).get("results")}
 
     def confirm(self, session_id: str, actor: Actor, profile: Profile, expected_revision: int) -> dict:
         with self.lock:
@@ -1879,6 +1955,34 @@ class HomeMatchService:
         with self.lock:
             self._role(actor, "admin")
             return conversations.handover_report(self.repo)
+
+    def admin_agent_turns(self, actor: Actor, limit: int = 100) -> dict:
+        """HN-05: lượt agent gần nhất + tổng hợp (p50/p95, tỉ lệ fallback,
+        chi phí) tính trên cửa sổ dữ liệu trả về. Mỗi lần đọc được audit."""
+        with self.lock:
+            self._role(actor, "admin")
+            limit = max(1, min(int(limit), 500))
+            rows = [dict(row) for row in self.repo.db.execute(
+                "SELECT turn_id,session_id,user_id,started_at,duration_ms,agent_mode,model,"
+                "llm_calls,input_tokens,output_tokens,cost_usd,decided_by,outcome,error_code "
+                "FROM hm_agent_turns ORDER BY started_at DESC LIMIT ?", (limit,))]
+            with self.repo.db:
+                record_audit(self.repo, actor, "agent_turns.viewed", "system", "agent-turns")
+            durations = sorted(row["duration_ms"] for row in rows)
+
+            def percentile(fraction: float):
+                if not durations:
+                    return None
+                return durations[min(len(durations) - 1, int(len(durations) * fraction))]
+
+            fallbacks = sum(1 for row in rows if row["agent_mode"] == "graph_fallback")
+            total_cost = sum(row["cost_usd"] or 0.0 for row in rows)
+            days = {row["started_at"][:10] for row in rows}
+            return {"turns": rows, "count": len(rows),
+                    "p50_ms": percentile(0.5), "p95_ms": percentile(0.95),
+                    "fallback_ratio": round(fallbacks / len(rows), 4) if rows else None,
+                    "cost_usd": round(total_cost, 6),
+                    "cost_usd_per_day": round(total_cost / max(1, len(days)), 6)}
 
     def admin_users(self, actor: Actor) -> list[dict]:
         with self.lock:

@@ -87,6 +87,30 @@ interface FailedRun {
   session_id: string;
   status: string;
 }
+// HN-05: lượt agent đọc từ hm_agent_turns qua /admin/agent-turns.
+interface AgentTurn {
+  turn_id: string;
+  session_id: string;
+  started_at: string;
+  duration_ms: number;
+  agent_mode: string | null;
+  llm_calls: number;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  decided_by: string | null;
+  outcome: string;
+  error_code: string | null;
+}
+interface AgentTurnsReport {
+  turns: AgentTurn[];
+  count: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  fallback_ratio: number | null;
+  cost_usd: number;
+  cost_usd_per_day: number;
+}
 const time = (value: string) =>
   new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
@@ -268,6 +292,7 @@ export function AdminWorkspace({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
   const [failed, setFailed] = useState<FailedRun[]>([]);
+  const [agentTurns, setAgentTurns] = useState<AgentTurnsReport | null>(null);
   // FE-02: hồ sơ chủ nhà chờ duyệt.
   const [applications, setApplications] = useState<LandlordApplication[]>([]);
   const [rejectTarget, setRejectTarget] = useState<LandlordApplication | null>(
@@ -311,6 +336,7 @@ export function AdminWorkspace({
       else {
         setMetrics(await api.get("/admin/metrics"));
         setFailed(await api.get("/admin/failed-runs"));
+        setAgentTurns(await api.get("/admin/agent-turns"));
       }
     } catch (err) {
       setError((err as Error).message);
@@ -733,6 +759,69 @@ export function AdminWorkspace({
                   ? ` — thiếu: ${cost.missing.join(", ")}`
                   : ""}
               </p>
+            )}
+          </section>
+          <section className="panel" aria-label="Lượt agent gần đây">
+            <h2>Lượt agent gần đây</h2>
+            {agentTurns === null ? (
+              <p className="subtle">Chưa tải được dữ liệu lượt agent.</p>
+            ) : agentTurns.count === 0 ? (
+              <p className="subtle">Chưa có lượt agent nào được ghi.</p>
+            ) : (
+              <>
+                <p className="subtle">
+                  {`${agentTurns.count} lượt · p50 ${new Intl.NumberFormat(
+                    "vi-VN",
+                  ).format(
+                    agentTurns.p50_ms ?? 0,
+                  )} ms · p95 ${new Intl.NumberFormat("vi-VN").format(
+                    agentTurns.p95_ms ?? 0,
+                  )} ms · fallback ${(
+                    (agentTurns.fallback_ratio ?? 0) * 100
+                  ).toFixed(1)}% · chi phí ${
+                    agentTurns.cost_usd > 0
+                      ? `$${agentTurns.cost_usd.toFixed(6)}/ngày`
+                      : "chưa báo"
+                  }`}
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Thời điểm</th>
+                      <th>Phiên</th>
+                      <th>Chế độ</th>
+                      <th>ms</th>
+                      <th>LLM</th>
+                      <th>Token (vào/ra)</th>
+                      <th>Kết quả</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agentTurns.turns.map((turn) => (
+                      <tr key={turn.turn_id}>
+                        <td>{time(turn.started_at)}</td>
+                        <td>{turn.session_id.slice(0, 8)}</td>
+                        <td>{turn.agent_mode ?? "graph"}</td>
+                        <td>
+                          {new Intl.NumberFormat("vi-VN").format(
+                            turn.duration_ms,
+                          )}
+                        </td>
+                        <td>{turn.llm_calls}</td>
+                        <td>
+                          {turn.input_tokens === null
+                            ? "chưa báo"
+                            : `${turn.input_tokens}/${turn.output_tokens ?? 0}`}
+                        </td>
+                        <td>
+                          {turn.outcome}
+                          {turn.error_code ? ` · ${turn.error_code}` : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </section>
           <section className="panel">

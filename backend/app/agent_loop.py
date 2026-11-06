@@ -25,6 +25,7 @@ from .agent_provenance import stamp
 from .agent_executor import execute_tool
 from .agent_guard import redact, redact_tree
 from .agents import ToolBox
+from .interpreter import split_usage
 from .locations import resolve_place
 from .models import Destination, DomainError
 
@@ -420,6 +421,7 @@ def fast_path_reply(service, session: dict, actor, text: str,
     lặp LLM; không bao giờ chết giữa chừng."""
     from .interpreter import DemoInterpreter, NEAR_PLACE
     session_id = session["id"]
+    started = time.monotonic()
     try:
         if NEAR_PLACE.search(text) or service._draft(session_id).destination:
             return None
@@ -469,6 +471,8 @@ def fast_path_reply(service, session: dict, actor, text: str,
         if emit is not None:
             emit({"name": "confirm_and_search", "kind": "tool",
                   "detail": "Đã xác nhận nhu cầu và chạy tìm phòng."})
+        service._record_step("tool", "confirm_and_search", True,
+                             "Đã xác nhận nhu cầu và chạy tìm phòng.")
         message = confirm_template(result)
         if assumptions:
             message += " Mình đang hiểu: " + "; ".join(assumptions) + ". Bạn có thể sửa trong nhu cầu."
@@ -483,7 +487,8 @@ def fast_path_reply(service, session: dict, actor, text: str,
                 "suggested_prompts": service._suggested_prompts(session_id),
                 "agent_mode": "fast_path", "turn_id": turn_id,
                 }, stamp("deterministic-engine", "fast_path", interpreter_mode="openai",
-                         agent_mode="fast_path")
+                         agent_mode="fast_path", llm_calls=0,
+                         duration_ms=round((time.monotonic() - started) * 1000))
     except DomainError:
         return None
     except Exception:
@@ -515,7 +520,10 @@ def run_turn(service, session: dict, actor, text: str,
     steps: list[dict] = []
     tool_payloads: list[str] = []
     toolbox.grounding = tool_payloads
-    usage_total = {"logical_calls": 0, "tokens": 0, "saw_none": False}
+    # HN-05: tổng hợp token/chi phí của cả lượt; provider không báo thì giữ None.
+    usage_total = {"logical_calls": 0, "tokens": 0, "saw_none": False,
+                   "input_tokens": 0, "output_tokens": 0, "saw_split": False,
+                   "cost_usd": 0.0, "saw_cost": False}
     response_dict: dict | None = None
     turn_started = time.monotonic()
     timings = {"llm_ms": 0, "tool_ms": 0}
@@ -579,11 +587,15 @@ def run_turn(service, session: dict, actor, text: str,
         steps.append({"tool": safe_name, "detail": detail, "ok": result["ok"],
                       "duration_ms": duration_ms})
         timings["tool_ms"] += duration_ms
+        # HN-05: mỗi tool là một dòng step trong trace bền (summary đã redact sẵn).
+        service._record_step("tool", safe_name, bool(result.get("ok")), detail, duration_ms)
         if emit is not None:
             emit({"name": safe_name, "kind": "tool", "detail": detail})
             if hits:
                 emit({"name": "guardrail", "kind": "guardrail",
                       "detail": "Dữ liệu công cụ có mẫu chèn lệnh — đã lọc và bọc khối untrusted"})
+                service._record_step("guard", "untrusted_filter", True,
+                                     "Dữ liệu công cụ có mẫu chèn lệnh — đã vô hiệu giá trị xấu")
         messages.append({"role": "tool", "tool_call_id": entry[0].id, "content": payload})
         if name == "ask_user" and result["ok"] and data.get("question"):
             return data
@@ -627,8 +639,27 @@ def run_turn(service, session: dict, actor, text: str,
             usage_total["saw_none"] = True
         else:
             usage_total["tokens"] += int(tokens)
-        # HN-06: chi phí do provider báo (OpenRouter usage.cost) cộng vào trần phiên.
-        service.budget.record_cost(session["id"], getattr(usage, "cost", None))
+        # HN-06: chi phí do provider báo (OpenRouter usage.cost) cộng vào trần phiên;
+        # HN-05: tách input/output token và ghi từng lần gọi LLM vào trace bền.
+        cost = getattr(usage, "cost", None)
+        if cost is None:
+            usage_total["saw_cost"] = True
+        else:
+            try:
+                usage_total["cost_usd"] += float(cost)
+            except (TypeError, ValueError):
+                usage_total["saw_cost"] = True
+        service.budget.record_cost(session["id"], cost)
+        split = split_usage(usage)
+        if split["input_tokens"] is None or split["output_tokens"] is None:
+            usage_total["saw_split"] = True
+        else:
+            usage_total["input_tokens"] += int(split["input_tokens"])
+            usage_total["output_tokens"] += int(split["output_tokens"])
+        service._record_step("llm", getattr(interpreter, "model", None) or "model", True,
+                             f"Gọi model lần {usage_total['logical_calls']}"
+                             + (f" · {int(tokens)} token" if tokens else " · provider không báo token"),
+                             round((time.monotonic() - llm_started) * 1000))
         message = completion.choices[0].message
         tool_calls = getattr(message, "tool_calls", None)
         if tool_calls:
@@ -693,6 +724,8 @@ def run_turn(service, session: dict, actor, text: str,
                 steps.append({"tool": "guard_output",
                               "detail": "Đã thay câu trả lời vi phạm guard đầu ra",
                               "ok": True, "duration_ms": 0})
+                service._record_step("guard", "guard_output", True,
+                                     "Đã thay câu trả lời vi phạm guard đầu ra")
                 if emit is not None:
                     emit({"name": "guardrail", "kind": "guardrail",
                           "detail": "Câu trả lời vi phạm guard đầu ra — đã thay bằng câu an toàn"})
@@ -718,10 +751,18 @@ def run_turn(service, session: dict, actor, text: str,
             response_dict["clarification"] = radius_choice
     if toolbox.assumptions:
         response_dict["message"] = (response_dict.get("message") or "") + " Mình đang hiểu: " + "; ".join(toolbox.assumptions) + ". Bạn có thể sửa trong nhu cầu."
-    service.interpreter.last_usage = {"logical_calls": usage_total["logical_calls"],
-                                      "tokens": None if usage_total["saw_none"] else usage_total["tokens"]}
+    service.interpreter.last_usage = {
+        "logical_calls": usage_total["logical_calls"],
+        "tokens": None if usage_total["saw_none"] else usage_total["tokens"],
+        "input_tokens": None if usage_total["saw_split"] else usage_total["input_tokens"],
+        "output_tokens": None if usage_total["saw_split"] else usage_total["output_tokens"],
+    }
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",
                        agent_mode="loop", duration_ms=round((time.monotonic() - turn_started) * 1000),
                        llm_ms=timings["llm_ms"], tool_ms=timings["tool_ms"],
-                       llm_calls=usage_total["logical_calls"], **toolbox.summary("needs"))
+                       llm_calls=usage_total["logical_calls"],
+                       input_tokens=None if usage_total["saw_split"] else usage_total["input_tokens"],
+                       output_tokens=None if usage_total["saw_split"] else usage_total["output_tokens"],
+                       cost_usd=None if usage_total["saw_cost"] else round(usage_total["cost_usd"], 6),
+                       **toolbox.summary("needs"))
     return response_dict, provenance

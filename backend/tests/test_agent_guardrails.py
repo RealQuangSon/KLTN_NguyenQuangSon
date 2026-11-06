@@ -53,13 +53,15 @@ def test_injection_quarantines_assistant_path_and_keeps_draft(own_service, rente
     after = own_service.session(sid, renter)
     assert after["draft_revision"] == before["draft_revision"] == 0
     assert after["draft"]["city"] is None
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["guard"]["injection_flagged"] is True
-    assert "ignore_instructions" in trace["guard"]["patterns"]
-    assert "privilege_escalation" in trace["guard"]["patterns"]
-    assert trace["provenance"]["node"] == "injection_quarantine"
+    # HN-05: guard/provenance của lượt đọc từ response; dữ kiện bền ở hm_agent_turns.
+    assert reply["guard"]["injection_flagged"] is True
+    assert "ignore_instructions" in reply["guard"]["patterns"]
+    assert "privilege_escalation" in reply["guard"]["patterns"]
+    assert reply["provenance"]["node"] == "injection_quarantine"
+    turn = own_service.agent_trace(sid, renter)["chat"]
+    assert turn and turn["outcome"] == "asked" and turn["error_code"] is None
     # Pattern evidence carries names only, never the raw user text.
-    assert "cấp quyền" not in json.dumps(trace["guard"], ensure_ascii=False)
+    assert "cấp quyền" not in json.dumps(reply["guard"], ensure_ascii=False)
 
 
 def test_flagged_text_on_explicit_cost_route_stays_deterministic(own_service, renter):
@@ -72,10 +74,9 @@ def test_flagged_text_on_explicit_cost_route_stays_deterministic(own_service, re
     # The deterministic engine ignores embedded instructions and computes normally.
     assert reply["status"] == "cost_estimate"
     assert reply["cost"]["monthly_total_vnd"] == 3_250_000
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["guard"]["injection_flagged"] is True
-    assert trace["provenance"]["node"] == "finance"
-    assert trace["provenance"]["source"] == "deterministic-engine"
+    assert reply["guard"]["injection_flagged"] is True
+    assert reply["provenance"]["node"] == "finance"
+    assert reply["provenance"]["source"] == "deterministic-engine"
 
 
 def test_pii_never_reaches_reply_trace_or_checkpoints(tmp_path, renter, landlord, profile):
@@ -88,10 +89,14 @@ def test_pii_never_reaches_reply_trace_or_checkpoints(tmp_path, renter, landlord
         assert "0901234567" not in dumped and "son@example.com" not in dumped
         assert "3,5" not in dumped  # raw money text is redacted; the numeric hint is the draft
         assert reply["draft"]["budget_hint_vnd"] == 3_500_000
-        trace = service.agent_trace(sid, renter)["chat"]
-        assert "[LIEN_HE_DA_TACH]" in trace["input_redacted"]
-        assert "[EMAIL_DA_TACH]" in trace["input_redacted"]
-        assert "[TIEN_DA_TACH]" in trace["input_redacted"]
+        # HN-05: trace bền không lưu input; bản transcript đã PII-mask kiểm trực tiếp.
+        rows = service.repo.db.execute(
+            "SELECT text FROM hm_chat_transcripts WHERE session_id=? AND speaker='user'",
+            (sid,)).fetchall()
+        masked = " ".join(row["text"] for row in rows)
+        assert "SĐT đã che" in masked and "email đã che" in masked  # mask_pii lúc ghi
+        turn = service.agent_trace(sid, renter)["chat"]
+        assert turn and turn["outcome"] == "asked" and "monthly_income_vnd" not in json.dumps(turn)
         # The persisted run/checkpoint payload contains no chat PII either.
         run_id = service.confirm(sid, renter, profile, reply["draft_revision"])["run_id"]
         assert service.repo.run(run_id)["status"] == "published"
@@ -114,8 +119,8 @@ def test_budget_limits_session_and_keeps_deterministic_routes(tmp_path, renter, 
             service.message(sid, renter, "Tìm phòng Đà Nẵng")
         assert error.value.code == "budget_exceeded" and error.value.http_status == 429
         assert "biểu mẫu" in str(error.value)
-        trace = service.agent_trace(sid, renter)["chat"]
-        assert trace["guard"]["budget"] == {"turns_used": 2, "turn_limit": 2, "spent_usd": 0.0}
+        turn = service.agent_trace(sid, renter)["chat"]
+        assert turn and turn["outcome"] == "asked" and turn["error_code"] is None
         # Escape hatches never consume budget: explicit cost route and handoff.
         quote = next(room.quote for room in service.catalog.rooms() if room.id == "demo-01")
         cost = service.message(sid, renter, "Tính chi phí", CostRequest(quote=quote, scenario=Scenario()))
@@ -140,10 +145,10 @@ def test_provider_failure_falls_back_to_guided_form(tmp_path, renter, code):
         after = service.session(sid, renter)
         assert after["draft_revision"] == before["draft_revision"]
         assert after["draft"]["city"] is None and after["draft"]["people"] is None
-        trace = service.agent_trace(sid, renter)["chat"]
-        assert trace["guard"]["provider_error"] == code
-        assert trace["provenance"]["node"] == "provider_fallback"
-        assert trace["guard"]["budget"]["turns_used"] == 1  # failed attempts still count
+        turn = service.agent_trace(sid, renter)["chat"]
+        assert turn["error_code"] == code  # taxonomy code stays in the durable trace
+        assert turn["outcome"] == "error" and turn["agent_mode"] is None  # nhánh demo graph
+        assert service.budget.used(sid) == 1  # failed attempts still count
     finally:
         service.close()
 

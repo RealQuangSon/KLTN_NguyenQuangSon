@@ -205,6 +205,8 @@ Trạng thái run còn `generating, generation_failed, published, invalidated, n
 | | `GET /maintenance`; `POST /maintenance {room_id, title, description, priority}`; `PATCH /maintenance/{id} {status?, assignee?, cost_vnd?, note?}` | Chỉ người đang thuê gửi được (403 `no_active_lease`). Khách chỉ chuyển sang `closed` hoặc `reopened` (cần ghi chú). |
 | Admin | `GET /admin/transcripts`; `GET /admin/transcripts/{session}`; `GET /admin/handovers`; `GET /admin/users`; `GET /admin/rooms`; `PATCH /admin/rooms/{id}/status`; `GET /admin/metrics`; `POST /admin/jobs/run`; `GET /admin/jobs`; `GET /admin/support-tickets`; `PATCH /admin/support-tickets/{id}` | Mở transcript ghi audit `transcript.viewed`. Transcript đã che PII, giữ 90 ngày. Ticket hỗ trợ xem mục riêng ở trên. |
 
+HN-05 (06/11/2026, đã kiểm offline): `GET /admin/agent-turns?limit=100` — lượt agent bền từ `hm_agent_turns` + `hm_agent_steps` (schema v20): mỗi lượt một dòng {turn_id, session_id, user_id, started_at, duration_ms, agent_mode (loop\|fast_path\|graph_fallback\|null), model, llm_calls, input_tokens, output_tokens, cost_usd, decided_by, outcome (answered\|asked\|handover\|safe_reply\|error), error_code} kèm tổng hợp trên cửa sổ trả về: p50_ms, p95_ms, fallback_ratio, cost_usd, cost_usd_per_day. Không lưu prompt/câu trả lời thô; summary bước đã redact; xoá theo retention hội thoại. Mỗi lần đọc ghi audit `agent_turns.viewed`. Trang `/quan-tri/van-hanh` có bảng lượt agent và các chỉ số này.
+
 Văn bản hợp đồng, hóa đơn, biên lai trả về `{html}` để giao diện hiển thị và in. Đây không phải chữ ký số.
 
 ## Lịch xem và retry

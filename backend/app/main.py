@@ -711,6 +711,11 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def admin_transcript(session_id: str, actor: ActorDep, agent: ServiceDep):
         return agent.admin_transcript(actor, session_id)
 
+    @app.get("/admin/agent-turns", response_model=dict)
+    def admin_agent_turns(actor: ActorDep, agent: ServiceDep, limit: int = 100):
+        # HN-05: lượt agent + p50/p95 + tỉ lệ fallback + chi phí (đã audit trong service).
+        return agent.admin_agent_turns(actor, limit)
+
     @app.get("/admin/handovers", response_model=dict)
     def admin_handovers(actor: ActorDep, agent: ServiceDep):
         return agent.admin_handovers(actor)

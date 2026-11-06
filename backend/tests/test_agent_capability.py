@@ -95,10 +95,9 @@ def test_handoff_from_chat_is_deterministic_idempotent_and_honest(own_service, r
     tickets = own_service.support_tickets(Actor(id="admin-a", role="admin"))
     assert [ticket["id"] for ticket in tickets] == [first["ticket_id"]]
     assert tickets[0]["session_id"] == sid and tickets[0]["status"] == "requested"
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["provenance"] == {"source": "deterministic-engine", "node": "support", "agent": "support",
+    assert first["provenance"] == {"source": "deterministic-engine", "node": "support", "agent": "support",
                                    "tools": ["request_support"], "steps": 1}
-    assert trace["guard"]["budget"]["turns_used"] == 0  # clear-intent routing skips the LLM
+    assert own_service.budget.used(sid) == 0  # clear-intent routing skips the LLM
 
 
 def test_viewing_preparation_from_chat_requires_published_current_room(own_service, renter, landlord, profile):
@@ -115,11 +114,10 @@ def test_viewing_preparation_from_chat_requires_published_current_room(own_servi
     assert "không tự giữ phòng" in reply["questions"][0]
     # Preparation creates nothing; the form action with time + key is still required.
     assert own_service.viewings(renter) == []
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["provenance"]["node"] == "viewing_prepare"
-    assert trace["provenance"]["outcome"] == "prepared"
-    assert trace["provenance"]["run_id"] == run_id
-    assert trace["guard"]["budget"]["turns_used"] == 0  # deterministic path, no LLM call
+    assert reply["provenance"]["node"] == "viewing_prepare"
+    assert reply["provenance"]["outcome"] == "prepared"
+    assert reply["provenance"]["run_id"] == run_id
+    assert own_service.budget.used(sid) == 0  # deterministic path, no LLM call
 
 
 def test_viewing_preparation_without_room_reference_asks(own_service, renter, profile):
@@ -127,4 +125,4 @@ def test_viewing_preparation_without_room_reference_asks(own_service, renter, pr
     reply = own_service.message(sid, renter, "Tôi muốn hẹn xem phòng")
     assert reply["status"] == "needs_clarification"
     assert "mã phòng" in reply["questions"][0]
-    assert own_service.agent_trace(sid, renter)["chat"]["provenance"]["outcome"] == "missing_room_reference"
+    assert own_service.agent_trace(sid, renter)["chat"]["outcome"] == "asked"

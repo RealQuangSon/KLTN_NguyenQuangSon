@@ -25,11 +25,11 @@ def test_toolbox_enforces_allowlist_and_step_limit():
 
 def test_each_turn_records_the_agent_and_its_tools(service, renter):
     sid = service.create_session(renter)["session_id"]
-    service.message(sid, renter, "Tìm căn hộ Cầu Giấy Hà Nội cho 2 người")
-    provenance = service.agent_trace(sid, renter)["chat"]["provenance"]
+    reply = service.message(sid, renter, "Tìm căn hộ Cầu Giấy Hà Nội cho 2 người")
+    provenance = reply["provenance"]
     assert provenance["agent"] == "needs" and provenance["tools"] == ["extract_needs", "update_draft"]
-    service.message(sid, renter, "Tính chi phí giúp tôi")
-    provenance = service.agent_trace(sid, renter)["chat"]["provenance"]
+    reply = service.message(sid, renter, "Tính chi phí giúp tôi")
+    provenance = reply["provenance"]
     assert provenance["agent"] == "finance" and provenance["steps"] == 0
 
 

@@ -19,17 +19,14 @@ def own_service(tmp_path):
 
 def test_chat_turns_carry_provenance_per_node(own_service, renter):
     sid = own_service.create_session(renter)["session_id"]
-    own_service.message(sid, renter, "Tìm studio TP.HCM cho 2 người")
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["provenance"]["source"] == "interpreter"
-    assert trace["provenance"]["node"] == "interview"
-    assert trace["provenance"]["interpreter_mode"] == "demo_rules"
+    reply = own_service.message(sid, renter, "Tìm studio TP.HCM cho 2 người")
+    assert reply["provenance"]["source"] == "interpreter"
+    assert reply["provenance"]["node"] == "interview"
+    assert reply["provenance"]["interpreter_mode"] == "demo_rules"
     quote = next(room.quote for room in own_service.catalog.rooms() if room.id == "demo-01")
-    own_service.message(sid, renter, "Tính chi phí", CostRequest(quote=quote, scenario=Scenario()))
-    trace = own_service.agent_trace(sid, renter)["chat"]
-    assert trace["provenance"]["source"] == "deterministic-engine"
-    assert trace["provenance"]["node"] == "finance"
-    assert trace["provenance"]["source"] != "interpreter"
+    reply = own_service.message(sid, renter, "Tính chi phí", CostRequest(quote=quote, scenario=Scenario()))
+    assert reply["provenance"]["source"] == "deterministic-engine"
+    assert reply["provenance"]["node"] == "finance"
 
 
 def test_results_payload_has_engine_provenance(own_service, renter, landlord, profile):

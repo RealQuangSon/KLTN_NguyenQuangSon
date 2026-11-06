@@ -334,6 +334,25 @@ MIGRATIONS = (
     (19, "session_summary", """
         ALTER TABLE hm_sessions ADD COLUMN summary_json TEXT;
     """),
+    (20, "agent_turn_trace", """
+        CREATE TABLE IF NOT EXISTS hm_agent_turns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            turn_id TEXT NOT NULL, session_id TEXT NOT NULL REFERENCES hm_sessions(id),
+            user_id TEXT NOT NULL, started_at TEXT NOT NULL, duration_ms INTEGER NOT NULL,
+            agent_mode TEXT, model TEXT, llm_calls INTEGER NOT NULL DEFAULT 0,
+            input_tokens INTEGER, output_tokens INTEGER, cost_usd REAL,
+            decided_by TEXT, outcome TEXT NOT NULL, error_code TEXT,
+            UNIQUE(session_id, turn_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_agent_turns_session ON hm_agent_turns(session_id, started_at);
+        CREATE TABLE IF NOT EXISTS hm_agent_steps (
+            turn_row_id INTEGER NOT NULL REFERENCES hm_agent_turns(id),
+            seq INTEGER NOT NULL, kind TEXT NOT NULL, name TEXT NOT NULL,
+            duration_ms INTEGER NOT NULL DEFAULT 0, ok INTEGER NOT NULL DEFAULT 1,
+            summary TEXT NOT NULL DEFAULT '',
+            PRIMARY KEY(turn_row_id, seq)
+        );
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 
