@@ -625,7 +625,11 @@ def run_turn(service, session: dict, actor, text: str,
             if reasoning in {"low", "medium", "high"}:
                 params["reasoning"] = {"effort": reasoning}
             llm_started = time.monotonic()
-            completion = interpreter.client.chat.completions.create(**params)
+            from .agent_cassette import model_call
+            # HN-09: cassette ghi/phát lại lượt live (env HOMEMATCH_AGENT_RECORD/REPLAY);
+            # request gửi đi là bản đã redact của vòng lặp.
+            completion = model_call(params,
+                                    lambda: interpreter.client.chat.completions.create(**params))
             timings["llm_ms"] += round((time.monotonic() - llm_started) * 1000)
         except DomainError:
             raise

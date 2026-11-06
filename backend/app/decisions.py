@@ -90,23 +90,36 @@ def decide(clarification: dict, context: dict, *, client=None,
     if mode != "jev":
         decision, best = _rules(clarification)
         return decision, best, "rules", None
-    owned_client = None
-    try:
-        if client is None:
-            import httpx
-            api_key = os.getenv("OPENAI_API_KEY", "")
-            owned_client = client = httpx.Client(timeout=DECISION_TIMEOUT_S)
-            response = client.post(
+    def _post(payload):
+        import httpx
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        owned = httpx.Client(timeout=DECISION_TIMEOUT_S)
+        try:
+            response = owned.post(
                 "https://openrouter.ai/api/alpha/decisions",
-                headers={"Authorization": f"Bearer {api_key}"},
-                json=_jev_payload(clarification, context))
+                headers={"Authorization": f"Bearer {api_key}"}, json=payload)
+            if response.status_code != 200:
+                raise RuntimeError(f"jev_http_{response.status_code}")
+            return response.json()
+        finally:
+            try:
+                owned.close()
+            except Exception:
+                pass  # lỗi đóng kết nối không được che mất kết quả
+
+    try:
+        from .agent_cassette import jev_call
+        # HN-09: cassette ghi/phát lại Jev; payload đã qua decision_context/redact.
+        if client is None:
+            answer = (jev_call(_jev_payload(clarification, context), _post)
+                      .get("answers") or {}).get("clarify") or {}
         else:
             response = client.post(
                 "https://openrouter.ai/api/alpha/decisions",
                 json=_jev_payload(clarification, context))
-        if response.status_code != 200:
-            raise RuntimeError(f"jev_http_{response.status_code}")
-        answer = (response.json().get("answers") or {}).get("clarify") or {}
+            if response.status_code != 200:
+                raise RuntimeError(f"jev_http_{response.status_code}")
+            answer = (response.json().get("answers") or {}).get("clarify") or {}
         probabilities = answer.get("probabilities") or {}
         options = {option["id"]: option for option in clarification["options"]}
         best = options.get(answer.get("choice"))
@@ -132,9 +145,3 @@ def decide(clarification: dict, context: dict, *, client=None,
     except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat
         decision, best = _rules(clarification)
         return decision, best, "fallback", type(error).__name__
-    finally:
-        if owned_client is not None:
-            try:
-                owned_client.close()
-            except Exception:
-                pass  # lỗi đóng kết nối không được che mất kết quả/đường lui
