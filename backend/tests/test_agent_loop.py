@@ -113,15 +113,20 @@ def test_loop_blocks_tools_outside_the_allowlist(service, renter):
     assert service.repo.db.execute("SELECT COUNT(*) AS c FROM hm_runs").fetchone()["c"] == 0
 
 
-def test_loop_answers_safely_after_step_limit(service, renter):
+def test_loop_answers_safely_after_llm_and_step_limits(service, renter):
+    """HN-01: 4 lần gọi LLM/lượt, 6 bước tool; vượt → SAFE_REPLY, không dài hơn."""
     from backend.app.agent_loop import SAFE_REPLY
-    client = FakeClient([message(tool_calls=[call(f"c{i}", "search_rooms")]) for i in range(8)])
+    client = FakeClient([
+        message(tool_calls=[call(f"c{i}a", "search_rooms"), call(f"c{i}b", "search_rooms")])
+        for i in range(4)])
     service.interpreter.client = client
     sid = service.create_session(renter)["session_id"]
     reply = service.message(sid, renter, "tìm phòng Quận 7")
     assert reply["agent_mode"] == "loop"
     assert reply["message"] == SAFE_REPLY
-    assert len(reply["steps"]) == 6  # đúng MAX_AGENT_STEPS, không chạy dài hơn
+    ok_steps = [step for step in reply["steps"] if not step.startswith("search_rooms: Lỗi")]
+    assert len(ok_steps) == 6  # đúng MAX_AGENT_STEPS bước tool thành công
+    assert len(client.requests) == 4  # đúng MAX_LLM_CALLS lần gọi LLM
 
 
 def test_loop_replaces_fabricated_numbers(service, renter):

@@ -11,20 +11,28 @@ tool (qua `ToolBox.call`, giới hạn `MAX_AGENT_STEPS` bước/lượt). Mọi
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from functools import partial
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from .agent_provenance import stamp
+from .agent_executor import execute_tool
 from .agent_guard import redact, redact_tree
 from .agents import ToolBox
 from .locations import resolve_place
 from .models import Destination, DomainError
 
+# HN-01: 6 bước tool, 4 lần gọi LLM/lượt, deadline 45 s; tool > timeout_s trong
+# registry → lỗi có cấu trúc tool_timeout. Vượt mọi giới hạn → SAFE_REPLY.
 MAX_AGENT_STEPS = 6
+MAX_LLM_CALLS = 4
+TURN_DEADLINE_S = 45.0
 SAFE_REPLY = ("Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. "
               "Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.")
 # Số trong câu trả lời phải xuất hiện trong câu của khách hoặc trong kết quả tool.
@@ -45,7 +53,6 @@ Trả lời bằng tiếng Việt, ngắn gọn, nói rõ các bước đã làm
 from .agent_tools import TOOL_REGISTRY, tool_specs, workspace_view
 
 TOOL_SPECS = tool_specs()
-TOOL_NAMES = frozenset(spec["function"]["name"] for spec in TOOL_SPECS)
 
 
 def _strip_income(payload):
@@ -74,6 +81,35 @@ def check_numbers(answer: str, user_text: str, tool_payloads: list[str]) -> str:
             return ("Mình vừa kiểm tra nhu cầu của bạn qua các bước bên dưới; số liệu chi tiết "
                     "xem trong khung kết quả hoặc hỏi mình thêm.")
     return answer
+
+
+def chat_budget_hint(text: str, old_hint: int | None) -> int | None:
+    """Tiền trong CÂU CỦA KHÁCH được đọc tất định (AG-02), không qua LLM:
+    tiền tương đối ưu tiên trước số tuyệt đối trong cùng câu."""
+    from .interpreter import relative_budget, rent_budget_hint
+    change = relative_budget(text)
+    if change and (change["direction"] == "set" or old_hint):
+        if change["direction"] == "set":
+            return change["amount_vnd"]
+        delta = change["amount_vnd"] * (1 if change["direction"] == "up" else -1)
+        return max(1, old_hint + delta)
+    return rent_budget_hint(text)
+
+
+CONFIRM_TEMPLATES = {
+    "published": ("Đã xác nhận nhu cầu và tìm được {count} căn phù hợp; kết quả đã hiện trong workspace. "
+                  "Bạn có thể mở bản đồ, hỏi chi tiết một căn hoặc yêu cầu đặt lịch xem."),
+    "needs_verification": ("Đã có kết quả nhưng một số tin thiếu bảng phí/sức chứa. Bạn đồng ý xem kèm nhãn "
+                           "ước tính để tăng số căn không? Chọn “Xem kèm ước tính” nhé."),
+    "no_match": ("Chưa có căn nào khớp điều kiện này. Bạn muốn nới khu vực hoặc mức tiền không? "
+                 "Mình có thể gợi ý các lựa chọn đang có căn."),
+}
+
+
+def confirm_template(data: dict) -> str:
+    """Câu chốt sau confirm_and_search: số duy nhất (count) lấy từ kết quả tool."""
+    template = CONFIRM_TEMPLATES.get(data.get("status"), CONFIRM_TEMPLATES["no_match"])
+    return template.format(count=data.get("count", 0))
 
 
 def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> dict:
@@ -256,6 +292,86 @@ def pick_view(tool_names: list[str], draft) -> tuple[str, dict | None]:
     return workspace_view(tool_names, draft)
 
 
+def fast_path_reply(service, session: dict, actor, text: str,
+                    emit=None, turn_id: str | None = None):
+    """HN-01 đường tắt tất định: luật hiểu đủ nhu cầu thì không gọi LLM trong lượt.
+
+    Điều kiện (bảo thủ): không ý định rõ (caller đã tách), không nhắc điểm đến,
+    DemoInterpreter trích được ít nhất thành phố hoặc nháp đã có thành phố, và
+    có mức tiền (câu này hoặc nháp). Mọi lỗi nội bộ → trả None để rơi về vòng
+    lặp LLM; không bao giờ chết giữa chừng."""
+    from .interpreter import DemoInterpreter, NEAR_PLACE
+    session_id = session["id"]
+    try:
+        if NEAR_PLACE.search(text) or service._draft(session_id).destination:
+            return None
+        extraction = DemoInterpreter().extract(text)
+        if extraction.intent != "find_room" or extraction.destination_text or extraction.needs_destination:
+            return None
+        if extraction.remove_preferences:
+            return None
+        draft = service._draft(session_id)
+        city = extraction.city or draft.city
+        if not city:
+            return None
+        hint = chat_budget_hint(text, draft.budget_hint_vnd)
+        if hint is None and draft.budget_hint_vnd is None:
+            return None
+        patch = {key: value for key in ("city", "area", "room_type", "bedrooms", "people",
+                                        "preferences", "needs_destination", "accept_estimated_data")
+                 for value in [getattr(extraction, key, None)] if value}
+        if emit is not None:
+            emit({"name": "route", "kind": "router", "detail": "Luật đã hiểu đủ nhu cầu, tìm luôn không cần AI"})
+        if hint:
+            service._apply_chat_budget_hint(session_id, hint, session["draft_revision"])
+        if patch:
+            service._apply_agent_patch(session_id, patch)
+        # Hỏi trước khi tìm: còn mơ hồ đáng kể → trả chip từ kho, không gọi LLM.
+        assumptions: list[str] = []
+        for _ in range(5):
+            payload = service._clarification_payload(session_id)
+            if payload is None:
+                break
+            if not payload.get("assumed"):
+                question = payload.get("question") or ""
+                return {"intent": "find_room", "status": "needs_clarification",
+                        "message": question, "questions": [question] if question else None,
+                        "clarification": payload,
+                        "view": "keep", "view_payload": None, "anchor": None,
+                        "steps": None, "agent_mode": "fast_path", "turn_id": turn_id}, \
+                    stamp("deterministic-engine", "fast_path", interpreter_mode="openai",
+                          agent_mode="fast_path")
+            assumptions.append(payload["assumed"])
+        profile = service._profile_from_draft(session_id)
+        if profile is None:
+            return None
+        fresh = service.repo.session(session_id)
+        result = service.confirm(session_id, actor, profile, fresh["draft_revision"])
+        draft = service._draft(session_id)
+        if emit is not None:
+            emit({"name": "confirm_and_search", "kind": "tool",
+                  "detail": "Đã xác nhận nhu cầu và chạy tìm phòng."})
+        message = confirm_template(result)
+        if assumptions:
+            message += " Mình đang hiểu: " + "; ".join(assumptions) + ". Bạn có thể sửa trong nhu cầu."
+        return {"intent": "find_room", "status": result["status"], "message": message,
+                "questions": None, "view": ("map" if draft.destination else "list"),
+                "view_payload": {"sorted_by": "distance" if draft.destination else "match"},
+                "anchor": ({"label": draft.destination.label, "latitude": draft.destination.latitude,
+                            "longitude": draft.destination.longitude,
+                            "uncertainty_m": draft.destination.uncertainty_m} if draft.destination else None),
+                "steps": ["confirm_and_search: Đã xác nhận nhu cầu và chạy tìm phòng."],
+                "criteria": service._criteria_projection(session_id),
+                "suggested_prompts": service._suggested_prompts(session_id),
+                "agent_mode": "fast_path", "turn_id": turn_id,
+                }, stamp("deterministic-engine", "fast_path", interpreter_mode="openai",
+                         agent_mode="fast_path")
+    except DomainError:
+        return None
+    except Exception:
+        return None
+
+
 def run_turn(service, session: dict, actor, text: str,
              emit=None, turn_id: str | None = None) -> tuple[dict, dict]:
     """Một lượt chat chạy bằng vòng lặp tool. Trả về (response, provenance).
@@ -266,20 +382,8 @@ def run_turn(service, session: dict, actor, text: str,
     turn_id = turn_id or str(uuid4())
     # Mức tiền trong CÂU CỦA KHÁCH được đọc tất định (như graph cũ), không qua LLM:
     # model không được tự ghi trường tiền nào khác qua update_needs.
-    from .interpreter import relative_budget, rent_budget_hint
-    # AG-02: tiền TƯƠNG ĐỐI ưu tiên trước số tuyệt đối trong cùng câu
-    # ("nới thêm 1 triệu" không được đọc thành trần 1 triệu).
-    change = relative_budget(text)
     old_hint = service._draft(session["id"]).budget_hint_vnd
-    hint = None
-    if change and (change["direction"] == "set" or old_hint):
-        if change["direction"] == "set":
-            hint = change["amount_vnd"]
-        else:
-            delta = change["amount_vnd"] * (1 if change["direction"] == "up" else -1)
-            hint = max(1, old_hint + delta)
-    if hint is None:
-        hint = rent_budget_hint(text)
+    hint = chat_budget_hint(text, old_hint)
     if hint:
         service._apply_chat_budget_hint(session["id"], hint, session["draft_revision"])
         session = service.repo.session(session["id"])
@@ -296,7 +400,11 @@ def run_turn(service, session: dict, actor, text: str,
     usage_total = {"logical_calls": 0, "tokens": 0, "saw_none": False}
     response_dict: dict | None = None
     turn_started = time.monotonic()
-    # WS-02: phát sự kiện bước ngay khi chạy; timeout lượt 60 s do endpoint giữ.
+    timings = {"llm_ms": 0, "tool_ms": 0}
+    # HN-01: executor dùng chung cho lượt — tool chỉ đọc chạy song song, mỗi tool
+    # có timeout riêng; thread quá hạn có thể còn chạy nốt nhưng lượt không chờ.
+    executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="agent-tool")
+    # WS-02: phát sự kiện bước ngay khi chạy; deadline lượt 45 s (HN-01).
     if emit is not None:
         emit({"name": "route", "kind": "router", "detail": "AI phân tích nhu cầu"})
 
@@ -319,14 +427,65 @@ def run_turn(service, session: dict, actor, text: str,
                             "uncertainty_m": draft.destination.uncertainty_m} if draft.destination else None),
                 "turn_id": turn_id}
 
-    for _ in range(MAX_AGENT_STEPS):
-        if time.monotonic() - turn_started > 55:
+    def run_one(entry):
+        """Tool ghi/chạy tuần tự ở THREAD CHÍNH, không executor: `message()`
+        giữ `service.lock` suốt lượt, worker khác sẽ deadlock nếu hàm nghiệp
+        vụ muốn lấy lock đó. Worker song song chỉ dành cho tool chỉ đọc."""
+        _, name, arguments = entry
+        started = time.monotonic()
+        if not isinstance(arguments, dict) or name not in tools or name not in TOOL_REGISTRY:
+            result = {"error": "tool_unavailable",
+                      "message": "Tool không có trong bộ được cấp hoặc tham số không phải JSON hợp lệ."}
+        else:
+            result = execute_tool(service, toolbox, session["id"], turn_id,
+                                  name, tools[name]["fn"], arguments, actor=actor)
+        return result, round((time.monotonic() - started) * 1000)
+
+    def record(entry, result, duration_ms):
+        """Ghi payload/bước/sự kiện cho một kết quả tool; trả data nếu ask_user hỏi."""
+        _, name, _ = entry
+        if "ok" not in result:
+            result = {"ok": False, **result, "hint": "Chọn tool trong danh sách được cấp."}
+        data = result.get("data") or {}
+        payload = json.dumps(TOOL_REGISTRY[name].redact(result) if name in TOOL_REGISTRY else result, ensure_ascii=False, default=str)
+        tool_payloads.append(payload)
+        detail = (TOOL_REGISTRY[name].summarize(result) if name in TOOL_REGISTRY
+                  else "Công cụ không được cấp")
+        safe_name = name if name in TOOL_REGISTRY else "tool_unavailable"
+        steps.append({"tool": safe_name, "detail": detail, "ok": result["ok"],
+                      "duration_ms": duration_ms})
+        timings["tool_ms"] += duration_ms
+        if emit is not None:
+            emit({"name": safe_name, "kind": "tool", "detail": detail})
+        messages.append({"role": "tool", "tool_call_id": entry[0].id, "content": payload})
+        if name == "ask_user" and result["ok"] and data.get("question"):
+            return data
+        return None
+
+    def readable(entry) -> bool:
+        _, name, arguments = entry
+        definition = TOOL_REGISTRY.get(name)
+        return (definition is not None and not definition.writes
+                and isinstance(arguments, dict) and name in tools and name in TOOL_REGISTRY)
+
+    for _ in range(MAX_LLM_CALLS):
+        if time.monotonic() - turn_started > TURN_DEADLINE_S:
             response_dict = finalize(SAFE_REPLY, None)
             break
         service.budget.spend(session["id"])
         try:
-            completion = interpreter.client.chat.completions.create(
-                model=interpreter.model, messages=messages, tools=TOOL_SPECS, tool_choice="auto")
+            # HN-01: tham số model qua env; reasoning model không nhận temperature.
+            params = {"model": interpreter.model, "messages": messages, "tools": TOOL_SPECS,
+                      "tool_choice": "auto", "parallel_tool_calls": True}
+            max_tokens = int(os.getenv("HOMEMATCH_AGENT_MAX_TOKENS", "800") or 0)
+            if max_tokens > 0:
+                params["max_completion_tokens"] = max_tokens
+            reasoning = os.getenv("HOMEMATCH_AGENT_REASONING", "low").strip().lower()
+            if reasoning in {"low", "medium", "high"}:
+                params["reasoning"] = {"effort": reasoning}
+            llm_started = time.monotonic()
+            completion = interpreter.client.chat.completions.create(**params)
+            timings["llm_ms"] += round((time.monotonic() - llm_started) * 1000)
         except DomainError:
             raise
         except Exception:
@@ -347,37 +506,49 @@ def run_turn(service, session: dict, actor, text: str,
                                              "function": {"name": call.function.name,
                                                           "arguments": call.function.arguments}}
                                             for call in tool_calls]})
+            entries = []
             for call in tool_calls:
-                name = call.function.name
                 try:
                     arguments = json.loads(call.function.arguments or "{}")
                 except json.JSONDecodeError:
                     arguments = None
-                if not isinstance(arguments, dict) or name not in tools or name not in TOOL_NAMES:
-                    result = {"error": "tool_unavailable",
-                              "message": "Tool không có trong bộ được cấp hoặc tham số không phải JSON hợp lệ."}
-                else:
-                    from .agent_executor import execute_tool
-                    result = execute_tool(service, toolbox, session["id"], turn_id,
-                                          name, tools[name]["fn"], arguments, actor=actor)
-                if "ok" not in result:
-                    result = {"ok": False, **result, "hint": "Chọn tool trong danh sách được cấp."}
-                data = result.get("data") or {}
-                payload = json.dumps(TOOL_REGISTRY[name].redact(result) if name in TOOL_REGISTRY else result, ensure_ascii=False, default=str)
-                tool_payloads.append(payload)
-                detail = (TOOL_REGISTRY[name].summarize(result) if name in TOOL_REGISTRY
-                          else "Công cụ không được cấp")
-                safe_name = name if name in TOOL_REGISTRY else "tool_unavailable"
-                steps.append({"tool": safe_name, "detail": detail, "ok": result["ok"]})
-                if emit is not None:
-                    emit({"name": safe_name, "kind": "tool", "detail": detail})
-                messages.append({"role": "tool", "tool_call_id": call.id, "content": payload})
-                if name == "ask_user" and result["ok"]:
-                    if data.get("question"):
-                        question = data["question"]
-                        response_dict = finalize(question, [question])
-                        response_dict["clarification"] = data
-                        break
+                entries.append((call, call.function.name, arguments))
+            index = 0
+            while index < len(entries) and response_dict is None:
+                entry = entries[index]
+                if readable(entry) and not service.repo.db.postgres:
+                    # Chỉ nhóm các tool chỉ đọc LIÊN TIẾP (tool ghi xen giữa cắt
+                    # nhóm và chạy tuần tự theo thứ tự model); PG luôn tuần tự
+                    # vì connection psycopg không dùng chéo thread được.
+                    batch = [entry]
+                    while (index + len(batch) < len(entries)
+                           and readable(entries[index + len(batch)])):
+                        batch.append(entries[index + len(batch)])
+                    index += len(batch)
+                    batch_started = time.monotonic()
+                    futures = [(item, executor.submit(execute_tool, service, toolbox, session["id"], turn_id,
+                                                      item[1], tools[item[1]]["fn"], item[2], actor=actor))
+                               for item in batch]
+                    for item, future in futures:
+                        try:
+                            result = future.result(timeout=TOOL_REGISTRY[item[1]].timeout_s)
+                        except FutureTimeout:
+                            result = {"ok": False, "error": "tool_timeout",
+                                      "message": "Công cụ xử lý quá lâu nên lượt không chờ nữa.",
+                                      "hint": "Bỏ bước này hoặc thử lại với dữ liệu hẹp hơn."}
+                        record(item, result, round((time.monotonic() - batch_started) * 1000))
+                    continue
+                result, duration_ms = run_one(entry)
+                data = record(entry, result, duration_ms)
+                if data is not None:
+                    response_dict = finalize(data["question"], [data["question"]])
+                    response_dict["clarification"] = data
+                    break
+                if entry[1] == "confirm_and_search" and result.get("ok") and (result.get("data") or {}).get("status"):
+                    # HN-01 gộp lượt cuối: template đủ ý (số lấy từ kết quả tool),
+                    # không gọi thêm LLM chỉ để "nói lại".
+                    response_dict = finalize(confirm_template(result["data"]), None)
+                index += 1
             if response_dict is not None:
                 break
             continue
@@ -385,6 +556,7 @@ def run_turn(service, session: dict, actor, text: str,
         if answer:
             response_dict = finalize(check_numbers(answer, text, tool_payloads), None)
             break
+    executor.shutdown(wait=False)
     if response_dict is None:
         response_dict = finalize(SAFE_REPLY, None)
     response_dict["suggested_prompts"] = service._suggested_prompts(session["id"])
@@ -407,5 +579,7 @@ def run_turn(service, session: dict, actor, text: str,
     service.interpreter.last_usage = {"logical_calls": usage_total["logical_calls"],
                                       "tokens": None if usage_total["saw_none"] else usage_total["tokens"]}
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",
-                       agent_mode="loop", **toolbox.summary("needs"))
+                       agent_mode="loop", duration_ms=round((time.monotonic() - turn_started) * 1000),
+                       llm_ms=timings["llm_ms"], tool_ms=timings["tool_ms"],
+                       llm_calls=usage_total["logical_calls"], **toolbox.summary("needs"))
     return response_dict, provenance

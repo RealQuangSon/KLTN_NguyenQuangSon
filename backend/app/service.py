@@ -25,7 +25,7 @@ from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fal
                           quarantine_reply, redact_tree, resolve_room_reference, screen_injection,
                           viewing_intent, viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
-from .agent_loop import run_turn as run_agent_turn
+from .agent_loop import fast_path_reply, run_turn as run_agent_turn
 from .agents import ToolBox
 from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
 from .catalog import Catalog, StoredCatalog
@@ -279,24 +279,34 @@ class HomeMatchService:
                 elif explicit_route is None and viewing_intent(text):
                     response, provenance = self._prepare_viewing(session, actor, text)
                 elif isinstance(self.interpreter, OpenAIInterpreter):
-                    # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
-                    # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
-                    try:
-                        response, provenance = run_agent_turn(self, session, actor, text, emit=emit, turn_id=turn_id)
-                    except DomainError as error:
-                        if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
-                            raise
-                        provider_error = error.code
+                    # HN-01 đường tắt tất định: ý định rõ đi graph luật ngay; câu
+                    # luật hiểu đủ thì confirm không cần LLM; còn lại mới vào
+                    # vòng lặp agent (AG-13). Mọi đường đều không chết giữa chừng.
+                    fast = (self._explicit_fast_path(session, actor, text, explicit_route,
+                                                     cost_input)
+                            if explicit_route else
+                            fast_path_reply(self, session, actor, text, emit=emit, turn_id=turn_id))
+                    if fast is not None:
+                        response, provenance = fast
+                    else:
+                        # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
+                        # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
                         try:
-                            response, provenance = self._chat_graph_turn(session, actor, text,
-                                                                         explicit_route, cost_input, spend=False)
-                        except DomainError as inner:
-                            if inner.code not in PROVIDER_FALLBACK_CODES:
+                            response, provenance = run_agent_turn(self, session, actor, text, emit=emit, turn_id=turn_id)
+                        except DomainError as error:
+                            if error.code not in (PROVIDER_FALLBACK_CODES | {"budget_exceeded"}):
                                 raise
-                            # Graph cũ cũng lỗi provider → trả biểu mẫu có nhãn mã.
-                            response = provider_fallback_reply(inner.code)
-                            provenance = stamp("deterministic-engine", "provider_fallback")
-                        response = {**response, "agent_mode": "graph_fallback"}
+                            provider_error = error.code
+                            try:
+                                response, provenance = self._chat_graph_turn(session, actor, text,
+                                                                             explicit_route, cost_input, spend=False)
+                            except DomainError as inner:
+                                if inner.code not in PROVIDER_FALLBACK_CODES:
+                                    raise
+                                # Graph cũ cũng lỗi provider → trả biểu mẫu có nhãn mã.
+                                response = provider_fallback_reply(inner.code)
+                                provenance = stamp("deterministic-engine", "provider_fallback")
+                            response = {**response, "agent_mode": "graph_fallback"}
                 else:
                     if emit is not None:
                         emit({"name": "route", "kind": "router",
@@ -327,6 +337,21 @@ class HomeMatchService:
             self._store_transcript(session_id, actor.id, text, response, provenance, scan.flagged)
             return {**self.session(session_id, actor), **response, "turn_id": turn_id, "usage": usage,
                     "provenance": provenance, "guard": guard}
+
+    def _explicit_fast_path(self, session: dict, actor: Actor, text: str,
+                            explicit_route: str, cost_input: CostRequest | None):
+        """HN-01: ý định rõ (chi phí/vay/handbook/handover/hỗ trợ) đi graph luật
+        ngay, không vòng LLM — các nhánh này không cần trích xuất của model.
+        Lỗi provider hiếm hoi của graph vẫn trả biểu mẫu có nhãn mã."""
+        try:
+            response, provenance = self._chat_graph_turn(session, actor, text,
+                                                         explicit_route, cost_input, spend=False)
+        except DomainError as error:
+            if error.code not in PROVIDER_FALLBACK_CODES:
+                raise
+            response = provider_fallback_reply(error.code)
+            provenance = stamp("deterministic-engine", "provider_fallback")
+        return {**response, "agent_mode": "fast_path"}, provenance
 
     def _store_transcript(self, session_id: str, user_id: str, text: str, response: dict, provenance: dict,
                           flagged: bool):

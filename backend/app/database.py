@@ -1,7 +1,36 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from pathlib import Path
+
+
+class _Rows:
+    """Kết quả đã đọc hết ngay trong khóa của execute — an toàn khi dùng chéo thread.
+
+    sqlite3 của bản Python/framework này không chịu hai thread cùng chạm connection
+    (kể cả per-call): câu lệnh và fetch phải là MỘT thao tác nguyên tử."""
+    __slots__ = ("_rows", "_index", "rowcount", "lastrowid")
+
+    def __init__(self, rows, rowcount=0, lastrowid=None):
+        self._rows = rows
+        self._index = 0
+        self.rowcount = rowcount
+        self.lastrowid = lastrowid
+
+    def fetchone(self):
+        if self._index >= len(self._rows):
+            return None
+        row = self._rows[self._index]
+        self._index += 1
+        return row
+
+    def fetchall(self):
+        self._index = len(self._rows)
+        return self._rows
+
+    def __iter__(self):
+        return iter(self._rows)
 
 
 class Database:
@@ -13,6 +42,9 @@ class Database:
         self.closed = False
         self.depth = 0
         self.transactions = []
+        # HN-01: tool chỉ đọc chạy song song ở executor dùng chung connection này;
+        # khóa tuần tự hóa từng thao tác connection (những phần không DB vẫn chồng).
+        self._lock = threading.RLock()
         if self.postgres:
             self.connection = self._connect_postgres()
         else:
@@ -20,7 +52,8 @@ class Database:
                 Path(location).parent.mkdir(parents=True, exist_ok=True)
             self.connection = sqlite3.connect(str(location), check_same_thread=False, isolation_level=None)
             self.connection.row_factory = sqlite3.Row
-            self.connection.execute("PRAGMA foreign_keys=ON")
+            with self._lock:
+                self.connection.execute("PRAGMA foreign_keys=ON")
 
     def _connect_postgres(self):
         import psycopg
@@ -43,10 +76,13 @@ class Database:
             return action()
 
     def execute(self, sql: str, params=()):
-        if not self.postgres:
-            return self.connection.execute(sql, params)
-        sql = sql.replace("?", "%s")
-        return self._retry_dead_connection(lambda: self.connection.execute(sql, params))
+        with self._lock:
+            if self.postgres:
+                sql = sql.replace("?", "%s")
+                cursor = self._retry_dead_connection(lambda: self.connection.execute(sql, params))
+            else:
+                cursor = self.connection.execute(sql, params)
+            return _Rows(cursor.fetchall(), cursor.rowcount, getattr(cursor, "lastrowid", None))
 
     def executescript(self, sql: str):
         for statement in sql.split(";"):
@@ -54,36 +90,40 @@ class Database:
                 self.execute(statement)
 
     def commit(self):
-        self.connection.commit()
+        with self._lock:
+            self.connection.commit()
 
     def close(self):
-        self.closed = True
-        self.connection.close()
+        with self._lock:
+            self.closed = True
+            self.connection.close()
 
     def __enter__(self):
-        if self.postgres:
-            def begin():
-                transaction = self.connection.transaction()
-                transaction.__enter__()
-                return transaction
-            # BEGIN is the first statement of the unit of work, so it is safe to retry.
-            self.transactions.append(self._retry_dead_connection(begin) if self.depth == 0 else begin())
-        elif self.depth == 0:
-            self.connection.execute("BEGIN IMMEDIATE")
-        else:
-            self.connection.execute(f"SAVEPOINT hm_nested_{self.depth}")
-        self.depth += 1
+        with self._lock:
+            if self.postgres:
+                def begin():
+                    transaction = self.connection.transaction()
+                    transaction.__enter__()
+                    return transaction
+                # BEGIN is the first statement of the unit of work, so it is safe to retry.
+                self.transactions.append(self._retry_dead_connection(begin) if self.depth == 0 else begin())
+            elif self.depth == 0:
+                self.connection.execute("BEGIN IMMEDIATE")
+            else:
+                self.connection.execute(f"SAVEPOINT hm_nested_{self.depth}")
+            self.depth += 1
         return self
 
     def __exit__(self, kind, error, traceback):
-        self.depth -= 1
-        if self.postgres:
-            return self.transactions.pop().__exit__(kind, error, traceback)
-        if self.depth == 0:
-            self.connection.rollback() if kind else self.connection.commit()
-        else:
-            name = f"hm_nested_{self.depth}"
-            if kind:
-                self.connection.execute(f"ROLLBACK TO SAVEPOINT {name}")
-            self.connection.execute(f"RELEASE SAVEPOINT {name}")
+        with self._lock:
+            self.depth -= 1
+            if self.postgres:
+                return self.transactions.pop().__exit__(kind, error, traceback)
+            if self.depth == 0:
+                self.connection.rollback() if kind else self.connection.commit()
+            else:
+                name = f"hm_nested_{self.depth}"
+                if kind:
+                    self.connection.execute(f"ROLLBACK TO SAVEPOINT {name}")
+                self.connection.execute(f"RELEASE SAVEPOINT {name}")
         return False
