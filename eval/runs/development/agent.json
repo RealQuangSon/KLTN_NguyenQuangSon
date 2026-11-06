@@ -5,8 +5,8 @@
   "kind": "agent_scenarios",
   "mode": "demo",
   "model": null,
-  "p50_ms": 28.1,
-  "p95_ms": 63.2,
+  "p50_ms": 30.9,
+  "p95_ms": 75.4,
   "questions_before_first_result": 0.95,
   "results": [
     {
@@ -24,7 +24,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 18.8,
+          "duration_ms": 20.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -51,7 +51,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 57.2,
+          "duration_ms": 62.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -78,7 +78,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 13.2,
+          "duration_ms": 13.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -105,7 +105,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 50.1,
+          "duration_ms": 59.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -132,7 +132,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 63.2,
+          "duration_ms": 140.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -159,7 +159,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.9,
+          "duration_ms": 14.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -186,7 +186,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.7,
+          "duration_ms": 15.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -213,7 +213,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.2,
+          "duration_ms": 14.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -240,7 +240,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 30.4,
+          "duration_ms": 30.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -267,7 +267,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 47.9,
+          "duration_ms": 51.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -294,7 +294,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 48.3,
+          "duration_ms": 50.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -321,7 +321,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 45.5,
+          "duration_ms": 49.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -348,7 +348,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 47.4,
+          "duration_ms": 51.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -375,7 +375,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 69.9,
+          "duration_ms": 75.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -402,7 +402,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.8,
+          "duration_ms": 14.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -429,7 +429,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 53.0,
+          "duration_ms": 59.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -456,7 +456,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 14.0,
+          "duration_ms": 14.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -483,7 +483,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 45.6,
+          "duration_ms": 50.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -510,7 +510,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.1,
+          "duration_ms": 13.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -537,7 +537,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 13.2,
+          "duration_ms": 17.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -564,7 +564,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 50.8,
+          "duration_ms": 62.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -582,7 +582,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 32.8,
+          "duration_ms": 31.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -608,7 +608,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 28.4,
+          "duration_ms": 31.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -626,7 +626,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 27.4,
+          "duration_ms": 32.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -652,7 +652,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 46.2,
+          "duration_ms": 57.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -670,7 +670,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 71.5,
+          "duration_ms": 79.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -696,7 +696,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 27.8,
+          "duration_ms": 28.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -714,7 +714,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 27.3,
+          "duration_ms": 29.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -740,7 +740,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 13.5,
+          "duration_ms": 13.8,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -766,7 +766,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.7,
+          "duration_ms": 13.3,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -792,7 +792,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 11.9,
+          "duration_ms": 12.9,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -818,7 +818,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.6,
+          "duration_ms": 13.2,
           "intent": "calculate_cost",
           "passed": true,
           "problems": [],
@@ -844,7 +844,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 12.7,
+          "duration_ms": 13.3,
           "intent": "human_support",
           "passed": true,
           "problems": [],
@@ -869,7 +869,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 51.5,
+          "duration_ms": 50.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -886,7 +886,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 13.2,
+          "duration_ms": 12.9,
           "intent": "simulate_finance",
           "passed": true,
           "problems": [],
@@ -913,7 +913,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 49.1,
+          "duration_ms": 54.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -940,7 +940,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 26.3,
+          "duration_ms": 28.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -967,7 +967,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 55.3,
+          "duration_ms": 60.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -994,7 +994,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 13.2,
+          "duration_ms": 13.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1021,7 +1021,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 50.9,
+          "duration_ms": 53.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1039,7 +1039,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 26.3,
+          "duration_ms": 28.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1065,7 +1065,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 26.8,
+          "duration_ms": 27.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1083,7 +1083,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 28.0,
+          "duration_ms": 28.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1109,7 +1109,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 53.5,
+          "duration_ms": 57.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1127,7 +1127,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 53.9,
+          "duration_ms": 54.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1154,7 +1154,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 33.6,
+          "duration_ms": 30.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1181,7 +1181,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 48.8,
+          "duration_ms": 49.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1207,7 +1207,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 52.2,
+          "duration_ms": 52.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1233,7 +1233,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 27.4,
+          "duration_ms": 62.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1259,7 +1259,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 51.0,
+          "duration_ms": 54.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1276,7 +1276,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 29.4,
+          "duration_ms": 30.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1302,7 +1302,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 27.1,
+          "duration_ms": 30.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1319,7 +1319,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 26.0,
+          "duration_ms": 30.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1345,7 +1345,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 28.1,
+          "duration_ms": 31.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1362,7 +1362,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 28.0,
+          "duration_ms": 29.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1380,5 +1380,5 @@
   "turn_count": 55,
   "turn_pass_rate": 1.0,
   "version": 1,
-  "wall_seconds": 1.9
+  "wall_seconds": 2.2
 }
