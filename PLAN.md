@@ -32,6 +32,7 @@
 |---|---|---|---|---|
 | 1a | Tìm bằng câu nói | Chat graph `route→interview`, `OpenAIInterpreter` (OpenRouter `chat_completions`), auto-confirm FE; đã sửa lỗi không chạy lại vòng tìm sau khi chấp nhận dữ liệu ước tính (04/11) | Không hiểu **điểm đến** ("gần HUST" → `destination=null`); "nới thêm 1 triệu" đọc thành trần 1 triệu; kho Chợ Tốt thiếu sức chứa nên vòng đầu luôn `needs_verification` | AG-01, AG-02, AG-03 |
 | 1a' | Phỏng vấn khai thác nhu cầu | `_questions` chỉ hỏi "thành phố nào?"; chip nới tiêu chí cố định ở FE | Không phân tích mơ hồ, không hỏi lại có lựa chọn, không đo khi nào nên hỏi | AG-11, AG-12 |
+| H | Harness của agent (06/11/2026) | Vòng lặp tool `agent_loop.py` (≤6 bước), `ToolBox` allowlist, hậu kiểm số, fallback graph, stream bước, Jev (`decisions.py`, sửa định dạng 06/11) | `ask_user` của LLM bỏ qua clarify/Jev; lượt 16 s; ngân sách 50 **lần gọi LLM**/phiên ≈ 10 câu là hết; trace chỉ trong RAM; chưa có eval kịch bản nhiều lượt; memory không vào vòng lặp | HN-01…HN-12 |
 | 1b | Tìm bằng giọng nói | `VoiceInput.tsx` (Web Speech, vi-VN) | Đủ cho demo; chỉ cần test E2E | E2E-01 |
 | 1c | Tìm bằng ảnh | Không có | Toàn bộ: upload ảnh khách → trích đặc điểm → nháp | AG-04 |
 | 1d | Kết quả + tương tác workspace | Danh sách, bản đồ MapLibre/OSM, so sánh ≤3, xem nhanh, lưu | Agent không tham chiếu được căn kiểu Chợ Tốt: `ROOM_REFERENCE` chỉ khớp `demo-NN` → "đặt lịch căn số 2", hỏi nội quy, mô phỏng vay theo căn đều hỏng | AG-05 |
@@ -53,6 +54,8 @@
 | Đợt | Task | Lý do |
 |---|---|---|
 | P0 — agent chạy được | AG-00, AG-13, WS-02, WS-01, AG-05, AG-11, AG-01, AG-02, AG-03, AG-09 | Gỡ các lỗi khiến luồng chính đứt ngay ở demo |
+| P0 — harness agent | HN-00, HN-03, HN-02, HN-01, HN-04, HN-06, HN-05 | Agent chạy đúng, đủ nhanh, không chết giữa phiên, quan sát được |
+| P1 — harness agent | HN-07, HN-08, HN-09, HN-10, HN-11, HN-12 | Đo được, tái lập được, an toàn hơn |
 | P1 — đủ vòng đời | AG-06, FL-01, FL-02, AG-07, FL-03, AU-01 | Nối từ kết quả tới nhận nhà |
 | P1 — trải nghiệm | MP-01, AG-14, MP-02, AG-15, WS-03, AG-12, PR-01, PR-02, AG-08, AG-04 | Trang cá nhân, hỏi đáp, ảnh |
 | P2 — đo và tối ưu | EV-01, AG-10, EV-02, E2E-01 | Chứng minh 39% → 60%, demo trình duyệt |
@@ -404,6 +407,92 @@ Lặp: chạy EV-01 → xem 10 kịch bản tệ nhất → sửa prompt, luật
 Viết lại `docs/kich-ban-demo.md` theo §0.1 và quay lại trên localhost (Neon + OpenRouter): giọng nói → kết quả + bản đồ → đặt lịch online → vào phòng Jitsi → chốt căn → review hợp đồng → cọc → nhận nhà → trang cá nhân. Ghi chú mọi bước còn giả lập (thanh toán, email).
 
 ---
+
+## 4H. Harness của agent (lập 06/11/2026)
+
+**Harness** = mọi thứ bao quanh LLM để nó chạy như một agent đáng tin: vòng lặp và giới hạn, ngữ cảnh, bộ tool và hợp đồng tool, lớp hỏi lại, guardrail vào/ra, ngân sách và tốc độ, stream, trace, bộ nhớ, đánh giá và tái lập. Phần này hoàn thiện harness cho AG-13; các task chức năng P1 (AG-06, MP-01, …) chỉ việc **thêm tool** theo hợp đồng ở HN-03.
+
+**Hiện trạng đã kiểm (06/11, chạy live `gpt-6-luna` + Jev):** agent tự gọi `find_place → update_needs → search_rooms → confirm_and_search → ask_user`, hiểu đúng HUST, mở bản đồ có ghim; nhưng lượt mất 16,4 s; `ask_user` trả lựa chọn do LLM tự viết; Jev chỉ chạy khi model **không** gọi `ask_user`; client Jev gửi sai định dạng (đã sửa trong working tree, chưa commit: `decisions.py`, `test_clarify.py`).
+
+**Sơ đồ đích của một lượt:**
+```
+FE ─POST /v1/sessions/{id}/turn (stream)─► Cổng vào (HN-06) ─► Dựng ngữ cảnh (HN-04)
+   ─► Vòng lặp (HN-01): LLM ⇄ ToolBox (HN-03) ── tool "ask_user" ─► Lớp hỏi lại kho+Jev (HN-02)
+   ─► Hậu kiểm ra (HN-06) ─► AgentTurn + stream bước ─► Trace bền (HN-05) ─► Eval/replay (HN-08/09)
+```
+
+### HN-00 — Commit sửa định dạng Jev (P0, làm ngay)
+Commit `backend/app/decisions.py` + `backend/tests/test_clarify.py` (định dạng Decisions API: `state` object, `questions.clarify.{type,instructions,criteria{id:nhãn}}`, đọc `answers.clarify.{choice,probabilities}`, xếp chip theo xác suất Jev). Bằng chứng live 06/11: HTTP 200, 0,85–1,14 s, ~0,00002 USD/lần, `decided_by="jev"`. Ghi vào `docs/trang-thai-trien-khai.md`.
+
+### HN-01 — Vòng lặp: giới hạn, tốc độ, kết thúc rõ ràng (P0)
+1. **Tham số model** qua env: `HOMEMATCH_AGENT_REASONING=low|medium|high` (mặc định `low`), `HOMEMATCH_AGENT_MAX_TOKENS` (mặc định 800), `temperature` không đặt nếu model reasoning. Truyền `parallel_tool_calls=true`.
+2. **Thực thi tool song song** khi một lượt model trả nhiều tool call **chỉ đọc** (`find_place`, `search_rooms`, `room_details`, `estimate_cost`, `search_handbook`, `route`…); tool **ghi** (`update_needs`, `confirm_and_search`, `prepare_viewing`, `open_landlord_chat`) luôn tuần tự theo thứ tự model gọi. Phân loại bằng cờ `writes: bool` trong registry (HN-03).
+3. **Đường tắt tất định:** câu mà luật đã hiểu đủ (fixed_intent, hoặc DemoInterpreter trích đủ city/area + không mơ hồ) → bỏ vòng LLM, chạy thẳng `update_needs → confirm_and_search` bằng code, LLM chỉ viết 1 câu trả lời (hoặc template). Ghi `agent_mode="fast_path"`.
+4. **Gộp lượt cuối:** sau `confirm_and_search` thành công, không quay lại LLM chỉ để “nói lại” nếu đã có template đủ ý; nếu cần LLM viết câu trả lời thì gọi **không kèm tools** (rẻ, nhanh).
+5. **Giới hạn:** 6 bước tool, 4 lần gọi LLM/lượt, 45 s/lượt (tool > 8 s → lỗi có cấu trúc `tool_timeout`). Vượt → `SAFE_REPLY` + trạng thái nháp vẫn lưu.
+6. **Đo** thời gian từng lần gọi LLM, từng tool, tổng lượt → vào trace (HN-05).
+**Mục tiêu:** p50 ≤ 4 s, p95 ≤ 10 s với câu tìm phòng thường (đo trên 20 câu, HN-08). **Test:** model giả trả 2 tool đọc cùng lúc → chạy song song (đo bằng tool giả có sleep); tool ghi tuần tự; fast path không gọi LLM tools; timeout tool → lỗi cấu trúc.
+
+### HN-02 — `ask_user` đi qua lớp hỏi lại kho + Jev (P0)
+**Lỗi hiện tại:** model gọi `ask_user(question, options[])` với lựa chọn tự viết → bỏ qua `clarify.py`/Jev; lớp AG-11 chỉ chạy khi model không hỏi.
+1. Đổi schema: `ask_user(field: "destination_radius"|"budget_scope"|"area"|"room_type"|"people"|"other", question?: str)` — model chọn **điểm cần hỏi**, không tự đặt lựa chọn (trừ `other`, khi đó tối đa 4 lựa chọn chữ, đánh dấu `source="model"`).
+2. Harness gọi `clarify.build_clarification(field=…)` → lựa chọn từ kho thật (số căn, giá từ) → `decisions.decide` (Jev khi `HOMEMATCH_DECISION_MODE=jev`) → chip có `patch`, xếp theo xác suất; Jev `p ≥ 0,8` → tự áp + nói giả định, **không** hỏi.
+3. Thêm `area` (top 3 quận có nhiều căn khớp quanh điểm đến/thành phố) và `room_type`, `people` vào `clarify._interpretations`.
+4. **Hỏi trước khi tìm:** system prompt + harness: nếu còn điểm mơ hồ có `impact ≥ 0,2` thì `confirm_and_search` trả lỗi cấu trúc `needs_clarification` kèm field gợi ý → model phải gọi `ask_user`. Mỗi lượt tối đa 1 câu hỏi, trước kết quả đầu tiên tối đa 2.
+5. Bán kính mặc định 3 km (đang tự đặt) chỉ dùng khi Jev/luật quyết định không cần hỏi; nói rõ trong câu trả lời.
+**Test:** model giả gọi `ask_user(field="destination_radius")` → DTO `clarification.options` có `count`, `patch`, `decided_by`; Jev giả p=0,9 → không hỏi, nháp ghi `clarify:auto`; `confirm_and_search` khi còn mơ hồ → lỗi `needs_clarification`. **Live:** "phòng dưới 4 triệu gần HUST" trên kho Neon → hỏi bán kính với chip có số căn thật (ghi bằng chứng).
+
+### HN-03 — Registry tool và hợp đồng tool (P0)
+1. `backend/app/agent_tools.py`: mỗi tool khai báo **một lần**: `name`, `agent` (needs/finance/ranking/support/handbook/booking/contract/map), `description`, Pydantic `Args` → JSON schema tự sinh, `writes`, `timeout_s`, `view` (view workspace mở khi tool thành công, thay `pick_view` if-else), `summarize(result) -> str` (dòng bước hiển thị, không PII), `redact(result)`.
+2. `AGENT_TOOLS`/`agent_capability.py` sinh từ registry; test đối chiếu không lệch.
+3. Kết quả tool chuẩn hóa: `{"ok": true, "data": …}` hoặc `{"ok": false, "error": code, "message": …, "hint": …}` (hint giúp model tự sửa, vd. "gọi find_place trước").
+4. Tool ghi nhận `idempotency_key = turn_id + tool + hash(args)` để retry stream không tạo bản ghi đôi.
+5. Hướng dẫn thêm tool mới (cho AG-06, MP-01, AG-07, …): 1 file, 1 test hợp đồng tự sinh (schema hợp lệ, `summarize` không lộ PII, chạy với args mẫu).
+**Test:** test tham số hóa chạy mọi tool trong registry với args mẫu; schema gửi model khớp Pydantic.
+
+### HN-04 — Ngữ cảnh và bộ nhớ hội thoại (P0)
+1. Ngữ cảnh mỗi lượt gồm: nháp + hồ sơ (không thu nhập, không tiền tuyệt đối ngoài trần khách nêu), **tóm tắt hội thoại** (≤ 600 token, cập nhật mỗi 4 lượt bằng 1 lần gọi LLM rẻ, lưu `hm_sessions.summary_json`), 6 lượt gần nhất, **workspace** (view, căn đang chọn, ≤30 căn hiển thị dạng `{room_id, title, giá, khoảng cách}`), **kết quả run hiện tại** (top 5 rút gọn), bộ nhớ sở thích (`memory.recall`, chỉ khi khách đồng ý, không tiền/điểm đến).
+2. Đếm token ngữ cảnh, cắt theo `HOMEMATCH_CONTEXT_TOKEN_CAP` (đã có biến 4000) theo thứ tự ưu tiên: hướng dẫn > nháp > workspace > tóm tắt > lượt cũ.
+3. Tiền trong lượt chat vẫn thay placeholder trước khi tới LLM (giữ nguyên).
+**Test:** ngữ cảnh không có `monthly_income_vnd`, SĐT, email; vượt cap → cắt đúng thứ tự; "căn thứ 2" hiểu được nhờ workspace.
+
+### HN-05 — Trace bền và quan sát (P0)
+1. Bảng `hm_agent_turns` (migration): `turn_id, session_id, user_id, started_at, duration_ms, agent_mode (loop|fast_path|graph_fallback), model, llm_calls, input_tokens, output_tokens, cost_usd, decided_by, outcome (answered|asked|handover|safe_reply|error), error_code` và `hm_agent_steps`: `turn_id, seq, kind (llm|tool|guard|decision), name, duration_ms, ok, summary` (đã redact). Không lưu prompt thô hay câu trả lời thô (transcript đã PII-mask nằm ở `hm_chat_transcripts`, giữ retention cũ).
+2. Thay `self._traces` (RAM) bằng đọc bảng; `GET /admin/agent-turns` (admin, có audit) + trang `/quan-tri/van-hanh` thêm bảng lượt agent, p50/p95, tỉ lệ fallback, chi phí/ngày.
+3. Chi phí: lấy `usage` của OpenRouter (có `cost` khi bật `usage: {include: true}`) và `usage.cost` của Jev; quy VND qua `cost_metrics.py`.
+**Test:** mỗi lượt sinh đúng 1 dòng turn + N dòng step; không có PII/tiền trong `summary`; renter không đọc được trace.
+
+### HN-06 — Guardrail vào/ra và ngân sách (P0)
+1. **Ngân sách:** đổi đơn vị từ "lần gọi LLM" sang **lượt chat** (`HOMEMATCH_SESSION_TURN_BUDGET`, mặc định 60) + trần chi phí phiên (`HOMEMATCH_SESSION_COST_CAP_USD`, mặc định 0,05). Hết → thông báo rõ, gợi ý dùng form; tool tất định vẫn chạy.
+2. **Vào:** giữ `screen_injection`; thêm giới hạn 2000 ký tự, ảnh ≤ 5 MB (AG-04); nội dung tool trả về (mô tả tin đăng) bọc trong khối `untrusted` và lọc mẫu injection trước khi đưa lại model.
+3. **Ra:** giữ hậu kiểm số; thêm kiểm: không nhắc thu nhập; không khẳng định "đã đặt lịch/đã liên hệ/đã thanh toán" nếu không có tool ghi tương ứng thành công trong lượt; không tuyên bố đã nới điều kiện cứng; tên căn/giá chỉ từ kết quả tool. Vi phạm → thay câu template + ghi `guard` step.
+4. **Tool ghi cần xác nhận người dùng** (`prepare_viewing`, chốt căn, gửi claim) chỉ trả bản **chuẩn bị**; thao tác thật do FE gửi khi khách bấm (giữ nguyên tắc).
+**Test:** 20 lượt liên tiếp không hết ngân sách; lượt vượt trần chi phí → 429 thân thiện; câu "đã đặt lịch" không có tool → bị thay; injection trong mô tả tin không đổi hành vi (test với tin giả chứa "bỏ qua hướng dẫn…").
+
+### HN-07 — Đường lui và độ bền (P1)
+Thứ tự lùi: model chính → (lỗi 5xx/timeout) thử lại 1 lần với backoff 0,5 s → model dự phòng `HOMEMATCH_AGENT_FALLBACK_MODEL` (tùy chọn) → graph cũ (`graph_fallback`) → template. Jev lỗi → luật (đã có). Goong lỗi → đường thẳng (MP-01). Mỗi lần lùi ghi vào trace. Circuit breaker: 5 lỗi liên tiếp trong 60 s → bỏ qua provider đó 120 s. **Test:** từng mức lùi bằng client giả.
+
+### HN-08 — Bộ kịch bản và chấm điểm agent (P1, gắn EV-01)
+1. `eval/scenarios/agent_e2e.json` (≥ 40 kịch bản nhiều lượt, HN/HCM): mỗi lượt có `user`, kỳ vọng `tools_called ⊇`, `tools_forbidden`, `view`, `clarification.field`, `draft` (trường kỳ vọng), `must_not_contain` (thu nhập, số bịa).
+2. Lệnh `python -m eval agent --mode demo|live --model …` chạy kịch bản qua `run_turn`, xuất `eval/runs/<run>/agent.json`: tỉ lệ hoàn thành, độ chính xác trường nháp, tỉ lệ hỏi đúng lúc (precision/recall so với `data/gold/clarify_cases.json`), số câu hỏi trước kết quả, p50/p95, chi phí. Đây là đầu vào điểm tổng hợp EV-01.
+3. Thêm suite `eval clarify` (AG-11 còn thiếu): chạy lớp 2+3 trên 40 ca gold, báo cáo theo `decided_by`.
+**Live chỉ chạy khi người dùng cho phép** (ước chi phí in trước khi chạy).
+
+### HN-09 — Ghi/phát lại lượt live (P1)
+Chế độ `HOMEMATCH_AGENT_RECORD=path`: ghi request/response model + Jev (đã redact) thành cassette JSON; test và eval dùng `HOMEMATCH_AGENT_REPLAY=path` để phát lại **không gọi mạng** — tái lập được bằng chứng live trong luận văn, không tốn phí khi chạy lại. **Test:** ghi rồi phát lại cho cùng kết quả.
+
+### HN-10 — Stream câu trả lời và trải nghiệm chờ (P1)
+Sau các bước tool, stream **từng đoạn chữ** của câu trả lời cuối (`{"type":"delta","text":…}`) khi gọi LLM không kèm tools; FE hiện dần. Hậu kiểm số chạy trên toàn câu trước sự kiện `done`; nếu vi phạm, gửi `{"type":"replace","text":…}`. Hiện trạng "Đang … — bước N" theo bước thật (đã có).
+
+### HN-11 — Phân vai agent trong harness (P1)
+Giữ một vòng lặp nhưng **lọc bộ tool theo pha**: phỏng vấn (needs + clarify), kết quả (ranking, cost, map, trust), giao dịch (booking, contract, handover). Pha suy từ trạng thái phiên (chưa có run / có run / đã có lịch-lease) → ít tool hơn mỗi lượt → model chọn đúng hơn, prompt ngắn hơn. Ghi `phase` vào trace. **Test:** pha "chưa có run" không thấy tool hợp đồng.
+
+### HN-12 — Tài liệu harness (P1)
+Viết lại `docs/thiet-ke-agent.md` và `docs/nghiep-vu-va-harness.md` theo kiến trúc mới: sơ đồ lượt, registry tool, lớp hỏi lại kho+Jev, guardrail, trace, eval; cập nhật `CLAUDE.md` mục "Agents and memory". Đây cũng là chương kiến trúc agent cho luận văn.
+
+**Thứ tự thực hiện harness:** HN-00 → HN-03 → HN-02 → HN-01 → HN-04 → HN-06 → HN-05 → HN-08 → HN-09 → HN-07 → HN-11 → HN-10 → HN-12. Sau HN-03, các task chức năng P1 thêm tool song song được.
+
+**Xong harness khi:** (1) "Tìm phòng trọ dưới 4 triệu gần HUST" live trên kho Neon: hỏi bán kính bằng chip có số căn thật, Jev xếp thứ tự, bấm chip → kết quả + bản đồ, tổng thời gian lượt đầu ≤ 6 s; (2) 20 lượt liên tiếp trong một phiên không hết ngân sách; (3) `eval agent --mode demo` chạy đủ 40 kịch bản, báo cáo p50/p95/chi phí; (4) mọi lượt có trace bền xem được ở trang admin; (5) `bash infra/check-local.sh` exit 0.
 
 ## 5. Nghiên cứu HubHome (05/11/2026)
 
