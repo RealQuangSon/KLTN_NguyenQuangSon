@@ -384,7 +384,64 @@ it("HN-02: lựa chọn câu hỏi mở gửi lại chữ khách chọn", async 
       "/sessions/session-1/messages",
       expect.objectContaining({ text: "Gần trường" }),
       expect.any(Function),
+      expect.anything(), // HN-10: onDelta là tham số thứ 4
     ),
   );
   expect(patch).not.toHaveBeenCalled();
 }, 20000);
+
+// HN-10: delta nối dần câu trả lời vào bubble streaming; replace thay toàn bộ
+// khi hậu kiểm phát hiện vi phạm; done vẫn là nguồn sự thật cuối.
+it("HN-10: stream delta hiện dần và replace thay câu vi phạm", async () => {
+  const api = new Api("token");
+  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  vi.spyOn(api, "get").mockImplementation(
+    async (path) =>
+      (path.endsWith("/results")
+        ? {
+            session_id: "session-1",
+            status: "awaiting_confirmation",
+            results: [],
+          }
+        : baseSession) as never,
+  );
+  const turn = vi
+    .spyOn(api, "turn")
+    .mockImplementation(async (_path, _body, _onStep, onDelta) => {
+      onDelta?.({ type: "delta", text: "Có đúng 99 căn " });
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      onDelta?.({ type: "delta", text: "giá 1 triệu gần đây." });
+      onDelta?.({
+        type: "replace",
+        text: "Mình vừa kiểm tra lại câu trả lời cho an toàn.",
+      });
+      return {
+        ...doneData,
+        message: "Mình vừa kiểm tra lại câu trả lời cho an toàn.",
+      } as unknown as never;
+    });
+  render(
+    <RouterProvider>
+      <RenterWorkspace
+        api={api}
+        actor={{ id: "renter-a", role: "renter" }}
+        tab="search"
+      />
+    </RouterProvider>,
+  );
+  const user = userEvent.setup();
+  await user.type(
+    await screen.findByPlaceholderText("Nhắn cho HomeMatch Agent…"),
+    "tìm phòng",
+  );
+  await user.keyboard("{Enter}");
+  // Trong lúc xử lý: bubble streaming đã hiện phần chữ delta đầu tiên.
+  const streaming = await screen.findByTestId("stream-text");
+  expect(streaming).toHaveTextContent(/99 căn/);
+  // Sau khi xong: bubble streaming biến mất, câu chính thức là bản replace.
+  await waitFor(() => expect(screen.queryByTestId("stream-text")).toBeNull());
+  expect(turn).toHaveBeenCalledTimes(1);
+  expect(
+    await screen.findByText(/kiểm tra lại câu trả lời/),
+  ).toBeInTheDocument();
+});

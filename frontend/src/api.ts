@@ -99,6 +99,7 @@ export class Api {
     path: string,
     body: unknown,
     onStep?: (step: { name: string; kind: string; detail: string }) => void,
+    onDelta?: (event: { type: "delta" | "replace"; text: string }) => void,
   ): Promise<T> {
     let response: Response;
     try {
@@ -143,9 +144,12 @@ export class Api {
           type: string;
           step?: { name: string; kind: string; detail: string };
           data?: T;
+          text?: string;
           error?: { code: string; message: string };
         };
         if (event.type === "step") onStep?.(event.step!);
+        else if (event.type === "delta" || event.type === "replace")
+          onDelta?.({ type: event.type, text: event.text ?? "" });
         else if (event.type === "done") done = event.data ?? null;
         else
           throw new ApiError(
@@ -170,6 +174,7 @@ export class Api {
     path: string,
     body: unknown,
     onStep?: (step: { name: string; kind: string; detail: string }) => void,
+    onDelta?: (event: { type: "delta" | "replace"; text: string }) => void,
   ): Promise<T> {
     const streamPath = `${path}/stream`;
     // Một mã cho cả stream retry và POST dự phòng, tránh ghi nghiệp vụ hai lần.
@@ -180,7 +185,7 @@ export class Api {
     let lastError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await this.streamTurn<T>(streamPath, body, onStep);
+        return await this.streamTurn<T>(streamPath, body, onStep, onDelta);
       } catch (error) {
         if (
           error instanceof ApiError &&

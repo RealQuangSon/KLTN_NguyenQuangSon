@@ -231,6 +231,23 @@ def confirm_template(data: dict) -> str:
     return template.format(count=data.get("count", 0))
 
 
+def delta_chunks(text: str, size: int = 24) -> list[str]:
+    """HN-10: cắt câu trả lời thành các đoạn chữ theo ranh giới từ (tất định).
+    Mỗi đoạn (trừ đoạn cuối) kết thúc bằng khoảng trắng để nối lại đúng nguyên văn."""
+    chunks: list[str] = []
+    current = ""
+    for token in text.split(" "):
+        candidate = f"{current} {token}".strip()
+        if current and len(candidate) > size:
+            chunks.append(current + " ")
+            current = token
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks
+
+
 def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox,
                 phase: str = "interview") -> dict:
     """Bộ tool của lượt: hàm tất định + agent cho phép, bó vào phiên hiện tại.
@@ -785,6 +802,11 @@ def run_turn(service, session: dict, actor, text: str,
             continue
         answer = (message.content or "").strip()
         if answer:
+            # HN-10: stream từng đoạn chữ cho khách đọc dần; hậu kiểm (số/guard)
+            # vẫn chạy trên TOÀN câu trước `done` — vi phạm thì gửi replace.
+            if emit is not None:
+                for chunk in delta_chunks(answer):
+                    emit({"type": "delta", "text": chunk})
             # HN-06 guard đầu ra: thu nhập, tuyên bố không có tool, tự nhận nới
             # điều kiện → thay bằng câu template an toàn và ghi bước guard.
             successful = [entry["tool"] for entry in steps if entry.get("ok")]
@@ -798,7 +820,10 @@ def run_turn(service, session: dict, actor, text: str,
                 if emit is not None:
                     emit({"name": "guardrail", "kind": "guardrail",
                           "detail": "Câu trả lời vi phạm guard đầu ra — đã thay bằng câu an toàn"})
-            response_dict = finalize(check_numbers(checked, text, tool_payloads), None)
+            final = check_numbers(checked, text, tool_payloads)
+            if final != answer and emit is not None:
+                emit({"type": "replace", "text": final})
+            response_dict = finalize(final, None)
             break
     executor.shutdown(wait=False)
     if response_dict is None:

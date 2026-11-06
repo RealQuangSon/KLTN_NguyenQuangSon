@@ -251,6 +251,8 @@ export function RenterWorkspace({
   const [session, setSession] = useState<Session | null>(null);
   const [result, setResult] = useState<Results | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  // HN-10: câu trả lời đang stream theo đoạn chữ (delta/replace từ NDJSON).
+  const [streamText, setStreamText] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -473,6 +475,9 @@ export function RenterWorkspace({
       await action();
       return true;
     } catch (err) {
+      // HN-10: lượt hỏng thì bỏ dở phần chữ đang stream.
+      setStreamText(null);
+      setTurnStep(null);
       if (live.current) {
         setError((err as Error).message);
         if (
@@ -544,9 +549,17 @@ export function RenterWorkspace({
           if (live.current && current.current === sid)
             setTurnStep(`${step.name} — ${step.detail}`);
         },
+        (event) => {
+          // HN-10: delta nối dần câu trả lời; replace thay toàn bộ khi hậu kiểm
+          // phát hiện vi phạm (số bịa/guard) — done vẫn là nguồn sự thật cuối.
+          if (!live.current || current.current !== sid) return;
+          if (event.type === "replace") setStreamText(event.text);
+          else setStreamText((text) => (text ?? "") + event.text);
+        },
       );
       if (live.current && current.current === sid) {
         setTurnStep(null);
+        setStreamText(null);
         lastBudgetExplicit.current =
           (response as { budget_explicit?: boolean }).budget_explicit === true
             ? response.draft_revision
@@ -1207,6 +1220,18 @@ export function RenterWorkspace({
                       )}
                   </div>
                 ))}
+                {busy && streamText && (
+                  <div className="chat-message assistant">
+                    <span className="visually-hidden">Trợ lý HomeMatch</span>
+                    <div
+                      className="chat-bubble theirs"
+                      aria-live="polite"
+                      data-testid="stream-text"
+                    >
+                      {streamText}
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {busy && (
@@ -1439,9 +1464,7 @@ export function RenterWorkspace({
                         onChange={(e) =>
                           setSort(
                             e.target.value as
-                              | "match"
-                              | "price_asc"
-                              | "price_desc",
+                              "match" | "price_asc" | "price_desc",
                           )
                         }
                       >

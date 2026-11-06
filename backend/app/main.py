@@ -347,9 +347,10 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
         "application/x-ndjson": {"schema": {"type": "string",
                                             "description": "NDJSON: step* rồi done|error"}}}}})
     def message_stream(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
-        """WS-02: stream NDJSON các bước xử lý — từng dòng
-        {"type":"step","step":{name,kind,detail}} phát ngay khi chạy, dòng cuối
-        {"type":"done","data":<MessageResult>} (hoặc {"type":"error","error":…}).
+        """WS-02 + HN-10: stream NDJSON các bước xử lý — {"type":"step",…} phát
+        ngay khi chạy; sau bước tool, câu trả lời stream từng đoạn chữ
+        {"type":"delta","text":…}, vi phạm hậu kiểm thì {"type":"replace","text":…};
+        dòng cuối {"type":"done","data":<MessageResult>} (hoặc {"type":"error"}).
         Timeout lượt 60 s ở phía đọc; client thử lại tối đa 2 lần khi đứt."""
         import queue as _queue
 
@@ -358,9 +359,15 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
             def worker():
                 try:
+                    def _emit(event):
+                        # HN-10: sự kiện delta/replace (stream câu trả lời) giữ
+                        # nguyên type riêng; các sự kiện còn lại là step.
+                        kind = event.get("type") if event.get("type") in {"delta", "replace"} else "step"
+                        events.put((kind, event))
+
                     result = agent.message(session_id, actor, body.text, body.cost_input,
                                            turn_id=body.turn_id,
-                                           emit=lambda step: events.put(("step", step)),
+                                           emit=_emit,
                                            workspace=body.workspace.model_dump() if body.workspace else None)
                     events.put(("done", result))
                 except DomainError as error:
@@ -379,8 +386,14 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
                         "code": "turn_timeout", "message": "Lượt xử lý quá 60 giây; hãy thử lại."}},
                         ensure_ascii=False) + "\n"
                     break
-                line = json.dumps({"type": kind, "data" if kind == "done" else "step" if kind == "step" else "error": payload},
-                                  ensure_ascii=False) + "\n"
+                if kind in {"delta", "replace"}:
+                    # HN-10: {"type":"delta","text":…} và {"type":"replace","text":…}.
+                    line = json.dumps({"type": kind, "text": payload.get("text", "")},
+                                      ensure_ascii=False) + "\n"
+                else:
+                    key = "data" if kind == "done" else "step" if kind == "step" else "error"
+                    line = json.dumps({"type": kind, key: payload},
+                                      ensure_ascii=False) + "\n"
                 yield line
                 if kind in {"done", "error"}:
                     break

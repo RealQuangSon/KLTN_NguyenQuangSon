@@ -47,7 +47,12 @@ def test_stream_emits_steps_then_done(tmp_path):
                            json={"text": "gần HUST"}) as response:
             assert response.headers["content-type"].startswith("application/x-ndjson")
             lines = [json.loads(line) for line in response.iter_lines() if line.strip()]
-    assert [line["type"] for line in lines] == ["step", "step", "done"]
+    # HN-10: sau các bước tool, câu trả lời stream delta rồi done.
+    assert lines[-1]["type"] == "done"
+    assert [line["type"] for line in lines[:2]] == ["step", "step"]
+    deltas = [line for line in lines if line["type"] == "delta"]
+    assert deltas and all(set(item) == {"type", "text"} for item in deltas)
+    assert "".join(item["text"] for item in deltas) == "Mình hiểu HUST là Đại học Bách Khoa Hà Nội."
     assert lines[0]["step"] == {"name": "route", "kind": "router", "detail": "AI phân tích nhu cầu"}
     assert lines[1]["step"]["name"] == "find_place" and lines[1]["step"]["kind"] == "tool"
     done = lines[-1]["data"]
@@ -70,6 +75,27 @@ def test_stream_step_lines_never_carry_pii_or_money_or_income(tmp_path):
     assert "monthly_income_vnd" not in blob
     assert "20 triệu" not in blob
     assert "find_place" in blob  # bước tool vẫn hiện
+
+def test_stream_replaces_answer_when_post_check_fails(tmp_path):
+    # HN-10: số bịa trong câu trả lời → delta đã phát, nhưng replace + done
+    # phải mang câu template an toàn.
+    service, app = stream_app(tmp_path, [
+        message(content="Có đúng 99 căn giá 1 triệu gần đây."),
+    ])
+    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    with TestClient(app) as client:
+        sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
+        with client.stream("POST", f"/sessions/{sid}/messages/stream", headers=renter_headers,
+                           json={"text": "gần HUST"}) as response:
+            lines = [json.loads(line) for line in response.iter_lines() if line.strip()]
+    deltas = "".join(item["text"] for item in lines if item["type"] == "delta")
+    assert "99" in deltas  # delta đã phát raw trước hậu kiểm
+    replace = [item for item in lines if item["type"] == "replace"]
+    assert replace and "99" not in replace[-1]["text"]
+    done = lines[-1]
+    assert done["type"] == "done" and "99" not in done["data"]["message"]
+    assert done["data"]["message"] == replace[-1]["text"]
+
 
 
 def test_stream_error_line_on_domain_error(tmp_path):
