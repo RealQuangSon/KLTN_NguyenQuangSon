@@ -115,7 +115,7 @@ def build_context(service, session: dict, actor) -> str:
 
 from .agent_tools import TOOL_REGISTRY, tool_specs, workspace_view
 
-TOOL_SPECS = tool_specs()
+# TOOL_SPECS toàn cục bỏ ở HN-11: specs theo pha được sinh tại run_turn.
 
 
 def _strip_income(payload):
@@ -231,7 +231,8 @@ def confirm_template(data: dict) -> str:
     return template.format(count=data.get("count", 0))
 
 
-def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> dict:
+def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox,
+                phase: str = "interview") -> dict:
     """Bộ tool của lượt: hàm tất định + agent cho phép, bó vào phiên hiện tại.
     Visible = kết quả hiện tại + căn trong ngữ cảnh workspace FE đang hiển thị."""
     results_guard = service.results(session["id"], actor)
@@ -404,7 +405,12 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
     for name, definition in TOOL_REGISTRY.items():
         if definition.handler is not None:
             handlers[name] = partial(definition.handler, service, session, actor, toolbox)
-    return {name: {"agent": TOOL_REGISTRY[name].agent, "fn": fn} for name, fn in handlers.items()}
+    from .agent_tools import phase_tools
+    allowed = phase_tools(phase)
+    # HN-11: lọc bộ tool theo pha — model không thấy tool ngoài pha (ít lựa chọn
+    # hơn → chọn đúng hơn, prompt ngắn hơn); gọi nhầm cũng bị tool_unavailable.
+    return {name: {"agent": TOOL_REGISTRY[name].agent, "fn": fn}
+            for name, fn in handlers.items() if name in allowed}
 
 
 def pick_view(tool_names: list[str], draft) -> tuple[str, dict | None]:
@@ -570,7 +576,8 @@ def run_turn(service, session: dict, actor, text: str,
         service._apply_chat_budget_hint(session["id"], hint, session["draft_revision"])
         session = service.repo.session(session["id"])
     toolbox = ToolBox(max_steps=MAX_AGENT_STEPS)
-    tools = build_tools(service, session, actor, text, toolbox)
+    phase = service._agent_phase(session["id"])
+    tools = build_tools(service, session, actor, text, toolbox, phase)
     messages = [
         {"role": "system", "content": AGENT_SYSTEM_PROMPT},
         {"role": "user", "content": build_context(service, session, actor)},
@@ -675,8 +682,9 @@ def run_turn(service, session: dict, actor, text: str,
             break
         try:
             # HN-01: tham số model qua env; reasoning model không nhận temperature.
-            params = {"model": interpreter.model, "messages": messages, "tools": TOOL_SPECS,
-                      "tool_choice": "auto", "parallel_tool_calls": True}
+            params = {"model": interpreter.model, "messages": messages,
+                      "tools": tool_specs(phase), "tool_choice": "auto",
+                      "parallel_tool_calls": True}
             max_tokens = int(os.getenv("HOMEMATCH_AGENT_MAX_TOKENS", "800") or 0)
             if max_tokens > 0:
                 params["max_completion_tokens"] = max_tokens
@@ -819,7 +827,8 @@ def run_turn(service, session: dict, actor, text: str,
         "output_tokens": None if usage_total["saw_split"] else usage_total["output_tokens"],
     }
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",
-                       agent_mode="loop", duration_ms=round((time.monotonic() - turn_started) * 1000),
+                       agent_mode="loop", phase=phase,
+                       duration_ms=round((time.monotonic() - turn_started) * 1000),
                        llm_ms=timings["llm_ms"], tool_ms=timings["tool_ms"],
                        llm_calls=usage_total["logical_calls"],
                        input_tokens=None if usage_total["saw_split"] else usage_total["input_tokens"],

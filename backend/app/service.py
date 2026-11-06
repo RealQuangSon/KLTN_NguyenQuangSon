@@ -626,6 +626,21 @@ class HomeMatchService:
                         "decided_by": decided_by}
         return clarify_layer.to_dto(clarification, decided_by)
 
+    def _agent_phase(self, session_id: str) -> str:
+        """HN-11: pha agent suy từ trạng thái phiên (không LLM): interview khi
+        chưa có kết quả published; results khi đã published; transaction khi đã
+        có lịch xem hoặc hội thoại chủ nhà mở từ phiên này."""
+        row = self.repo.db.execute(
+            "SELECT 1 FROM hm_runs WHERE session_id=? AND published_at IS NOT NULL LIMIT 1",
+            (session_id,)).fetchone()
+        if not row:
+            return "interview"
+        viewing = self.repo.db.execute(
+            "SELECT 1 FROM hm_viewings WHERE session_id=? LIMIT 1", (session_id,)).fetchone()
+        conversation = self.repo.db.execute(
+            "SELECT 1 FROM hm_conversations WHERE session_id=? LIMIT 1", (session_id,)).fetchone()
+        return "transaction" if (viewing or conversation) else "results"
+
     def _can_ask_clarification(self, session_id: str) -> bool:
         published = self.repo.db.execute(
             "SELECT 1 FROM hm_runs WHERE session_id=? AND published_at IS NOT NULL LIMIT 1",
@@ -731,7 +746,7 @@ class HomeMatchService:
             cursor = self.repo.db.execute(
                 "INSERT INTO hm_agent_turns(turn_id,session_id,user_id,started_at,duration_ms,"
                 "agent_mode,model,llm_calls,input_tokens,output_tokens,cost_usd,decided_by,"
-                "outcome,error_code) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "outcome,error_code,phase) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (turn_id, session_id, actor.id, recording.get("started_at") or conversations.utc_now(),
                  int((time.monotonic() - recording["t0"]) * 1000) if recording.get("t0") else 0,
                  response.get("agent_mode"), getattr(self.interpreter, "model", None)
@@ -739,7 +754,8 @@ class HomeMatchService:
                  int(usage.get("logical_calls") or 0), usage.get("input_tokens"),
                  usage.get("output_tokens"),
                  (provenance or {}).get("cost_usd"),
-                 clarification.get("decided_by"), outcome, provider_error))
+                 clarification.get("decided_by"), outcome, provider_error,
+                 (provenance or {}).get("phase")))
             for seq, step in enumerate(recording.get("steps") or [], 1):
                 self.repo.db.execute(
                     "INSERT INTO hm_agent_steps(turn_row_id,seq,kind,name,duration_ms,ok,summary) "

@@ -34,7 +34,8 @@ def test_retry_cache_obeys_chat_retention(service, renter):
 def test_real_exposed_handlers_obey_envelope_contract(service, renter, name):
     sid = service.create_session(renter)["session_id"]
     box = ToolBox()
-    handlers = build_tools(service, service.repo.session(sid), renter, "", box)
+    # HN-11: pha transaction là siêu tập tool — hợp đồng envelope kiểm trên đủ bộ.
+    handlers = build_tools(service, service.repo.session(sid), renter, "", box, "transaction")
     result = execute_tool(service, box, sid, "contract", name, handlers[name]["fn"],
                           TOOL_REGISTRY[name].sample_args, actor=renter)
     assert isinstance(result["ok"], bool)

@@ -170,6 +170,9 @@ def _search_view(draft) -> tuple[str, dict]:
     return ("map" if destination else "list"), {"sorted_by": "distance" if destination else "match"}
 
 
+PHASES = ("interview", "results", "transaction")
+
+
 @dataclass(frozen=True)
 class ToolDefinition:
     name: str
@@ -187,6 +190,8 @@ class ToolDefinition:
     # Tool mới có thể đặt nghiệp vụ ngay cạnh khai báo; executor gắn ngữ cảnh
     # (service, session, actor, toolbox) trước khi truyền tham số đã kiểm.
     handler: Callable | None = None
+    # HN-11: các pha agent được phép dùng tool (mặc định: cả ba pha).
+    phases: tuple[str, ...] = PHASES
 
     def spec(self) -> dict:
         return {"type": "function", "function": {
@@ -206,9 +211,10 @@ class ToolDefinition:
 def _definition(name: str, agent: str, description: str, Args: type[ToolArgs], *,
                 writes: bool = False, view=None, capability: str = "chat:message",
                 sample_args: dict | None = None, exposed: bool = True,
-                summary: str = "Đã xử lý công cụ.", handler: Callable | None = None) -> ToolDefinition:
+                summary: str = "Đã xử lý công cụ.", handler: Callable | None = None,
+                phases: tuple[str, ...] = PHASES) -> ToolDefinition:
     return ToolDefinition(name, agent, description, Args, writes, 8.0, view, capability,
-                          sample_args or {}, exposed, summary, handler=handler)
+                          sample_args or {}, exposed, summary, handler=handler, phases=phases)
 
 
 _DEFINITIONS = (
@@ -230,19 +236,19 @@ _DEFINITIONS = (
                 summary="Đã chuẩn bị câu hỏi làm rõ nhu cầu."),
     _definition("room_details", "needs", "Xem căn trong kết quả hiện tại bằng mã hoặc thứ tự trong workspace.",
                 RoomReferenceArgs, view="detail", capability="results:read", sample_args={"room_ref": "căn số 2"},
-                summary="Đã lấy thông tin căn đang xem."),
+                summary="Đã lấy thông tin căn đang xem.", phases=("results", "transaction")),
     _definition("estimate_cost", "finance", "Tính chi phí và khả năng chi trả bằng công cụ tất định.",
                 EstimateCostArgs, view="cost", capability="results:read", sample_args={"room_id": "demo-01"},
-                summary="Đã tính chi phí từ dữ liệu hiện có."),
+                summary="Đã tính chi phí từ dữ liệu hiện có.", phases=("results", "transaction")),
     _definition("search_handbook", "handbook", "Tra cẩm nang quyền lợi, tiền cọc và nội quy người thuê.",
                 HandbookArgs, sample_args={"question": "Thủ tục tạm trú?"},
                 summary="Đã tra cẩm nang người thuê."),
     _definition("open_landlord_chat", "support", "Mở hội thoại với chủ nhà của căn trong kết quả hiện tại.",
                 RoomReferenceArgs, writes=True, capability="support:handoff", sample_args={"room_ref": "demo-01"},
-                summary="Đã mở hội thoại với chủ nhà."),
+                summary="Đã mở hội thoại với chủ nhà.", phases=("transaction",)),
     _definition("prepare_viewing", "needs", "Chuẩn bị lịch xem; khách chọn giờ và xác nhận trên giao diện mới tạo lịch.",
                 RoomReferenceArgs, writes=True, capability="viewing:prepare", sample_args={"room_ref": "demo-01"},
-                summary="Đã chuẩn bị thông tin; lịch xem chưa được tạo."),
+                summary="Đã chuẩn bị thông tin; lịch xem chưa được tạo.", phases=("transaction",)),
     _definition("extract_needs", "needs", "Trích nhu cầu cho graph nội bộ.", ExtractNeedsArgs,
                 sample_args={"text": "Phòng ở Hà Nội"}, exposed=False),
     _definition("update_draft", "needs", "Ghi hồ sơ nháp có revision cho graph nội bộ.", UpdateDraftArgs,
@@ -274,8 +280,17 @@ if len(TOOL_REGISTRY) != len(_DEFINITIONS):
     raise ValueError("Registry có tên công cụ trùng nhau")
 
 
-def tool_specs() -> list[dict]:
-    return [definition.spec() for definition in TOOL_REGISTRY.values() if definition.exposed]
+def tool_specs(phase: str | None = None) -> list[dict]:
+    if phase is None:
+        return [definition.spec() for definition in TOOL_REGISTRY.values() if definition.exposed]
+    return [definition.spec() for definition in TOOL_REGISTRY.values()
+            if definition.exposed and phase in definition.phases]
+
+
+def phase_tools(phase: str) -> frozenset[str]:
+    """HN-11: bộ tool của một pha — nguồn duy nhất là registry."""
+    return frozenset(name for name, definition in TOOL_REGISTRY.items()
+                     if phase in definition.phases)
 
 
 def tools_by_agent() -> dict[str, frozenset[str]]:

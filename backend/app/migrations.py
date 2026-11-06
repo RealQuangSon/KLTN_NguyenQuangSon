@@ -353,6 +353,9 @@ MIGRATIONS = (
             PRIMARY KEY(turn_row_id, seq)
         );
     """),
+    (21, "agent_turn_phase", """
+        ALTER TABLE hm_agent_turns ADD COLUMN phase TEXT;
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 
