@@ -1,6 +1,6 @@
 # Nghiệp vụ hiện có và harness của AI Agent HomeMatch
 
-**Cập nhật:** 31/10/2026, đối chiếu trực tiếp với code (schema v13, 110 route API). Tài liệu này thay phần tổng quan của [quy-trinh-nghiep-vu.md](quy-trinh-nghiep-vu.md) (05/10) và [thiet-ke-agent.md](thiet-ke-agent.md) (08/10). Hai file đó vẫn giữ chi tiết lịch sử.
+**Cập nhật:** 06/11/2026, đối chiếu trực tiếp với code (schema v21). Mục 2 viết lại theo kiến trúc harness mới (HN-00…HN-12); kiến trúc agent chi tiết ở [thiet-ke-agent.md](thiet-ke-agent.md). Bước "chủ nhà duyệt gợi ý" đã bị bỏ (D-10, 05/11/2026) — kết quả công bố ngay sau xếp hạng.
 
 "Harness" ở đây là toàn bộ phần code **bao quanh mô hình ngôn ngữ**: định tuyến, công cụ được phép gọi, kiểm tra quyền, chặn prompt injection, giới hạn lượt gọi, ghi nguồn gốc câu trả lời, chờ người duyệt, và bộ đánh giá. Nguyên tắc xuyên suốt: **LLM chỉ hiểu ngôn ngữ, code quyết định.** Tiền, điều kiện cứng, điểm xếp hạng, quyền và việc công bố đều do code tất định xử lý.
 
@@ -19,7 +19,7 @@
 
 | Nhóm | Nghiệp vụ | API chính |
 |---|---|---|
-| Tư vấn AI | Mở phiên, chat nhu cầu, sửa nháp hồ sơ, **xác nhận hồ sơ** (tạo bản gợi ý), xem kết quả đã được chủ nhà duyệt | `POST /sessions`, `/messages`, `PATCH /draft`, `/confirm`, `GET /results` |
+| Tư vấn AI | Mở phiên, chat nhu cầu (chip làm rõ từ kho + Jev), sửa nháp hồ sơ, **xác nhận hồ sơ** → kết quả **công bố ngay** (D-10, không còn chờ chủ nhà duyệt) | `POST /sessions`, `/messages`, `PATCH /draft`, `/confirm`, `GET /results` |
 | Trong chat | Hỏi tính chi phí, mô phỏng vay, hỏi cẩm nang/nội quy, yêu cầu gặp người thật (tạo ticket), chuẩn bị đặt lịch | Cùng `/messages`, định tuyến theo ý định (mục 2.3) |
 | Sau khi có gợi ý | So sánh 2–3 phòng (kèm lời khuyên AI), mô phỏng 1–3 kịch bản chi phí, đặt lịch xem (trực tiếp hoặc Jitsi), chat với chủ nhà kèm ngữ cảnh phiên | `/compare`, `/simulate`, `/sessions/{id}/viewings`, `POST /conversations` |
 | Tìm kiếm thường | Lọc theo thành phố/quận/loại/giá, xem nhanh, bản đồ Leaflet, so sánh, đặt lịch không cần AI | `GET /listings`, `/listings/{id}`, `/listings/compare`, `/listings/{id}/viewings` |
@@ -31,7 +31,7 @@
 | Nhóm | Nghiệp vụ | API chính |
 |---|---|---|
 | Tài khoản | Tự đăng ký → xác minh email → chờ admin duyệt. Khi đang chờ: được soạn tin nháp, **không** được công khai | `/auth/register`, `/auth/verify` |
-| **Duyệt gợi ý AI** | Xem danh sách gợi ý có phòng của mình, giữ/bỏ/sắp xếp **chỉ phần phòng của mình**; bỏ hoặc đổi thứ tự phải ghi lý do. Thấy **băng khả năng chi trả** của khách, không thấy thu nhập | `/landlord/recommendations/*` (`review`, `retry`) |
+| Khách tiềm năng | Nhận lead khi căn của mình lọt top 5 gợi ý (kèm băng khả năng chi trả, **không thu nhập**) — thay cho bước duyệt đã bỏ | `/landlord/leads` |
 | Tin đăng | Tạo/sửa phòng, đổi trạng thái (còn/đã cọc/đã thuê), ảnh (tải lên, sắp xếp, xóa), ưu đãi có hạn | `/landlord/rooms/*` |
 | Co-pilot | Soạn bài đăng theo kênh, link chia sẻ, trang công khai `/tin/:id`, gợi ý giá theo phòng tương tự, trợ lý theo luật có nhập giọng nói | `/marketing`, `/price-advice`, `/landlord/assistant` |
 | Khách & lịch | Hộp thư với khách, khách tiềm năng (lead), trả lời yêu cầu xem phòng, phân tích | `/conversations`, `/landlord/leads`, `/viewings/{id}/respond`, `/landlord/analytics` |
@@ -65,98 +65,87 @@ Không có cổng thanh toán, email/SMS thật (dùng bản giả lập, ghi lo
 
 ## 2. Harness của AI Agent
 
+> Kiến trúc chi tiết (sơ đồ lượt, registry tool, lớp hỏi lại, guardrail, eval) ở [thiet-ke-agent.md](thiet-ke-agent.md). Mục này tóm tắt các lớp kiểm soát và biến vận hành.
+
 ### 2.1. Một lượt chat đi qua những lớp nào
 
 ```mermaid
 flowchart TD
-  A[POST /sessions/id/messages] --> B[Xác thực token + quyền chat:message trên đúng phiên]
-  B --> C{Độ dài 1–2000 ký tự}
-  C --> D[screen_injection: 6 nhóm mẫu]
-  D --> E{fixed_intent: từ khóa tất định}
-  E -->|có cờ injection và không có từ khóa| Q[Cách ly: không gọi AI, nháp giữ nguyên]
-  E -->|ý định đặt lịch| V[Chuẩn bị đặt lịch: chỉ kiểm phòng đã duyệt, không tạo lịch]
-  E -->|còn lại| G[Chat graph LangGraph]
-  G --> R[route: supervisor]
-  R -->|find_room / unknown| I[interview: cập nhật nháp, field_status = inferred]
-  R -->|calculate_cost / simulate_finance| F[finance: costs.py]
-  R -->|human_support| S[support: tạo ticket]
-  R -->|handbook| H[handbook: tra cẩm nang + nội quy phòng]
-  Q & V & I & F & S & H --> T[Ghi guard + provenance + usage; lưu transcript đã che PII]
-  G -. lỗi nhà cung cấp AI .-> P[Fallback: hướng dẫn dùng form, giữ mã lỗi]
+  A[POST /sessions/id/messages/stream NDJSON] --> B[Xác thực token + quyền chat:message · idempotency turn_id]
+  B --> C{Độ dài 1–2000 ký tự · screen_injection}
+  C -->|nghi injection, không có ý định rõ| Q[Cách ly: không gọi AI, nháp giữ nguyên]
+  C --> D[budget.ensure_turn: 60 lượt/phiên + trần 0,05 USD]
+  D --> E{Định tuyến}
+  E -->|ý định rõ: chi phí/vay/handbook/handover/hỗ trợ| L[Graph luật — 0 lần gọi LLM]
+  E -->|luật hiểu đủ: city + tiền, không mơ hồ| F[Fast path tất định — 0 lần gọi LLM]
+  E -->|còn lại| G[Vòng lặp agent: ≤4 lần gọi LLM, ≤6 bước tool, 45 s]
+  G --> S[Stream NDJSON: step theo từng bước, delta/replace cho câu trả lời]
+  F & L & G --> T[Guard đầu ra + provenance + phase + trace bền hm_agent_turns/steps]
+  G -. breaker → retry → model dự phòng → graph luật → template .-> P[graph_fallback]
   P --> T
+  Q --> T
 ```
-
-Code: `HomeMatchService.message` và `_chat_turn` trong [service.py](../backend/app/service.py).
 
 ### 2.2. Các lớp kiểm soát
 
 | Lớp | Làm gì | Ở đâu |
 |---|---|---|
-| **Quyền theo hành động** | Bảng tĩnh `hành động → vai trò` (`session:create`, `chat:message`, `profile:confirm`, `run:review`…), cộng kiểm tra **sở hữu bản ghi**: khách phải sở hữu phiên, chủ nhà phải sở hữu phòng. Output của mô hình không thể thêm hay cấp quyền | [agent_capability.py](../backend/app/agent_capability.py), [capabilities.py](../backend/app/capabilities.py) |
-| **Trường đặc quyền** | Payload chứa `role`, `approved`, `decision`, `keep_room_ids`, `permissions`… từ mô hình hoặc lúc resume graph bị **từ chối**, không được làm theo | `assert_unprivileged` |
-| **Chặn prompt injection** | 6 nhóm mẫu trên chữ đã bỏ dấu: bỏ qua hướng dẫn, đổi vai, dò system prompt, leo quyền, gọi tool/SQL, dò mật khẩu/key. Có cờ thì **cách ly** lượt đó: không qua AI, nháp không đổi | [agent_guard.py](../backend/app/agent_guard.py) |
-| **PII** | Văn bản được che (`redact`) trước khi vào graph; diagnostics/checkpoint đi qua `redact_tree`; transcript lưu bằng `mask_pii` | `agent_guard.py`, `conversations.py` |
-| **Allowlist công cụ** | Mỗi agent chỉ gọi được tool trong danh sách của mình; gọi ngoài danh sách → 403 `tool_not_allowed` | `AGENT_TOOLS` trong [agents.py](../backend/app/agents.py) |
-| **Giới hạn bước** | Tối đa **4** lần gọi tool mỗi lượt → 429 `agent_step_limit` | `ToolBox.MAX_STEPS` |
-| **Ngân sách lượt gọi AI** | Mỗi phiên tối đa `HOMEMATCH_SESSION_LLM_BUDGET` (mặc định 50) lượt trích xuất → 429 `budget_exceeded`. Nhánh tất định (chi phí, hỗ trợ, đặt lịch) không tốn lượt, nên khách vẫn có lối thoát | [agent_budget.py](../backend/app/agent_budget.py) |
-| **Lỗi nhà cung cấp AI** | `ai_unavailable`/`context_limit` → trả hướng dẫn dùng form, **giữ mã lỗi**, không bịa kết quả | `provider_fallback_reply` |
-| **Nguồn gốc (provenance)** | Mỗi câu trả lời gắn `source` ∈ {`user`, `deterministic-engine`, `interpreter`} và `node`, kèm danh sách tool đã gọi | [agent_provenance.py](../backend/app/agent_provenance.py) |
-| **Theo dõi chi phí** | `usage` (số lượt, token vào/ra) mỗi lượt; admin xem quy ra VND | `metrics.provider_usage`, `/admin/metrics` |
+| **Quyền theo hành động** | Bảng tĩnh `hành động → vai trò` (`session:create`, `chat:message`, `profile:confirm`…), cộng kiểm tra **sở hữu bản ghi**. Output của mô hình không thể thêm hay cấp quyền | [agent_capability.py](../backend/app/agent_capability.py), [capabilities.py](../backend/app/capabilities.py) |
+| **Trường đặc quyền** | Payload chứa `role`, `approved`, `permissions`… từ mô hình bị **từ chối** | `assert_unprivileged` |
+| **Chặn prompt injection** | 6 nhóm mẫu (bỏ dấu) vào: bỏ qua hướng dẫn, đổi vai, dò prompt, leo quyền, gọi tool/SQL, dò key. Nghi nhiễm → **cách ly** lượt | [agent_guard.py](../backend/app/agent_guard.py) |
+| **PII / thu nhập** | `redact` che SĐT/email/tiền trước LLM và Jev; `decision_context` bỏ đệ quy trường `*_vnd`/income/loan; transcript lưu bằng `mask_pii`; thu nhập không bao giờ tới DTO chủ nhà, prompt hay cassette | `agent_guard.py`, `conversations.py`, `decisions.py` |
+| **Registry tool** | Mỗi tool khai báo một lần: schema Pydantic, `writes`, `timeout_s` 8 s, `view`, capability, `phases`. Allowlist theo agent + pha; kết quả chuẩn `{ok,data}`/`{ok,error,message,hint}` | [agent_tools.py](../backend/app/agent_tools.py) |
+| **Giới hạn vòng lặp** | ≤ 6 bước tool (`agent_step_limit`), ≤ 4 lần gọi LLM, 45 s/lượt, tool > 8 s → `tool_timeout`; vượt → `SAFE_REPLY`, nháp vẫn lưu | [agent_loop.py](../backend/app/agent_loop.py) |
+| **Ngân sách phiên** | `HOMEMATCH_SESSION_TURN_BUDGET` (60 **lượt chat** cần AI) + `HOMEMATCH_SESSION_COST_CAP_USD` (0,05 từ `usage.cost`) → 429 `budget_exceeded`. Route tất định không tốn lượt — lối thoát luôn còn | [agent_budget.py](../backend/app/agent_budget.py) |
+| **Guardrail vào** | Dữ liệu tool (mô tả tin đăng) vô hiệu giá trị chứa mẫu injection rồi bọc khối *untrusted* trước khi trả model | `neutralize_untrusted` |
+| **Guardrail ra** | `check_numbers` (số phải từ câu khách/tool) · cấm nhắc thu nhập · cấm tuyên bố "đã đặt lịch/thanh toán/liên hệ" thiếu tool · cấm tự nhận nới → thay template + bước `guard_output` | `guard_output` |
+| **Đường lui** | breaker (5 lỗi/60 s → bỏ qua 120 s) → retry 1 lần (backoff 0,5 s) → `HOMEMATCH_AGENT_FALLBACK_MODEL` → graph luật → template. Jev lỗi → luật | `provider_breaker.py`, `_call_model` |
+| **Nguồn gốc (provenance)** | `source` ∈ {user, deterministic-engine, interpreter}, `node`, `agent_mode` (loop/fast_path/graph_fallback), `phase`, tool đã gọi | [agent_provenance.py](../backend/app/agent_provenance.py) |
+| **Trace bền** | `hm_agent_turns` + `hm_agent_steps` (schema v20/v21): phase, token, cost USD, outcome, error_code, từng bước đã redact; `GET /admin/agent-turns` (audit `agent_turns.viewed`) | `_write_agent_turn_record`, `main.py` |
 
-### 2.3. Định tuyến ý định
+### 2.3. Định tuyến và pha
 
-1. **Từ khóa tất định trước (`fixed_intent`)**, không tốn lượt AI:
-   - "mô phỏng vay", "vay … tháng" → `simulate_finance`;
-   - "tính chi phí", "tiền vào ở" → `calculate_cost`;
-   - "người thật", "gặp chủ nhà" → `human_support`;
-   - "nội quy", "hoàn cọc", "pháp lý" → `handbook`.
-2. **Còn lại:** node `route` gọi `extract_needs` của interpreter. Ở chế độ `demo` đây là bộ luật; ở chế độ `openai` là GPT structured output, qua Responses API hoặc qua `chat_completions` (OpenRouter). Ý định do bước trích xuất này quyết định.
+1. **Ý định rõ (`fixed_intent`)** — không tốn LLM: "nếu vay…/trả góp" → `simulate_finance`; "tính chi phí" → `calculate_cost`; "chat với chủ nhà" → `landlord_handover`; "người thật" → `human_support`; "nội quy/hoàn cọc/pháp lý" → `handbook`.
+2. **Fast path (HN-01)** — luật trích đủ thành phố + tiền, không mơ hồ: patch → lớp hỏi lại → confirm, `agent_mode="fast_path"`.
+3. **Vòng lặp agent (AG-13)** — model tự gọi tool qua registry; **pha** lọc bộ tool: `interview` (chưa có kết quả) → `results` (đã published) → `transaction` (đã có lịch xem/hội thoại chủ nhà) — suy từ trạng thái phiên, không LLM; `phase` ghi vào trace.
+4. **Lớp hỏi lại (HN-02)** — `ask_user(field)` → `build_clarification` đếm căn toàn tập kho cho từng cách hiểu → Jev (`typesafe/jev-1.14`, lỗi → luật) → chip có `count/patch/decided_by`; ngưỡng 0,85/0,40/0,2 hiệu chỉnh trên 40 ca gold (`eval clarify`). Confirm khi còn mơ hồ → lỗi cấu trúc `needs_clarification`.
 
-### 2.4. Năm agent và công cụ được phép
+### 2.4. Công cụ theo pha
 
-| Agent (node) | Công cụ được phép | Việc |
+| Pha | Tool cho model | Ghi |
 |---|---|---|
-| `needs` (interview) | `extract_needs`, `update_draft`, `read_memory` | Trích xuất nhu cầu, cập nhật nháp với `field_status=inferred` và `evidence_ref`, hỏi tối đa những gì chặn việc tìm (nghĩa số tiền, số người, thành phố chưa rõ, điểm đến). Tự gán thành phố khi khách nêu quận (`locations.city_for_area`) |
-| `finance` | `calculate_cost`, `assess_affordability`, `estimate_loan`, `simulate_scenarios` | Mọi con số do [costs.py](../backend/app/costs.py) tính (Decimal, làm tròn VND). Thiếu lãi suất → **hỏi lại**, không tự giả định |
-| `ranking` (rank) | `match_catalog`, `semantic_scores`, `explain_candidate` | Lọc cứng, rồi xếp hạng B1 (từ vựng + luật) hoặc P (B1 + pgvector). P không có thì lùi về B1 và ghi rõ `B1_fallback` |
-| `support` | `request_support` | Tạo ticket cho admin; không bao giờ nói "đã kết nối người thật" |
-| `handbook` | `search_handbook` | Tra cẩm nang nền tảng và nội quy của phòng được nhắc tên |
+| `interview` | find_place, update_needs, search_rooms, confirm_and_search, ask_user, search_handbook | Tool kết quả/giao dịch ẩn — model không thấy, gọi nhầm bị chặn |
+| `results` | + room_details, estimate_cost | Có kết quả published |
+| `transaction` | + prepare_viewing, open_landlord_chat | Đã có lịch xem hoặc hội thoại chủ nhà |
 
-### 2.5. Con người trong vòng lặp (HITL) — recommendation graph
+Nội bộ graph vẫn có tool riêng (`extract_needs`, `update_draft`, `read_memory`, `calculate_cost`, `match_catalog`…) không gửi model; mọi gọi nghiệp vụ đi qua `ToolBox.call` với allowlist tĩnh.
 
-```mermaid
-flowchart LR
-  K[Khách xác nhận hồ sơ<br/>expected_draft_revision] --> R[rank]
-  R --> S[save_draft]
-  S -->|pending_review| W[wait_for_review<br/>interrupt]
-  S -->|no_match / needs_verification / invalidated| E[Kết thúc]
-  W -->|mỗi chủ nhà duyệt phần phòng của mình| W
-  W -->|tất cả chủ nhà đã quyết định:<br/>resume bằng event_id trong ledger| P[publish]
-```
+### 2.5. Kết quả công bố ngay (D-10, 05/11/2026)
 
-- Nháp hồ sơ chỉ thành chính thức khi khách bấm xác nhận, kèm đúng `expected_draft_revision`. Số tiền nói trong chat chỉ là **gợi ý** (`budget_hint`).
-- Khi chủ nhà đầu tiên duyệt, run chuyển `partially_published` và khách thấy dần các phòng đã duyệt, theo thứ tự của agent.
-- Graph chỉ được resume bằng `event_id` có trong sổ nghiệp vụ (`hm_runs`). Payload resume mang quyền hay quyết định bị từ chối (`untrusted_resume`).
-- Node trước `interrupt()` **không ghi gì**, vì LangGraph chạy lại node đó khi resume. Ledger là nguồn sự thật, checkpoint chỉ giữ tiến trình.
-- Hồ sơ mới được xác nhận hoặc catalog đổi version → kết quả, so sánh, lịch xem cũ bị vô hiệu (`invalidated`).
-- Trạng thái run: `generating`, `generation_failed`, `pending_review`, `partially_published`, `reviewed`, `published`, `invalidated`, `no_match`, `needs_verification`, `rejected`, `needs_revision`.
+- Khách xác nhận hồ sơ (`expected_draft_revision`) → `rank → publish` trong một lượt: có căn là `published` ngay, không có là `no_match`, thiếu dữ liệu là `needs_verification`. Không còn `interrupt()`, không còn trang duyệt của chủ nhà.
+- Chủ nhà biết nhu cầu qua **lead**: căn của họ lọt top 5 → `touch_lead(source="recommended")` với băng khả năng chi trả, không thu nhập.
+- Hồ sơ mới xác nhận hoặc kho đổi version → kết quả, so sánh, lịch xem cũ `invalidated`.
 
 ### 2.6. Dữ liệu nhạy cảm và ghi nhớ
 
-- **Chủ nhà không bao giờ thấy thu nhập.** `_landlord_projection` bỏ `monthly_income_vnd` và để `housing_ratio = null`, vì tỷ lệ cộng với gánh nặng trả góp sẽ suy ra được thu nhập. Chủ nhà chỉ thấy băng `phu_hop` / `can_nhac` / `vuot` / `chua_ro`. Thu nhập cũng không đi vào ngữ cảnh chuyển giao, prompt LLM hay embedding.
-- **Memory** ([memory.py](../backend/app/memory.py)) chỉ nhớ thành phố, quận, loại phòng, số phòng ngủ, sở thích, mô tả mềm, và chỉ khi khách bật đồng ý `remember_sessions`. Không bao giờ nhớ tiền, thu nhập, khoản vay, điểm đến hay chat thô. Phiên mới chỉ được điền sẵn dưới dạng `inferred`; rút đồng ý là xóa.
-- **Transcript** đã che PII, xóa sau `HOMEMATCH_CHAT_RETENTION_DAYS`. Admin mở xem là có audit.
-- **Xếp hạng không dùng thuộc tính thương mại** như hoa hồng hay thời gian đăng. `eval invariants` thay đổi các thuộc tính này và kiểm rằng thứ hạng không đổi.
+- **Chủ nhà không bao giờ thấy thu nhập.** Projection bỏ `monthly_income_vnd` và `housing_ratio = null` (tỷ lệ cộng gánh nặng sẽ suy ra thu nhập); lead và ngữ cảnh handover chỉ mang băng tài chính. Thu nhập cũng không vào prompt, Jev, embedding hay cassette.
+- **Memory** chỉ nhớ thành phố, quận, loại, số PN, sở thích, mô tả mềm khi khách đồng ý; không nhớ tiền/thu nhập/vay/điểm đến; rút đồng ý là xoá.
+- **Transcript** đã che PII, xoá theo `HOMEMATCH_CHAT_RETENTION_DAYS`; admin mở là có audit; trace agent (`hm_agent_turns/steps`) cũng theo retention và không lưu prompt/câu trả lời thô.
+- **Xếp hạng không dùng thuộc tính thương mại** (hoa hồng, thời gian đăng) — `eval invariants` kiểm.
+- **Tóm tắt hội thoại** (`hm_sessions.summary_json`, HN-04) cập nhật mỗi 4 lượt bằng 1 lần gọi LLM rẻ không tools, redact hai chiều — không tiền/SĐT/email/thu nhập.
 
-### 2.7. Harness đánh giá và kiểm thử
+### 2.7. Đánh giá, tái lập và kiểm thử
 
 | Công cụ | Kiểm gì |
 |---|---|
-| `pytest` (backend + eval) | 285 test trên SQLite; 426 khi bật thêm PostgreSQL (`HOMEMATCH_TEST_DATABASE_URL`). Test luôn dùng interpreter demo, không gọi API trả phí |
-| `vitest` (frontend) | 74 test UI, 17 file |
-| `python -m eval …` | `validate` (hash dữ liệu đóng băng), `oracle` (chi phí), `extraction`, `ranking`, `metrics`, `invariants`, `intents`, `invoices`, `grounding`, `measure`, `report`, `label-sheet` / `label-report` / `survey-report` (công cụ gắn nhãn và khảo sát, **chưa có dữ liệu**) |
-| `infra/smoke_api.py` | Luồng API đầu-cuối: đăng nhập → chat → xác nhận → chủ nhà duyệt → khách thấy kết quả |
-| `infra/check-local.sh` | Chạy toàn bộ bộ offline |
+| `pytest` (backend + eval) | 657 test offline trên SQLite; thêm PG khi `HOMEMATCH_TEST_DATABASE_URL`. Test luôn dùng provider giả, không gọi API trả phí |
+| `vitest` (frontend) | 109 test UI, 25 file |
+| `python -m eval agent --mode demo` | 44 kịch bản nhiều lượt (completion, nháp, câu hỏi, p50/p95 offline); `--mode live` phải `--allow-live` + ngân sách |
+| `python -m eval clarify` | precision/recall/top-1 của lớp hỏi lại trên 40 ca gold |
+| `HOMEMATCH_AGENT_RECORD/REPLAY` | Cassette JSON ghi/phát lại lượt live (model + Jev, đã redact) — tái lập bằng chứng không tốn phí |
+| `python -m eval …` | `validate`, `oracle`, `extraction`, `ranking`, `metrics`, `invariants`, `intents`, `invoices`, `grounding`, `measure`, `report`, `label-sheet`/`label-report`/`survey-report` (công cụ gắn nhãn, **chưa có dữ liệu người**) |
+| `infra/smoke_api.py` | Luồng API đầu-cuối offline: đăng nhập → chat → xác nhận → kết quả công bố |
+| `infra/check-local.sh` | Toàn bộ bộ offline: eval (gồm agent demo + clarify) + pytest + vitest + build + demo + smoke |
 
 ---
 
@@ -168,13 +157,13 @@ flowchart LR
 
 ---
 
-## 4. Khoảng trống đã biết (đọc từ code, 31/10/2026)
+## 4. Khoảng trống đã biết (rà lại sau đợt harness, 06/11/2026)
 
-| Vấn đề | Ảnh hưởng |
+| Vấn đề | Trạng thái 06/11/2026 |
 |---|---|
-| Đa số tin Chợ Tốt thiếu phí (chỉ 14/2.779 phòng đủ 5 loại phí) | Xác nhận hồ sơ thường ra `needs_verification` thay vì gửi chủ nhà duyệt |
-| `room_reference` chỉ nhận mã `demo-NN` ([agent_guard.py:78](../backend/app/agent_guard.py#L78)) | Đặt lịch và hỏi nội quy theo mã phòng thật trong chat không khớp |
-| Frontend hiển thị sai `cost_estimate` và làm mất câu hỏi khi có cả `message` | Xem [coding-plan/fe-chat-ai.md](coding-plan/fe-chat-ai.md), FE-C02 |
-| Khách không đọc lại được lịch sử chat sau khi tải lại trang | Chưa có API; FE-C07 |
-| Ngân sách lượt AI và trace lưu trong bộ nhớ tiến trình | Khởi động lại server là đếm lại từ 0 |
-| Chưa chạy đánh giá với GPT/pgvector thật, chưa quay demo trình duyệt, chưa có nhãn và khảo sát | Phần kết quả thực nghiệm của luận văn còn thiếu |
+| Đa số tin Chợ Tốt thiếu phí | Vẫn còn — xác nhận thường `needs_verification`; budget_scope trên kho này gần như không phân biệt được (gold CL15-20 chưa hỏi được) |
+| `room_reference` chỉ nhận `demo-NN` | **Đã sửa** (AG-05): resolver nhận mọi nguồn id + thứ tự + tiêu đề |
+| Ngân sách và trace trong RAM | **Đã sửa** (HN-05): `hm_agent_turns/steps` bền; ngân sách phiên vẫn trong RAM (restart đếm lại lượt — chấp nhận cho một worker localhost) |
+| Chưa chạy đánh giá live (GPT/pgvector), chưa quay demo trình duyệt, chưa có nhãn và khảo sát | Vẫn còn — cần người dùng duyệt chạy live; xem `review/HARNESS-final.md` |
+| Jev `usage.cost` chưa ghi vào cost_usd của turn; chưa quy VND trong panel admin | Đã ghi việc; làm cùng đo chi phí live (HN-08/HN-12) |
+| Chi phí xác nhận hồ sơ trên Neon (~14 s) | Đã giảm nhiều bước truy vấn per-row trong harness; chưa đo lại chính thức |
