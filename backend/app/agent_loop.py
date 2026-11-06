@@ -495,6 +495,65 @@ def fast_path_reply(service, session: dict, actor, text: str,
         return None
 
 
+RETRY_BACKOFF_S = 0.5
+
+
+def _is_transient(error: Exception) -> bool:
+    """Lỗi tạm thời (5xx/timeout/mất kết nối) mới được thử lại; lỗi khác đi thẳng
+    đường lui. Nhận diện theo status_code ≥ 500 hoặc tên lỗi quen thuộc."""
+    status = getattr(error, "status_code", None)
+    if isinstance(status, int) and status >= 500:
+        return True
+    name = type(error).__name__.lower()
+    return any(token in name for token in ("timeout", "connection"))
+
+
+def _call_model(service, interpreter, params: dict, steps: list | None = None):
+    """HN-07: circuit breaker → thử lại 1 lần (backoff) → model dự phòng
+    (HOMEMATCH_AGENT_FALLBACK_MODEL) → ném ai_unavailable cho graph cũ.
+    Mỗi lần lùi được ghi vào trace bền và vào steps của lượt."""
+    from .agent_cassette import model_call
+    from . import provider_breaker
+    key = f"chat:{interpreter.model}"
+    def _guard_step(name, summary):
+        if steps is not None:
+            steps.append({"tool": name, "detail": summary, "ok": True, "duration_ms": 0})
+        service._record_step("guard", name, True, summary)
+
+    if provider_breaker.open_(key):
+        _guard_step("circuit_open", f"Provider {key} đang bị bỏ qua sau nhiều lỗi")
+        raise DomainError("ai_unavailable",
+                          "Dịch vụ AI đang tạm ngưng sau nhiều lỗi; thử lại sau ít phút.", 503)
+    attempts = [("primary", interpreter.model)]
+    fallback_model = os.getenv("HOMEMATCH_AGENT_FALLBACK_MODEL", "").strip()
+    if fallback_model:
+        attempts.append(("fallback_model", fallback_model))
+    last_error: Exception | None = None
+    for level, model in attempts:
+        params = {**params, "model": model}
+        for attempt in range(2):
+            try:
+                completion = model_call(
+                    params, lambda: interpreter.client.chat.completions.create(**params))
+                provider_breaker.record(key, True)
+                return completion
+            except DomainError:
+                raise
+            except Exception as error:
+                last_error = error
+                provider_breaker.record(key, False)
+                if attempt == 0 and _is_transient(error):
+                    _guard_step("retry", f"Lỗi tạm thời ({type(error).__name__}) — thử lại")
+                    time.sleep(float(os.getenv("HOMEMATCH_AGENT_RETRY_BACKOFF_S", str(RETRY_BACKOFF_S))))
+                    continue
+                if level == "primary" and fallback_model:
+                    _guard_step("fallback_model",
+                                f"Model chính lỗi ({type(error).__name__}) — chuyển model dự phòng")
+                break
+    raise DomainError("ai_unavailable",
+                      "Dịch vụ AI chưa sẵn sàng; vui lòng thử lại.", 503) from last_error
+
+
 def run_turn(service, session: dict, actor, text: str,
              emit=None, turn_id: str | None = None) -> tuple[dict, dict]:
     """Một lượt chat chạy bằng vòng lặp tool. Trả về (response, provenance).
@@ -625,11 +684,9 @@ def run_turn(service, session: dict, actor, text: str,
             if reasoning in {"low", "medium", "high"}:
                 params["reasoning"] = {"effort": reasoning}
             llm_started = time.monotonic()
-            from .agent_cassette import model_call
-            # HN-09: cassette ghi/phát lại lượt live (env HOMEMATCH_AGENT_RECORD/REPLAY);
-            # request gửi đi là bản đã redact của vòng lặp.
-            completion = model_call(params,
-                                    lambda: interpreter.client.chat.completions.create(**params))
+            # HN-09: cassette ghi/phát lại (env RECORD/REPLAY) bên trong
+            # HN-07: breaker → retry → model dự phòng.
+            completion = _call_model(service, interpreter, params, steps)
             timings["llm_ms"] += round((time.monotonic() - llm_started) * 1000)
         except DomainError:
             raise

@@ -109,10 +109,20 @@ def decide(clarification: dict, context: dict, *, client=None,
 
     try:
         from .agent_cassette import jev_call
+        from . import provider_breaker
         # HN-09: cassette ghi/phát lại Jev; payload đã qua decision_context/redact.
         if client is None:
-            answer = (jev_call(_jev_payload(clarification, context), _post)
-                      .get("answers") or {}).get("clarify") or {}
+            # HN-07: breaker — 5 lỗi liên tiếp → bỏ qua provider Jev 120 s (dùng luật).
+            # Chỉ đếm trên đường provider thật (client ngoài là test/đường nhánh riêng).
+            if provider_breaker.open_("jev"):
+                raise RuntimeError("jev_circuit_open")
+            try:
+                answer = (jev_call(_jev_payload(clarification, context), _post)
+                          .get("answers") or {}).get("clarify") or {}
+                provider_breaker.record("jev", True)
+            except Exception:
+                provider_breaker.record("jev", False)
+                raise
         else:
             response = client.post(
                 "https://openrouter.ai/api/alpha/decisions",

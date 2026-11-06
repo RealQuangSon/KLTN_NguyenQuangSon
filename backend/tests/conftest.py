@@ -15,6 +15,10 @@ def offline_mode(monkeypatch):
     monkeypatch.setenv("HOMEMATCH_EMBEDDING_MODE", "disabled")
     # Tests trigger automation explicitly; no background thread inside TestClient apps.
     monkeypatch.setenv("HOMEMATCH_JOBS_INTERVAL_SECONDS", "0")
+    # HN-07: không ngủ backoff trong test; breaker sạch cho từng test.
+    monkeypatch.setenv("HOMEMATCH_AGENT_RETRY_BACKOFF_S", "0")
+    from backend.app import provider_breaker
+    provider_breaker.reset()
 
 
 @pytest.fixture
