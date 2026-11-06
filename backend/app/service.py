@@ -22,13 +22,14 @@ from langgraph.graph import END, START, StateGraph
 from .agent_budget import SessionCallBudget
 from .agent_capability import Resource, require, require_session_role
 from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fallback_reply,
-                          quarantine_reply, redact_tree, resolve_room_reference, screen_injection,
-                          viewing_intent, viewing_prep_missing_room_reply)
+                          quarantine_reply, redact, redact_tree, resolve_room_reference,
+                          screen_injection, viewing_intent, viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
-from .agent_loop import fast_path_reply, run_turn as run_agent_turn
+from .agent_loop import SUMMARY_SYSTEM_PROMPT, fast_path_reply, run_turn as run_agent_turn
 from .agents import ToolBox
 from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
 from .catalog import Catalog, StoredCatalog
+from .catalog import distance_m as catalog_distance_m
 from .costs import estimate_cost, estimate_with_affordability
 from .interpreter import (DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, fixed_intent,
                           make_interpreter, redact, relative_budget, rent_budget_hint)
@@ -241,7 +242,11 @@ class HomeMatchService:
                 self.repo.db.execute("INSERT INTO hm_agent_requests VALUES(?,?,?,?,?,?,?)",
                     (session_id, turn_id, request_hash, json.dumps(envelope, ensure_ascii=False),
                      result["draft_revision"], self.catalog.version, conversations.utc_now()))
-                return {**self.session(session_id, actor), **envelope}
+                projection = {**self.session(session_id, actor), **envelope}
+            # HN-04: tóm tắt hội thoại cập nhật mỗi 4 lượt — chạy NGOÀI transaction
+            # của lượt (không giữ khóa DB khi gọi LLM); best-effort, lỗi bỏ qua.
+            self._refresh_conversation_summary(session_id)
+            return projection
 
     def _message_once(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
                       emit=None, workspace: dict | None = None, turn_id: str | None = None) -> dict:
@@ -667,6 +672,90 @@ class HomeMatchService:
                 "recent_chat": [f"{row['speaker']}: {row['text']}" for row in reversed(rows)],
                 "notes": "draft.budget_hint_vnd là mức tiền khách nêu (gợi ý trần tổng tháng); "
                          "destination chỉ đặt qua update_needs sau khi find_place tra được."}
+
+    def _turn_context(self, session: dict, actor: Actor) -> dict:
+        """HN-04: ngữ cảnh đầy đủ một lượt agent — nháp + hồ sơ (không thu nhập),
+        workspace (view, căn chọn, ≤30 căn dạng gọn), top 5 kết quả hiện tại,
+        bộ nhớ sở thích (chỉ khi khách đồng ý), tóm tắt hội thoại. Không tiền
+        tuyệt đối ngoài trần khách nêu; không bao giờ có monthly_income_vnd."""
+        context = self._agent_context(session)
+        context["memory"] = memory.recall(self.repo, session["owner_id"])
+        row = self.repo.db.execute("SELECT summary_json FROM hm_sessions WHERE id=?",
+                                   (session["id"],)).fetchone()
+        if row and row["summary_json"]:
+            try:
+                summary = json.loads(row["summary_json"])
+                context["summary"] = summary.get("text")
+            except (ValueError, TypeError):
+                context["summary"] = None
+        workspace = self._workspace.get(session["id"]) or {}
+        draft = self._draft(session["id"])
+        destination = draft.destination
+        rooms_by_id = {room.id: room for room in self.catalog.rooms()}
+
+        def _distance(room_id: str):
+            if not destination:
+                return None
+            room = rooms_by_id.get(room_id)
+            distance = catalog_distance_m(room, destination) if room else None
+            return int(distance) if distance is not None else None
+
+        entries: list[dict] = []
+        results = self.results(session["id"], actor)["results"]
+        by_id = {item["room_id"]: item for item in results}
+        for room_id in (workspace.get("visible_room_ids") or [])[:30]:
+            item = by_id.get(room_id)
+            if item is not None:
+                entry = {"room_id": item["room_id"], "title": item["title"],
+                         "monthly_total_vnd": (item.get("cost") or {}).get("monthly_total_vnd")}
+            else:
+                room = rooms_by_id.get(room_id)
+                if room is None or not room.published:
+                    continue
+                entry = {"room_id": room.id, "title": room.title.split(". ")[0],
+                         "rent_vnd": room.quote.rent_vnd}
+            entry["distance_m"] = _distance(room_id)
+            entries.append(entry)
+        context["workspace"] = {"view": workspace.get("view"),
+                                "selected_room_id": workspace.get("selected_room_id"),
+                                "rooms": entries}
+        context["current_results"] = [
+            {"room_id": item["room_id"], "title": item["title"],
+             "monthly_total_vnd": (item.get("cost") or {}).get("monthly_total_vnd"),
+             "distance_m": _distance(item["room_id"])}
+            for item in results[:5]]
+        return context
+
+    def _refresh_conversation_summary(self, session_id: str) -> None:
+        """HN-04: tóm tắt hội thoại (≤ ~600 token) cập nhật mỗi 4 lượt bằng một
+        lần gọi LLM rẻ không tools, lưu `hm_sessions.summary_json`. Văn bản tóm
+        tắt đi qua redact hai lần (vào và ra) — không tiền, SĐT, email, thu nhập.
+        Best-effort: mọi lỗi chỉ bỏ qua, không bao giờ làm hỏng lượt đã xong."""
+        if self.interpreter.mode != "openai":
+            return
+        try:
+            count = self.repo.db.execute(
+                "SELECT COUNT(*) AS c FROM hm_agent_requests WHERE session_id=?",
+                (session_id,)).fetchone()["c"]
+            if count == 0 or count % 4 != 0:
+                return
+            rows = self.repo.db.execute(
+                "SELECT speaker,text FROM hm_chat_transcripts WHERE session_id=? "
+                "ORDER BY created_at DESC LIMIT 12", (session_id,)).fetchall()
+            transcript = redact("\n".join(f"{row['speaker']}: {row['text']}"
+                                          for row in reversed(rows)))[:4000]
+            completion = self.interpreter.client.chat.completions.create(
+                model=self.interpreter.model,
+                messages=[{"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+                          {"role": "user", "content": transcript}],
+                max_completion_tokens=300)
+            text = redact((completion.choices[0].message.content or "").strip())[:1200]
+            if text:
+                with self.repo.db:
+                    self.repo.db.execute("UPDATE hm_sessions SET summary_json=? WHERE id=?",
+                        (json.dumps({"text": text, "turns": count}, ensure_ascii=False), session_id))
+        except Exception:
+            return  # tóm tắt là tối ưu; lỗi provider không được phá lượt chat
 
     def agent_trace(self, session_id: str, actor: Actor) -> dict:
         """Redacted diagnostics of the last chat turn and result read. Service-level

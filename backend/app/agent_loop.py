@@ -49,6 +49,68 @@ Khi tool báo needs_clarification, gọi ask_user(field=...) để lấy chip t�
 Mỗi lượt chỉ hỏi một câu. Hỏi trước khi tìm nếu cách hiểu còn ảnh hưởng đáng kể tới kết quả.
 Trả lời bằng tiếng Việt, ngắn gọn, nói rõ các bước đã làm."""
 
+SUMMARY_SYSTEM_PROMPT = """Bạn tóm tắt hội thoại tìm phòng giữa khách và trợ lý HomeMatch để dùng làm
+ngữ cảnh các lượt sau. Viết ≤ 120 từ tiếng Việt: nhu cầu chính (thành phố, khu, loại, số người, điểm đến),
+diễn biến (đã tìm, đã hỏi gì, khách chọn gì), điều còn chưa rõ.
+Tuyệt đối không ghi số tiền, số điện thoại, email, thu nhập hay thông tin liên hệ — chỉ ý chính bằng từ.
+Chỉ tóm tắt, không tư vấn thêm."""
+
+
+def _estimate_tokens(text: str) -> int:
+    """Ước lượng token tất định: ~3 byte UTF-8/token với tiếng Việt có dấu."""
+    return max(1, len(text.encode("utf-8")) // 3)
+
+
+def build_context(service, session: dict, actor) -> str:
+    """HN-04: dựng ngữ cảnh một lượt theo mức ưu tiên PLAN — nháp/hồ sơ >
+    workspace (≤30 căn + top 5 kết quả) > bộ nhớ > tóm tắt > lượt cũ.
+    Vượt HOMEMATCH_CONTEXT_TOKEN_CAP (mặc định 4000) thì cắt từ phần ưu tiên
+    thấp trước; lượt cũ cắt từ cũ nhất. Tiền trong lượt cũ vẫn placeholder."""
+    context = service._turn_context(session, actor)
+    cap = int(os.getenv("HOMEMATCH_CONTEXT_TOKEN_CAP", "4000"))
+    budget = max(400, cap - _estimate_tokens(AGENT_SYSTEM_PROMPT))
+    parts: dict = {}
+    # Ưu tiên 1 — nháp + hồ sơ đã xác nhận + ghi chú luật chơi: không bao giờ cắt.
+    for key in ("draft", "confirmed_profile", "notes"):
+        if context.get(key) is not None:
+            parts[key] = context[key]
+    used = _estimate_tokens(json.dumps(parts, ensure_ascii=False))
+
+    def fits(value) -> int:
+        return _estimate_tokens(json.dumps(value, ensure_ascii=False, default=str))
+
+    # Ưu tiên 2 — workspace + kết quả hiện tại: cắt bớt căn từ cuối danh sách.
+    workspace = context.get("workspace") or {}
+    rooms = list(workspace.get("rooms") or [])
+    while rooms and used + fits({**workspace, "rooms": rooms}) > budget:
+        rooms = rooms[:-1]
+    if rooms:
+        trimmed_workspace = {**workspace, "rooms": rooms}
+        used += fits(trimmed_workspace)
+        parts["workspace"] = trimmed_workspace
+    results = list(context.get("current_results") or [])
+    while results and used + fits({"current_results": results}) > budget:
+        results = results[:-1]
+    if results:
+        used += fits({"current_results": results})
+        parts["current_results"] = results
+    # Ưu tiên 3 — bộ nhớ sở thích (chỉ khi khách đồng ý, không tiền/điểm đến).
+    if context.get("memory") and used + fits({"memory": context["memory"]}) <= budget:
+        used += fits({"memory": context["memory"]})
+        parts["memory"] = context["memory"]
+    # Ưu tiên 4 — tóm tắt hội thoại.
+    if context.get("summary") and used + fits({"summary": context["summary"]}) <= budget:
+        used += fits({"summary": context["summary"]})
+        parts["summary"] = context["summary"]
+    # Ưu tiên 5 — 6 lượt gần nhất, cắt từ cũ nhất khi thiếu chỗ.
+    recent = list(context.get("recent_chat") or [])
+    while recent and used + fits({"recent_chat": recent}) > budget:
+        recent = recent[1:]
+    if recent:
+        parts["recent_chat"] = recent
+    redacted = redact_tree(_strip_income(parts))
+    return json.dumps(redacted, ensure_ascii=False)
+
 
 from .agent_tools import TOOL_REGISTRY, tool_specs, workspace_view
 
@@ -391,7 +453,7 @@ def run_turn(service, session: dict, actor, text: str,
     tools = build_tools(service, session, actor, text, toolbox)
     messages = [
         {"role": "system", "content": AGENT_SYSTEM_PROMPT},
-        {"role": "user", "content": json.dumps(redact_tree(_strip_income(service._agent_context(session))), ensure_ascii=False)},
+        {"role": "user", "content": build_context(service, session, actor)},
         {"role": "user", "content": redact(text)},
     ]
     steps: list[dict] = []
