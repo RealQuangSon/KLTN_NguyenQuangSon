@@ -146,11 +146,16 @@ def test_model_request_carries_harness_params(agent, renter):
 
 
 def test_turn_ends_with_template_after_confirm_without_extra_llm_call(agent, renter):
+    from backend.app.models import DraftPatch
     agent.interpreter.client = FakeClient([
         message(tool_calls=[call("c1", "update_needs", patch={"city": "TP.HCM", "area": "Quận 7"})]),
         message(tool_calls=[call("c2", "confirm_and_search")]),
     ])
     sid = agent.create_session(renter)["session_id"]
+    # HN-08: confirm phải hỏi các trường mơ hồ (scope/room_type/people — gold
+    # CL15 và preflight HN-02) — seed sẵn để test này tập trung vào "gộp lượt cuối".
+    agent.patch_draft(sid, renter, DraftPatch(expected_draft_revision=0,
+        set={"budget_scope": "total", "room_type": "room", "people": 2}, source="clarify"))
     reply = agent.message(sid, renter, "phòng dưới 5 triệu")
     assert reply["agent_mode"] == "loop"
     assert reply["message"].startswith(("Đã xác nhận nhu cầu", "Đã có kết quả", "Chưa có căn nào"))

@@ -1,0 +1,496 @@
+{
+  "accuracy": 0.8,
+  "case_count": 40,
+  "confusion": {
+    "fn": 8,
+    "fp": 0,
+    "tn": 24,
+    "tp": 8
+  },
+  "decided_by": {
+    "none": 30,
+    "rules": 10
+  },
+  "gold_file": "/Users/son/KLTN_NguyenQuangSon/data/gold/clarify_cases.json",
+  "kind": "clarify_suite",
+  "note": "Nhãn do tác giả đặt (chưa có nhãn người độc lập); decided_by là 'rules' ở chế độ demo — Jev chỉ chạy khi HOMEMATCH_DECISION_MODE=jev. Ca không nêu tiền được cấp trần gợi ý 6.000.000 (giả định phiên thật đã có ngân sách) vì lớp 2 cần trần để xếp hạng đếm.",
+  "precision": 1.0,
+  "recall": 0.5,
+  "results": [
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL01",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL02",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL03",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL04",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL05",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL06",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL07",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL08",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL09",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": true,
+      "case_id": "CL10",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [
+        [
+          "opt-0",
+          true
+        ],
+        [
+          "opt-1",
+          false
+        ]
+      ],
+      "should_ask": "yes",
+      "top1_matches_preferred": true
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL11",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL12",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL13",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL14",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL15",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL16",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL17",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL18",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL19",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL20",
+      "correct": false,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "yes",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL21",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL22",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL23",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL24",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL25",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL26",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL27",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL28",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL29",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL30",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL31",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL32",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "low_impact",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL33",
+      "correct": true,
+      "decided_by": "rules",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL34",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL35",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "none",
+      "asked": false,
+      "case_id": "CL36",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "none",
+      "asked": false,
+      "case_id": "CL37",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "none",
+      "asked": false,
+      "case_id": "CL38",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "destination_radius",
+      "asked": false,
+      "case_id": "CL39",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    },
+    {
+      "ambiguity": "budget_scope",
+      "asked": false,
+      "case_id": "CL40",
+      "correct": true,
+      "decided_by": "none",
+      "options": [],
+      "should_ask": "no",
+      "top1_matches_preferred": null
+    }
+  ],
+  "top1_accuracy": 1.0,
+  "version": 1,
+  "wall_seconds": 0.5
+}

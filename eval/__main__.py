@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 
+from .agent_eval import run_agent_scenarios, run_clarify_suite
 from .common import DEFAULT_DATA, ROOT, EvaluationError, validate_dataset
 from .intents import intents_report
 from .invoices import invoice_oracle_report
@@ -68,6 +69,17 @@ def main() -> int:
     labeling = sub.add_parser("label-report")
     labeling.add_argument("--labels-dir", type=Path, default=ROOT / "eval/labels")
     labeling.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/label_report.json")
+    agent = sub.add_parser("agent")
+    agent.add_argument("--mode", choices=("demo", "live"), default="demo")
+    agent.add_argument("--model", default=None)
+    agent.add_argument("--scenarios", type=Path, default=ROOT / "eval/scenarios/agent_e2e.json")
+    agent.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/agent.json")
+    agent.add_argument("--allow-live", action="store_true")
+    agent.add_argument("--api-budget-vnd", type=int)
+    clarify = sub.add_parser("clarify")
+    clarify.add_argument("--gold", type=Path, default=ROOT / "data/gold/clarify_cases.json")
+    clarify.add_argument("--model", default=None)
+    clarify.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/clarify.json")
     survey = sub.add_parser("survey-report")
     survey.add_argument("--csv", type=Path, required=True)
     survey.add_argument("--output", type=Path, default=ROOT / "eval/runs/development/survey_report.json")
@@ -102,6 +114,11 @@ def main() -> int:
         elif args.command == "metrics":
             report = evaluate_rankings(args.data_dir, args.run_dir, args.judgments,
                                         args.human_declared, args.allow_development)
+        elif args.command == "agent":
+            report = run_agent_scenarios(args.scenarios, args.mode, args.model, args.output,
+                                         args.allow_live, args.api_budget_vnd)
+        elif args.command == "clarify":
+            report = run_clarify_suite(args.gold, args.output, args.model)
         elif args.command == "invariants":
             report = invariants_report(args.data_dir, args.split, args.output)
         elif args.command == "intents":

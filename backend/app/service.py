@@ -35,14 +35,16 @@ from .costs import estimate_cost, estimate_with_affordability
 from .interpreter import (DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, fixed_intent,
                           make_interpreter, redact, relative_budget, rent_budget_hint)
 from .locations import city_for_area, resolve_place
-from .models import (DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination, DomainError, DraftPatch,
-                     DraftProfile, Profile, RoomInput, RoomUpdate, Scenario, SimulationRequest)
+from .models import (AMENITY_KEYS, DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination,
+                     DomainError, DraftPatch, DraftProfile, Profile, RoomInput, RoomUpdate, Scenario,
+                     SimulationRequest)
 from .repository import Repository
 from .organizations import record_audit
 from .operations import Metrics
 
-AMENITIES = {"window", "quiet", "parking", "air_conditioning", "private_bathroom",
-             "washing_machine", "balcony", "furniture", "pets_allowed"}
+# HN-08 (sửa lỗi do eval bắt được): đồng bộ với AMENITY_KEYS (LF-04 đủ 19 khóa) —
+# trước đây graph chỉ nhận 9 khóa cũ nên làm rơi wifi/elevator/kitchen/loft…
+AMENITIES = set(AMENITY_KEYS)
 
 
 CHAT_RETENTION_DAYS = int(os.getenv("HOMEMATCH_CHAT_RETENTION_DAYS", "90"))

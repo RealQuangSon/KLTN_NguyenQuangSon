@@ -1,0 +1,912 @@
+{
+  "kind": "agent_e2e_scenarios",
+  "version": 1,
+  "note": "HN-08: kịch bản nhiều lượt cho agent (HN/HCM). Nhãn kỳ vọng do tác giả đặt và đã chạy đối chiếu ở chế độ demo (offline); tools_called/view chỉ chấm ở chế độ live. must_not_contain chặn thu nhập và số bịa. Đầu vào điểm tổng hợp EV-01, không thay nhãn người độc lập.",
+  "scenarios": [
+    {
+      "id": "AE01",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ gần HUST cho 1 người",
+          "draft": {
+            "destination": true,
+            "people": 1
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE02",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Cho thuê phòng trọ gần ĐH Quốc gia Hà Nội, giá dưới 3 triệu",
+          "draft": {
+            "destination": true,
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE03",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ gần Bách Khoa TP.HCM cho 2 người",
+          "draft": {
+            "destination": true,
+            "city": "TP.HCM",
+            "people": 2
+          },
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE04",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ gần Times City Hà Nội dưới 4 triệu",
+          "draft": {
+            "destination": true,
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE05",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm studio gần Aeon Mall Bình Tân giá 5 triệu",
+          "draft": {
+            "destination": true,
+            "room_type": "studio",
+            "budget_hint_vnd": 5000000
+          },
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE06",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ gần Bách Khoa, cách 2 km, Hà Nội",
+          "draft": {
+            "destination": true,
+            "city": "Hà Nội"
+          },
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE07",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Căn hộ gần Đại học Bách Khoa TP.HCM cho 3 người",
+          "draft": {
+            "destination": true,
+            "people": 3
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE08",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ gần ĐH Kinh tế Quốc dân cho 1 người",
+          "draft": {
+            "destination": true,
+            "people": 1
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE09",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ Quận 7 TP.HCM dưới 4 triệu cho 2 người",
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "people": 2,
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE10",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Cầu Giấy Hà Nội khoảng 3,5 triệu",
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Cầu Giấy",
+            "budget_hint_vnd": 3500000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE11",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Studio Bình Thạnh 6 triệu, có ban công",
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận Bình Thạnh",
+            "room_type": "studio",
+            "budget_hint_vnd": 6000000,
+            "preferences": [
+              "balcony"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE12",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Căn hộ Hai Bà Trưng Hà Nội 8 triệu 2 phòng ngủ",
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hai Bà Trưng",
+            "room_type": "apartment",
+            "bedrooms": 2,
+            "budget_hint_vnd": 8000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE13",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ Thủ Đức TP.HCM 2,5 triệu có máy lạnh",
+          "draft": {
+            "city": "TP.HCM",
+            "budget_hint_vnd": 2500000,
+            "preferences": [
+              "air_conditioning"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE14",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Đống Đa Hà Nội 3 triệu, wc riêng",
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Đống Đa",
+            "budget_hint_vnd": 3000000,
+            "preferences": [
+              "private_bathroom"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE15",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Căn hộ 3 phòng ngủ Bình Thạnh TP.HCM cho gia đình 4 người",
+          "draft": {
+            "room_type": "apartment",
+            "bedrooms": 3,
+            "area": "Quận Bình Thạnh",
+            "people": 4
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE16",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ có gác lưng Hà Nội dưới 3 triệu",
+          "draft": {
+            "preferences": [
+              "loft"
+            ],
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE17",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ Quận Gò Vấp TP.HCM, để xe, wifi",
+          "draft": {
+            "area": "Quận Gò Vấp",
+            "preferences": [
+              "parking",
+              "wifi"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE18",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Studio Tây Hồ Hà Nội 7 triệu, yên tĩnh, thang máy",
+          "draft": {
+            "room_type": "studio",
+            "area": "Quận Tây Hồ",
+            "budget_hint_vnd": 7000000,
+            "preferences": [
+              "quiet",
+              "elevator"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE19",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ 5 người Quận 8 TP.HCM",
+          "draft": {
+            "people": 5,
+            "area": "Quận 8"
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE20",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Long Biên Hà Nội cho 2 người, nấu ăn được",
+          "draft": {
+            "people": 2,
+            "preferences": [
+              "kitchen"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE21",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng Quận 7 TP.HCM 4 triệu cho 2 người",
+          "draft": {
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        },
+        {
+          "user": "nới thêm 500 nghìn",
+          "draft": {
+            "budget_hint_vnd": 4500000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE22",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ Bình Thạnh 5 triệu 2 người",
+          "draft": {
+            "budget_hint_vnd": 5000000
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "giảm xuống 4 triệu",
+          "draft": {
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE23",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Cầu Giấy Hà Nội 3 triệu",
+          "draft": {
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "nới thêm 1 triệu",
+          "draft": {
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE24",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Hà Đông Hà Nội 3,5 triệu cho 1 người",
+          "draft": {
+            "budget_hint_vnd": 3500000,
+            "people": 1
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "giảm xuống 3 triệu",
+          "draft": {
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE25",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "nội quy thuê phòng gồm những gì?",
+          "intent": "handbook",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE26",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "hoàn cọc khi trả phòng sớm thì sao?",
+          "intent": "handbook",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE27",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "tạm trú sau khi thuê phòng cần làm gì?",
+          "intent": "handbook",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE28",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "tính chi phí thuê phòng giúp mình",
+          "intent": "calculate_cost",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE29",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "tôi muốn gặp người thật để tư vấn",
+          "intent": "human_support",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE30",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Tìm phòng Cầu Giấy Hà Nội 4 triệu",
+          "questions_max": 2
+        },
+        {
+          "user": "nếu vay 12 tháng lãi 12% thì sao",
+          "intent": "simulate_finance",
+          "questions_max": 1,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE31",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ Quận 3 TP.HCM 4 triệu",
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 3",
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE32",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Ba Đình Hà Nội 5 triệu 1 người",
+          "draft": {
+            "area": "Quận Ba Đình",
+            "budget_hint_vnd": 5000000,
+            "people": 1
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE33",
+      "city": null,
+      "turns": [
+        {
+          "user": "Tìm phòng trọ Quận 7 dưới 4 triệu",
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "budget_hint_vnd": 4000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE34",
+      "city": null,
+      "turns": [
+        {
+          "user": "Cho mình xin phòng studio 5 triệu",
+          "draft": {
+            "city": null,
+            "room_type": "studio",
+            "budget_hint_vnd": 5000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE35",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ gần Bách Khoa TP.HCM 3 triệu cho 1 người",
+          "draft": {
+            "destination": true,
+            "city": "TP.HCM",
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        },
+        {
+          "user": "phòng 2 người thì sao",
+          "draft": {
+            "people": 2
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE36",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ gần Times City Hà Nội dưới 4,5 triệu",
+          "draft": {
+            "destination": true,
+            "budget_hint_vnd": 4500000
+          },
+          "questions_max": 1
+        },
+        {
+          "user": "cần có máy giặt",
+          "draft": {
+            "preferences": [
+              "washing_machine"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE37",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ Quận 10 TP.HCM 3 triệu có máy lạnh",
+          "draft": {
+            "preferences": [
+              "air_conditioning"
+            ]
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "bỏ máy lạnh, cần ban công",
+          "draft": {
+            "preferences": [
+              "balcony"
+            ]
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE38",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Phòng trọ Sài Gòn Q7 4 triệu cho 2 người",
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "budget_hint_vnd": 4000000,
+            "people": 2
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE39",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ HN quận Thanh Xuân 3 triệu",
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Thanh Xuân",
+            "budget_hint_vnd": 3000000
+          },
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AE40",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ Quận 1 TP.HCM dưới 4 triệu",
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income",
+            "99 căn",
+            "rẻ nhất chỉ 500.000"
+          ],
+          "questions_max": 2
+        }
+      ]
+    },
+    {
+      "id": "AE41",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Phòng trọ Hoàn Kiếm Hà Nội 6 triệu 2 người",
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ],
+          "questions_max": 2
+        }
+      ]
+    },
+    {
+      "id": "AE42",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Tìm phòng trọ Quận 7 TP.HCM 4 triệu cho 2 người, máy lạnh",
+          "draft": {
+            "city": "TP.HCM",
+            "people": 2
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "ok tìm luôn",
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ],
+      "final": {
+        "draft": {
+          "city": "TP.HCM",
+          "people": 2,
+          "budget_hint_vnd": 4000000
+        }
+      }
+    },
+    {
+      "id": "AE43",
+      "city": "Hà Nội",
+      "turns": [
+        {
+          "user": "Studio Cầu Giấy Hà Nội 5 triệu cho 1 người",
+          "draft": {
+            "city": "Hà Nội",
+            "room_type": "studio"
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "tìm luôn giúp mình",
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ],
+      "final": {
+        "draft": {
+          "room_type": "studio",
+          "budget_hint_vnd": 5000000
+        }
+      }
+    },
+    {
+      "id": "AE44",
+      "city": "TP.HCM",
+      "turns": [
+        {
+          "user": "Căn hộ Bình Thạnh TP.HCM 8 triệu 2 phòng ngủ cho 3 người",
+          "draft": {
+            "city": "TP.HCM",
+            "bedrooms": 2,
+            "people": 3
+          },
+          "questions_max": 2
+        },
+        {
+          "user": "chạy tìm đi",
+          "questions_max": 2,
+          "must_not_contain": [
+            "thu nhập",
+            "monthly_income"
+          ]
+        }
+      ],
+      "final": {
+        "draft": {
+          "room_type": "apartment",
+          "budget_hint_vnd": 8000000
+        }
+      }
+    }
+  ]
+}

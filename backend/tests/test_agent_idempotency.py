@@ -117,6 +117,10 @@ def test_retry_after_confirm_keeps_one_run_and_identical_response(storage, rente
     service = HomeMatchService(storage, interpreter=OpenAIInterpreter(client=client, model="fixture"))
     try:
         sid = service.create_session(renter)["session_id"]
+        # HN-08: confirm hỏi các trường mơ hồ (scope/room_type/people) — seed sẵn
+        # để test này tập trung vào idempotency của confirm+retry.
+        service.patch_draft(sid, renter, DraftPatch(expected_draft_revision=0,
+            set={"budget_scope": "total", "room_type": "room", "people": 2}, source="clarify"))
         first = service.message(sid, renter, "phòng dưới 4 triệu", turn_id="confirm-retry")
         second = service.message(sid, renter, "phòng dưới 4 triệu", turn_id="confirm-retry")
         assert first == second

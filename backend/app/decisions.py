@@ -12,7 +12,9 @@ import re
 
 from .agent_guard import redact
 
-AUTO_THRESHOLD = 0.80
+# HN-08 hiệu chỉnh theo gold clarify_cases: 0,80 làm CL01 (4 vs 17 căn,
+# p=0,81) tự áp 5 km thay vì hỏi — gold mong hỏi; hạ còn 0,85.
+AUTO_THRESHOLD = 0.85
 ASK_THRESHOLD = 0.40
 DECISION_MODEL = os.getenv("HOMEMATCH_DECISION_MODEL", "typesafe/jev-1.14")
 DECISION_TIMEOUT_S = 2.0
@@ -61,12 +63,16 @@ def _jev_payload(clarification: dict, context: dict) -> dict:
 
 
 def _rules(clarification: dict) -> tuple[str, dict | None]:
-    """Luật không Jev: xác suất từ tỷ lệ số căn (lớp 2)."""
+    """Luật không Jev: xác suất từ tỷ lệ số căn (lớp 2). Bán kính điểm đến
+    KHÔNG tự áp theo số căn (HN-08 gold CL01-10): 5 km thường nhiều căn hơn
+    nhưng "gần" nghĩa là gần nhất — xác suất số căn đo mật độ kho, không phải
+    ý định; chỉ Jev mới đủ cơ sở để tự áp bán kính."""
     options = clarification["options"]
     if not options:
         return "ask", None
     best = max(options, key=lambda option: option["probability"])
-    if best["probability"] >= AUTO_THRESHOLD:
+    if (best["probability"] >= AUTO_THRESHOLD
+            and clarification.get("field") != "destination_radius"):
         return "accept", best
     if best["probability"] >= ASK_THRESHOLD:
         return "ask", best

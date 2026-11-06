@@ -164,23 +164,44 @@ def test_demo_mode_never_enters_the_loop(storage, renter):
 
 
 def test_loop_controls_workspace_view_and_understands_selection(service, renter):
+    from backend.app.models import DraftPatch
     client = FakeClient([
         message(tool_calls=[call("c1", "find_place", query="Phú Mỹ Hưng")]),
         message(tool_calls=[call("c2", "update_needs",
                                  patch={"city": "TP.HCM", "destination_text": "Phú Mỹ Hưng"})]),
         message(tool_calls=[call("c3", "confirm_and_search")]),
-        message(content="Đã xếp theo khoảng cách tới Phú Mỹ Hưng."),
+        # HN-08: confirm chạm mơ hồ bán kính (gold CL01) → model hỏi chip từ kho.
+        message(content=None, tool_calls=[call("c4", "ask_user", field="destination_radius")]),
     ])
     service.interpreter.client = client
     sid = service.create_session(renter)["session_id"]
+    # HN-08: seed scope/room_type/people để turn 2 chỉ còn đúng mơ hồ bán kính cần kiểm.
+    service.patch_draft(sid, renter, DraftPatch(expected_draft_revision=0,
+        set={"budget_scope": "total", "room_type": "room", "people": 2}, source="clarify"))
     reply = service.message(sid, renter, "Tìm phòng dưới 4 triệu gần Phú Mỹ Hưng",
                             workspace={"view": None, "selected_room_id": None,
                                        "visible_room_ids": [], "focus_room_ids": []})
+    # Chip bán kính từ kho có count/patch/decided_by; chưa tạo run.
+    assert reply["clarification"]["field"] == "destination_radius"
+    assert all({"count", "patch", "decided_by"} <= set(option)
+               for option in reply["clarification"]["options"])
+    assert service.repo.db.execute(
+        "SELECT COUNT(*) AS c FROM hm_runs").fetchone()["c"] == 0
+    # Khách bấm chip → radius confirmed; lượt sau confirm chạy trọn (template).
+    service.patch_draft(sid, renter, DraftPatch(
+        expected_draft_revision=service.session(sid, renter)["draft_revision"],
+        set={"destination_radius_m": 5000}, source="clarify"))
+    client2 = FakeClient([message(tool_calls=[call("d1", "confirm_and_search")])])
+    service.interpreter.client = client2
+    reply = service.message(sid, renter, "chạy tìm với bán kính đã chọn",
+                            workspace={"view": None, "selected_room_id": None,
+                                       "visible_room_ids": [], "focus_room_ids": []})
+    assert reply["agent_mode"] == "loop"
     # confirm_and_search → bản đồ khi có điểm đến; anchor + tiêu chí cho FE.
     assert reply["view"] == "map"
     assert reply["anchor"]["label"] == "Khu đô thị Phú Mỹ Hưng"
     assert reply["criteria"]["city"] == "TP.HCM"
-    assert reply["turn_id"] and reply["suggested_prompts"]
+    assert reply["turn_id"] and isinstance(reply["suggested_prompts"], list)
 
     # Lượt sau: "căn này" theo selection của workspace, tool cuối room_details → view detail.
     result = service.results(sid, renter)

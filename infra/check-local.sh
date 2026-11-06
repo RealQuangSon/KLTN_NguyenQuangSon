@@ -16,6 +16,8 @@ export HOMEMATCH_LLM_MODE=demo
 "$PYTHON" -m eval invoices
 "$PYTHON" -m eval grounding
 "$PYTHON" -m eval measure
+"$PYTHON" -m eval agent --mode demo
+"$PYTHON" -m eval clarify
 "$PYTHON" -m eval report
 "$PYTHON" -m pytest backend/tests eval/tests
 npm --prefix frontend run test -- --run

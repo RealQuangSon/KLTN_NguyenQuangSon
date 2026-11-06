@@ -64,7 +64,10 @@ def _interpretations(draft: DraftProfile, service=None,
         out.append({"field": "budget_scope", "kind": "rent_cap",
                     "label": "Chỉ trần tiền THUÊ", "scope": "rent"})
     confirmed = Profile.model_validate_json(base_profile_json) if base_profile_json else None
-    if wants("area") and not draft.area and not (confirmed and confirmed.area) and service is not None:
+    # Có điểm đến thì không hỏi khu vực: điểm đến đã là tín hiệu khu vực, hỏi
+    # thêm quận là nhiễu (gold CL11/CL33 — HN-08).
+    if (wants("area") and not draft.area and not (confirmed and confirmed.area)
+            and not draft.destination and service is not None):
         if profile is None:
             profile = service._profile_from_draft("__clarify__", session_row=_DraftSession(draft, base_profile_json))
         if profile is not None:
@@ -115,12 +118,22 @@ def _temp_profile(service, draft: DraftProfile, interpretation: dict,
 
 
 def _impact(options: list[dict]) -> float:
-    """So các cặp trong cùng trường; hai tập rỗng không tạo khác biệt giả."""
+    """So các cặp trong cùng trường. Hai tín hiệu: (1) Jaccard top-5 — lựa chọn
+    đổi kết quả thấy ngay; (2) chênh SỐ CĂN — "2 km có 3 căn, 5 km có 20 căn"
+    vẫn đáng hỏi dù top-5 trùng. Hiệu chỉnh theo gold clarify_cases (HN-08):
+    nhóm yes có chênh 6–21 căn, nhóm low_impact gần bằng nhau. Hai tập rỗng
+    không tạo khác biệt giả."""
     impacts = []
     for first, second in combinations(options, 2):
         left, right = set(first["top"]), set(second["top"])
         union = left | right
-        impacts.append(1 - len(left & right) / len(union) if union else 0.0)
+        top_impact = 1 - len(left & right) / len(union) if union else 0.0
+        counts = (first.get("count", 0), second.get("count", 0))
+        if max(counts) > 0:
+            count_impact = 1 - min(counts) / max(counts)
+        else:
+            count_impact = 0.0
+        impacts.append(max(top_impact, count_impact))
     return max(impacts, default=0.0)
 
 
@@ -147,13 +160,23 @@ def build_clarification(service, session_id: str, field: str | None = None) -> d
                             "kind": interpretation["kind"], "label": interpretation["label"],
                             "interpretation": interpretation, "top": top, "count": count,
                             "min_monthly_total_vnd": min_monthly})
-        kept = [option for option in options if option["count"] > 0] or options
+        kept = [option for option in options if option["count"] > 0]
+        if not kept:
+            kept = options
+        elif len(kept) < len(options):
+            # Giữ cả lựa chọn 0 căn khi có lựa chọn dương: "2 km · 0 căn" vs
+            # "5 km · 5 căn" là thông tin người dùng cần để chọn (HN-08 gold).
+            kept = options
         impact = _impact(kept)
         if len(kept) < 2 or impact < IMPACT_THRESHOLD:
             continue
         total = sum(option["count"] for option in kept) or 1
         for option in kept:
             option["probability"] = round(option["count"] / total, 4)
+        if group_field == "destination_radius":
+            # "Gần" mặc định là gần nhất: chip bán kính xếp gần-trước (HN-08 gold
+            # preferred=radius_2000); xác suất vẫn hiển thị trên từng chip.
+            kept = sorted(kept, key=lambda option: option["interpretation"]["radius_m"])
         return {"field": group_field, "impact": round(impact, 4), "options": kept}
     return None
 

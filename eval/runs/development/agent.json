@@ -1,0 +1,1384 @@
+{
+  "completed_scenarios": 44,
+  "completion_rate": 1.0,
+  "cost_usd": null,
+  "kind": "agent_scenarios",
+  "mode": "demo",
+  "model": null,
+  "p50_ms": 28.1,
+  "p95_ms": 63.2,
+  "questions_before_first_result": 0.95,
+  "results": [
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE01",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 18.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ gần HUST cho 1 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE02",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 57.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Cho thuê phòng trọ gần ĐH Quốc gia Hà Nội, giá dưới 3 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE03",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 13.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ gần Bách Khoa TP.HCM cho 2 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE04",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "destination_radius",
+          "duration_ms": 50.1,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ gần Times City Hà Nội dưới 4 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE05",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 63.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm studio gần Aeon Mall Bình Tân giá 5 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE06",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.9,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ gần Bách Khoa, cách 2 km, Hà Nội"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE07",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.7,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Căn hộ gần Đại học Bách Khoa TP.HCM cho 3 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE08",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ gần ĐH Kinh tế Quốc dân cho 1 người"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE09",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 30.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ Quận 7 TP.HCM dưới 4 triệu cho 2 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE10",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 47.9,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Cầu Giấy Hà Nội khoảng 3,5 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE11",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 48.3,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Studio Bình Thạnh 6 triệu, có ban công"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE12",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 45.5,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Căn hộ Hai Bà Trưng Hà Nội 8 triệu 2 phòng ngủ"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE13",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 47.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Thủ Đức TP.HCM 2,5 triệu có máy lạnh"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE14",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 69.9,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Đống Đa Hà Nội 3 triệu, wc riêng"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE15",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Căn hộ 3 phòng ngủ Bình Thạnh TP.HCM cho gia đình 4 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE16",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 53.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ có gác lưng Hà Nội dưới 3 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE17",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 14.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Quận Gò Vấp TP.HCM, để xe, wifi"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE18",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 45.6,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Studio Tây Hồ Hà Nội 7 triệu, yên tĩnh, thang máy"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE19",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.1,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ 5 người Quận 8 TP.HCM"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE20",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 13.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Long Biên Hà Nội cho 2 người, nấu ăn được"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE21",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 50.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 2,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng Quận 7 TP.HCM 4 triệu cho 2 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 32.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "nới thêm 500 nghìn"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE22",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 28.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Bình Thạnh 5 triệu 2 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 27.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "giảm xuống 4 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE23",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 46.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Cầu Giấy Hà Nội 3 triệu"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 71.5,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "nới thêm 1 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE24",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 27.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Hà Đông Hà Nội 3,5 triệu cho 1 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 27.3,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "giảm xuống 3 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE25",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 13.5,
+          "intent": "handbook",
+          "passed": true,
+          "problems": [],
+          "questions": 0,
+          "skipped": [],
+          "status": "handbook_answer",
+          "turn_index": 0,
+          "user": "nội quy thuê phòng gồm những gì?"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE26",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.7,
+          "intent": "handbook",
+          "passed": true,
+          "problems": [],
+          "questions": 0,
+          "skipped": [],
+          "status": "handbook_answer",
+          "turn_index": 0,
+          "user": "hoàn cọc khi trả phòng sớm thì sao?"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE27",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 11.9,
+          "intent": "handbook",
+          "passed": true,
+          "problems": [],
+          "questions": 0,
+          "skipped": [],
+          "status": "handbook_answer",
+          "turn_index": 0,
+          "user": "tạm trú sau khi thuê phòng cần làm gì?"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE28",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.6,
+          "intent": "calculate_cost",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "tính chi phí thuê phòng giúp mình"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE29",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 12.7,
+          "intent": "human_support",
+          "passed": true,
+          "problems": [],
+          "questions": 0,
+          "skipped": [],
+          "status": "support_requested",
+          "turn_index": 0,
+          "user": "tôi muốn gặp người thật để tư vấn"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE30",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 51.5,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 2,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng Cầu Giấy Hà Nội 4 triệu"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 13.2,
+          "intent": "simulate_finance",
+          "passed": true,
+          "problems": [],
+          "questions": 0,
+          "skipped": [],
+          "status": "needs_results",
+          "turn_index": 1,
+          "user": "nếu vay 12 tháng lãi 12% thì sao"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE31",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 49.1,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ Quận 3 TP.HCM 4 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE32",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 26.3,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Ba Đình Hà Nội 5 triệu 1 người"
+        }
+      ]
+    },
+    {
+      "city": null,
+      "final_problems": [],
+      "id": "AE33",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 55.3,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ Quận 7 dưới 4 triệu"
+        }
+      ]
+    },
+    {
+      "city": null,
+      "final_problems": [],
+      "id": "AE34",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 13.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Cho mình xin phòng studio 5 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE35",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "destination_radius",
+          "duration_ms": 50.9,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ gần Bách Khoa TP.HCM 3 triệu cho 1 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "destination_radius",
+          "duration_ms": 26.3,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "phòng 2 người thì sao"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE36",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": "destination_radius",
+          "duration_ms": 26.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ gần Times City Hà Nội dưới 4,5 triệu"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "destination_radius",
+          "duration_ms": 28.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "cần có máy giặt"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE37",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 53.5,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Quận 10 TP.HCM 3 triệu có máy lạnh"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 53.9,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "bỏ máy lạnh, cần ban công"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE38",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 33.6,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Sài Gòn Q7 4 triệu cho 2 người"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE39",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 48.8,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ HN quận Thanh Xuân 3 triệu"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE40",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": "people",
+          "duration_ms": 52.2,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ Quận 1 TP.HCM dưới 4 triệu"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE41",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 27.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Phòng trọ Hoàn Kiếm Hà Nội 6 triệu 2 người"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE42",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 51.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Tìm phòng trọ Quận 7 TP.HCM 4 triệu cho 2 người, máy lạnh"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 29.4,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "ok tìm luôn"
+        }
+      ]
+    },
+    {
+      "city": "Hà Nội",
+      "final_problems": [],
+      "id": "AE43",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 27.1,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Studio Cầu Giấy Hà Nội 5 triệu cho 1 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 26.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "tìm luôn giúp mình"
+        }
+      ]
+    },
+    {
+      "city": "TP.HCM",
+      "final_problems": [],
+      "id": "AE44",
+      "passed": true,
+      "published": null,
+      "turns": [
+        {
+          "agent_mode": null,
+          "checked": [
+            "draft",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 28.1,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 0,
+          "user": "Căn hộ Bình Thạnh TP.HCM 8 triệu 2 phòng ngủ cho 3 người"
+        },
+        {
+          "agent_mode": null,
+          "checked": [
+            "must_not_contain",
+            "questions_max"
+          ],
+          "clarification_field": null,
+          "duration_ms": 28.0,
+          "intent": "find_room",
+          "passed": true,
+          "problems": [],
+          "questions": 1,
+          "skipped": [],
+          "status": "needs_clarification",
+          "turn_index": 1,
+          "user": "chạy tìm đi"
+        }
+      ]
+    }
+  ],
+  "scenario_count": 44,
+  "scenarios_file": "/Users/son/KLTN_NguyenQuangSon/eval/scenarios/agent_e2e.json",
+  "turn_count": 55,
+  "turn_pass_rate": 1.0,
+  "version": 1,
+  "wall_seconds": 1.9
+}

@@ -45,15 +45,17 @@ def budget_hint(text: str) -> int | None:
 # AG-02: tiền TƯƠNG ĐỐI trong chat — "nới/lên/thêm N" cộng vào mức cũ, "giảm …
 # xuống N" trừ; không có mức cũ thì hỏi lại, không đoán. Đọc trên văn bản GỐC
 # để giữ dấu tiếng Việt; đơn vị như budget_hint (triệu/tr, nghìn/ngan/k).
+# HN-08 (sửa lỗi do eval agent bắt được): từ khóa phải đứng ĐỘC LẬP (mốc đầu câu
+# hoặc sau khoảng trắng) — trước đây "Bình Thạnh 5 triệu" khớp nhầm "thạnh" chứa
+# "ha" và bị đọc thành "giảm xuống 5 triệu".
+_REL_UNIT = r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)"
 RELATIVE_BUDGET_UP = re.compile(
-    r"(nới|nơi|lên|len|tăng|tang|nâng|nang)(?:\s*(?:thêm|them|cộng))?\s*"
-    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+    r"(?:^|\s)(?:nới|nơi|lên|len|tăng|tang|nâng|nang)(?:\s*(?:thêm|them|cộng))?\s*" + _REL_UNIT,
+    re.I)
 RELATIVE_BUDGET_DOWN_DELTA = re.compile(
-    r"(giảm|giam|hạ|ha)(?!\s*(?:xuống|xuong))[^\d]{0,16}?"
-    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+    r"(?:^|\s)(?:giảm|giam|hạ|ha)(?!\s*(?:xuống|xuong))[^\d]{0,16}?" + _REL_UNIT, re.I)
 RELATIVE_BUDGET_DOWN_SET = re.compile(
-    r"(giảm|giam|hạ|ha)[^\d]{0,16}?(?:xuống|xuong)\s*"
-    r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)", re.I)
+    r"(?:^|\s)(?:giảm|giam|hạ|ha)[^\d]{0,16}?(?:xuống|xuong)\s*" + _REL_UNIT, re.I)
 
 
 def _relative_amount(raw: str, unit: str) -> int:
@@ -67,14 +69,14 @@ def relative_budget(text: str) -> dict | None:
     "amount_vnd": delta} hoặc None khi câu không nói nới/giảm."""
     match = RELATIVE_BUDGET_UP.search(text)
     if match:
-        return {"direction": "up", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+        return {"direction": "up", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
     match = RELATIVE_BUDGET_DOWN_SET.search(text)
     if match:
         # "giảm ... xuống 4 triệu" là mức mới, không phải delta.
-        return {"direction": "set", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+        return {"direction": "set", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
     match = RELATIVE_BUDGET_DOWN_DELTA.search(text)
     if match:
-        return {"direction": "down", "amount_vnd": _relative_amount(match.group(2), match.group(3))}
+        return {"direction": "down", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
     return None
 
 
