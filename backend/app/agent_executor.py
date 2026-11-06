@@ -23,6 +23,8 @@ def execute_tool(service, toolbox, session_id: str, turn_id: str,
     args_hash = hashlib.sha256(json.dumps(arguments, sort_keys=True,
                                          ensure_ascii=False).encode()).hexdigest()
     result: dict = {}
+    previous_assumptions = list(getattr(toolbox, "assumptions", []))
+    previous_question = getattr(toolbox, "question_asked", False)
     try:
         with service.repo.db:
             cached = service.repo.db.execute(
@@ -33,10 +35,15 @@ def execute_tool(service, toolbox, session_id: str, turn_id: str,
                 return toolbox.call(definition.agent, name, lambda: json.loads(cached["result_json"]))
             result = toolbox.invoke(name, function, arguments)
             if not result["ok"]:
+                if name == "confirm_and_search" and result.get("error") == "needs_clarification":
+                    # Preflight chỉ đã ghi diễn giải an toàn; chưa tạo run. Giữ
+                    # nháp này để chip và giả định khách thấy cùng một phiên bản.
+                    return result
                 raise _RollbackTool()
             service.repo.db.execute("INSERT INTO hm_agent_tool_calls VALUES(?,?,?,?,?,?,?)",
                 (session_id, turn_id, name, args_hash, f"{turn_id}:{name}:{args_hash}",
                  json.dumps(public_result(result), ensure_ascii=False, default=str), utc_now()))
     except _RollbackTool:
-        pass
+        toolbox.assumptions = previous_assumptions
+        toolbox.question_asked = previous_question
     return result

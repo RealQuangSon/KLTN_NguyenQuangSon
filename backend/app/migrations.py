@@ -328,6 +328,9 @@ MIGRATIONS = (
             PRIMARY KEY(session_id, turn_id, tool, args_hash)
         );
     """),
+    (18, "agent_clarification_limit", """
+        ALTER TABLE hm_sessions ADD COLUMN clarification_questions INTEGER NOT NULL DEFAULT 0;
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

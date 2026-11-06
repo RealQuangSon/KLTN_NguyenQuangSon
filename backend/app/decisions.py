@@ -6,39 +6,65 @@ trên xác suất `count` của lớp 2, ghi `decided_by="fallback"`, không ch�
 """
 from __future__ import annotations
 
-import json
 import math
 import os
+import re
+
+from .agent_guard import redact
 
 AUTO_THRESHOLD = 0.80
 ASK_THRESHOLD = 0.40
 DECISION_MODEL = os.getenv("HOMEMATCH_DECISION_MODEL", "typesafe/jev-1.14")
 DECISION_TIMEOUT_S = 2.0
+_INCOME_TEXT = re.compile(r"(?:thu\s*nhập|thu\s*nhap|\bincome\b)\s*[:=]?[^\n;!?]*", re.I)
+_SYMBOL_MONEY = re.compile(r"\b\d[\d.,]*(?:\s*\d{3})*\s*(?:₫|đ\b|usd\b)|\$\s*\d[\d.,]*", re.I)
+
+
+def _decision_text(text: str) -> str:
+    value = redact(text)
+    value = _INCOME_TEXT.sub("[THONG_TIN_RIENG_DA_TACH]", value)
+    value = re.sub(r"monthly_income_vnd|housing_ratio", "[THONG_TIN_RIENG_DA_TACH]", value, flags=re.I)
+    return _SYMBOL_MONEY.sub("[TIEN_DA_TACH]", value)
+
+
+def decision_context(value):
+    """Ranh giới Jev độc lập caller: không giữ tiền, khoản vay hay thu nhập."""
+    if isinstance(value, dict):
+        return {_decision_text(str(key)): decision_context(item) for key, item in value.items()
+                if not (str(key).lower().endswith("_vnd") or "income" in str(key).lower()
+                        or "loan" in str(key).lower() or str(key).lower() == "housing_ratio")}
+    if isinstance(value, (list, tuple)):
+        return [decision_context(item) for item in value]
+    if isinstance(value, str):
+        return _decision_text(value)
+    return value
 
 
 def _jev_payload(clarification: dict, context: dict) -> dict:
     """Request Jev theo Decisions API: `state` là object, `questions` khóa theo
-    tên, câu `choice` có `criteria` = {id phương án: mô tả}. State đã qua redact
-    (không tiền tuyệt đối, SĐT, email, thu nhập — caller chịu trách nhiệm, ở đây
-    chỉ kiểm lại miền giá trị)."""
+    tên, câu `choice` có `criteria` = {id phương án: mô tả}. Mọi văn bản đi
+    qua redact; tiền, khoản vay và thu nhập bị bỏ đệ quy ngay tại ranh giới."""
     from .clarify import question_for
-    state = json.dumps(context, ensure_ascii=False)
-    for banned in ("monthly_income_vnd", "@", "090", "091", "092", "093",
-                   "032", "035", "038", "039", "070", "083", "zalo.me"):
-        if banned in state:
-            raise ValueError(f"context carries banned token: {banned}")
+    options = clarification["options"]
+    if not options:
+        raise ValueError("jev_no_options")
+    if any(not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,79}", str(option["id"]))
+           or redact(str(option["id"])) != str(option["id"]) for option in options):
+        raise ValueError("jev_invalid_option_id")
     return {"model": DECISION_MODEL,
-            "state": context,
+            "state": decision_context(context),
             "questions": {"clarify": {
                 "type": "choice",
                 "instructions": "Dựa trên hội thoại và nhu cầu nháp trong state, khách nhiều khả năng "
                                 f"chọn phương án nào cho câu hỏi: {question_for(clarification.get('field', ''))}",
-                "criteria": {option["id"]: option["label"] for option in clarification["options"]}}}}
+                "criteria": {option["id"]: _decision_text(option["label"]) for option in options}}}}
 
 
 def _rules(clarification: dict) -> tuple[str, dict | None]:
     """Luật không Jev: xác suất từ tỷ lệ số căn (lớp 2)."""
     options = clarification["options"]
+    if not options:
+        return "ask", None
     best = max(options, key=lambda option: option["probability"])
     if best["probability"] >= AUTO_THRESHOLD:
         return "accept", best
@@ -58,11 +84,12 @@ def decide(clarification: dict, context: dict, *, client=None,
     if mode != "jev":
         decision, best = _rules(clarification)
         return decision, best, "rules", None
+    owned_client = None
     try:
         if client is None:
             import httpx
             api_key = os.getenv("OPENAI_API_KEY", "")
-            client = httpx.Client(timeout=DECISION_TIMEOUT_S)
+            owned_client = client = httpx.Client(timeout=DECISION_TIMEOUT_S)
             response = client.post(
                 "https://openrouter.ai/api/alpha/decisions",
                 headers={"Authorization": f"Bearer {api_key}"},
@@ -77,12 +104,18 @@ def decide(clarification: dict, context: dict, *, client=None,
         probabilities = answer.get("probabilities") or {}
         options = {option["id"]: option for option in clarification["options"]}
         best = options.get(answer.get("choice"))
-        if best is None or not probabilities:
+        if best is None or not isinstance(probabilities, dict) or not probabilities:
             raise RuntimeError("jev_unknown_choice")
         # Kiểm toàn bộ trước khi ghi: response hỏng không được làm lệch luật dự phòng.
-        parsed = {key: float(probabilities.get(key, 0.0)) for key in options}
+        if set(probabilities) != set(options):
+            raise ValueError("jev_missing_probability")
+        if any(isinstance(value, bool) for value in probabilities.values()):
+            raise ValueError("jev_invalid_probability")
+        parsed = {key: float(probabilities[key]) for key in options}
         if not all(math.isfinite(p) and 0 <= p <= 1 for p in parsed.values()):
             raise ValueError("jev_invalid_probability")
+        if not math.isclose(sum(parsed.values()), 1.0, abs_tol=0.02):
+            raise ValueError("jev_invalid_probability_total")
         # Chip xếp theo xác suất của Jev (cao nhất đứng đầu).
         for option in clarification["options"]:
             option["probability"] = round(parsed[option["id"]], 4)
@@ -93,3 +126,9 @@ def decide(clarification: dict, context: dict, *, client=None,
     except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat
         decision, best = _rules(clarification)
         return decision, best, "fallback", type(error).__name__
+    finally:
+        if owned_client is not None:
+            try:
+                owned_client.close()
+            except Exception:
+                pass  # lỗi đóng kết nối không được che mất kết quả/đường lui

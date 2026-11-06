@@ -1,6 +1,8 @@
 # Trạng thái triển khai HomeMatch AI Agent
 
-## HARNESS — HN-00 (06/11/2026)
+## HARNESS (06/11/2026)
+
+HN-02 đã triển khai, review và commit phần offline: ask_user chọn field, chip lấy từ toàn tập kho đủ điều kiện qua Jev/luật; count/patch/decided_by, nhóm area/type/people, chặn confirm khi mơ hồ, giới hạn câu hỏi bền ở schema v18 và bảo vệ điều kiện đã chốt. Sửa các lỗi review về rollback giả định, câu hỏi ngoài DTO, mất evidence khi ghi lại cùng điểm đến và giữ hướng dẫn/lựa chọn của luồng cũ. Bằng chứng: pytest 597 pass / 8 skip, Vitest 106 pass, typecheck và check-local exit 0. Chưa chạy HUST trên Neon hay model/Jev thật — tiêu chí live của HN-02 giữ trạng thái "Chưa", gom vào danh sách cần người dùng duyệt ở `docs/review/HARNESS-final.md`. Chi tiết ở [review HN-02](review/HN-02.md).
 
 HN-03 bổ sung registry chung 22 tool (10 exposed), Args Pydantic, schema/allowlist/capability/view sinh tự động, envelope và handler cho tool mới trong một file. Schema v17 giữ khóa lượt/tool cùng transaction; retry không cộng tiền tương đối hoặc tạo run đôi, cache bỏ thu nhập/PII, dọn theo retention và từ chối replay khi nháp/kho đã đổi. FE dùng chung UUID qua stream retry và POST. Review độc lập đã sửa các lỗi replay, identifier và parity mô phỏng tài chính. Bằng chứng: pytest 542 pass / 8 skip; Vitest 105 pass, typecheck exit 0; kiểm check-local cuối ghi ở [review HN-03](review/HN-03.md). Chưa chạy live/Neon/PostgreSQL/E2E trình duyệt.
 

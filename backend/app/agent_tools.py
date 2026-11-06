@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 import re
 from typing import Any, Callable, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .agent_guard import redact
 from .conversations import mask_pii
@@ -47,9 +47,17 @@ class UpdateNeedsArgs(ToolArgs):
 
 
 class AskUserArgs(ToolArgs):
-    # HN-02 sẽ thay hợp đồng câu hỏi bằng field lấy từ lớp hỏi lại.
-    question: str = Field(min_length=1, max_length=300)
+    field: Literal["destination_radius", "budget_scope", "area", "room_type", "people", "other"]
+    question: str | None = Field(default=None, min_length=1, max_length=300)
     options: list[str] = Field(default_factory=list, max_length=4)
+
+    @model_validator(mode="after")
+    def options_only_for_other(self):
+        if self.field != "other" and self.options:
+            raise ValueError("Lựa chọn phải do lớp hỏi lại dựng từ kho; model chỉ chọn field")
+        if self.field == "other" and self.question is None:
+            raise ValueError("Câu hỏi khác cần nội dung question")
+        return self
 
 
 class RoomReferenceArgs(ToolArgs):
@@ -215,9 +223,10 @@ _DEFINITIONS = (
     _definition("confirm_and_search", "needs", "Xác nhận hồ sơ từ nháp rồi xếp hạng và công bố kết quả hiện tại.",
                 EmptyArgs, writes=True, view=_search_view, capability="profile:confirm",
                 summary="Đã xác nhận nhu cầu và chạy tìm phòng."),
-    _definition("ask_user", "needs", "Hỏi một câu ngắn với tối đa bốn lựa chọn từ kết quả công cụ.",
+    _definition("ask_user", "needs", "Chọn field cần làm rõ; hệ thống dựng lựa chọn có số căn từ kho và Jev. "
+                "Chỉ field=other mới nhận câu hỏi và tối đa bốn lựa chọn chữ của model.",
                 AskUserArgs, writes=True,
-                sample_args={"question": "Bạn muốn tìm tại thành phố nào?", "options": ["Hà Nội", "TP.HCM"]},
+                sample_args={"field": "other", "question": "Bạn muốn tìm tại thành phố nào?", "options": ["Hà Nội", "TP.HCM"]},
                 summary="Đã chuẩn bị câu hỏi làm rõ nhu cầu."),
     _definition("room_details", "needs", "Xem căn trong kết quả hiện tại bằng mã hoặc thứ tự trong workspace.",
                 RoomReferenceArgs, view="detail", capability="results:read", sample_args={"room_ref": "căn số 2"},

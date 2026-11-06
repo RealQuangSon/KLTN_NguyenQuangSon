@@ -37,6 +37,8 @@ Không tự bịa số tiền hay số liệu: mọi con số trong câu trả l
 Không tự nới điều kiện cứng (khu vực, trần tiền, tiện ích bắt buộc): chỉ đề nghị như một lựa chọn, khách xác nhận mới áp.
 Thu nhập của khách không có trong ngữ cảnh, không được hỏi hay suy đoán.
 Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền khách nêu nằm ở ngữ cảnh dưới dạng trần gợi ý.
+Khi tool báo needs_clarification, gọi ask_user(field=...) để lấy chip từ kho; không tự viết lựa chọn.
+Mỗi lượt chỉ hỏi một câu. Hỏi trước khi tìm nếu cách hiểu còn ảnh hưởng đáng kể tới kết quả.
 Trả lời bằng tiếng Việt, ngắn gọn, nói rõ các bước đã làm."""
 
 
@@ -78,6 +80,20 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
     """Bộ tool của lượt: hàm tất định + agent cho phép, bó vào phiên hiện tại.
     Visible = kết quả hiện tại + căn trong ngữ cảnh workspace FE đang hiển thị."""
     results_guard = service.results(session["id"], actor)
+    toolbox.decision_cache = {}
+    toolbox.assumptions = []
+    toolbox.question_asked = False
+    toolbox.grounding = []
+
+    def clarification(field: str | None = None):
+        payload = service._clarification_payload(session["id"], field=field,
+                                                  decision_cache=toolbox.decision_cache)
+        if payload and payload.get("assumed"):
+            assumption = payload["assumed"]
+            if assumption not in toolbox.assumptions:
+                toolbox.assumptions.append(assumption)
+        return payload
+    toolbox.clarify = clarification
     visible = {item["room_id"]: item for item in results_guard["results"]}
     workspace = service._workspace.get(session["id"]) or {}
     for room_id in workspace.get("visible_room_ids", []):
@@ -106,20 +122,26 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
         patch = dict(patch)
         destination_text = patch.pop("destination_text", None)
         if destination_text:
-            place = resolve_place(str(destination_text), service._draft(session["id"]).city)
+            current_draft = service._draft(session["id"])
+            place = resolve_place(str(destination_text), current_draft.city)
             if place is None:
                 raise DomainError("unknown_place", "Điểm mốc không có trong danh mục; gọi find_place trước.", 422)
-            patch["destination"] = Destination(
+            old = current_draft.destination
+            same_place = old and old.latitude == place["latitude"] and old.longitude == place["longitude"]
+            patch["destination"] = old if same_place else Destination(
                 label=place["label"], latitude=place["latitude"], longitude=place["longitude"],
                 uncertainty_m=place["uncertainty_m"], max_distance_m=3000)
         updated = service._apply_agent_patch(session["id"], patch)
-        return {"saved": True, "fields": sorted(updated), "note": "đã ghi ở trạng thái inferred; nhớ nói lại giả định cho khách"}
+        return {"saved": True, "fields": sorted(updated),
+                "destination_radius_m": service._draft(session["id"]).destination.max_distance_m
+                    if service._draft(session["id"]).destination else None,
+                "note": "đã ghi ở trạng thái inferred; nhớ nói lại giả định cho khách"}
 
     def search_rooms():
         profile = service._profile_from_draft(session["id"])
         if profile is None:
             return {"count": 0, "note": "Chưa đủ dữ liệu tối thiểu (thành phố + mức tiền); hỏi khách bổ sung."}
-        items, diagnostics = service.catalog.match(profile, service.matching_method)
+        items, diagnostics = service.catalog.rank(profile, service.matching_method)
         rejected = {key: value for key, value in (diagnostics.get("rejected") or {}).items() if value}
         monthly = [item.cost.monthly_total_vnd for item in items if item.cost.monthly_total_vnd is not None]
         return {"count": len(items),
@@ -132,6 +154,16 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
         profile = service._profile_from_draft(session["id"])
         if profile is None:
             raise DomainError("needs_more_info", "Cần thành phố và mức tiền trước khi tìm.", 422)
+        for _ in range(5):
+            pending = clarification()
+            if not pending:
+                break
+            if not pending.get("assumed"):
+                error = DomainError("needs_clarification", "Cần làm rõ nhu cầu trước khi tìm.", 422)
+                error.field = pending["field"]
+                raise error
+        # Hồ sơ được dựng lại sau khi đã ghi giả định, không dùng bản cũ trước preflight.
+        profile = service._profile_from_draft(session["id"])
         fresh = service.repo.session(session["id"])
         result = service.confirm(session["id"], actor, profile, fresh["draft_revision"])
         return {"status": result["status"], "count": len(result["results"]),
@@ -140,8 +172,30 @@ def build_tools(service, session: dict, actor, text: str, toolbox: ToolBox) -> d
                          "monthly_total_vnd": item["cost"].get("monthly_total_vnd")}
                         for item in result["results"][:3]]}
 
-    def ask_user(question: str, options: list[str] | None = None):
-        return {"question": str(question), "options": [str(item) for item in (options or [])][:4]}
+    def ask_user(field: str, question: str | None = None, options: list[str] | None = None):
+        if toolbox.question_asked or not service._can_ask_clarification(session["id"]):
+            raise DomainError("question_limit", "Đã đủ số câu hỏi; hướng dẫn khách dùng biểu mẫu nhu cầu.", 422)
+        if field == "other":
+            question = question or "Bạn muốn bổ sung thông tin nào?"
+            if question.count("?") > 1:
+                question = question.split("?", 1)[0] + "?"
+            choices = options or []
+            if any(check_numbers(value, text, toolbox.grounding) != value for value in [question, *choices]):
+                raise DomainError("invalid_question", "Câu hỏi có số chưa được khách hoặc công cụ cung cấp.", 422)
+            payload = {"id": "clarify-other", "field": "other", "question": question,
+                "source": "model", "decided_by": "model",
+                "options": [{"id": f"model-{index}", "label": choice, "source": "model",
+                             "count": None, "patch": {"set": {}}, "decided_by": "model"}
+                            for index, choice in enumerate(choices)]}
+        else:
+            payload = clarification(field)
+            if payload is None:
+                return {"resolved": True, "field": field,
+                        "note": "Kho không cho thấy cách hiểu làm thay đổi đáng kể kết quả; không hỏi thêm."}
+            if payload.get("assumed"):
+                return payload
+        toolbox.question_asked = True
+        return payload
 
     def _visible_room(ref: str):
         lowered = str(ref).strip().lower()
@@ -238,6 +292,7 @@ def run_turn(service, session: dict, actor, text: str,
     ]
     steps: list[dict] = []
     tool_payloads: list[str] = []
+    toolbox.grounding = tool_payloads
     usage_total = {"logical_calls": 0, "tokens": 0, "saw_none": False}
     response_dict: dict | None = None
     turn_started = time.monotonic()
@@ -318,9 +373,11 @@ def run_turn(service, session: dict, actor, text: str,
                     emit({"name": safe_name, "kind": "tool", "detail": detail})
                 messages.append({"role": "tool", "tool_call_id": call.id, "content": payload})
                 if name == "ask_user" and result["ok"]:
-                    question = data.get("question") or ""
-                    questions = [question] + [f"Lựa chọn: {option}" for option in data.get("options", [])]
-                    response_dict = finalize(question, questions)
+                    if data.get("question"):
+                        question = data["question"]
+                        response_dict = finalize(question, [question])
+                        response_dict["clarification"] = data
+                        break
             if response_dict is not None:
                 break
             continue
@@ -333,8 +390,20 @@ def run_turn(service, session: dict, actor, text: str,
     response_dict["suggested_prompts"] = service._suggested_prompts(session["id"])
     response_dict["criteria"] = service._criteria_projection(session["id"])
     # AG-11: không có chip ask_user từ model thì vẫn có thể có làm rõ từ kho thật.
-    if not response_dict.get("questions"):
-        response_dict["clarification"] = service._clarification_payload(session["id"])
+    if not response_dict.get("questions") and not response_dict.get("clarification"):
+        response_dict["clarification"] = toolbox.clarify()
+    draft = service._draft(session["id"])
+    if (draft.destination and draft.field_status.get("destination") == "inferred"
+            and not draft.evidence_ref.get("destination", "").startswith("clarify:")
+            and not response_dict.get("questions") and not (response_dict.get("clarification") or {}).get("question")):
+        radius_choice = toolbox.clarify("destination_radius")
+        if radius_choice is None:
+            toolbox.assumptions.append(
+                f"Tạm dùng bán kính {draft.destination.max_distance_m / 1000:g} km quanh điểm đến")
+        elif radius_choice.get("question"):
+            response_dict["clarification"] = radius_choice
+    if toolbox.assumptions:
+        response_dict["message"] = (response_dict.get("message") or "") + " Mình đang hiểu: " + "; ".join(toolbox.assumptions) + ". Bạn có thể sửa trong nhu cầu."
     service.interpreter.last_usage = {"logical_calls": usage_total["logical_calls"],
                                       "tokens": None if usage_total["saw_none"] else usage_total["tokens"]}
     provenance = stamp("interpreter", "agent_loop", interpreter_mode="openai",

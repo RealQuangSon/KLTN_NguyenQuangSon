@@ -331,3 +331,60 @@ it("AG-11: chip làm rõ render trên đầu câu trả lời và gửi PATCH cl
     ),
   );
 }, 20000);
+
+it("HN-02: lựa chọn câu hỏi mở gửi lại chữ khách chọn", async () => {
+  const api = new Api("token");
+  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  vi.spyOn(api, "get").mockImplementation(
+    async (path) =>
+      (path.endsWith("/results")
+        ? {
+            session_id: "session-1",
+            status: "awaiting_confirmation",
+            results: [],
+          }
+        : baseSession) as never,
+  );
+  const turn = vi.spyOn(api, "turn").mockResolvedValue({
+    ...doneData,
+    message: "Bạn muốn bổ sung thông tin nào?",
+    clarification: {
+      question: "Bạn muốn bổ sung thông tin nào?",
+      decided_by: "model",
+      options: [
+        {
+          id: "model-0",
+          label: "Gần trường",
+          source: "model",
+          patch: { set: {} },
+        },
+      ],
+    },
+  } as unknown as never);
+  const patch = vi.spyOn(api, "patch").mockResolvedValue({} as never);
+  render(
+    <RouterProvider>
+      <RenterWorkspace
+        api={api}
+        actor={{ id: "renter-a", role: "renter" }}
+        tab="search"
+      />
+    </RouterProvider>,
+  );
+  const user = userEvent.setup();
+  await user.type(
+    await screen.findByPlaceholderText("Nhắn cho HomeMatch Agent…"),
+    "tìm phòng",
+  );
+  await user.keyboard("{Enter}");
+  const group = await screen.findByRole("group", { name: "Lựa chọn làm rõ" });
+  await user.click(within(group).getByRole("button", { name: "Gần trường" }));
+  await waitFor(() =>
+    expect(turn).toHaveBeenLastCalledWith(
+      "/sessions/session-1/messages",
+      expect.objectContaining({ text: "Gần trường" }),
+      expect.any(Function),
+    ),
+  );
+  expect(patch).not.toHaveBeenCalled();
+}, 20000);

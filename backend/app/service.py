@@ -323,6 +323,7 @@ class HomeMatchService:
                 "provenance": provenance, "guard": guard,
                 "input_redacted": redact(text),
             }
+            self._limit_clarification_response(session_id, response)
             self._store_transcript(session_id, actor.id, text, response, provenance, scan.flagged)
             return {**self.session(session_id, actor), **response, "turn_id": turn_id, "usage": usage,
                     "provenance": provenance, "guard": guard}
@@ -400,9 +401,12 @@ class HomeMatchService:
             draft = DraftProfile.model_validate_json(session["draft_json"])
             allowed = {"city", "area", "people", "room_type", "bedrooms", "preferences",
                        "needs_destination", "accept_estimated_data", "soft_description", "destination"}
-            touched = set(patch) & allowed
+            touched = {key for key in set(patch) & allowed if getattr(draft, key) != patch[key]}
+            if not touched:
+                return []
             for key, value in patch.items():
-                setattr(draft, key, value)
+                if key in touched:
+                    setattr(draft, key, value)
             evidence = f"agent:r{session['draft_revision'] + 1}"
             for key in touched:
                 draft.field_status[key] = "inferred"
@@ -493,14 +497,8 @@ class HomeMatchService:
 
     def _strip_money_for_decision(self, context: dict) -> dict:
         """Ngữ cảnh gửi Jev: không tiền tuyệt đối, không thu nhập (PLAN AG-11)."""
-        draft = context.get("draft")
-        if draft:
-            draft.pop("budget_hint_vnd", None)
-        confirmed = context.get("confirmed_profile")
-        if confirmed:
-            for key in ("max_monthly_cost_vnd", "max_rent_vnd", "max_initial_cash_vnd", "monthly_income_vnd"):
-                confirmed.pop(key, None)
-        return context
+        from .decisions import decision_context
+        return decision_context(context)
 
     def _apply_clarification_choice(self, session_id: str, best: dict):
         """Tự chấp nhận cách hiểu phổ biến nhất (p_max ≥ ngưỡng): áp vào nháp ở
@@ -508,35 +506,106 @@ class HomeMatchService:
         interpretation = best["interpretation"]
         session = self.repo.session(session_id)
         draft = self._draft(session_id)
+        field = {"destination_radius": "destination", "budget_scope": "budget"}.get(
+            interpretation["field"], interpretation["field"])
+        key = "budget_scope" if field == "budget" else field
+        value = (interpretation.get("radius_m") if field == "destination" else
+                 interpretation.get("scope") if field == "budget" else interpretation.get("value"))
+        current = (draft.destination.max_distance_m if field == "destination" and draft.destination
+                   else getattr(draft, key, None))
+        if draft.field_status.get(key) == "confirmed" and value != current:
+            return None
+        if session["profile_json"]:
+            base = Profile.model_validate_json(session["profile_json"])
+            if (field == "destination" and base.destination and value > base.destination.max_distance_m
+                    or field in {"area", "room_type"} and getattr(base, field) and value != getattr(base, field)
+                    or field == "people" and value < base.scenario.people
+                    or field == "budget" and draft.budget_hint_vnd
+                    and (draft.budget_hint_vnd > base.max_monthly_cost_vnd
+                         or interpretation.get("scope") == "rent" and base.max_rent_vnd is not None
+                         and draft.budget_hint_vnd > base.max_rent_vnd)):
+                return None
         evidence = f"clarify:auto-r{session['draft_revision'] + 1}"
-        if interpretation["field"] == "destination" and draft.destination:
+        if field == "destination" and draft.destination:
             draft.destination = draft.destination.model_copy(
                 update={"max_distance_m": interpretation["radius_m"]})
             draft.field_status["destination"] = "inferred"
             draft.evidence_ref["destination"] = evidence
-        elif interpretation["field"] == "budget":
+        elif field == "budget":
             draft.budget_scope = interpretation["scope"]
             draft.field_status["budget_scope"] = "inferred"
             draft.evidence_ref["budget_scope"] = evidence
+        elif field in {"area", "room_type", "people"}:
+            setattr(draft, field, value)
+            draft.field_status[field] = "inferred"
+            draft.evidence_ref[field] = evidence
         else:
             return None
         self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
                                session["draft_revision"])
         return best["label"]
 
-    def _clarification_payload(self, session_id: str) -> dict | None:
+    def _clarification_payload(self, session_id: str, field: str | None = None,
+                               decision_cache: dict | None = None) -> dict | None:
         """AG-11: dựng lựa chọn từ kho thật, Jev/luật quyết định hỏi hay tự chấp nhận."""
         from . import clarify as clarify_layer, decisions as decisions_layer
-        clarification = clarify_layer.build_clarification(self, session_id)
+        clarification = clarify_layer.build_clarification(self, session_id, field=field)
         if clarification is None:
             return None
         context = self._strip_money_for_decision(self._agent_context(self.repo.session(session_id)))
         mode = "rules" if self.interpreter.mode != "openai" else None
-        decision, best, decided_by, _ = decisions_layer.decide(clarification, context, mode=mode)
+        cache_key = hashlib.sha256(json.dumps([clarification, context], sort_keys=True,
+                                              ensure_ascii=False).encode()).hexdigest()
+        cached = decision_cache.get(cache_key) if decision_cache is not None else None
+        if cached is None:
+            decision, best, decided_by, error = decisions_layer.decide(clarification, context, mode=mode)
+            if decision_cache is not None:
+                decision_cache[cache_key] = (decision, best, decided_by, error, clarification)
+        else:
+            decision, best, decided_by, _, clarification = cached
         if decision == "accept" and best is not None:
-            self._apply_clarification_choice(session_id, best)
-            return {"assumed": clarify_layer.option_label(best)}
+            label = self._apply_clarification_choice(session_id, best)
+            if label is not None:
+                return {"assumed": clarify_layer.option_label(best), "field": clarification["field"],
+                        "decided_by": decided_by}
         return clarify_layer.to_dto(clarification, decided_by)
+
+    def _can_ask_clarification(self, session_id: str) -> bool:
+        published = self.repo.db.execute(
+            "SELECT 1 FROM hm_runs WHERE session_id=? AND published_at IS NOT NULL LIMIT 1",
+            (session_id,)).fetchone()
+        return bool(published or self.repo.session(session_id)["clarification_questions"] < 2)
+
+    def _limit_clarification_response(self, session_id: str, response: dict) -> None:
+        """Chỉ đếm câu hỏi đã gửi, trong transaction của lượt nên retry không tăng đôi."""
+        dto = response.get("clarification") or {}
+        questions = response.get("questions") or []
+        message = response.get("message") or ""
+        actual_questions = [question for question in questions if "?" in question]
+        question = dto.get("question") or (actual_questions[0] if actual_questions else
+                                            message if "?" in message else None)
+        if not question:
+            return
+        if not self._can_ask_clarification(session_id):
+            response.update(clarification=None, questions=None,
+                message="Mình cần thêm thông tin để tìm chính xác. Bạn điền các mục còn thiếu trong “Nhu cầu của tôi” rồi xác nhận nhé.")
+            return
+        if dto.get("question"):
+            if dto["question"].count("?") > 1:
+                dto["question"] = dto["question"].split("?", 1)[0] + "?"
+            response["questions"] = [dto["question"]]
+            if "?" in message and not message.startswith(dto["question"]):
+                response["message"] = dto["question"]
+        elif actual_questions:
+            # Các dòng lựa chọn/giải thích không phải câu hỏi vẫn được giữ.
+            response["questions"] = [question.split("?", 1)[0] + "?" if question.count("?") > 1 else question] + [
+                value for value in questions if "?" not in value]
+            if "?" in message and not message.startswith(response["questions"][0]):
+                response["message"] = response["questions"][0]
+        if (response.get("message") or "").count("?") > 1:
+            response["message"] = message.split("?", 1)[0] + "?"
+        self.repo.db.execute(
+            "UPDATE hm_sessions SET clarification_questions=clarification_questions+1 WHERE id=?", (session_id,))
 
     def _suggested_prompts(self, session_id: str) -> list[str]:
         """WS-01: gợi ý tiếp theo tất định theo trạng thái phiên (không LLM, không số lạ)."""

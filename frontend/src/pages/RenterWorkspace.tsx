@@ -36,6 +36,7 @@ type ClarificationOption = {
   id: string;
   label: string;
   patch: { set: Record<string, unknown> };
+  source?: "model";
 };
 type Message = {
   role: "user" | "assistant";
@@ -619,6 +620,10 @@ export function RenterWorkspace({
   const applyClarification = async (option: ClarificationOption) => {
     const sid = current.current;
     if (!sid || lock.current) return;
+    if (option.source === "model") {
+      await sendText(option.label);
+      return;
+    }
     try {
       await api.patch(`/sessions/${sid}/draft`, {
         expected_draft_revision: session?.draft_revision ?? 0,

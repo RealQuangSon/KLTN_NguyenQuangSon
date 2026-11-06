@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.app.agent_capability import CAPABILITIES, TOOL_CAPABILITIES
-from backend.app.agent_tools import (TOOL_REGISTRY, public_result, redact_result, tool_specs,
+from backend.app.agent_tools import (TOOL_REGISTRY, AskUserArgs, public_result, redact_result, tool_specs,
                                      tools_by_agent, workspace_view)
 from backend.app.agents import AGENT_TOOLS, ToolBox
 from backend.app.models import DomainError, DraftProfile
@@ -64,6 +64,20 @@ def test_registry_generates_allowlist_capability_and_only_exposed_specs():
         name for name, definition in TOOL_REGISTRY.items() if definition.exposed}
     assert len(specs) == 10
     assert "extract_needs" not in {spec["function"]["name"] for spec in specs}
+
+
+@pytest.mark.parametrize("field", ["destination_radius", "budget_scope", "area", "room_type", "people"])
+def test_ask_user_model_selects_field_without_inventing_options(field):
+    assert AskUserArgs(field=field).field == field
+    with pytest.raises(ValidationError):
+        AskUserArgs(field=field, options=["Cho 999 căn", "Tự nới trần"])
+    assert AskUserArgs(field="other", question="Bạn muốn hỏi gì?", options=["A", "B"]).options == ["A", "B"]
+    with pytest.raises(ValidationError):
+        AskUserArgs(field="other")
+    with pytest.raises(ValidationError):
+        AskUserArgs(field="other", question="Bạn chọn?", options=["A", "B", "C", "D", "E"])
+    with pytest.raises(ValidationError):
+        AskUserArgs(question="Câu hỏi thiếu field")
 
 
 @pytest.mark.parametrize("name, arguments, code", [

@@ -64,6 +64,13 @@ class ToolBox:
                     "message": "Tham số chưa đúng hợp đồng công cụ.",
                     "hint": "Dùng đúng tên trường và kiểu dữ liệu trong schema; không gửi trường tiền hay quyền."}
         except DomainError as error:
+            if error.code == "needs_clarification":
+                field = getattr(error, "field", "other")
+                if field not in {"destination_radius", "budget_scope", "area", "room_type", "people"}:
+                    field = "other"
+                return {"ok": False, "error": error.code, "field": field,
+                        "message": "Cần làm rõ nhu cầu trước khi tìm.",
+                        "hint": f"Gọi ask_user(field='{field}') để lấy lựa chọn từ kho."}
             return {"ok": False, "error": error.code, "message": definition.redact(str(error)),
                     "hint": {"unknown_place": "Gọi find_place để kiểm chứng điểm mốc trước.",
                              "needs_more_info": "Hỏi thành phố và mức tiền trước khi tìm.",

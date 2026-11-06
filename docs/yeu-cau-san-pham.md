@@ -17,7 +17,7 @@
 |---|---|---|---|---|
 | FR-01 | Hội thoại tiếng Việt, phân loại ý định (tìm, chi phí, gặp người thật, cẩm nang). Ý định rõ ràng đi nhánh luật, không gọi LLM. | CB | Đã có | AC-01 |
 | FR-02 | Trích xuất thành phố, khu vực (kèm tên gọi khác), loại, số phòng ngủ, số người, sở thích, điểm đến, mô tả mềm. Mỗi trường có trạng thái và nguồn. | CB | Đã có | AC-01 |
-| FR-03 | Hỏi lại tối đa 2 câu mỗi lượt; khách sửa hoặc xóa từng trường | CB | Đã có | AC-01 |
+| FR-03 | Harness hỏi tối đa 1 câu mỗi lượt, tối đa 2 câu trước kết quả đầu tiên; chip lấy từ kho, khách sửa/xóa từng trường | CB | HN-02 đã kiểm offline (06/11), chờ bằng chứng HUST/Jev live; xem review/HN-02.md | AC-01 |
 | FR-04 | Khách xác nhận hồ sơ trên form; mỗi lần tạo phiên bản bất biến; tiền nêu trong chat không tự thành ngân sách | CB | Đã có | AC-02 |
 | FR-05 | Tổng tháng, tiền vào ở; khoản chưa biết giữ `null` | CB | Đã có | AC-03 |
 | FR-06 | Khả năng chi trả: trần tổng tháng, tiền mặt, tỷ lệ trên thu nhập, băng đánh giá | CB | Đã có | AC-03 |
