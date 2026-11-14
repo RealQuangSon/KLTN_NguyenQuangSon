@@ -8,9 +8,9 @@ import {
   useDemoExperience,
 } from "../components/DemoExperience";
 import { Link } from "../router";
-// Màn đăng nhập (S02) theo bố cục tham chiếu hubhome.vn: cột trái là form tối giản
+// Màn đăng nhập (S02) bố cục hai cột: cột trái là form tối giản
 // (chọn loại tài khoản, ô gạch chân, nút pill), cột phải là cảnh phố màu ấm vẽ bằng
-// CSS kèm tagline. Icon và hình dùng bộ của HomeMatch, không dùng tài sản của bên kia.
+// CSS kèm tagline. Icon và hình dùng bộ của HomeMatch.
 export function Login({
   error,
   onError,

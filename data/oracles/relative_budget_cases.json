@@ -30,9 +30,10 @@
       "case_id": "RB04",
       "text": "nâng lên 2 triệu được không",
       "old_vnd": 2500000,
-      "direction": "up",
+      "direction": "set",
       "amount_vnd": 2000000,
-      "new_vnd": 4500000
+      "new_vnd": 4500000,
+      "note": "HN-13.3-A2 (08/11): “nâng lên X” ≡ “nới lên X” = ĐặT mức X theo luật mới; nhãn cũ up"
     },
     {
       "case_id": "RB05",
@@ -99,5 +100,8 @@
       "new_vnd": null,
       "note": "chưa có mức cũ → hỏi lại, không đoán"
     }
-  ]
+  ],
+  "meta": {
+    "last_updated": "2026-11-08 HN-13.3-A2: RB04 đổi up→set theo luật 'lên X' = đặt mức"
+  }
 }

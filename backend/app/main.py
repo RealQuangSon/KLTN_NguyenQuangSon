@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import json
 import logging
@@ -26,8 +26,8 @@ from .models import (Actor, CatalogStatus, ConfirmRequest, CostRequest, CostResu
                      RoomUpdate, SimulationRequest, VerifyRequest, PasswordResetRequest, PasswordResetConfirm)
 from . import media, memory, organizations, pms
 from .auth import (SEED_USERS, DevDeliveryStub, SeedAuth, account_profile, confirm_password_reset,
-                   landlord_status, list_sessions, register_account, request_password_reset,
-                   revoke_session, update_account_profile, verify_account)
+                   landlord_status, list_sessions, normalize_phone, register_account,
+                   request_password_reset, revoke_session, update_account_profile, verify_account)
 from .service import HomeMatchService
 from .auth import SEED_USERS, DevDeliveryStub, SeedAuth
 from .migrations import SCHEMA_VERSION, schema_version
@@ -92,6 +92,13 @@ class ViewingRequest(Model):
     requested_at: datetime
     idempotency_key: str = Field(min_length=1, max_length=100)
     mode: Literal["offline", "online"] = "offline"
+    # crawl.md E-01: liên hệ là tùy chọn ở đường phiên (service keyword); route
+    # đặt lịch từ tin đăng mới bắt buộc contact + consent.
+    contact_name: str | None = Field(default=None, min_length=2, max_length=80)
+    contact_phone: str | None = Field(default=None, min_length=8, max_length=20)
+    contact_consent: bool = False
+    time_slot: Literal["morning", "afternoon", "evening"] | None = None
+    note: str | None = Field(default=None, max_length=500)
 
 
 class ListingCompareRequest(Model):
@@ -105,6 +112,38 @@ class ListingViewingRequest(Model):
     requested_at: datetime
     idempotency_key: str = Field(min_length=1, max_length=100)
     mode: Literal["offline", "online"] = "offline"
+    # crawl.md E-01/E-06: đặt lịch bắt buộc để lại liên hệ và đồng ý chia sẻ
+    # (route bắt buộc; tầng service vẫn cho phép lời gọi cũ không có contact).
+    contact_name: str | None = Field(default=None, min_length=2, max_length=80)
+    contact_phone: str | None = Field(default=None, min_length=8, max_length=20)
+    contact_consent: bool = False
+    time_slot: Literal["morning", "afternoon", "evening"] | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
+class ViewingActionRequest(Model):
+    action: Literal["cancel", "accept", "choose_time", "propose", "confirm",
+                    "decline", "complete", "no_show"]
+    reason: str | None = Field(default=None, max_length=300)
+    proposed_at: datetime | None = None
+    time_slot: Literal["morning", "afternoon", "evening"] | None = None
+    # crawl.md sửa lỗi 4 (08/11): choose_time — khách chọn giờ mới thay giờ đề xuất.
+    requested_at: datetime | None = None
+
+
+class ViewingFeedbackRequest(Model):
+    rating: int = Field(ge=1, le=5, strict=True)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class ListingReportRequest(Model):
+    reason: Literal["scam_suspect", "already_rented", "wrong_info", "duplicate",
+                    "contact_missing", "other"]
+    note: str | None = Field(default=None, max_length=500)
+
+
+class ListingReportDecision(Model):
+    decision: Literal["confirmed", "dismissed"]
 
 
 class MarketingRequest(Model):
@@ -247,6 +286,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception):
+        logger.exception("unexpected_error_on_%s", request.url.path)
         return JSONResponse(status_code=500, content={"error": {"code": "internal_error", "message": "Không thể hoàn tất yêu cầu."},
             "request_id": getattr(request.state, "request_id", None)})
 
@@ -446,7 +486,19 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
     @app.post("/listings/{room_id}/viewings", status_code=201, response_model=ViewingResult)
     def listing_viewing(room_id: str, body: ListingViewingRequest, actor: ActorDep, agent: ServiceDep):
-        return agent.request_listing_viewing(actor, room_id, body.requested_at, body.idempotency_key, body.mode)
+        # crawl.md E-01/E-06: route BẮT BUỘC contact_name, contact_phone (chuẩn
+        # hóa qua normalize_phone) và contact_consent=true.
+        if not body.contact_name or not body.contact_phone:
+            raise DomainError("contact_required", "Cần điền họ tên và số điện thoại để đặt lịch.", 422)
+        if body.contact_consent is not True:
+            raise DomainError("consent_required", "Cần đồng ý chia sẻ liên hệ để đặt lịch.", 422)
+        phone = normalize_phone(body.contact_phone)
+        contact = {"contact_name": body.contact_name.strip(), "contact_phone": phone,
+                   "contact_consent_at": datetime.now(timezone.utc).isoformat()}
+        result = agent.request_listing_viewing(actor, room_id, body.requested_at, body.idempotency_key,
+                                               body.mode, contact=contact, time_slot=body.time_slot,
+                                               note=body.note)
+        return JSONResponse(status_code=201, content=json.loads(json.dumps(result, ensure_ascii=False, default=str)))
 
     # --- Danh sách cá nhân người thuê: căn đã lưu / căn đã xem (trang cá nhân) ---
 
@@ -545,6 +597,54 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.post("/landlord/viewings/{viewing_id}/respond", response_model=ViewingResult)
     def respond_viewing(viewing_id: str, body: ViewingResponse, actor: ActorDep, agent: ServiceDep):
         return agent.respond_viewing(viewing_id, actor, body.status)
+
+    # --- crawl.md E-01/E-02: vòng đời lịch xem và điều phối ---
+
+    @app.post("/viewings/{viewing_id}/actions", response_model=ViewingResult)
+    def viewing_action(viewing_id: str, body: ViewingActionRequest, actor: ActorDep, agent: ServiceDep):
+        return agent.viewing_action(viewing_id, actor, body.action, reason=body.reason,
+                                    proposed_at=body.requested_at or body.proposed_at,
+                                    time_slot=body.time_slot)
+
+    @app.post("/viewings/{viewing_id}/feedback", response_model=ViewingResult)
+    def viewing_feedback(viewing_id: str, body: ViewingFeedbackRequest, actor: ActorDep, agent: ServiceDep):
+        return agent.viewing_feedback(viewing_id, actor, body.rating, body.note)
+
+    @app.get("/viewings/{viewing_id}/events", response_model=list[dict])
+    def viewing_events(viewing_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.viewing_history(viewing_id, actor)
+
+    @app.get("/viewings/{viewing_id}/address", response_model=dict)
+    def viewing_full_address(viewing_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.viewing_full_address(viewing_id, actor)
+
+    @app.get("/admin/viewings", response_model=list[dict])
+    def admin_viewings(actor: ActorDep, agent: ServiceDep):
+        agent._role(actor, "admin")
+        return agent.admin_viewings(actor)
+
+    @app.get("/admin/viewings/{viewing_id}/contact", response_model=dict)
+    def admin_viewing_contact(viewing_id: str, actor: ActorDep, agent: ServiceDep):
+        # Route xem SĐT riêng — audit mỗi lần gọi (E-02/R3).
+        agent._role(actor, "admin")
+        return agent.admin_viewing_contact(viewing_id, actor)
+
+    # --- crawl.md E-05: báo cáo tin đăng ---
+
+    @app.post("/listings/{room_id}/reports", status_code=201, response_model=dict)
+    def report_listing(room_id: str, body: ListingReportRequest, actor: ActorDep, agent: ServiceDep):
+        report = agent.report_listing(actor, room_id, body.reason, body.note)
+        return JSONResponse(status_code=201, content=report)
+
+    @app.get("/admin/listing-reports", response_model=list[dict])
+    def listing_reports_admin(actor: ActorDep, agent: ServiceDep):
+        agent._role(actor, "admin")
+        return agent.listing_reports_admin(actor)
+
+    @app.post("/admin/listing-reports/{report_id}/decide", response_model=dict)
+    def decide_listing_report(report_id: str, body: ListingReportDecision, actor: ActorDep, agent: ServiceDep):
+        agent._role(actor, "admin")
+        return agent.decide_listing_report(actor, report_id, body.decision)
 
     # --- Live chat and smart handover ---
 
@@ -772,8 +872,20 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
     @app.post("/sessions/{session_id}/viewings", status_code=201, response_model=ViewingResult)
     def request_viewing(session_id: str, body: ViewingRequest, actor: ActorDep, agent: ServiceDep):
+        # Đặt lịch từ kết quả của trợ lý: form gửi kèm liên hệ như đặt từ tin đăng, nên
+        # phải chuyển xuống service (trước đây bị bỏ rơi → chủ nhà không có SĐT khách).
+        # Liên hệ vẫn tùy chọn ở đường này; đã gửi thì bắt buộc có đồng ý chia sẻ.
+        contact = None
+        if body.contact_name or body.contact_phone:
+            if not body.contact_name or not body.contact_phone:
+                raise DomainError("contact_required", "Cần điền họ tên và số điện thoại để đặt lịch.", 422)
+            if body.contact_consent is not True:
+                raise DomainError("consent_required", "Cần đồng ý chia sẻ liên hệ để đặt lịch.", 422)
+            contact = {"contact_name": body.contact_name.strip(),
+                       "contact_phone": normalize_phone(body.contact_phone),
+                       "contact_consent_at": datetime.now(timezone.utc).isoformat()}
         return agent.request_viewing(session_id, actor, body.room_id, body.requested_at, body.idempotency_key,
-                                     body.mode)
+                                     body.mode, contact=contact, time_slot=body.time_slot, note=body.note)
 
     @app.get("/viewings", response_model=list[ViewingResult])
     def viewings(actor: ActorDep, agent: ServiceDep):
@@ -873,6 +985,13 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def forget_memory(actor: ActorDep, agent: ServiceDep):
         with agent.lock:
             return memory.forget(agent.repo, actor.id)
+
+    @app.delete("/me/memory/preferences/{key}", response_model=ForgetResult)
+    def forget_memory_preference(key: str, actor: ActorDep, agent: ServiceDep):
+        if key not in memory.AMENITIES:
+            raise DomainError("invalid_memory_field", "Tiện ích không được hỗ trợ.", 422)
+        with agent.lock:
+            return memory.forget_preference(agent.repo, actor.id, key)
 
     @app.delete("/me/memory/{field}", response_model=ForgetResult)
     def forget_memory_field(field: str, actor: ActorDep, agent: ServiceDep):

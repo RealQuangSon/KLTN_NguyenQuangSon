@@ -17,11 +17,18 @@ from .models import DomainError, Room
 # not echoed back. `synthetic` stays public for data honesty (NFR-08).
 # LF-01: description is the PII-masked post body; posted_at/poster_kind and the
 # address detail are listing facts, never ranking input (F2).
+# CA-04: source_images (CDN Chợ Tốt URL), toilets và project_name là dữ liệu tin
+# gốc để hiển thị; poster_name KHÔNG vào danh sách này — nó chỉ trả qua khối
+# contact cho người đã đăng nhập (C1b).
+# crawl.md B-2/C-1: source_videos (Cloudflare Stream) và tầng/hướng/loại hình
+# cũng chỉ để hiển thị, không vào ranking/LLM/embedding.
 PUBLIC_ROOM_FIELDS = (
     "id", "revision", "title", "city", "area", "room_type", "bedrooms", "capacity", "area_m2",
     "available", "amenities", "latitude", "longitude", "location_accuracy",
     "uncertainty_m", "quote", "source", "synthetic", "features_text", "occupancy", "landlord_id",
     "description", "posted_at", "poster_kind", "ward", "ward_2025", "street", "available_from",
+    "source_images", "source_videos", "toilets", "project_name",
+    "floor", "direction", "balcony_direction", "property_subtype",
 )
 
 # Run statuses from which AI recommendation items may be shown publicly.
@@ -42,6 +49,15 @@ def public_room_projection(room: Room) -> dict:
     # Public coordinates must stay approximate even when the owner record is exact.
     if projection["location_accuracy"] == "exact":
         projection["location_accuracy"] = "approximate"
+    # crawl.md E-03: che địa chỉ chi tiết ở LÚC TRẢ RESPONSE (snapshot bất biến,
+    # không đổi dữ liệu đã lưu). Model dùng title trực tiếp ở agent_loop/advisor
+    # cũng đi qua projection-ish paths; trust/E-06 đọc Room gốc nên không ảnh hưởng.
+    from .listings import mask_address
+    street = data.get("street")
+    for field in ("description", "title", "street"):
+        value = projection.get(field)
+        if isinstance(value, str):
+            projection[field] = mask_address(value, street)
     return projection
 
 
@@ -58,4 +74,4 @@ def ensure_ai_results_public(run_status: str) -> None:
     """Guard for AI recommendation items: only published runs are public."""
     if run_status not in AI_VISIBLE_RUN_STATUSES:
         raise DomainError("not_published",
-                          "Kết quả AI chưa được quản lý duyệt công bố.", 403)
+                          "Kết quả AI chưa được công bố.", 403)

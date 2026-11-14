@@ -31,7 +31,7 @@ Môi trường được ghi: React 19.1.1/Vite 7.1.7; frontend `127.0.0.1:5173`,
 
 SHA-256 ghi cho source của lượt trước: catalog `e5e91c011df2de5820efe571d1872321ad0c66edc64a3269df818530e5599c82`; App.tsx `c2cb04addfd8233214c79a3c71612338cd2732f33300195b549dd441c249bb53`; styles.css `865d56ddaa42ca5b396e93620138f794b05c5c68a82e59270651b09942a8c721`. Các hash này không là định danh source ngày 04/10.
 
-**Chưa xác minh trong lượt trước:** declined trên browser, compare 3 qua browser, lỗi mạng/restart thật, PostgreSQL, GPT/embedding live hoặc cloud. Hướng HubHome mới, map/media/favorites/history/owner/admin/contracts/billing/maintenance chưa được nghiệm thu từ baseline này.
+**Chưa xác minh trong lượt trước:** declined trên browser, compare 3 qua browser, lỗi mạng/restart thật, PostgreSQL, GPT/embedding live hoặc cloud. Hướng giao diện mới, map/media/favorites/history/owner/admin/contracts/billing/maintenance chưa được nghiệm thu từ baseline này.
 
 ## 3. Checklist regression của subset hiện có
 
@@ -59,7 +59,7 @@ Các mục cần chạy lại khi sửa source/contract; ghi bằng chứng mớ
 ### HM-02 — Owner inventory, media và moderation
 
 - [ ] Owner CRUD nhà/phòng/quote/phí/amenities/location/availability với draft/revision/validation; owner khác bị chặn.
-- [ ] Upload/gallery/tour/order/alt/delete/progress/error/quyền và moderation có receipt; không có ảnh/nguồn sao HubHome.
+- [ ] Upload/gallery/tour/order/alt/delete/progress/error/quyền và moderation có receipt; không có ảnh sao chép từ nguồn khác.
 - [ ] Listing draft→submit→approve/request changes/reject; sửa sau duyệt theo contract; save không tự publish.
 - [ ] Null availability/fee/amenity/location precision giữ ý nghĩa; CAS conflict đọc lại; thay tin ảnh hưởng recommendation đúng rule.
 

@@ -13,7 +13,9 @@ from uuid import uuid4
 import httpx
 
 
-def run(base: str, test_client=None) -> dict:
+def run(base: str, test_client=None, service=None) -> dict:
+    """`service` (in-process only) cho phép nháp cào: import một tin source Chợ Tốt
+    để chạy nhánh điều phối (crawl.md E-09.3). Real HTTP mode bỏ qua nhánh này."""
     if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
         raise ValueError("This mutation smoke is restricted to a local synthetic-data API.")
     tokens = {}
@@ -45,7 +47,9 @@ def run(base: str, test_client=None) -> dict:
         message = request("POST", f"/sessions/{sid}/messages", "renter-a", {
             "text": "Tìm phòng TP.HCM Quận 7 cho 1 người, tầm 3,5 triệu, có cửa sổ và yên tĩnh"})
         assert message["draft"]["monthly_budget_vnd"] is None
-        assert len(message["questions"]) <= 2
+        # UX-02: đủ thành phố + mức tiền thì backend tự xác nhận và xếp hạng ngay trong lượt.
+        assert len(message.get("questions") or []) <= 2
+        assert message["status"] in {"published", "no_match", "needs_clarification"}
         revision = message["draft_revision"]
         patch = request("PATCH", f"/sessions/{sid}/draft", "renter-a", {
             "expected_draft_revision": revision, "set": {"people": 2},
@@ -108,6 +112,95 @@ def run(base: str, test_client=None) -> dict:
         request("POST", "/auth/logout", "renter-a")
         request("GET", "/auth/me", "renter-a", expected=401)
         checks.append("token_revocation")
+
+        # --- crawl.md E-09.3 nhánh 1: vòng đời lịch xem + hợp đồng từ lịch ---
+        second_owner = results["results"][1]["landlord_id"]
+        for user in dict.fromkeys(("renter-a", second_owner)):
+            login = request("POST", "/auth/login", body={"username": user, "password": f"local-{user}-password"})
+            tokens[user] = login["access_token"]
+        handler = second_owner
+        from datetime import date as _date
+        viewing_body = {"mode": "offline",
+                        "requested_at": (datetime.now(timezone.utc) + timedelta(days=2))
+                        .strftime("%Y-%m-%dT08:00:00+07:00"),
+                        "idempotency_key": f"smoke-lifecycle-{uuid4()}",
+                        "contact_name": "Nguyễn Văn A", "contact_phone": "0901234567",
+                        "contact_consent": True, "time_slot": "morning"}
+        lifecycle = request("POST", f"/listings/{ids[1]}/viewings", "renter-a", viewing_body, expected=201)
+        vid = lifecycle["id"]
+        assert lifecycle["contact_shared"] and lifecycle["contact_phone"] == "0901234567"
+        hidden = request("GET", f"/viewings/{vid}", handler)
+        assert hidden["contact_phone"] is None, "phone must stay hidden before confirmed"
+        propose = request("POST", f"/viewings/{vid}/actions", handler,
+                          {"action": "propose", "proposed_at": (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()})
+        assert propose["status"] == "reschedule_proposed"
+        accepted = request("POST", f"/viewings/{vid}/actions", "renter-a", {"action": "accept"})
+        assert accepted["status"] == "confirmed" and accepted["contact_phone"] == "0901234567"
+        completed = request("POST", f"/viewings/{vid}/actions", handler, {"action": "complete"})
+        assert completed["status"] == "completed"
+        feedback = request("POST", f"/viewings/{vid}/feedback", "renter-a", {"rating": 5, "note": "Đã xem phòng."})
+        assert feedback["feedback_rating"] == 5
+        period = _date.today().strftime("%Y-%m")
+        lease_created = request("POST", "/landlord/leases", handler, {
+            "room_id": ids[1], "renter_id": "renter-a", "viewing_id": vid,
+            "start_date": (_date.today() + timedelta(days=1)).isoformat(),
+            "end_date": (_date.today() + timedelta(days=181)).isoformat()}, expected=201)
+        lease_id = (lease_created.get("lease") or lease_created)["id"]
+        sent = request("POST", f"/landlord/leases/{lease_id}/send", handler)
+        version = (sent.get("lease") or sent).get("version") or 2
+        request("POST", f"/leases/{lease_id}/accept", "renter-a", {"expected_version": version})
+        request("POST", f"/landlord/leases/{lease_id}/activate", handler)
+        request("POST", f"/landlord/leases/{lease_id}/readings", handler,
+                {"period": period, "electricity_start": 0, "electricity_end": 120,
+                 "water_start": 0, "water_end": 4}, expected=201)
+        invoice = request("POST", f"/landlord/leases/{lease_id}/invoices", handler,
+                          {"period": period}, expected=201)
+        invoice_id = (invoice.get("invoice") or invoice)["id"]
+        claim = request("POST", f"/invoices/{invoice_id}/claims", "renter-a",
+                        {"amount_vnd": 1, "reference": "Đã chuyển"}, expected=201)
+        claim_id = (claim.get("claim") or claim)["id"]
+        request("POST", f"/landlord/payment-claims/{claim_id}/confirm", handler)
+        checks.append("viewing_lifecycle_and_lease_from_viewing")
+
+        # --- crawl.md E-09.3 nhánh 2: tin cào → điều phối (chỉ in-process) ---
+        if service is not None:
+            from backend.app.models import Room as RoomModel
+            crawled = RoomModel.model_validate({
+                "id": "chotot-smoke-1", "revision": 1, "title": "Phòng trọ smoke Quận 7. Còn trống",
+                "city": "TP.HCM", "area": "Quận 7", "room_type": "room", "capacity": 2,
+                "area_m2": 20.0, "published": True, "available": True, "amenities": {},
+                "quote": {"rent_vnd": 900_000, "deposit_vnd": 900_000, "fees": []},
+                "source": "https://www.chotot.com/99999.htm", "synthetic": False,
+                "poster_kind": "individual",
+                "source_images": ["https://cdn.chotot.com/smoke/1.jpg"]})
+            service.catalog.import_rooms([crawled])
+            concierge_body = {"mode": "offline",
+                              "requested_at": (datetime.now(timezone.utc) + timedelta(days=2))
+                              .strftime("%Y-%m-%dT14:00:00+07:00"),
+                              "idempotency_key": f"smoke-concierge-{uuid4()}",
+                              "contact_name": "Trần Thị B", "contact_phone": "0987654321",
+                              "contact_consent": True, "time_slot": "afternoon"}
+            concierge = request("POST", "/listings/chotot-smoke-1/viewings", "renter-a",
+                                concierge_body, expected=201)
+            assert concierge["handler"] == "concierge" and concierge["landlord_id"] is None
+            # owner-a không thấy lịch đó.
+            owner_rows = request("GET", "/viewings", owner)
+            assert concierge["id"] not in {row["id"] for row in owner_rows}
+            admin_login = request("POST", "/auth/login", body={"username": "admin-a", "password": "local-admin-a-password"})
+            tokens["admin-a"] = admin_login["access_token"]
+            queue = request("GET", "/admin/viewings", "admin-a")
+            row = next(item for item in queue if item["id"] == concierge["id"])
+            assert "contact_phone" not in row, "admin queue must not carry contact"
+            reveal = request("GET", f"/admin/viewings/{concierge['id']}/contact", "admin-a")
+            assert reveal["contact_phone"] == "0987654321"
+            request("GET", f"/admin/viewings/{concierge['id']}/contact", "renter-a", expected=403)
+            confirmed_c = request("POST", f"/viewings/{concierge['id']}/actions", "admin-a",
+                                  {"action": "confirm"})
+            assert confirmed_c["status"] == "confirmed"
+            completed_c = request("POST", f"/viewings/{concierge['id']}/actions", "admin-a",
+                                  {"action": "complete"})
+            assert completed_c["status"] == "completed"
+            checks.append("concierge_queue_and_audit_reveal")
         # Report safe IDs/counts only; access tokens and payloads never leave this process.
         return {"status": "passed", "storage": health["storage"], "checks": checks,
                 "transport": "in_process_testclient" if test_client is not None else "real_local_http",
@@ -138,9 +231,10 @@ def main():
         tempdir = None if database_url else tempfile.TemporaryDirectory(prefix="homematch-smoke-")
         try:
             target = database_url or str(Path(tempdir.name) / "smoke.sqlite")
-            app = create_app(lambda: HomeMatchService(target))
+            service_instance = HomeMatchService(target)
+            app = create_app(lambda: service_instance)
             with TestClient(app, base_url=args.base) as client:
-                result = run(args.base, client)
+                result = run(args.base, client, service=service_instance)
         finally:
             if tempdir is not None:
                 tempdir.cleanup()

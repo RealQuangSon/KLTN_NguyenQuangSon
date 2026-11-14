@@ -162,7 +162,7 @@ it("full app shows the two experience options in the account block in demo mode"
     }),
   );
   sessionStorage.setItem("homematch.token", "token-admin");
-  // Trang chủ giờ vẫn mở được khi đã đăng nhập (tham chiếu HubHome); khối
+  // Trang chủ giờ vẫn mở được khi đã đăng nhập; khối
   // tài khoản nằm ở workspace, nên mở đúng cổng của vai admin.
   window.history.replaceState(null, "", "/quan-tri/hoi-thoai");
   render(<App />);

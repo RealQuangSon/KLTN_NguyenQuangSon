@@ -62,10 +62,12 @@ def invariants_report(data_dir: Path, split: str, output: Path, catalog: Catalog
             if room is None:
                 check("room_resolves", False, "eligible room missing from hashed catalog")
                 continue
-            cost = calculate_cost(room.quote, profile.scenario)
+            # D-12 (08/11): thiếu dữ liệu (available/capacity/bedrooms None) KHÔNG còn
+            # loại căn — hiện kèm nhãn "chưa rõ"; chỉ known-false mới là vi phạm.
+            cost = calculate_cost(room.quote, profile.scenario, accept_estimated_fees=True)
             check("published", room.published is True, f"published={room.published}")
-            check("available", room.available is True, f"available={room.available}")
-            check("capacity", room.capacity is not None and room.capacity >= profile.scenario.people,
+            check("available", room.available is not False, f"available={room.available}")
+            check("capacity", room.capacity is None or room.capacity >= profile.scenario.people,
                   f"capacity={room.capacity}, people={profile.scenario.people}")
             check("city", normalize(canonical_city(room.city)) == normalize(canonical_city(profile.city)),
                   f"room={room.city}, profile={profile.city}")
@@ -74,7 +76,7 @@ def invariants_report(data_dir: Path, split: str, output: Path, catalog: Catalog
                   f"room={room.area}, profile={profile.area}")
             check("room_type", room.room_type == profile.room_type, f"room_type={room.room_type}")
             check("bedrooms", profile.min_bedrooms is None
-                  or (room.bedrooms is not None and room.bedrooms >= profile.min_bedrooms),
+                  or room.bedrooms is None or room.bedrooms >= profile.min_bedrooms,
                   f"bedrooms={room.bedrooms}, min={profile.min_bedrooms}")
             check("monthly_budget", cost.monthly_total_vnd is not None
                   and cost.monthly_total_vnd <= profile.max_monthly_cost_vnd,
@@ -158,9 +160,11 @@ def _counterfactual_checks(data_dir: Path, split: str, reference: Catalog, rows:
         if not any(row["eligible_count"] for row in rows):
             return {"mutation": "title+source commercial text", "profiles_compared": 0,
                     "invariant_holds": True, "positive_control": "skipped_no_eligible_room",
-                    "listing_meta": {"mutation": "posted_at (-1 year, +1 day) and poster_kind (broker<->null) on every room",
+                    "listing_meta": {"mutation": "posted_at (-1 year, +1 day), poster_kind (broker<->null), "
+                                                 "source_images and poster_name on every room",
                                      "profiles_compared": 0, "posted_at_past_changed": 0,
                                      "posted_at_future_changed": 0, "poster_kind_changed": 0,
+                                     "source_images_changed": 0, "poster_name_changed": 0,
                                      "invariant_holds": True,
                                      "positive_control": "skipped_no_eligible_room"},
                     "promotion": {"mutation": "hm_promotions row via HomeMatchService.set_promotion",
@@ -208,7 +212,8 @@ def _listing_meta_counterfactual(reference: Catalog, profiles: list[tuple[str, P
     """LF-01/F2: the AI ranking must not read posted_at or poster_kind. Every room
     gets its posting time shifted back a year, then forward a day, then its poster
     kind swapped (broker<->null); the ranked (room_id, score, components) tuples
-    must stay identical to the unmutated baseline in all three passes."""
+    must stay identical to the unmutated baseline in all three passes. CA-04: the
+    same holds for display-only crawl fields (source_images, poster_name)."""
     rooms = reference.rooms()
     mutations = {
         "posted_at_past": [{"posted_at": (room.posted_at or _LISTING_META_ANCHOR) - timedelta(days=365)}
@@ -217,6 +222,21 @@ def _listing_meta_counterfactual(reference: Catalog, profiles: list[tuple[str, P
                              for room in rooms],
         "poster_kind": [{"poster_kind": None if room.poster_kind == "broker" else "broker"}
                         for room in rooms],
+        "source_images": [{"source_images": [f"https://cdn.chotot.com/{room.id}/1.jpg",
+                                             f"https://cdn.chotot.com/{room.id}/2.jpg"]}
+                          for room in rooms],
+        "poster_name": [{"poster_name": f"Người đăng {room.id}"} for room in rooms],
+        # crawl.md B-2/C-1: media và thông số hiển thị từ tin cào không đổi thứ hạng.
+        "source_videos": [{"source_videos": [{"url": f"https://{index}.videodelivery.net/x/manifest/video.m3u8",
+                                              "thumbnail": None}]}
+                          for index, room in enumerate(rooms)],
+        "listing_specs": [{"floor": str(index % 6), "direction": "Đông",
+                           "balcony_direction": "Nam", "property_subtype": "Phòng trọ"}
+                          for index, room in enumerate(rooms)],
+        # crawl.md E-04: kiểm chứng tin (prepay, ảnh dùng chung) không vào xếp hạng.
+        "trust_signals": [{"description": "Đặt cọc trước khi xem để giữ chỗ. " + (room.description or ""),
+                           "source_images": [f"https://cdn.chotot.com/shared/{room.id}.jpg"]}
+                          for room in rooms],
     }
     changed = {name: 0 for name in mutations}
     for name, updates in mutations.items():
@@ -230,11 +250,18 @@ def _listing_meta_counterfactual(reference: Catalog, profiles: list[tuple[str, P
                 changed[name] += 1
                 violations[f"{name}_changed_ranking"] += 1
     total = sum(changed.values())
-    return {"mutation": "posted_at (-1 year, +1 day) and poster_kind (broker<->null) on every room",
+    return {"mutation": "posted_at (-1 year, +1 day), poster_kind (broker<->null), "
+                        "source_images, poster_name, source_videos, listing specs and "
+                        "trust signals (prepay phrase, shared image) on every room",
             "profiles_compared": len(profiles),
             "posted_at_past_changed": changed["posted_at_past"],
             "posted_at_future_changed": changed["posted_at_future"],
             "poster_kind_changed": changed["poster_kind"],
+            "source_images_changed": changed["source_images"],
+            "poster_name_changed": changed["poster_name"],
+            "source_videos_changed": changed["source_videos"],
+            "listing_specs_changed": changed["listing_specs"],
+            "trust_signals_changed": changed["trust_signals"],
             "invariant_holds": total == 0,
             "positive_control": "ranked tuples compared against unmutated baseline"}
 
@@ -336,7 +363,7 @@ def _check_item(profile: Profile, item: dict, rooms: dict[str, Room],
             amount = int(match[1].replace(",", ""))
             monthly_cited = True
             record("monthly_total", amount == cost.monthly_total_vnd
-                   and amount <= profile.max_monthly_cost_vnd,
+                   and (profile.max_monthly_cost_vnd is None or amount <= profile.max_monthly_cost_vnd),
                    f"claim={amount}, computed={cost.monthly_total_vnd}, budget={profile.max_monthly_cost_vnd}")
         elif match := MUST_CLAIM.match(reason):
             name = match[1]

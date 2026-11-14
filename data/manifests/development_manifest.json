@@ -2,14 +2,14 @@
   "artifacts": {
     "catalog/alias_fixtures.json": "2498cd233b222d564be9c3b147acc51490f06962c0d49012ca38ea8a0a4fe42f",
     "catalog/metadata.json": "59d17711949a0d21b376bb258bddc624a73ed4b032b794e6ec917904183b30dd",
-    "catalog/pilot.json": "b79d40b132665ba7a5c5b3bf7150f22c55d6b62626dcb2670423a40e86fe5474",
-    "catalog/rooms.json": "2baa3d41b4fc7b3b6f8215c0d3cbcbca92d94530e55eca2d902efb809905bced",
-    "catalog/source_register.json": "0d55b2ed2b330c6ed1e00da026682a9a270863188ca4186eb30e28601ef32d9c",
-    "oracles/cost_cases.json": "a3d603554c72e7cff1c77cba7548d63d7befe47ee876c701887a6bdc486fb7e6",
-    "oracles/invoice_cases.json": "92b82d62cf8828059fe310ee68819f955138c1de3cbef15e6941dd5c5661096c",
-    "oracles/loan_parse_cases.json": "0dc058d452c24530201e3639be7ae0a934883459db1f50c4e911b60d71684b9d",
+    "catalog/pilot.json": "59c5069776e0f991a493a392311f8a5083b7ba628c9d27643b6d301530bda64b",
+    "catalog/rooms.json": "03a671b3d89457ae8a10b39228f8a62ec169d2356c3f6fdad53030102e8f5a31",
+    "catalog/source_register.json": "b3bb9bb85f385aced06cd9f527e36e189e9b326685887b74c8e499a5481b44b9",
+    "oracles/cost_cases.json": "ac0bd4e3382660e8668b07f240f335fdbcb1703a1cdad210d208c05136720b81",
+    "oracles/invoice_cases.json": "128e23618fa21f7cda47ef76042303eca768a6d5d3197477f6e25b43cd917e85",
+    "oracles/loan_parse_cases.json": "2175ab6c6cfd6fc6eb68f126b2507e47dbb6954cdeae1c8ead3c159b765468f8",
     "profiles/dev/profiles.jsonl": "e9b4a93c8a3a9f41e00ebf0c0be4041268c8f138b95a0e9c908627d6f92e1c88",
-    "profiles/intent_cases.json": "e9901f5dc853d6a192fd56a26b3f835fa928b07fb3f1c7245d87c106b8761788",
+    "profiles/intent_cases.json": "9e91c2b4d3c20a66a2f8fe67338835cbf255325f573017ec4877a3c3fdc8921b",
     "profiles/split_manifest.json": "a850b06180324e0e978276366da93a34afc33ffde3c63bc00bca0277da320098",
     "profiles/test/profiles.jsonl": "d2943d9424450a886a9fa21ee236daa783b8e9f15743da53a407b350ec512f91"
   },
@@ -22,7 +22,7 @@
   "gold_profiles": 45,
   "labels_status": "pending_human_judgments",
   "schema_version": "Room/Profile/Extraction imported",
-  "source_notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "source_notice": "Hoàn toàn giả lập; không phải phòng có thật hoặc biểu giá thị trường.",
   "stage": "development",
   "synthetic": true
 }

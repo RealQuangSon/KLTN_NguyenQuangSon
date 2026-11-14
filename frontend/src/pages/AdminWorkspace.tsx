@@ -7,15 +7,18 @@ import type {
   Room,
   SupportTicket,
   TicketStatus,
+  Viewing,
 } from "../types";
 import { roleNames, ticketStatusLabels } from "../types";
 import {
+  Badge,
   EmptyState,
   ErrorNotice,
   Icon,
   money,
   roomTitle,
 } from "../components/Shared";
+import { LoadingState } from "../components/LoadingState";
 import { Link } from "../router";
 // Admin Console: giám sát hội thoại AI (đã che PII, mỗi lần mở được ghi audit),
 // đánh giá chuyển giao AI → chủ nhà, người dùng, duyệt hồ sơ chủ nhà (FE-02),
@@ -26,6 +29,7 @@ export type AdminSection =
   | "ho-tro"
   | "tai-khoan"
   | "tin-dang"
+  | "dieu-phoi"
   | "van-hanh";
 // FE-03: link "phiên" trong màn ho-tro mở đúng phiên ở section hoi-thoai.
 export const OPEN_ADMIN_SESSION_KEY = "homematch.admin.openSession";
@@ -46,6 +50,10 @@ const titles: Record<AdminSection, [string, string]> = {
   "tin-dang": [
     "Kiểm duyệt tin đăng",
     "Toàn bộ tin của các chủ nhà; quản trị viên có thể ẩn tin sai hoặc vi phạm.",
+  ],
+  "dieu-phoi": [
+    "Điều phối lịch xem tin gốc",
+    "Hàng đợi lịch xem của tin lấy từ tin đăng gốc. Bạn TỰ liên hệ người đăng qua link tin gốc; mỗi lần mở liên hệ khách được ghi audit. Không có gọi/nhắn tự động.",
   ],
   "van-hanh": [
     "Vận hành",
@@ -301,6 +309,18 @@ export function AdminWorkspace({
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState<string | null>(null);
   const [rejectBusy, setRejectBusy] = useState(false);
+  // crawl.md E-02/E-05: hàng đợi điều phối và báo cáo tin.
+  const [concierge, setConcierge] = useState<Viewing[]>([]);
+  const [conciergeLoading, setConciergeLoading] = useState(false);
+  const [listingReports, setListingReports] = useState<
+    {
+      id: string;
+      room_id: string;
+      reason: string;
+      note: string | null;
+      status: string;
+    }[]
+  >([]);
   // FE-03: ticket hỗ trợ.
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [ticketFilter, setTicketFilter] = useState<"all" | TicketStatus>("all");
@@ -331,9 +351,19 @@ export function AdminWorkspace({
         setApplications(
           await api.get("/admin/landlord-applications?status=pending"),
         );
-      } else if (section === "tin-dang")
+      } else if (section === "tin-dang") {
         setRooms((await api.get<{ rooms: Room[] }>("/admin/rooms")).rooms);
-      else {
+        setListingReports(
+          await api.get("/admin/listing-reports?status=pending"),
+        );
+      } else if (section === "dieu-phoi") {
+        setConciergeLoading(true);
+        try {
+          setConcierge(await api.get<Viewing[]>("/admin/viewings"));
+        } finally {
+          setConciergeLoading(false);
+        }
+      } else {
         setMetrics(await api.get("/admin/metrics"));
         setFailed(await api.get("/admin/failed-runs"));
         setAgentTurns(await api.get("/admin/agent-turns"));
@@ -354,6 +384,13 @@ export function AdminWorkspace({
     } catch (err) {
       setError((err as Error).message);
     }
+  };
+  const reloadConcierge = () => {
+    setError(null);
+    api
+      .get<Viewing[]>("/admin/viewings")
+      .then(setConcierge)
+      .catch((err) => setError((err as Error).message));
   };
   // FE-03: đổi trạng thái ticket. 409 ticket_state nghĩa là ai đó đã đổi trước:
   // đọc lại danh sách rồi mới hiện thông báo (load() đặt lại error).
@@ -739,6 +776,197 @@ export function AdminWorkspace({
               ))}
             </tbody>
           </table>
+        </section>
+      )}
+      {section === "tin-dang" && listingReports.length > 0 && (
+        <section className="panel">
+          <h2>Báo cáo tin chờ duyệt</h2>
+          <p className="input-hint">
+            Xác nhận chỉ ghi trạng thái cho mục kiểm chứng "Báo cáo từ người
+            dùng"; HomeMatch không tự ẩn tin theo số báo cáo.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Tin</th>
+                <th>Lý do</th>
+                <th>Ghi chú</th>
+                <th>Quyết định</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listingReports.map((report) => (
+                <tr key={report.id}>
+                  <td>{report.room_id}</td>
+                  <td>{report.reason}</td>
+                  <td>{report.note || "—"}</td>
+                  <td>
+                    <button
+                      className="button small"
+                      disabled={false}
+                      onClick={() =>
+                        void act(() =>
+                          api.post(
+                            `/admin/listing-reports/${report.id}/decide`,
+                            {
+                              decision: "confirmed",
+                            },
+                          ),
+                        )
+                      }
+                    >
+                      Xác nhận
+                    </button>{" "}
+                    <button
+                      className="button small outline"
+                      onClick={() =>
+                        void act(() =>
+                          api.post(
+                            `/admin/listing-reports/${report.id}/decide`,
+                            {
+                              decision: "dismissed",
+                            },
+                          ),
+                        )
+                      }
+                    >
+                      Bác
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+      {section === "dieu-phoi" && (
+        <section className="panel">
+          <p className="input-hint">
+            Người điều phối TỰ mở tin gốc bằng liên kết dưới đây để liên hệ
+            người đăng. HomeMatch không gọi hay nhắn tin tự động. Mỗi lần mở
+            liên hệ khách được máy chủ ghi audit.
+          </p>
+          {conciergeLoading && !concierge.length ? (
+            <LoadingState label="Đang tải hàng đợi điều phối…" />
+          ) : concierge.length === 0 ? (
+            <EmptyState
+              title="Chưa có lịch điều phối nào"
+              description="Lịch xem của tin lấy từ tin đăng gốc sẽ xuất hiện tại đây."
+              icon="calendar"
+            />
+          ) : (
+            <div className="viewing-list">
+              {concierge.map((viewing) => (
+                <article className="viewing-row" key={viewing.id}>
+                  <div className="date-icon">
+                    <Icon name="calendar" size={22} />
+                  </div>
+                  <div>
+                    <h3>
+                      Phòng {viewing.room_id} <Badge status={viewing.status} />
+                    </h3>
+                    <p>
+                      {new Intl.DateTimeFormat("vi-VN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(viewing.requested_at))}
+                      {viewing.time_slot
+                        ? ` · ${{ morning: "Sáng", afternoon: "Chiều", evening: "Tối" }[viewing.time_slot]}`
+                        : ""}
+                    </p>
+                    <a
+                      href={`https://www.chotot.com/${viewing.room_id.replace("chotot-", "")}.htm`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Mở tin gốc trên Chợ Tốt ↗
+                    </a>
+                    {viewing.note && <small>Khách ghi: {viewing.note}</small>}
+                  </div>
+                  <div className="viewing-actions">
+                    <button
+                      className="button small outline"
+                      onClick={() => {
+                        api
+                          .get<{
+                            contact_name: string | null;
+                            contact_phone: string | null;
+                          }>(`/admin/viewings/${viewing.id}/contact`)
+                          .then((data) => {
+                            window.alert(
+                              `Liên hệ khách: ${data.contact_name ?? "—"} · ${data.contact_phone ?? "—"} (đã ghi audit)`,
+                            );
+                          })
+                          .catch((err) => setError((err as Error).message));
+                      }}
+                    >
+                      Xem SĐT khách
+                    </button>
+                    {viewing.status === "requested" && (
+                      <>
+                        <button
+                          className="button small"
+                          disabled={conciergeLoading}
+                          onClick={() =>
+                            void act(() =>
+                              api.post(`/viewings/${viewing.id}/actions`, {
+                                action: "confirm",
+                              }),
+                            )
+                          }
+                        >
+                          Xác nhận
+                        </button>
+                        <button
+                          className="button small outline"
+                          disabled={conciergeLoading}
+                          onClick={() =>
+                            void act(() =>
+                              api.post(`/viewings/${viewing.id}/actions`, {
+                                action: "decline",
+                              }),
+                            )
+                          }
+                        >
+                          Từ chối
+                        </button>
+                      </>
+                    )}
+                    {viewing.status === "confirmed" && (
+                      <>
+                        <button
+                          className="button small"
+                          disabled={conciergeLoading}
+                          onClick={() =>
+                            void act(() =>
+                              api.post(`/viewings/${viewing.id}/actions`, {
+                                action: "complete",
+                              }),
+                            )
+                          }
+                        >
+                          Hoàn tất
+                        </button>
+                        <button
+                          className="button small outline"
+                          disabled={conciergeLoading}
+                          onClick={() =>
+                            void act(() =>
+                              api.post(`/viewings/${viewing.id}/actions`, {
+                                action: "no_show",
+                              }),
+                            )
+                          }
+                        >
+                          Không có khách
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
       {section === "van-hanh" && (

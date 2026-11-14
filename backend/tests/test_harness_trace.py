@@ -68,11 +68,13 @@ def test_one_turn_row_and_n_step_rows_per_turn(agent, renter):
     assert turn["agent_mode"] == "loop" and turn["model"] == "fixture-model"
     assert turn["llm_calls"] == 2  # 2 lần gọi LLM trong lượt
     assert turn["input_tokens"] == 10 and turn["output_tokens"] == 4  # 2 × (5,2)
-    assert turn["outcome"] == "answered" and turn["error_code"] is None
+    # HN-13.2: chưa có mức tiền → cuối lượt gắn chip budget_cap từ kho → "asked".
+    assert turn["outcome"] == "asked" and turn["error_code"] is None
     assert turn["cost_usd"] == pytest.approx(0.0002)
     steps = step_rows(agent)
     kinds = [step["kind"] for step in steps]
-    assert kinds == ["llm", "tool", "llm"]  # gọi model → tool → gọi model chốt
+    # HN-13.2: cuối lượt gắn chip budget_cap từ kho → thêm một bước decision.
+    assert kinds == ["llm", "tool", "llm", "decision"]
     assert steps[1]["name"] == "search_rooms" and steps[1]["ok"] == 1
     assert all("[TIEN_DA_TACH]" not in step["summary"] for step in steps)
 

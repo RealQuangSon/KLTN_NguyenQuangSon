@@ -1,0 +1,3271 @@
+{
+  "kind": "hn13_dialog_measure",
+  "label": "v2-B",
+  "catalog": ".local/chotot/chotot-2026-10-30/catalog.json",
+  "catalog_name": "chotot-2026-10-30",
+  "analyst": "jev",
+  "reasoning": "low",
+  "decision_mode": "rules",
+  "model": "openai/gpt-6-luna",
+  "runs": 1,
+  "script_sha256_16": "942fe26df9217e7f",
+  "measured_at": "2026-11-08T11:50:15.228112+00:00",
+  "elapsed_s": 254.3,
+  "turns": 30,
+  "total_cost_usd": 0.0108,
+  "criteria": {
+    "asked_already_known": [
+      "answer-free-text#3:room_type"
+    ],
+    "chip_field_mismatch": [],
+    "chip_count_mismatch": [],
+    "internal_terms": [],
+    "truncated_finish_reason_length": [],
+    "question_without_chip": [
+      "budget-people-first#1"
+    ],
+    "question_limit_hits": [
+      "landmark-in-catalog#3",
+      "landmark-ben-thanh#3",
+      "answer-free-text#3"
+    ],
+    "handover_turns": [
+      "vague-no-city#3",
+      "landmark-ho-guom#2",
+      "landmark-ho-guom#3",
+      "budget-people-first#2",
+      "change-mind#1",
+      "change-mind#2",
+      "change-mind#3",
+      "self-publish-handover#1"
+    ],
+    "chip_fallback_text": [],
+    "confirmed_runs": 1,
+    "safe_reply_turns": [
+      "budget-people-first#2"
+    ],
+    "claimed_vs_actual": [],
+    "reenter_known_turns": [],
+    "verbatim_repeat_turns": [
+      "answer-free-text#2",
+      "no-match#2",
+      "no-match#3"
+    ],
+    "money_mismatch": [],
+    "claimed_vs_actual_old": [
+      "landmark-in-catalog#3: nói 5, thật {'eligible': 20, 'estimate_only': 19, 'held': 0, 'shown': 5, 'exact': 1, 'capped_eligible': 20, 'capped_estimate_only': 19, 'capped_shown': 5}",
+      "landmark-ben-thanh#3: nói 5, thật {'eligible': 13, 'estimate_only': 13, 'held': 0, 'shown': 5, 'exact': 0, 'capped_eligible': 13, 'capped_estimate_only': 13, 'capped_shown': 5}"
+    ],
+    "estimate_invite_turns": [],
+    "loan_principal_mismatch": [],
+    "no_room_while_held": [],
+    "chip_click_errors": [],
+    "money_chip_turns": [
+      "vague-no-city#2",
+      "landmark-in-catalog#1",
+      "landmark-ben-thanh#1",
+      "landmark-ben-thanh#2"
+    ],
+    "call_limit_turns": [
+      "landmark-in-catalog#2",
+      "landmark-in-catalog#3",
+      "landmark-ho-guom#1",
+      "landmark-ben-thanh#3",
+      "budget-people-first#1"
+    ],
+    "latency_p50_ms": 7726,
+    "latency_p95_ms": 15569,
+    "errors": [],
+    "asked_fields": [
+      "city",
+      "budget_cap",
+      "budget_cap",
+      "destination_radius",
+      "budget_cap",
+      "budget_cap",
+      "city",
+      "city",
+      "city",
+      "room_type"
+    ]
+  },
+  "conversations": [
+    {
+      "id": "vague-no-city",
+      "name": "Mơ hồ, không có thành phố",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "cho mình xin phòng ở rẻ thôi",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn tìm phòng ở TP.HCM hay Hà Nội?",
+          "questions": [
+            "Bạn muốn tìm phòng ở TP.HCM hay Hà Nội?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn tìm phòng ở TP.HCM hay Hà Nội?",
+            "reason": "Thành phố quyết định các phòng và mức giá có thể tìm được.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 1,
+          "handover_calls": null,
+          "cost_usd": 9.1e-05,
+          "latency_ms": 6269,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {},
+            "evidence_ref": {}
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3956,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "city",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 288,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "TP.HCM, Quận 7",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình ghi nhận bạn muốn tìm phòng ở Quận 7, TP.HCM. Bạn dự kiến mức tiền tối đa mỗi tháng là bao nhiêu?",
+          "questions": [
+            "Mình ghi nhận bạn muốn tìm phòng ở Quận 7, TP.HCM. Bạn dự kiến mức tiền tối đa mỗi tháng là bao nhiêu?"
+          ],
+          "clarification": {
+            "id": "clarify-budget_cap",
+            "field": "budget_cap",
+            "question": "Mình ghi nhận bạn muốn tìm phòng ở Quận 7, TP.HCM. Bạn dự kiến mức tiền tối đa mỗi tháng là bao nhiêu?",
+            "reason": "Mức trần tháng quyết định những phòng nào phù hợp để tìm.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Tổng tháng dưới 4 triệu (28 căn)",
+                "detail": "Tổng tháng dưới 4 triệu",
+                "probability": 0.1783,
+                "count": 28,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 4 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Tổng tháng dưới 5 triệu (55 căn)",
+                "detail": "Tổng tháng dưới 5 triệu",
+                "probability": 0.3503,
+                "count": 55,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Tổng tháng dưới 6.5 triệu (74 căn)",
+                "detail": "Tổng tháng dưới 6.5 triệu",
+                "probability": 0.4713,
+                "count": 74,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 6.5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "budget_cap",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000172,
+          "latency_ms": 5574,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "area": "inferred",
+              "city": "inferred"
+            },
+            "evidence_ref": {
+              "area": "agent:r1",
+              "city": "agent:r1"
+            }
+          },
+          "pending_field_before": "city",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2573,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 3,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1680,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "budget_cap",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 125,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "dưới 4 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Đã xác nhận nhu cầu và công bố kết quả: căn “Chp thuê phòng trọ ngay khu dân cư yên tĩnh” đứng đầu với tổng tháng 2.320.000 ₫ và diện tích 10 m²; kế tiếp là “cần cho thuê phòng” với 2.420.000 ₫ và 10 m². “phòng homestay nam đầy đủ tiện nghi cao cấp” có diện tích lớn hơn, 25 m², nhưng tổng tháng cao hơn ở mức 2.520.000 ₫. Tiền ban đầu của cả ba căn chưa rõ; các khoản phí đang theo giả định chuẩn và nhiều tiện nghi chưa được xác minh, nên chưa đủ dữ liệu để so sánh đầy đủ.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": 1,
+          "cost_usd": 0.000341,
+          "latency_ms": 9292,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng giá rẻ ở Quận 7, TP.HCM; ngân sách trần tổng tháng 4.000.000 đồng; 1 người.",
+            "field_status": {
+              "area": "inferred",
+              "city": "inferred",
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "area": "agent:r1",
+              "city": "agent:r1",
+              "budget_hint": "agent:r2",
+              "soft_description": "agent:r3",
+              "people": "agent:r3",
+              "room_type": "clarify:auto-r4"
+            }
+          },
+          "pending_field_before": "budget_cap",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1497,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 3,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1316,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "room_type",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 1784,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2480,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "landmark-in-catalog",
+      "name": "Địa danh có trong danh mục",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "tìm phòng gần Đại học Quốc gia Hà Nội",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận bạn muốn tìm phòng gần Đại học Quốc gia Hà Nội. Bạn dự kiến trần tổng tiền mỗi tháng khoảng bao nhiêu?",
+          "questions": [
+            "Mình đã ghi nhận bạn muốn tìm phòng gần Đại học Quốc gia Hà Nội. Bạn dự kiến trần tổng tiền mỗi tháng khoảng bao nhiêu?"
+          ],
+          "clarification": {
+            "id": "clarify-budget_cap",
+            "field": "budget_cap",
+            "question": "Mình đã ghi nhận bạn muốn tìm phòng gần Đại học Quốc gia Hà Nội. Bạn dự kiến trần tổng tiền mỗi tháng khoảng bao nhiêu?",
+            "reason": "Mức trần tháng quyết định những phòng nào phù hợp để tìm.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Tổng tháng dưới 3.5 triệu (121 căn)",
+                "detail": "Tổng tháng dưới 3.5 triệu",
+                "probability": 0.1534,
+                "count": 121,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 3.5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Tổng tháng dưới 5 triệu (278 căn)",
+                "detail": "Tổng tháng dưới 5 triệu",
+                "probability": 0.3523,
+                "count": 278,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Tổng tháng dưới 6.5 triệu (390 căn)",
+                "detail": "Tổng tháng dưới 6.5 triệu",
+                "probability": 0.4943,
+                "count": 390,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 6.5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "budget_cap",
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000165,
+          "latency_ms": 7726,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": null,
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "destination": "inferred"
+            },
+            "evidence_ref": {
+              "needs_destination": "agent:r1",
+              "city": "agent:r1",
+              "destination": "agent:r1"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1246,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1293,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 3,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1670,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "budget_cap",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 383,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "tổng tháng dưới 5 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn ở gần điểm đến trong bán kính nào?",
+          "questions": [
+            "Bạn muốn ở gần điểm đến trong bán kính nào?"
+          ],
+          "clarification": {
+            "id": "clarify-destination_radius",
+            "field": "destination_radius",
+            "question": "Bạn muốn ở gần điểm đến trong bán kính nào?",
+            "reason": "Khoảng cách tối đa quyết định khu vực phòng được đưa vào tìm kiếm.",
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Trong 2 km (8 căn, từ 2.520.000 ₫)",
+                "detail": "Trong 2 km",
+                "probability": 0.0769,
+                "count": 8,
+                "min_monthly_total_vnd": 2520000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 2000
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Trong 3 km (20 căn, từ 2.220.000 ₫)",
+                "detail": "Trong 3 km",
+                "probability": 0.1923,
+                "count": 20,
+                "min_monthly_total_vnd": 2220000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 3000
+                  }
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Trong 5 km (76 căn, từ 2.020.000 ₫)",
+                "detail": "Trong 5 km",
+                "probability": 0.7308,
+                "count": 76,
+                "min_monthly_total_vnd": 2020000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 5000
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "destination_radius",
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000667,
+          "latency_ms": 15569,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": null,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": "total",
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tổng tiền mỗi tháng dưới 5.000.000 đồng",
+            "field_status": {
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "destination": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred",
+              "soft_description": "inferred"
+            },
+            "evidence_ref": {
+              "needs_destination": "agent:r1",
+              "city": "agent:r1",
+              "destination": "agent:r1",
+              "budget_hint": "agent:r2",
+              "budget_scope": "agent:r2",
+              "soft_description": "agent:r3"
+            }
+          },
+          "pending_field_before": "budget_cap",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1827,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 11,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2938,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 4,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1712,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 258,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 5640,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "destination_radius",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 439,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "chốt luôn cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Đã xác nhận nhu cầu và tìm được 5 căn phù hợp; kết quả đã hiện trong workspace. Bạn có thể mở bản đồ, hỏi chi tiết một căn hoặc yêu cầu đặt lịch xem.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000477,
+          "latency_ms": 9929,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": "total",
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tổng tiền mỗi tháng dưới [TIEN_DA_TACH]",
+            "field_status": {
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "destination": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "needs_destination": "agent:r1",
+              "city": "agent:r1",
+              "destination": "agent:r1",
+              "budget_hint": "agent:r2",
+              "budget_scope": "agent:r2",
+              "soft_description": "agent:r4",
+              "people": "agent:r4"
+            }
+          },
+          "pending_field_before": "destination_radius",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1483,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 1,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1302,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "destination_radius",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 220,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1686,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 6,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2032,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "destination_radius",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "landmark-ho-guom",
+      "name": "Địa danh ngoài danh mục: Hồ Gươm",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng gần Hồ Gươm Hà Nội tầm 5 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận Hà Nội, trần tổng tháng 5.000.000 đồng và tạm hiểu bạn tìm phòng riêng cho 1 người ở khu Hoàn Kiếm, gần Hồ Gươm. Mình sẽ tìm theo các thông tin này; bạn có thể sửa giả định nếu chưa đúng.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000823,
+          "latency_ms": 15264,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách muốn tìm phòng gần Hồ Gươm, Hà Nội; tạm hiểu khu Hoàn Kiếm. Ngân sách trần tổng tháng 5.000.000 đồng; giả định 1 người và loại phòng riêng.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "needs_destination": "agent:r2",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r2",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1433,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 1,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2340,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 4,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1985,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 4049,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 2,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "ở Hoàn Kiếm cũng được",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Đã xác nhận nhu cầu và công bố kết quả: căn **Phòng trọ quận hoàn kiếm** đứng đầu với tổng tháng **2.020.000 ₫**, diện tích **10 m²**; căn **phòng trọ quân hoàn kiếm** có cùng diện tích nhưng tổng tháng **2.420.000 ₫**. Căn **CHO THUÊ PHÒNG TRỌ CHÍNH CHỦ – PHÚC TÂN, HOÀN KIẾM – GIÁ CHỈ 1 TRIỆU** rộng **18 m²**, đổi lại tổng tháng là **2.520.000 ₫**. Tiền ban đầu của cả ba căn chưa rõ, và phí tiện ích cùng nhiều tiện nghi cần xác minh thêm.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": 1,
+          "cost_usd": 0.000469,
+          "latency_ms": 13980,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng riêng cho 1 người ở Quận Hoàn Kiếm, Hà Nội. Trần tổng tháng 5.000.000 đồng.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "needs_destination": "agent:r3",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r3",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1250,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 6,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 5645,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 8,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1129,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 389,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2480,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "1 người, tìm giúp mình",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Các phòng đứng đầu có tổng tháng lần lượt là 2.020.000 ₫, 2.420.000 ₫ và 2.520.000 ₫; hai phòng đầu đều 10 m², còn phòng thứ ba rộng 18 m². Đánh đổi là phòng đầu có tổng tháng thấp nhất nhưng diện tích nhỏ hơn phòng thứ ba; các phòng đều chưa rõ tiền ban đầu và có phí cùng tiện nghi cần xác minh. Dữ liệu về sức chứa chưa đủ để xác nhận mức độ phù hợp cho 1 người; nhu cầu đã xác nhận và kết quả đã được công bố.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 1,
+          "handover_calls": 1,
+          "cost_usd": 0.000512,
+          "latency_ms": 6747,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng riêng cho 1 người ở Quận Hoàn Kiếm, Hà Nội. Trần tổng tháng 5.000.000 đồng.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "needs_destination": "agent:r3",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r3",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2671,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 292,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2509,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "landmark-ben-thanh",
+      "name": "Địa danh ngoài danh mục: Bến Thành",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng gần chợ Bến Thành, 2 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình hiểu bạn muốn phòng ở Quận 1, gần chợ Bến Thành, cho 2 người. Mình đã ghi nhận TP.HCM và Quận 1 là giả định vì chưa tra được vị trí chợ; nếu chưa đúng, bạn có thể sửa lại.",
+          "questions": [
+            "Bạn muốn chi bao nhiêu mỗi tháng?"
+          ],
+          "clarification": {
+            "id": "clarify-budget_cap",
+            "field": "budget_cap",
+            "question": "Bạn muốn chi bao nhiêu mỗi tháng?",
+            "reason": null,
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Tổng tháng dưới 5.5 triệu (10 căn)",
+                "detail": "Tổng tháng dưới 5.5 triệu",
+                "probability": 0.1786,
+                "count": 10,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 5.5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Tổng tháng dưới 7 triệu (19 căn)",
+                "detail": "Tổng tháng dưới 7 triệu",
+                "probability": 0.3393,
+                "count": 19,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 7 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Tổng tháng dưới 9 triệu (27 căn)",
+                "detail": "Tổng tháng dưới 9 triệu",
+                "probability": 0.4821,
+                "count": 27,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 9 triệu",
+                "patch": {
+                  "set": {}
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "budget_cap",
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000203,
+          "latency_ms": 7296,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành",
+            "field_status": {
+              "area": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "area": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r1",
+              "people": "agent:r1"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1148,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 8,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2141,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 8,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1724,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "budget_cap",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "Quận 1 được",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Đã ghi nhận Quận 1 phù hợp. Bạn muốn giới hạn tổng tiền thuê mỗi tháng tối đa bao nhiêu?",
+          "questions": [
+            "Đã ghi nhận Quận 1 phù hợp. Bạn muốn giới hạn tổng tiền thuê mỗi tháng tối đa bao nhiêu?"
+          ],
+          "clarification": {
+            "id": "clarify-budget_cap",
+            "field": "budget_cap",
+            "question": "Đã ghi nhận Quận 1 phù hợp. Bạn muốn giới hạn tổng tiền thuê mỗi tháng tối đa bao nhiêu?",
+            "reason": "Mức trần tiền tháng sẽ quyết định các phòng nào phù hợp để tìm.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Tổng tháng dưới 5.5 triệu (10 căn)",
+                "detail": "Tổng tháng dưới 5.5 triệu",
+                "probability": 0.1786,
+                "count": 10,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 5.5 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Tổng tháng dưới 7 triệu (19 căn)",
+                "detail": "Tổng tháng dưới 7 triệu",
+                "probability": 0.3393,
+                "count": 19,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 7 triệu",
+                "patch": {
+                  "set": {}
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Tổng tháng dưới 9 triệu (27 căn)",
+                "detail": "Tổng tháng dưới 9 triệu",
+                "probability": 0.4821,
+                "count": 27,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "text",
+                "text": "Tổng tháng dưới 9 triệu",
+                "patch": {
+                  "set": {}
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "budget_cap",
+          "llm_calls": 1,
+          "handover_calls": null,
+          "cost_usd": 0.000119,
+          "latency_ms": 3691,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành",
+            "field_status": {
+              "area": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "area": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r1",
+              "people": "agent:r1"
+            }
+          },
+          "pending_field_before": "budget_cap",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1594,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "budget_cap",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 197,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "tổng tháng 6 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Đã xác nhận nhu cầu và tìm được 5 căn phù hợp; kết quả đã hiện trong workspace. Bạn có thể mở bản đồ, hỏi chi tiết một căn hoặc yêu cầu đặt lịch xem.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000557,
+          "latency_ms": 16103,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 6000000,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": "total",
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành",
+            "field_status": {
+              "area": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred"
+            },
+            "evidence_ref": {
+              "area": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r1",
+              "people": "agent:r1",
+              "budget_hint": "agent:r2",
+              "budget_scope": "agent:r2"
+            }
+          },
+          "pending_field_before": "budget_cap",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1564,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "find_place",
+              "duration_ms": 7,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 5749,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "room_type",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 454,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 4405,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 2,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1717,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "room_type",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "budget-people-first",
+      "name": "Ngân sách và số người ngay câu đầu",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Quận 7 TP.HCM dưới 4 triệu cho 2 người có máy lạnh",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận phòng ở Quận 7, TP.HCM cho 2 người, trần tổng tháng 4.000.000đ. Yêu cầu máy lạnh chưa áp dụng được làm điều kiện lọc; bạn có đồng ý để mình tìm phòng trước rồi kiểm tra máy lạnh với chủ nhà không?",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000744,
+          "latency_ms": 14882,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Phòng Quận 7, TP.HCM cho 2 người, có máy lạnh; mức trần tổng tháng đã ghi nhận là 4.000.000đ.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "preferences": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "preferences": "agent:r3",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r3",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1626,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 1,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1173,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 305,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2474,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 16,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3067,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 3,
+              "ok": 0
+            },
+            {
+              "kind": "guard",
+              "name": "question_without_chip",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "phòng nào đáng tiền hơn?",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "fallback",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Mình vừa kiểm tra nhu cầu của bạn qua các bước bên dưới; số liệu chi tiết xem trong khung kết quả hoặc hỏi mình thêm.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": 1,
+          "cost_usd": 0.000441,
+          "latency_ms": 13599,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Phòng Quận 7, TP.HCM cho 2 người, có máy lạnh; mức trần tổng tháng đã ghi nhận là 4.000.000đ.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "preferences": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "preferences": "agent:r3",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r3",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3224,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 667,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2140,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 3403,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "giảm xuống 3,5 triệu thì sao?",
+          "route": "finance",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "finance"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn vừa hạ trần tổng tháng từ **4.000.000đ xuống 3.500.000đ** theo thông tin đã ghi nhận. Trong 5 căn hiện có, **chưa thể xác nhận căn nào nằm trong trần mới**, vì phí còn thiếu khiến tổng tháng chưa tính được:\n\n- **Chp thuê phòng trọ ngay khu dân cư yên tĩnh:** đã biết **1.300.000đ/tháng**; thiếu điện, nước, internet, giữ xe, dịch vụ. Tiền vào ở đã biết **500.000đ**; thiếu cọc, tiền thuê đầu kỳ và phí một lần.\n- **Cần cho thuê phòng:** đã biết **1.400.000đ/tháng**; thiếu các khoản tháng tương tự. Tiền vào ở đã biết **1.500.000đ**; thiếu tiền thuê đầu kỳ và phí một lần.\n- **Phòng homestay nam đầy đủ tiện nghi cao cấp:** đã biết **1.500.000đ/tháng**; thiếu các khoản tháng tương tự. Tiền vào ở đã biết **2.000.000đ**; thiếu tiền thuê đầu kỳ và phí một lần.\n- **Tìm nữ ở ghép Quận 7:** đã biết **1.810.000đ/tháng**, gồm nước, internet và giữ xe; còn thiếu điện, dịch vụ. Tiền vào ở đã biết **1.900.000đ**; thiếu tiền thuê đầu kỳ và phí một lần.\n- **KTX tiện nghi Quận 7:** đã biết **1.600.000đ/tháng**; thiếu điện, nước, internet, giữ xe, dịch vụ. Tiền vào ở đã biết **1.300.000đ**; thiếu tiền thuê đầu kỳ và phí một lần.\n\nCác số trên đều từ **estimate_cost**; “đã biết” không phải tổng cuối cùng. Căn ở ghép đã có một số phí tháng cụ thể, còn KTX có tiền vào ở đã biết thấp hơn; nhưng thiếu phí ở từng căn khiến chưa thể kết luận căn nào đáng tiền hoặc phù hợp trần 3.500.000đ.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000925,
+          "latency_ms": 7640,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3500000,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Phòng Quận 7, TP.HCM cho 2 người, có máy lạnh; mức trần tổng tháng đã ghi nhận là 4.000.000đ.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "preferences": "inferred",
+              "city": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r5",
+              "preferences": "agent:r3",
+              "city": "agent:r2",
+              "people": "agent:r2",
+              "area": "agent:r2",
+              "soft_description": "agent:r3",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1971,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "estimate_cost",
+              "duration_ms": 263,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "estimate_cost",
+              "duration_ms": 354,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "estimate_cost",
+              "duration_ms": 355,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "estimate_cost",
+              "duration_ms": 391,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "estimate_cost",
+              "duration_ms": 400,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 4292,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer-by-chip",
+      "name": "Khách trả lời bằng cách bấm chip",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng trọ dưới 4 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn thuê tại thành phố nào?",
+          "questions": [
+            "Bạn muốn thuê tại thành phố nào?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn thuê tại thành phố nào?",
+            "reason": "Thành phố quyết định những phòng nào có thể tìm.",
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000169,
+          "latency_ms": 8498,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2793,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 5,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3616,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "city",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 70,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "chip",
+          "chip": "Ở TP.HCM (2087 căn)",
+          "confirm": "published",
+          "message": "(khách bấm chip — không có câu trả lời mới)",
+          "latency_ms": 377,
+          "cost_usd": 0.0
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "phòng nào rẻ nhất?",
+          "route": "ranking",
+          "clarity": "reason",
+          "decided_by": "fallback",
+          "agents": [
+            "ranking"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Rẻ nhất trong kết quả hiện tại là **“nhà trọ bao điện nước giá re.từ 900k trở lên khu vực phường 4 và 5”**, với tổng chi phí tháng ước tính **1.620.000 đồng**. Chi phí thuê ghi là **600.000 đồng**; sức chứa chưa có thông tin.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000318,
+          "latency_ms": 7272,
+          "draft": {
+            "city": "TP.HCM",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "city": "confirmed"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "city": "clarify:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3671,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "room_details",
+              "duration_ms": 313,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2331,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer-free-text",
+      "name": "Khách trả lời bằng câu gõ tự do",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "cần phòng gần trường đại học, 3 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn thuê tại thành phố nào?",
+          "questions": [
+            "Bạn muốn thuê tại thành phố nào?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn thuê tại thành phố nào?",
+            "reason": "Thành phố quyết định các phòng có thể tìm được.",
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.00019,
+          "latency_ms": 5301,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1581,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2452,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "city",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 221,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "tổng tháng, 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn thuê tại thành phố nào?",
+          "questions": [
+            "Bạn muốn thuê tại thành phố nào?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn thuê tại thành phố nào?",
+            "reason": "Thành phố quyết định căn phòng nào có thể tìm cho bạn.",
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000208,
+          "latency_ms": 8533,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2"
+            }
+          },
+          "pending_field_before": "city",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3258,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 4205,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "city",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 79,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "Quận Cầu Giấy Hà Nội nhé",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận Hà Nội, quận Cầu Giấy, 1 người và trần tổng tháng 3.000.000 đồng. Bạn vui lòng bổ sung tên trường đại học trong biểu mẫu nhu cầu để mình tìm phòng gần đó nhé.",
+          "questions": null,
+          "clarification": {
+            "assumed": "Tạm tìm phòng trọ",
+            "field": "room_type",
+            "decided_by": "rules"
+          },
+          "field": "room_type",
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000298,
+          "latency_ms": 8386,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Cầu Giấy",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Cần phòng gần trường đại học; ngân sách gợi ý trần tổng tháng 3.000.000 đồng; 1 người.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "area": "inferred",
+              "needs_destination": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "area": "agent:r3",
+              "needs_destination": "agent:r3",
+              "city": "agent:r3",
+              "soft_description": "agent:r3",
+              "room_type": "clarify:auto-r4"
+            }
+          },
+          "pending_field_before": "city",
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2032,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 1,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3180,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 1,
+              "ok": 0
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1587,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "room_type",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "change-mind",
+      "name": "Khách đổi ý giữa chừng",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Hà Nội Cầu Giấy 4 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Căn phòng chính chủ ở Nguyễn Ngọc Vũ đứng đầu với tổng tháng 2.120.000 ₫ và diện tích 12 m²; căn chính chủ trên cùng đường có diện tích lớn hơn, 15 m², nhưng tổng tháng cao hơn là 2.220.000 ₫. Căn tìm thêm nữ ở ghép có diện tích 30 m², tổng tháng 2.300.000 ₫; đánh đổi là hình thức ở ghép, và thông tin về sức chứa chưa rõ. Tiền ban đầu của cả ba căn đều chưa rõ; các khoản phí đang theo giả định chuẩn và nhiều tiện nghi, vị trí cần xác minh thêm.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": 1,
+          "cost_usd": 0.000429,
+          "latency_ms": 11528,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Cầu Giấy",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r2",
+              "city": "agent:r2",
+              "room_type": "clarify:auto-r3"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1921,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "ask_user",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2346,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 1,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2736,
+              "ok": 1
+            },
+            {
+              "kind": "decision",
+              "name": "room_type",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 964,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2181,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "thôi đổi sang Quận 7 TP.HCM",
+          "route": "needs",
+          "clarity": "clear",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Các căn đứng đầu lần lượt có tổng tháng là 2.320.000 ₫, 2.420.000 ₫ và 2.520.000 ₫; căn thứ ba rộng nhất, 25 m², so với 10 m² ở hai căn đầu. Đánh đổi là tiền ban đầu của cả ba căn chưa rõ, một số tiện nghi và phí còn cần xác minh, và vị trí chỉ được ghi nhận gần đúng với độ không chắc chắn 300 m; chưa đủ dữ liệu để xác nhận các căn có đáp ứng yêu cầu ở Quận 7 TP.HCM hay không. Quý khách đã xác nhận nhu cầu và công bố kết quả.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": 1,
+          "cost_usd": 0.000373,
+          "latency_ms": 7511,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r5",
+              "city": "agent:r5",
+              "room_type": "clarify:auto-r3"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1640,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1226,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 351,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2938,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "dưới 4 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Căn “Chp thuê phòng trọ ngay khu dân cư yên tĩnh” đứng đầu với tổng tháng 2.320.000 ₫ và diện tích 10 m²; căn “cần cho thuê phòng” có cùng diện tích nhưng tổng tháng cao hơn, 2.420.000 ₫. “phòng homestay nam đầy đủ tiện nghi cao cấp” có diện tích lớn hơn là 25 m², đổi lại tổng tháng cao nhất, 2.520.000 ₫. Tiền ban đầu của cả ba căn chưa rõ; phí đang theo giả định chuẩn và các tiện nghi, sức chứa cùng vị trí còn cần xác minh.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": 1,
+          "cost_usd": 0.00043,
+          "latency_ms": 10148,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred",
+              "room_type": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r7",
+              "area": "agent:r5",
+              "city": "agent:r5",
+              "room_type": "clarify:auto-r3",
+              "people": "agent:r8"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3323,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 7,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1332,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 659,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 3290,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "no-match",
+      "name": "Không có căn khớp",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Quận 1 TP.HCM dưới 500 nghìn một tháng",
+          "route": "needs",
+          "clarity": "clear",
+          "decided_by": "jev",
+          "agents": [],
+          "agent_mode": "fast_path",
+          "status": "no_match",
+          "message": "Chưa có căn nào khớp điều kiện này. Bạn muốn nới khu vực hoặc mức tiền không? Mình có thể gợi ý các lựa chọn đang có căn.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 0,
+          "handover_calls": null,
+          "cost_usd": 2.9e-05,
+          "latency_ms": 1476,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 500000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r2",
+              "city": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "chấp nhận dữ liệu ước tính",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "no_match",
+          "message": "Chưa có căn nào khớp điều kiện này. Bạn muốn nới khu vực hoặc mức tiền không? Mình có thể gợi ý các lựa chọn đang có căn.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000189,
+          "latency_ms": 5289,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 500000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách chấp nhận dữ liệu ước tính.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r2",
+              "city": "agent:r2",
+              "soft_description": "agent:r4",
+              "room_type": "agent:r4",
+              "people": "agent:r4"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1778,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 5,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2381,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 418,
+              "ok": 1
+            },
+            {
+              "kind": "guard",
+              "name": "question_without_chip",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "nới lên 2 triệu đi",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "no_match",
+          "message": "Chưa có căn nào khớp điều kiện này. Bạn muốn nới khu vực hoặc mức tiền không? Mình có thể gợi ý các lựa chọn đang có căn.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 1,
+          "handover_calls": null,
+          "cost_usd": 0.000203,
+          "latency_ms": 4257,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 2000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách chấp nhận dữ liệu ước tính.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r6",
+              "area": "agent:r2",
+              "city": "agent:r2",
+              "soft_description": "agent:r4",
+              "room_type": "agent:r4",
+              "people": "agent:r4"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3165,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 276,
+              "ok": 1
+            },
+            {
+              "kind": "guard",
+              "name": "question_without_chip",
+              "duration_ms": 0,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-publish-handover",
+      "name": "Lượt tự publish (bàn giao xếp hạng) rồi hỏi xếp hạng và vay",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "tìm phòng trọ Quận 7 TP.HCM dưới 5 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "published",
+          "message": "Các phòng đứng đầu có tổng tháng lần lượt là **2.320.000 ₫**, **2.420.000 ₫** và **2.520.000 ₫** trong kịch bản đã xác nhận; căn đầu có mức tổng tháng thấp nhất, còn căn homestay có diện tích lớn nhất, **25 m²** so với **10 m²** ở hai căn kia. Đánh đổi là tiền ban đầu chưa rõ ở cả ba căn, một số tiện nghi và sức chứa chưa đủ dữ liệu, còn các khoản phí điện, nước, internet, gửi xe và dịch vụ đang theo giả định chuẩn nên cần xác minh. Đã xác nhận nhu cầu và công bố kết quả.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": 1,
+          "cost_usd": 0.000296,
+          "latency_ms": 8734,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "people": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1362,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "update_needs",
+              "duration_ms": 2,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2820,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "confirm_and_search",
+              "duration_ms": 481,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "handover",
+              "duration_ms": 2756,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "phòng nào đáng tiền hơn?",
+          "route": "ranking",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "ranking"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Trong 3 căn đã so sánh, **căn “Chp thuê phòng trọ ngay khu dân cư yên tĩnh”** có lợi thế về chi phí tháng: **2.320.000 ₫**, thấp hơn căn thứ hai **100.000 ₫** và homestay **200.000 ₫**. Đổi lại, căn này chỉ **10 m²**, và tiền cọc, tiền thuê đầu kỳ cùng các khoản một lần chưa rõ.\n\n- **“cần cho thuê phòng”**: **2.420.000 ₫/tháng**, **10 m²**; tiền cọc ghi **1.000.000 ₫**, nhưng tiền thuê đầu kỳ và khoản một lần chưa rõ.\n- **Homestay nam**: **2.520.000 ₫/tháng**, rộng **25 m²**; tiền cọc ghi **1.500.000 ₫**, còn tiền thuê đầu kỳ và khoản một lần chưa rõ.\n\nVậy “đáng tiền” tùy ưu tiên: căn đầu tiết kiệm nhất theo tổng tháng; homestay rộng hơn đáng kể nhưng tốn hơn. Cả ba đều còn tiện nghi, sức chứa và một số phí cần xác minh.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000546,
+          "latency_ms": 6635,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "area": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "people": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "decision",
+              "name": "input_analyst",
+              "duration_ms": 0,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1783,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "room_details",
+              "duration_ms": 77,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "room_details",
+              "duration_ms": 214,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "room_details",
+              "duration_ms": 214,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "compare_rooms",
+              "duration_ms": 214,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 3050,
+              "ok": 1
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "vay 10 triệu lãi 10% trong 12 tháng thì sao?",
+          "route": "finance",
+          "clarity": "clear",
+          "decided_by": "rules",
+          "agents": [
+            "finance"
+          ],
+          "agent_mode": "loop",
+          "status": "simulation",
+          "message": "Mô phỏng vay **10.000.000 ₫** trong **12 tháng**, lãi suất năm **10%**: trả góp khoảng **879.159 ₫/tháng**, tổng lãi **549.908 ₫** (theo công cụ mô phỏng vay).\n\nMô phỏng đang gắn với căn **“Chp thuê phòng trọ ngay khu dân cư yên tĩnh”**. Công cụ ghi tiền thuê **1.300.000 ₫/tháng**, nhưng **tổng chi phí tháng và tổng tiền vào ở chưa xác định** vì thiếu phí điện, nước, internet, gửi xe, dịch vụ, tiền cọc, tiền thuê đầu kỳ và khoản một lần. Khoản trả góp không làm các chi phí còn thiếu này rõ hơn.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000415,
+          "latency_ms": 5059,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 10000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "area": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r4",
+              "area": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "people": "agent:r2"
+            }
+          },
+          "pending_field_before": null,
+          "steps_detail": [
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 1114,
+              "ok": 1
+            },
+            {
+              "kind": "tool",
+              "name": "simulate_loan",
+              "duration_ms": 246,
+              "ok": 1
+            },
+            {
+              "kind": "llm",
+              "name": "openai/gpt-6-luna",
+              "duration_ms": 2621,
+              "ok": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

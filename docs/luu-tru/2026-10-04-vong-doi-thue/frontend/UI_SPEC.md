@@ -6,13 +6,13 @@
 
 | Nhãn | Ý nghĩa | Áp dụng |
 |---|---|---|
-| Quan sát HubHome | Đã đọc/thao tác giao diện tại ngày khảo sát, không suy backend | Landing/composer và AI workspace công khai; tổ chức 11 trang người thuê ngày 01/10 |
-| HubHome công bố | Nội dung website tự mô tả, chưa thử có dữ liệu | Hợp đồng, đối chiếu tiền, công tơ, sửa chữa, xem trực tuyến và owner portal |
+| Quan sát sản phẩm tham khảo | Đã đọc/thao tác giao diện tại ngày khảo sát, không suy backend | Landing/composer và AI workspace công khai; tổ chức 11 trang người thuê ngày 01/10 |
+| Sản phẩm tham khảo công bố | Nội dung website tự mô tả, chưa thử có dữ liệu | Hợp đồng, đối chiếu tiền, công tơ, sửa chữa, xem trực tuyến và owner portal |
 | Thiết kế HomeMatch | Quyết định cho sản phẩm của dự án | HITL trước gợi ý AI; portal bốn vai trò; screens/flows sau thuê và tiêu chí nghiệm thu |
 | Đã có source | Thành phần tìm thấy trong repository, khác với đã nghiệm thu | React/TypeScript, Landing, App, RenterWorkspace, ManagerWorkspace, API client và components |
 | Chưa triển khai | Yêu cầu phải xây/kiểm chứng để phát hành đầy đủ | Các routes mới, owner/admin, map/media/lưu tin/lịch sử/thông báo/vận hành thuê |
 
-Nguồn: [nghiên cứu công khai 04/10/2026, HH-01…HH-12](../docs/nghien-cuu-hubhome.md), [khảo sát đăng nhập 01/10/2026](../docs/khao-sat-hubhome-da-dang-nhap.md), đo style công khai 02/10 ghi dưới đây. Card/compare có dữ liệu, owner dashboard và giao dịch sau thuê của HubHome chưa được kiểm chứng đầy đủ. Không gọi các thiết kế tương ứng là bản sao đã xác minh.
+Nguồn: nghiên cứu công khai 04/10/2026, HH-01…HH-12, khảo sát đăng nhập 01/10/2026, đo style công khai 02/10 ghi dưới đây. Card/compare có dữ liệu, owner dashboard và giao dịch sau thuê của sản phẩm tham khảo chưa được kiểm chứng đầy đủ. Không gọi các thiết kế tương ứng là bản sao đã xác minh.
 
 **API hiện tại 0.3.0:** UI có hai role `renter`/`manager`; điều hướng bằng state tab, chưa có router/deep link; có chat/draft/confirm/review/results/compare/catalog status/viewing. Current viewing chỉ `requested/confirmed/declined`; current profile chỉ `room/studio`. Candidate/Room DTO hiện không có media và dữ liệu tọa độ đủ để dựng bản đồ. **API sản phẩm v1 là contract mục tiêu**, không gọi endpoint dự kiến như thể đã có. Namespace backend mục tiêu `/v1`, frontend proxy `/api/v1`; current client gọi `/api` qua proxy tới backend routes không prefix. Không đổi client trước khi migration/API v1 có thật.
 
@@ -33,11 +33,11 @@ Truy vết từ nghiên cứu sang giao diện:
 | HM-09 | HH-11 | Maintenance/timeline/accept/reopen |
 | HM-10 | HH-07/12 | Admin/assignment/audit/privacy/support/ops |
 
-HH là nguồn rút ra yêu cầu, không chứng minh HubHome hoặc HomeMatch đã chạy các flow này. Tên status/DTO dùng contract HomeMatch, không suy từ labels website tham chiếu.
+HH là nguồn rút ra yêu cầu, không chứng minh sản phẩm tham khảo hoặc HomeMatch đã chạy các flow này. Tên status/DTO dùng contract HomeMatch, không suy từ labels website tham chiếu.
 
 ## 2. Token và cấu trúc chung
 
-Các giá trị đo là lịch sử tại 1280×720 ngày 02/10/2026, không khẳng định toàn site HubHome dùng cùng token.
+Các giá trị đo là lịch sử tại 1280×720 ngày 02/10/2026, không khẳng định toàn site sản phẩm tham khảo dùng cùng token.
 
 | Token/vùng | Bằng chứng tham chiếu | Mục tiêu HomeMatch |
 |---|---|---|
@@ -51,7 +51,7 @@ Các giá trị đo là lịch sử tại 1280×720 ngày 02/10/2026, không kh�
 | Sidebar | Tổ chức có nhãn từ khảo sát đăng nhập; chưa đo lại dashboard | Khoảng 220px desktop, mobile drawer có nhãn |
 | Spacing/control | Chưa đo toàn bộ | Scale 4/8/12/16/24/32/48/64; radius control 10–12px/card 16–18px; chip pill; vùng chạm ≥44×44px |
 
-Accent sáng cần kiểm tra contrast; không mặc định chữ trắng nhỏ trên mọi nền cam. Mỗi status có nhãn và icon. Icon dùng wrapper SVG `Icon`, lưới 24px/stroke 1,6px/currentColor. `RoomIllustration` là tài sản gốc; không sao logo, mascot, ảnh, font hoặc kho tin HubHome. Source hiện vẫn là cam đỏ/nền ngà, khác hướng mục tiêu.
+Accent sáng cần kiểm tra contrast; không mặc định chữ trắng nhỏ trên mọi nền cam. Mỗi status có nhãn và icon. Icon dùng wrapper SVG `Icon`, lưới 24px/stroke 1,6px/currentColor. `RoomIllustration` là tài sản gốc; không sao logo, mascot, ảnh, font hoặc kho tin sản phẩm tham khảo. Source hiện vẫn là cam đỏ/nền ngà, khác hướng mục tiêu.
 
 Motion 140–180ms ease-out, dịch tối đa 4px; `prefers-reduced-motion` bỏ chuyển động không cần thiết. Khi server xử lý lâu, thông báo trạng thái thật; không dựng câu trả lời/gợi ý bằng timer. Empty/loading giữ khung ổn định, không hiển thị số phòng/hóa đơn giả.
 
@@ -89,9 +89,9 @@ Nếu một tài khoản có nhiều role đã được cấp, selector đổi n
 
 ### 4.1. Landing, discovery và chi tiết
 
-Landing: header/brand → minh họa gốc nhỏ → tiêu đề giữa → mô tả → composer → Tìm nhanh/4 câu mẫu → quy trình/tài chính/cẩm nang → CTA/footer. Gửi trước login giữ nhu cầu trong memory; câu mẫu chỉ điền, không tự gửi. Nội dung nói đúng chế độ demo hoặc sản phẩm vận hành; không lấy số nguồn cung hoặc claim HubHome.
+Landing: header/brand → minh họa gốc nhỏ → tiêu đề giữa → mô tả → composer → Tìm nhanh/4 câu mẫu → quy trình/tài chính/cẩm nang → CTA/footer. Gửi trước login giữ nhu cầu trong memory; câu mẫu chỉ điền, không tự gửi. Nội dung nói đúng chế độ demo hoặc sản phẩm vận hành; không lấy số nguồn cung hoặc claim sản phẩm tham khảo.
 
-Discovery cho phép tìm trực tiếp tin **đã qua listing moderation**, với filter city/area/type/price/amenity/availability và map. API sản phẩm quyết định lọc/sắp xếp/pagination; UI không đổi thứ tự gợi ý AI. Filter giữ giá trị khi reload/back, có xóa từng chip/reset, loại điều kiện cứng/mềm và đơn vị rõ. Dictionary loại phòng theo contract được duyệt; current chỉ room/studio, không coi mọi loại HubHome đã được hỗ trợ.
+Discovery cho phép tìm trực tiếp tin **đã qua listing moderation**, với filter city/area/type/price/amenity/availability và map. API sản phẩm quyết định lọc/sắp xếp/pagination; UI không đổi thứ tự gợi ý AI. Filter giữ giá trị khi reload/back, có xóa từng chip/reset, loại điều kiện cứng/mềm và đơn vị rõ. Dictionary loại phòng theo contract được duyệt; current chỉ room/studio, không coi mọi loại sản phẩm tham khảo đã được hỗ trợ.
 
 Phòng thực có `physical_room_id` ổn định, riêng với `listing_id` và revision tin; không tạo phòng mới chỉ vì đăng lại tin. Anti-overlap kiểm phòng thực, không kiểm mỗi mã tin. Map và danh sách dùng cùng public refs `listing_id + published_revision`, server resolve physical_room_id, không dùng draft revision của owner. AI refs dùng `run_id/profile_version/catalog_version + room_ids` đã published/current; comparison dùng `mode`, viewing dùng `source_mode`, enum `public_catalog/ai_recommendation` theo contract. Chọn marker làm nổi card; chọn card làm nổi marker. Vị trí gần đúng có nhãn và vùng sai số nếu API có; `area_only` không dựng ghim chính xác. Khoảng cách đường thẳng và đường đi ghi khác nhau, chưa có dữ liệu thì không hiện số. Map lỗi/cấm quyền vị trí vẫn dùng list/filter được. Không xin GPS trước hành động chủ động.
 
@@ -200,4 +200,4 @@ Target comparison dùng `mode`, viewing dùng `source_mode`, enum `public_catalo
 
 Current token và session ID dùng sessionStorage; current chat/profile/tài chính không lưu bền vững trên browser. Khi phát triển v1, chọn cơ chế phiên theo threat model HM-01 và cập nhật tài liệu, không mặc nhiên coi sessionStorage là kiến trúc production đã chốt. Không đưa model/DB/storage private keys vào bundle/env public. Media/documents nhạy cảm cần URL quyền hạn/thời hạn từ server.
 
-Đánh dấu screen/module hoàn tất chỉ sau API integration và browser evidence. [Bản preview lịch sử](design/hubhome-preview.html) dùng dữ liệu tổng hợp, không có map/owner/vận hành thuê; không thay source runtime hoặc chứng minh UI-V đã đạt. Checklist ngày 02/10 là baseline của giao diện cũ; không kế thừa nhãn đạt cho các screen mới.
+Đánh dấu screen/module hoàn tất chỉ sau API integration và browser evidence. Bản preview lịch sử dùng dữ liệu tổng hợp, không có map/owner/vận hành thuê; không thay source runtime hoặc chứng minh UI-V đã đạt. Checklist ngày 02/10 là baseline của giao diện cũ; không kế thừa nhãn đạt cho các screen mới.

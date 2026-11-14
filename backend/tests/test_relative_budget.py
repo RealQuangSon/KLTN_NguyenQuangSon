@@ -25,6 +25,16 @@ def test_relative_budget_matches_the_oracle():
             assert got["amount_vnd"] == case["amount_vnd"], case["case_id"]
 
 
+def test_relative_budget_semantics_oracle_v2():
+    """HN-13.3-A2: thêm/bớt = delta; lên/xuống/còn (không thêm) = ĐẶT mức."""
+    data = json.loads((Path(__file__).resolve().parents[2]
+                       / "data/oracles/relative_budget_semantics_cases.json").read_text())
+    for case in data["cases"]:
+        got = relative_budget(case["text"])
+        assert got and got["direction"] == case["direction"], (case["case_id"], got)
+        assert got["amount_vnd"] == case["amount_vnd"], case["case_id"]
+
+
 def _message(service, renter, sid, text):
     reply = service.message(sid, renter, text)
     return reply, service.repo.session(sid)
@@ -42,7 +52,8 @@ def test_relative_up_adds_to_the_previous_hint(service, renter):
     assert draft["field_status"]["budget_hint"] == "inferred"
     assert reply["budget_explicit"] is True
     # Relative turn must NOT keep the old confirmation revision usable.
-    assert session["draft_revision"] == revision + 1
+    # +1 cho nháp mới, +1 cho lần tự xác nhận lại trong cùng lượt (UX-02).
+    assert session["draft_revision"] == revision + 2
 
 
 def test_relative_without_a_baseline_asks_instead_of_guessing(service, renter):
@@ -71,3 +82,23 @@ def test_plain_money_still_explicit_but_chip_bug_is_gone(service, renter):
                           "Hãy nới ngân sách tổng tháng lên thêm 1 triệu và tìm lại.")
     import json as jsonlib
     assert jsonlib.loads(session["draft_json"])["budget_hint_vnd"] == 4_500_000
+
+
+import pytest as _pytest
+
+
+@_pytest.mark.parametrize("text,expected", [
+    ("chấp nhận dữ liệu ước tính", True),
+    ("đồng ý xem phí ước tính", True),
+    ("bật dữ liệu ước tính", True),
+    ("không chấp nhận dữ liệu ước tính", False),
+    ("có nên chấp nhận dữ liệu ước tính không?", False),
+    ("không đồng ý dữ liệu ước tính", False),
+    ("chưa chấp nhận dữ liệu ước tính", False),
+    ("đừng bật dữ liệu ước tính", False),
+    ("dữ liệu ước tính là gì", False),
+    ("tìm phòng quận 7", False),
+])
+def test_accept_estimated_intent_table(text, expected):
+    from backend.app.interpreter import accept_estimated_intent
+    assert accept_estimated_intent(text) is expected

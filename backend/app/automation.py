@@ -34,7 +34,11 @@ def viewing_reminders(service, now: datetime) -> int:
         when = datetime.fromisoformat(row["requested_at"]).astimezone(timezone(timedelta(hours=7)))
         body = (f"Lịch xem phòng {row['room_id']} lúc {when:%H:%M %d/%m} (giờ Việt Nam), "
                 + ("trực tuyến qua link phòng họp." if row["mode"] == "online" else "xem trực tiếp."))
-        for user, link in ((row["owner_id"], "/nguoi-thue/lich-xem"), (row["landlord_id"], "/chu-nha/lich-xem")):
+        # crawl.md E-02: lịch điều phối có landlord_id NULL — chỉ nhắc người thuê.
+        recipients = [(row["owner_id"], "/nguoi-thue/lich-xem")]
+        if row["landlord_id"]:
+            recipients.append((row["landlord_id"], "/chu-nha/lich-xem"))
+        for user, link in recipients:
             sent += notify(service.repo, user, "viewing_reminder", "Nhắc lịch xem phòng", body,
                            f"viewing-reminder:{row['id']}:{user}", link, email=True)
     return sent

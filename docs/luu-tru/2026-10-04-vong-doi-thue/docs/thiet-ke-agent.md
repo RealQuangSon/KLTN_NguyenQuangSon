@@ -8,7 +8,7 @@ Phiên bản 04/10/2026. Agent là năng lực trong **HM-04**, nối vào hành
 
 `interpreter.py` có rule demo/OpenAI adapter; `service.py` có chat graph và recommendation/HITL graph. Draft field status/evidence, confirm/CAS, snapshot run, review commit-before-resume, stale và checkpoint SQLite/PG đã có mã. Hiện chỉ renter/manager, cost/B1 và semantic adapter/fixtures; chưa có evidence chất lượng GPT/P live hoặc tool hợp đồng/billing/maintenance.
 
-[Research công khai 04/10/2026](nghien-cuu-hubhome.md) và [khảo sát HubHome 01/10/2026](khao-sat-hubhome-da-dang-nhap.md) cho thấy cần hỏi rõ, routing chi phí riêng và trạng thái người thật tiếp nhận. Màn hình hợp đồng/hóa đơn trống không chứng minh AI thực hiện giao dịch. HomeMatch đặt yêu cầu riêng từ bài học đó.
+Research công khai 04/10/2026 và khảo sát sản phẩm tham khảo 01/10/2026 cho thấy cần hỏi rõ, routing chi phí riêng và trạng thái người thật tiếp nhận. Màn hình hợp đồng/hóa đơn trống không chứng minh AI thực hiện giao dịch. HomeMatch đặt yêu cầu riêng từ bài học đó.
 
 ## 2. Nhiệm vụ và giới hạn
 

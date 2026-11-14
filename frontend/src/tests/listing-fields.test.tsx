@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 import { Api } from "../api";
 import { PublicListing } from "../pages/PublicListing";
 import { SearchPage } from "../pages/SearchPage";
+import { CostBreakdown, costSourceText } from "../components/Shared";
 import { addressLine, postedAgoLabel } from "../types";
 import { cost as baseCost } from "./fixtures";
 import type { Cost, Room } from "../types";
@@ -121,12 +122,11 @@ it("shows address, broker badge, posting age, terms and amenity chips on the pub
   expect(screen.getByText(/Trống từ: 01\/12/)).toBeInTheDocument();
   // Nội dung tin dài → thu gọn kèm "Xem thêm".
   expect(screen.getByRole("button", { name: "Xem thêm" })).toBeInTheDocument();
-  // Chip: true hiện bình thường, false gạch ngang, null không hiện.
+  // D-2 (crawl.md): tiện ích dạng lưới trên trang chi tiết, chỉ mục true —
+  // tin nói "không wifi" hay không nói tới thì không hiện (không gạch ngang,
+  // không suy ra 0/false hiển thị).
   expect(screen.getByText("Bếp")).toBeInTheDocument();
-  expect(screen.getByText("Wifi").closest("span")).toContainElement(
-    screen.getByText("Wifi"),
-  );
-  expect(screen.getByText("Wifi").tagName).toBe("S");
+  expect(screen.queryByText("Wifi")).toBeNull();
   expect(screen.queryByText("Thang máy")).toBeNull();
 });
 
@@ -142,6 +142,85 @@ it("shows the individual badge for individual posters", async () => {
   serve(room({ poster_kind: "individual" }));
   render(<PublicListing roomId="chotot-777" />);
   expect(await screen.findByText("Chính chủ")).toBeInTheDocument();
+});
+
+// crawl.md C-1: bảng chi phí không hiện mã nội bộ — tên khoản và nguồn đều
+// tiếng Việt ở lớp hiển thị; tên trường trong API không đổi.
+it("shows Vietnamese cost sources and line names instead of internal codes", () => {
+  expect(costSourceText("quote.rent_vnd")).toBe("Theo tin đăng");
+  expect(costSourceText("quote")).toBe("Theo tin đăng");
+  expect(costSourceText("missing")).toBe("Tin chưa ghi");
+  expect(costSourceText("scenario")).toBe("Theo kịch bản của bạn");
+  expect(costSourceText("chotot://ad/1/body#water")).toBe(
+    "Theo nội dung tin gốc",
+  );
+  const cost: Cost = {
+    ...baseCost,
+    missing_monthly: [],
+    lines: [
+      {
+        name: "first_rent",
+        period: "initial",
+        amount_vnd: 3_500_000,
+        source: "quote",
+        included_in_rent: false,
+      },
+      {
+        name: "rent",
+        period: "monthly",
+        amount_vnd: 3_000_000,
+        source: "quote.rent_vnd",
+        included_in_rent: false,
+      },
+      {
+        name: "water",
+        period: "monthly",
+        amount_vnd: null,
+        source: "missing",
+        included_in_rent: false,
+      },
+      {
+        name: "moving",
+        period: "initial",
+        amount_vnd: 300_000,
+        source: "scenario",
+        included_in_rent: false,
+      },
+    ],
+    missing_initial: ["first_rent", "deposit"],
+  };
+  render(<CostBreakdown cost={cost} />);
+  expect(screen.getByText("Tiền thuê trả trước")).toBeInTheDocument();
+  expect(screen.getAllByText("Theo tin đăng").length).toBeGreaterThan(0);
+  expect(screen.getByText("Tin chưa ghi")).toBeInTheDocument();
+  expect(screen.getByText("Theo kịch bản của bạn")).toBeInTheDocument();
+  const body = document.body.textContent ?? "";
+  for (const code of ["first_rent", "quote.rent_vnd", "missing", "scenario"]) {
+    expect(body).not.toContain(code);
+  }
+  expect(body).toContain("Chưa đủ thông tin: Tiền thuê trả trước, Tiền cọc");
+});
+
+it("never shows the crawled poster name to an anonymous visitor (C1b/crawl.md D-4)", async () => {
+  // Bảo đảm chính nằm ở máy chủ: khách ẩn danh nhận contact.poster_name = null
+  // (test backend test_crawl_images_and_poster_name_flow_only_to_allowed_surfaces).
+  // Giao diện chỉ render đúng dữ liệu máy chủ gửi: tên null → không có khối tên.
+  serve(
+    room({
+      contact: {
+        kind: "external",
+        original_url: "https://www.chotot.com/87761600.htm",
+        phone: null,
+        phone_requires_login: false,
+        poster_name: null,
+      },
+    }),
+  );
+  render(<PublicListing roomId="chotot-777" />);
+  expect(
+    await screen.findByText("Xem tin gốc trên Chợ Tốt"),
+  ).toBeInTheDocument();
+  expect(document.querySelector(".poster-name")).toBeNull();
 });
 
 const searchListing = (overrides: Record<string, unknown> = {}) => ({

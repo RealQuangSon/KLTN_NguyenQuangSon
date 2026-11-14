@@ -14,7 +14,7 @@
 
 ## FE-01 — Contract, evidence và coverage · P0
 
-**Đầu vào:** nghiên cứu HubHome, source/types/API 0.3.0, product modules và API v1 mục tiêu. **Đầu ra:** screen/action/DTO/state matrix; reference register; fixture synthetic theo phiên bản contract.
+**Đầu vào:** nghiên cứu sản phẩm tham khảo, source/types/API 0.3.0, product modules và API v1 mục tiêu. **Đầu ra:** screen/action/DTO/state matrix; reference register; fixture synthetic theo phiên bản contract.
 
 - [ ] Audit App, Landing, hai workspace, Shared/ProfileForm/ViewingPanel, types/API/styles/tests; phân biệt source có, kiểm thử đã ghi và target.
 - [ ] Chốt physical_room_id riêng listing_id/published_revision, public catalog vs AI recommendation projection, role/scope/assignment và target entity/version/error/key semantics.
@@ -101,7 +101,7 @@
 
 **Phụ thuộc:** Mỗi screen đã tích hợp API và UI_SPEC. **Đầu ra:** ảnh, measurements và keyboard/mobile report.
 
-- [ ] Đối chiếu tham chiếu cùng viewport/state tại vùng có evidence; màn bổ sung là thiết kế HomeMatch, không claim baseline HubHome chưa có.
+- [ ] Đối chiếu tham chiếu cùng viewport/state tại vùng có evidence; màn bổ sung là thiết kế HomeMatch, không claim baseline sản phẩm tham khảo chưa có.
 - [ ] Desktop 1440×900/1280×720, tablet 768px, mobile 360px/390×844/320px, zoom 200%; bảng/map cuộn riêng, bàn phím mobile không che CTA.
 - [ ] Keyboard/focus/labels/landmarks/status announcements, contrast và reduced motion; upload/splitter có alternative không kéo thả.
 - [ ] UI-V01…16 và regression nghiệp vụ kiểm tra theo từng module, không chỉ landing.

@@ -10,8 +10,7 @@
   color: #1f2733;
   background: #f7f8fa;
   font-synthesis: none;
-  /* Bảng màu tham chiếu cảm giác thị giác hubhome.vn (đọc 30/10/2026):
-     cam nổi trên nền sáng, chữ navy đậm, thẻ trắng bo lớn. */
+  /* Bảng màu: cam nổi trên nền sáng, chữ navy đậm, thẻ trắng bo lớn. */
   --ink: #14213d;
   --ink-deep: #0b1220;
   --muted: #536278;
@@ -277,7 +276,7 @@ label {
   font-weight: 600;
   color: #534b46;
 }
-input:not([type="checkbox"]),
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   width: 100%;
@@ -310,7 +309,8 @@ textarea {
   resize: vertical;
   line-height: 1.7;
 }
-input[type="checkbox"] {
+input[type="checkbox"],
+input[type="radio"] {
   accent-color: var(--accent);
   width: 17px;
   height: 17px;
@@ -3220,22 +3220,45 @@ input[aria-invalid="true"] {
   max-height: calc(100vh - 32px);
   overflow-y: auto;
 }
+/* Khung bản đồ: canvas co giãn theo không gian còn lại của trang cha.
+   .map-view là cột định vị: canvas + overlay (zoom, chú giải) + dòng chú thích.
+   Ở ngữ cảnh không bị giới hạn chiều cao (tìm kiếm), canvas giữ tối thiểu
+   460px; trong khung agent (bị giới hạn), min-height về 0 để lấp đầy chiều cao
+   khả dụng thay vì cố định. */
+.map-view {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+/* Khung chứa canvas + overlay: overlay định vị theo khung, không đè dòng
+   chú thích nằm dưới khung. */
+.map-frame {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
 .map-canvas {
-  height: 460px;
+  flex: 1 1 auto;
+  min-height: 460px;
   border-radius: 14px;
   overflow: hidden;
 }
-/* Marker giá trên bản đồ theo kiểu tin đăng tham chiếu: pill giá tháng,
-   phòng đang chọn đảo màu. divIcon của Leaflet đặt trong .map-price-marker. */
+/* Marker giá trên bản đồ theo kiểu tin đăng tham chiếu: pill giá tháng với
+   chấm màu theo băng giá, phòng đang chọn đảo màu. */
 .map-price-marker {
   background: none;
   border: none;
 }
 .map-price-marker span {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: #fff;
-  color: #ba4100;
-  border: 1px solid #ffd3b6;
+  color: #43506a;
+  border: 1px solid #d8e0ea;
   border-radius: 999px;
   padding: 3px 9px;
   font-size: 11px;
@@ -3244,10 +3267,178 @@ input[aria-invalid="true"] {
   box-shadow: 0 1px 5px #1f273326;
   cursor: pointer;
 }
+.map-price-marker span .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
 .map-price-marker span.selected {
-  background: #ba4100;
-  border-color: #ba4100;
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
+}
+.map-price-marker span.selected .dot {
+  background: #fff !important;
+}
+/* Màu băng giá dùng chung cho marker và chú giải. */
+.map-price-marker span.b0 .dot,
+.map-legend i.b0 {
+  background: #2e9e5b;
+}
+.map-price-marker span.b1 .dot,
+.map-legend i.b1 {
+  background: #f2b230;
+}
+.map-price-marker span.b2 .dot,
+.map-legend i.b2 {
+  background: #f07f24;
+}
+.map-price-marker span.b3 .dot,
+.map-legend i.b3 {
+  background: #e2482d;
+}
+/* Overlay bản đồ: zoom + chú giải băng giá, góc trái dưới (theo tham chiếu). */
+.map-overlay-left {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.map-zoom {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+.map-zoom button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  cursor: pointer;
+}
+.map-zoom button + button {
+  border-top: 1px solid var(--border);
+}
+.map-zoom button:hover:not(:disabled) {
+  background: #eef1f6;
+}
+.map-legend {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink);
+}
+.map-legend strong {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #43506a;
+}
+.map-legend i.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+/* Popup room card khi hover/chạm marker. */
+.map-room-popup .maplibregl-popup-content {
+  padding: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.map-room-popup .maplibregl-popup-tip {
+  border-top-color: #fff;
+}
+.map-popup {
+  width: 224px;
+  background: #fff;
+}
+.map-popup-visual {
+  height: 92px;
+  position: relative;
+  background: linear-gradient(120deg, #f7ead2 0%, #efe0c5 55%, #e6d3b0 100%);
+}
+.map-popup-visual small {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  background: #ffffffd9;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: #64748b;
+}
+.map-popup-body {
+  padding: 9px 11px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.map-popup-title {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.map-popup-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+.map-popup-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+}
+.map-popup-price {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 13px;
+}
+.map-popup-save {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+}
+.map-popup-save.saved {
+  background: var(--accent-soft);
+  border-color: #ffd3b6;
+  color: var(--accent);
 }
 .listing-map-links {
   display: flex;
@@ -3702,10 +3893,8 @@ input[aria-invalid="true"] {
 }
 
 /* ============================================================
-   Giao diện công khai theo cảm giác thị giác hubhome.vn (đọc
-   30/10/2026): nền sáng, cam nổi, navy đậm, nút pill, thẻ bo
-   lớn. Thương hiệu, nội dung và dữ liệu vẫn là của HomeMatch;
-   không sao chép ảnh, mascot hay logo của HubHome.
+   Giao diện công khai: nền sáng, cam nổi, navy đậm, nút pill,
+   thẻ bo lớn.
    ============================================================ */
 
 /* --- Nút pill --- */
@@ -4018,7 +4207,7 @@ input[aria-invalid="true"] {
   gap: 12px;
 }
 
-/* --- Thẻ vùng: gradient minh họa thay ảnh (không dùng ảnh HubHome) --- */
+/* --- Thẻ vùng: gradient minh họa thay ảnh --- */
 .hh-tiles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -4245,7 +4434,7 @@ input[aria-invalid="true"] {
     grid-template-columns: 1fr;
   }
 }
-/* ---- Đăng nhập / Đăng ký: bố cục tham chiếu hubhome.vn (form trái, cảnh phố phải);
+/* ---- Đăng nhập / Đăng ký: bố cục form trái, cảnh phố phải;
    hình nền vẽ bằng CSS thuần, icon dùng bộ Icon của HomeMatch. ---- */
 .auth-page {
   display: grid;
@@ -4670,8 +4859,7 @@ input[aria-invalid="true"] {
   gap: 8px;
 }
 
-/* --- Màn khởi đầu trợ lý (mặc định khi vào trang), tham chiếu
-       hubhome.vn/tro-ly-ai: giữa trang là avatar sáng, heading lớn,
+/* --- Màn khởi đầu trợ lý (mặc định khi vào trang): giữa trang là avatar sáng, heading lớn,
        ô trò chuyện và các câu hỏi mẫu. --- */
 .landing-hero.hh-start {
   display: flex;
@@ -4792,7 +4980,7 @@ input[aria-invalid="true"] {
 }
 
 /* --- Chuyển động khi gửi câu hỏi: màn khởi đầu nhường chỗ cho
-       hội thoại nổi lên (giống cảm giác hubhome.vn). --- */
+       hội thoại nổi lên. --- */
 @keyframes hh-rise {
   from {
     opacity: 0;
@@ -4899,8 +5087,7 @@ input[aria-invalid="true"] {
   line-height: 1.65;
 }
 
-/* Chấm "trợ lý đang soạn" trong màn chuyển cảnh (giống cảm giác
-   chat của hubhome.vn). */
+/* Chấm "trợ lý đang soạn" trong màn chuyển cảnh. */
 .hh-typing {
   animation: hh-rise 300ms var(--motion-ease) both;
 }
@@ -5102,7 +5289,7 @@ input[aria-invalid="true"] {
   background: var(--accent-soft);
   color: var(--accent);
 }
-/* Menu tài khoản popover kiểu tham chiếu HubHome: mở từ avatar cuối rail. */
+/* Menu tài khoản popover: mở từ avatar cuối rail. */
 .popover-backdrop {
   position: fixed;
   inset: 0;
@@ -5467,12 +5654,21 @@ input[aria-invalid="true"] {
   display: flex;
   flex-direction: column;
 }
+/* Màn hẹp: bản đồ và danh sách xếp dọc, không tràn ngang. Từ 1200px trở lên:
+   hai cột — bản đồ trái, danh sách phải, mỗi bên cuộn riêng, trang không cuộn
+   thêm vì bản đồ. */
 .agent-results {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 8px;
+}
+@media (min-width: 1200px) {
+  .agent-results {
+    flex-direction: row;
+  }
 }
 .agent-map {
   flex: 1.15;
@@ -5491,6 +5687,34 @@ input[aria-invalid="true"] {
   border-radius: 0;
   min-height: 0;
   height: 100%;
+}
+/* Bản đồ trong khung agent chiếm hết chiều cao khả dụng của khung preview
+   (không cố định 460px); danh sách bên phải cuộn riêng. */
+.agent-map .map-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+/* Khung chi tiết căn đang chọn (bấm thẻ nhỏ): chiếm cột phải thay danh sách,
+   cuộn riêng, không ép bản đồ về 0 chiều rộng. */
+.agent-focus-view {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 2px 4px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #d8e0ea transparent;
+}
+.agent-focus-view .room-card {
+  grid-template-columns: 125px minmax(0, 1fr);
+}
+/* Con của cột cuộn không co lại — nếu không RoomCard/bảng phí bị ép dẹt. */
+.agent-focus-view > * {
+  flex-shrink: 0;
 }
 .agent-map-chip {
   position: absolute;
@@ -5553,6 +5777,149 @@ input[aria-invalid="true"] {
 }
 .agent-suggest-body .results-count {
   margin: 0 2px 2px;
+}
+/* --- Danh sách thẻ nhỏ dạng lưới cạnh bản đồ --- */
+.room-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .room-mini-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.room-mini {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.room-mini:hover {
+  border-color: #ffd3b6;
+}
+.room-mini.highlighted {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.room-mini.selected {
+  border-color: var(--accent);
+  background: #fff7f2;
+}
+.room-mini-visual {
+  height: 84px;
+  position: relative;
+  flex-shrink: 0;
+}
+.room-mini-visual .room-illustration {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.room-mini-visual .room-image-label {
+  position: absolute;
+  bottom: 5px;
+  left: 7px;
+  background: #ffffffd9;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9px;
+  color: #64748b;
+}
+.room-mini-visual .room-mini-flag {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  font-size: 9px;
+}
+.room-mini-body {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.room-mini-title {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+}
+.room-mini-meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.room-mini-reason {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.room-mini-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+.room-mini-price {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.room-mini-price small {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 10px;
+}
+.room-mini-tools {
+  display: inline-flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.icon-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  cursor: pointer;
+}
+.icon-chip:hover {
+  background: #eef1f6;
+  color: var(--ink);
+}
+.icon-chip.saved,
+.icon-chip.active {
+  color: var(--accent);
+  border-color: #ffd3b6;
+  background: var(--accent-soft);
+}
+.see-all-rooms {
+  width: 100%;
+  justify-content: center;
+  margin-top: 2px;
 }
 .agent-status-panel {
   flex: 1;
@@ -5809,9 +6176,6 @@ input[aria-invalid="true"] {
     min-height: 460px;
     max-height: 70dvh;
   }
-  .agent-results {
-    flex-direction: column;
-  }
   .agent-map {
     min-height: 320px;
   }
@@ -5979,4 +6343,228 @@ input[aria-invalid="true"] {
   border-color: #ffcdb0;
   background: var(--accent-soft);
   color: var(--accent-text);
+}
+
+/* CA-06: ảnh thật (ảnh chủ nhà hoặc ảnh tin gốc Chợ Tốt) lấp đúng khung hình
+   minh họa cũ — vị trí tuyệt đối nên không làm xô lệch bố cục, object-fit giữ
+   tỉ lệ khung; link chú thích giữ nhãn gọn trên ảnh. */
+.room-visual > .card-photo,
+.room-mini-visual > .card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.room-mini-visual > .card-photo {
+  object-fit: cover;
+}
+.room-visual .room-image-label a,
+.room-mini-visual .room-image-label a {
+  color: inherit;
+  text-decoration: none;
+}
+.room-image-label {
+  background: #ffffffd9;
+  border-radius: 999px;
+  padding: 1px 7px;
+  color: #64748b;
+}
+.photo-source-caption a {
+  color: inherit;
+}
+
+/* HN-13.2: lý do câu hỏi làm rõ (một câu nhỏ dưới câu hỏi) và giả định engine
+   hiển thị riêng — không nối vào câu trả lời nữa. */
+.chat-clarify-reason {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted, #667);
+  font-size: 12.5px;
+}
+.chat-assumptions {
+  margin: 4px 0 0;
+  color: var(--muted, #667);
+  font-size: 12.5px;
+}
+
+/* crawl.md D: bố cục trang chi tiết — media bên trái, thông số + hành động bên
+   phải; phần dưới là các section xếp dọc. Dùng đúng token màu/bộ số của repo. */
+.listing-detail-top {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+.listing-detail-media {
+  min-width: 0;
+}
+.listing-detail-facts {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.listing-detail-price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.listing-detail-address {
+  color: var(--muted);
+  margin: 0;
+}
+.spec-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 14px;
+}
+.spec-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  border-bottom: 1px dashed var(--line, #e5e0d4);
+  padding: 3px 0;
+}
+.spec-label {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.spec-value {
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.listing-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.listing-book {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.listing-detail-sections {
+  margin-top: 22px;
+  display: grid;
+  gap: 18px;
+}
+.listing-detail-section h2 {
+  margin: 0 0 8px;
+}
+.amenity-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 14px;
+}
+.amenity-grid li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+}
+.detail-missing {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0;
+}
+.video-embed {
+  margin: 10px 0 0;
+}
+.video-embed iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 12px;
+  background: #f2eddf;
+  display: block;
+}
+.video-embed.fallback img {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+.video-embed figcaption {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.video-embed figcaption a {
+  color: inherit;
+}
+/* Mobile (375 px): các cột xếp thành một cột, không cuộn ngang. */
+@media (max-width: 760px) {
+  .listing-detail-top {
+    grid-template-columns: 1fr;
+  }
+  .spec-list {
+    grid-template-columns: 1fr;
+  }
+}
+.room-mini-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.room-mini-chips li {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2, #eef3ef);
+}
+.room-mini-caution {
+  opacity: 0.8;
+}
+.room-mini-total {
+  display: block;
+  font-weight: 400;
+}
+.unknown-amenities summary {
+  cursor: pointer;
+}
+.chat-send-failed {
+  font-size: 0.85rem;
+  margin: 4px 0 0;
+}
+/* Phản hồi sau khi xem phòng: khách tự chọn điểm và ghi chú. */
+.viewing-feedback {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.viewing-feedback fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.viewing-feedback legend {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.viewing-feedback textarea {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  margin-top: 4px;
 }

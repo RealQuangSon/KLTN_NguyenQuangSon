@@ -42,6 +42,28 @@ def decision_context(value):
     return value
 
 
+def jev_post(payload: dict, timeout_s: float = DECISION_TIMEOUT_S) -> dict:
+    """POST Decisions API tách riêng để dùng chung (input analyst có timeout riêng).
+
+    Caller tự bọc cassette/breaker; lỗi HTTP ≠ 200 ném RuntimeError với mã
+    jev_http_<status> để đường lui đọc được."""
+    import httpx
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    owned = httpx.Client(timeout=timeout_s)
+    try:
+        response = owned.post(
+            "https://openrouter.ai/api/alpha/decisions",
+            headers={"Authorization": f"Bearer {api_key}"}, json=payload)
+        if response.status_code != 200:
+            raise RuntimeError(f"jev_http_{response.status_code}")
+        return response.json()
+    finally:
+        try:
+            owned.close()
+        except Exception:
+            pass  # lỗi đóng kết nối không được che mất kết quả
+
+
 def _jev_payload(clarification: dict, context: dict) -> dict:
     """Request Jev theo Decisions API: `state` là object, `questions` khóa theo
     tên, câu `choice` có `criteria` = {id phương án: mô tả}. Mọi văn bản đi
@@ -90,23 +112,6 @@ def decide(clarification: dict, context: dict, *, client=None,
     if mode != "jev":
         decision, best = _rules(clarification)
         return decision, best, "rules", None
-    def _post(payload):
-        import httpx
-        api_key = os.getenv("OPENAI_API_KEY", "")
-        owned = httpx.Client(timeout=DECISION_TIMEOUT_S)
-        try:
-            response = owned.post(
-                "https://openrouter.ai/api/alpha/decisions",
-                headers={"Authorization": f"Bearer {api_key}"}, json=payload)
-            if response.status_code != 200:
-                raise RuntimeError(f"jev_http_{response.status_code}")
-            return response.json()
-        finally:
-            try:
-                owned.close()
-            except Exception:
-                pass  # lỗi đóng kết nối không được che mất kết quả
-
     try:
         from .agent_cassette import jev_call
         from . import provider_breaker
@@ -117,7 +122,8 @@ def decide(clarification: dict, context: dict, *, client=None,
             if provider_breaker.open_("jev"):
                 raise RuntimeError("jev_circuit_open")
             try:
-                answer = (jev_call(_jev_payload(clarification, context), _post)
+                answer = (jev_call(_jev_payload(clarification, context),
+                                   lambda payload: jev_post(payload, DECISION_TIMEOUT_S))
                           .get("answers") or {}).get("clarify") or {}
                 provider_breaker.record("jev", True)
             except Exception:

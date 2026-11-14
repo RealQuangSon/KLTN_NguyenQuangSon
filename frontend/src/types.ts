@@ -7,7 +7,7 @@ export const roleNames: Record<Role, string> = {
   manager: "Nhân viên (cũ)",
   admin: "Quản trị viên",
 };
-// Statuses where approved rooms are visible to the renter (some or all landlords approved).
+// Statuses where recommended rooms are visible to the renter.
 export const visibleStatuses = ["published"];
 export interface Actor {
   id: string;
@@ -90,8 +90,14 @@ export interface Profile {
   area: string | null;
   room_type: RoomType;
   min_bedrooms?: number | null;
-  max_monthly_cost_vnd: number;
+  // UX-01: khách chỉ nêu tiền thuê thì trần tổng tháng trống (null).
+  max_monthly_cost_vnd: number | null;
   max_rent_vnd?: number | null;
+  min_rent_vnd?: number | null;
+  min_area_m2?: number | null;
+  min_area_hard?: boolean;
+  prefer_cheapest?: boolean;
+  budget_approx?: boolean;
   max_initial_cash_vnd: number | null;
   monthly_income_vnd?: number | null;
   cost_split?: "none" | "equal";
@@ -110,6 +116,12 @@ export interface Draft {
   people: number | null;
   preferences: string[];
   budget_hint_vnd: number | null;
+  budget_scope?: "rent" | "total" | null;
+  budget_min_vnd?: number | null;
+  min_area_m2?: number | null;
+  min_area_hard?: boolean;
+  prefer_cheapest?: boolean;
+  budget_approx?: boolean;
   destination?: Destination | null;
   needs_destination: boolean;
   accept_estimated_data?: boolean;
@@ -206,10 +218,11 @@ export interface Candidate {
   title: string;
   city: string;
   area: string;
-  area_m2: number;
   room_type?: RoomType;
   bedrooms?: number | null;
   landlord_id?: string | null;
+  // Tin cào có thể không rõ diện tích: null, không bao giờ 0 hay số giả.
+  area_m2: number | null;
   cost: Cost;
   score: number;
   components: Record<string, number>;
@@ -224,6 +237,9 @@ export interface Candidate {
   longitude?: number | null;
   location_accuracy?: "exact" | "approximate" | "area_only";
   uncertainty_m?: number | null;
+  // CA-05: URL ảnh CDN Chợ Tốt gắn theo room_id lúc trả response (không nằm
+  // trong payload run đã xếp hạng); chỉ để hiển thị.
+  source_images?: string[];
 }
 export interface Results {
   session_id: string;
@@ -231,7 +247,15 @@ export interface Results {
   status: string;
   profile_version?: number;
   results: Candidate[];
+  // D-12: run giữ top 5; tổng số căn khớp, số căn đủ dữ liệu chi phí / ước tính và
+  // đường dẫn tìm theo bộ lọc cùng điều kiện (null với run lịch sử).
+  total_matches?: number | null;
+  exact_cost_matches?: number | null;
+  estimated_matches?: number | null;
+  search_path?: string | null;
   suggestions?: string[];
+  // Câu trả lời gợi ý cho khung chat, máy chủ chọn theo trạng thái phiên.
+  suggested_prompts?: string[];
   // Tổng hợp lọc cứng cho ca kho rỗng (chỉ số liệu, không có danh tính phòng).
   diagnostics_summary?: {
     scanned: number;
@@ -279,11 +303,14 @@ export interface Promotion {
 }
 // Chỉ có ở chi tiết tin (/listings/{id}). external: tin cào, liên hệ ở tin gốc;
 // landlord: SĐT chủ nhà tự khai, máy chủ chỉ trả khi đã đăng nhập.
+// CA-04/C1b: poster_name (tên người đăng trên tin gốc) chỉ có với tin cào và
+// chỉ trả khi đã đăng nhập; khách ẩn danh nhận null.
 export interface ListingContact {
   kind: "external" | "landlord";
   original_url: string | null;
   phone: string | null;
   phone_requires_login: boolean;
+  poster_name?: string | null;
 }
 export interface Room {
   id: string;
@@ -297,7 +324,7 @@ export interface Room {
   published: boolean;
   available: boolean | null;
   occupancy?: Occupancy | null;
-  area_m2: number;
+  area_m2: number | null;
   source: string;
   synthetic: boolean;
   amenities: Record<string, boolean | null>;
@@ -318,23 +345,112 @@ export interface Room {
   ward_2025?: string | null;
   street?: string | null;
   available_from?: string | null;
+  // CA-04/crawl.md B-2,C-1: ảnh, video Cloudflare Stream, nhà vệ sinh, tên dự
+  // án, tầng, hướng, loại hình theo tin gốc; tin không ghi thì null/rỗng —
+  // poster_name KHÔNG bao giờ có ở đây (chỉ trả qua contact khi đã đăng nhập).
+  source_images?: string[];
+  source_videos?: { url: string; thumbnail: string | null }[];
+  toilets?: number | null;
+  project_name?: string | null;
+  floor?: string | null;
+  direction?: string | null;
+  balcony_direction?: string | null;
+  property_subtype?: string | null;
+  // crawl.md E-04/E-06: kiểm chứng tin + chỗ ở tương tự (chỉ ở /listings/{id}).
+  trust?: TrustPayload | null;
+  similar_rooms?: SimilarRoom[];
+  photos?: Photo[];
   // FE-05/FE-06: chỉ có ở chi tiết tin (/landlord/rooms/{id}); danh sách có
   // thể không kèm. photos trống nghĩa là tin chưa có ảnh thật.
-  photos?: Photo[];
   promotion?: Promotion | null;
   contact?: ListingContact;
 }
+export interface TrustCheck {
+  status: "ok" | "warn" | "unknown";
+  detail: string;
+}
+export interface TrustPayload extends Record<string, unknown> {
+  completeness?: TrustCheck;
+  price_vs_area?: TrustCheck;
+  duplicate?: TrustCheck;
+  image_reuse?: TrustCheck;
+  prepay_request?: TrustCheck;
+  title_consistency?: TrustCheck;
+  freshness?: TrustCheck;
+  reports?: TrustCheck;
+  ownership?: TrustCheck;
+  price_per_m2?: number | null;
+  group_median_per_m2?: number | null;
+  position?: "ok" | "high" | "low" | null;
+  notice?: string;
+}
+export interface SimilarRoom {
+  id: string;
+  title: string;
+  area: string;
+  city: string;
+  rent_vnd: number;
+  area_m2: number | null;
+  source: string;
+}
+export const trustLabels: Record<string, string> = {
+  completeness: "Đủ thông tin",
+  price_vs_area: "Giá so với khu",
+  duplicate: "Trùng tin",
+  image_reuse: "Ảnh trùng",
+  prepay_request: "Yêu cầu cọc trước",
+  title_consistency: "Tiêu đề nhất quán",
+  freshness: "Độ mới của tin",
+  reports: "Báo cáo từ người dùng",
+  ownership: "Quyền sở hữu",
+};
 export interface Viewing {
   id: string;
   session_id: string | null;
   run_id: string | null;
   room_id: string;
   requested_at: string;
-  status: "requested" | "confirmed" | "declined";
+  // crawl.md E-01: vòng đời mở rộng.
+  status:
+    | "requested"
+    | "confirmed"
+    | "declined"
+    | "cancelled"
+    | "reschedule_proposed"
+    | "completed"
+    | "no_show";
   landlord_id?: string | null;
   mode?: "offline" | "online";
   meeting_url?: string | null;
+  handler?: "landlord" | "concierge" | null;
+  time_slot?: "morning" | "afternoon" | "evening" | null;
+  note?: string | null;
+  proposed_at?: string | null;
+  feedback_rating?: number | null;
+  feedback_note?: string | null;
+  lease_id?: string | null;
+  lease_status?: string | null;
+  lease_visible?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_shared?: boolean;
 }
+export const timeSlotLabels: Record<string, string> = {
+  morning: "Sáng (8:00–12:00)",
+  afternoon: "Chiều (12:00–17:00)",
+  evening: "Tối (17:00–20:00)",
+};
+export const viewingStatusLabels: Record<string, string> = {
+  requested: "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  declined: "Không nhận lịch",
+  cancelled: "Đã hủy",
+  reschedule_proposed: "Có đề xuất giờ mới",
+  completed: "Đã xem xong",
+  no_show: "Không diễn ra",
+};
 export interface DraftPatch {
   expected_draft_revision: number;
   set: Partial<
@@ -361,7 +477,9 @@ export const amenities: Record<string, string> = {
   air_conditioning: "Máy lạnh",
   washing_machine: "Máy giặt",
   balcony: "Ban công",
-  furniture: "Nội thất cơ bản",
+  // AMENITY_KEYS chỉ có một khóa nội thất; tin ghi "nội thất đầy đủ" cũng map
+  // vào khóa này nên nhãn trung tính, không nói sai nội dung tin (crawl.md C-2).
+  furniture: "Có nội thất",
   pets_allowed: "Nuôi thú cưng",
   // LF-05: 10 tiện ích mới — nhãn phải khớp AMENITY_KEYS của backend (test đồng bộ).
   kitchen: "Bếp",
@@ -409,6 +527,12 @@ export const postedAgoLabel = (
 export const verificationLabels: Record<string, string> = {
   location_approximate: "Vị trí gần đúng",
   location_area_only: "Chỉ biết tới khu vực",
+  // UX-04: nhãn đọc từ tiêu đề/mô tả tin, không suy đoán về người thuê.
+  shared_listing: "Tin ghi ở ghép",
+  roommate_wanted: "Tin ghi tìm bạn ở ghép",
+  gender_female_only: "Tin ghi: chỉ cho nữ thuê",
+  gender_male_only: "Tin ghi: chỉ cho nam thuê",
+  area_unknown: "Chưa rõ diện tích",
 };
 export const verificationText = (code: string): string => {
   if (code.startsWith("amenity_unknown:")) {
@@ -424,15 +548,27 @@ export const verificationText = (code: string): string => {
       .slice("fee_assumed:".length)
       .split(",")
       .map((n) => fees[n.trim()] || n.trim());
-    return `Phí theo giả định chuẩn: ${names.join(", ")} — xác minh lại khi xem`;
+    return `Phí tạm tính vì tin không ghi: ${names.join(", ").toLowerCase()} — xác minh lại khi xem`;
   }
   if (code === "capacity_unknown") {
-    return "Sức chứa chưa ghi trong tin — coi như vừa số người bạn nêu, xác minh khi xem";
+    return "Sức chứa: chưa rõ (tin không ghi) — xác minh khi xem";
   }
   if (code.startsWith("location_uncertainty_")) {
     return `Sai số vị trí ${code.slice("location_uncertainty_".length)}`;
   }
   return verificationLabels[code] || code;
+};
+// UX-08: gộp các tiện ích "chưa rõ" thành một dòng thay vì liệt kê từng cái.
+export const verificationSummary = (codes: string[]): string[] => {
+  const unknownAmenities = codes.filter((c) =>
+    c.startsWith("amenity_unknown:"),
+  );
+  const rest = codes
+    .filter((c) => !c.startsWith("amenity_unknown:"))
+    .map(verificationText);
+  return unknownAmenities.length
+    ? [...rest, `Tin chưa ghi ${unknownAmenities.length} tiện ích`]
+    : rest;
 };
 export const fees: Record<string, string> = {
   rent: "Tiền thuê",
@@ -442,6 +578,7 @@ export const fees: Record<string, string> = {
   parking: "Giữ xe",
   service: "Dịch vụ",
   deposit: "Tiền cọc",
+  first_rent: "Tiền thuê trả trước",
   advance_rent: "Thuê trả trước",
   one_time: "Phí một lần",
   moving: "Chuyển nhà",
@@ -460,4 +597,8 @@ export const statusLabels: Record<string, string> = {
   requested: "Chờ xác nhận lịch",
   confirmed: "Lịch đã xác nhận",
   declined: "Lịch chưa được chấp nhận",
+  cancelled: "Lịch đã hủy",
+  reschedule_proposed: "Có đề xuất giờ mới",
+  completed: "Đã xem xong",
+  no_show: "Không diễn ra",
 };

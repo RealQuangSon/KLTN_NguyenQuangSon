@@ -12,7 +12,7 @@ HomeMatch phục vụ toàn bộ hành trình thuê phòng: tìm chỗ ở, quy�
 | Chức năng bắt buộc, nguồn và mã yêu cầu | [Danh mục yêu cầu](yeu-cau-san-pham.md) |
 | Vai trò, bàn giao, quy tắc và trạng thái | [Quy trình nghiệp vụ](quy-trinh-nghiep-vu.md) |
 | Khi nào đủ điều kiện gọi là hoàn thiện | [Tiêu chí nghiệm thu](tieu-chi-nghiem-thu.md) |
-| Nghiên cứu HubHome và giới hạn bằng chứng | [Nghiên cứu](nghien-cuu-hubhome.md), [khảo sát đăng nhập lịch sử](khao-sat-hubhome-da-dang-nhap.md) |
+| Nghiên cứu sản phẩm tham khảo và giới hạn bằng chứng | Nghiên cứu, khảo sát đăng nhập lịch sử |
 | Cấu trúc hệ thống cần xây | [Kiến trúc sản phẩm](kien-truc-homematch.md), [thiết kế agent](thiet-ke-agent.md) |
 | API đang chạy và API cần bổ sung | [Contract 0.3.0](api-contract.md), [thiết kế API v1](api-san-pham-v1.md) |
 | Việc phải làm và thứ tự phụ thuộc | [Kế hoạch triển khai](ke-hoach-trien-khai.md), [phân công từng phần](ke-hoach-tung-phan.md), [plan chi tiết](ke-hoach-chi-tiet.md) |
@@ -27,7 +27,7 @@ HomeMatch phục vụ toàn bộ hành trình thuê phòng: tìm chỗ ở, quy�
 - **Bằng chứng lịch sử:** kết quả của phiên kiểm chứng có ngày, phạm vi và cấu hình; không phải kết quả vừa chạy lại.
 - **Mở rộng:** không chặn v1, chỉ triển khai khi có nhu cầu cụ thể.
 
-Mã `HM-01` đến `HM-10` định danh module. Mã `HM-xx-Rnn` định danh yêu cầu và `AC-HM-xx-nn` định danh ca nghiệm thu tương ứng. Nguồn `HH-01` đến `HH-12` là các mục nghiên cứu HubHome; các quy tắc riêng của HomeMatch phải ghi là đề xuất sản phẩm.
+Mã `HM-01` đến `HM-10` định danh module. Mã `HM-xx-Rnn` định danh yêu cầu và `AC-HM-xx-nn` định danh ca nghiệm thu tương ứng. Nguồn `HH-01` đến `HH-12` là các mục nghiên cứu sản phẩm tham khảo; các quy tắc riêng của HomeMatch phải ghi là đề xuất sản phẩm.
 
 ## Thứ tự ưu tiên khi tài liệu khác nhau
 

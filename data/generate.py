@@ -15,7 +15,7 @@ SEED = 20261001
 SEED_V2 = 20261005
 OBSERVED_AT = "2026-10-01T00:00:00+07:00"
 DATASET_ID = "homematch-synthetic-v2"
-NOTICE = "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường."
+NOTICE = "Hoàn toàn giả lập; không phải phòng có thật hoặc biểu giá thị trường."
 AREAS = ["Quận 7", "Quận 1", "Quận 3", "Quận 10", "Quận Bình Thạnh"]
 CENTERS = [(10.735, 106.721), (10.775, 106.700), (10.785, 106.685),
            (10.773, 106.668), (10.803, 106.711)]
@@ -923,7 +923,7 @@ def generate(output: Path, count: int = V2_ROOMS, profile_count: int = 45) -> di
     dump_json(output / "catalog/source_register.json", {"synthetic_ratio": 1.0, "external_inventory_imported": False,
         "notice": NOTICE, "seed_origin": "backend/data/demo_rooms.json (12 authored synthetic fixtures adapted to TP.HCM/room); v2 templates for Hà Nội and studios/apartments",
         "template_seed": SEED, "pii_exclusions": 0,
-        "permissions_notice": "No HubHome export/crawl or rights claimed. Share only authored synthetic artifacts after project review."})
+        "permissions_notice": "No third-party export/crawl or rights claimed. Share only authored synthetic artifacts after project review."})
     for split in ("dev", "test"):
         path = output / f"profiles/{split}/profiles.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)

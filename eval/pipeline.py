@@ -275,7 +275,7 @@ def build_annotation(rankings: list[dict], metadata: dict, rooms: list, run_dir:
     template_json = json.dumps(templates, ensure_ascii=False).replace("<", "\\u003c")
     page = '''<!doctype html><html lang="vi"><meta charset="utf-8"><title>HomeMatch — chấm nhãn giả lập</title>
 <style>body{font:16px system-ui;max-width:1000px;margin:30px auto;padding:20px;background:#f7f8fa}article,section{background:white;border:1px solid #dde1e5;border-radius:12px;padding:18px;margin:15px 0}pre{white-space:pre-wrap;font-size:13px}label{display:block;margin:12px 0}input,textarea,select{padding:8px;max-width:90%;width:400px}button{padding:12px}strong{color:#923900}</style>
-<h1>Chấm mức phù hợp — dữ liệu giả lập</h1><p>Không phải tin HubHome hoặc phòng thật. <strong>Các nhãn đang để trống; người chấm đọc hồ sơ và bằng chứng rồi quyết định.</strong></p>
+<h1>Chấm mức phù hợp — dữ liệu giả lập</h1><p>Không phải phòng thật. <strong>Các nhãn đang để trống; người chấm đọc hồ sơ và bằng chứng rồi quyết định.</strong></p>
 <p>0: vi phạm hard/không đủ bằng chứng hard (ghi reason). 1: đủ hard nhưng đáp ứng ít sở thích. 2: đáp ứng đáng kể, có đánh đổi. 3: đáp ứng tốt theo hồ sơ. Điểm không phải thứ hạng máy.</p>
 <label>Judge ID giả danh <input id="judge"></label><button onclick="save()">Tải judgments.json</button>''' + "".join(blocks) + '''<script>
 const rows=TEMPLATE;

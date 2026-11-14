@@ -356,6 +356,37 @@ MIGRATIONS = (
     (21, "agent_turn_phase", """
         ALTER TABLE hm_agent_turns ADD COLUMN phase TEXT;
     """),
+    (22, "viewing_lifecycle", """
+        ALTER TABLE hm_viewings ADD COLUMN handler TEXT NOT NULL DEFAULT 'landlord';
+        ALTER TABLE hm_viewings ADD COLUMN contact_name TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN contact_phone TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN contact_consent_at TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN time_slot TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN note TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN proposed_at TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN feedback_rating INTEGER;
+        ALTER TABLE hm_viewings ADD COLUMN feedback_note TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN lease_id TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN created_at TEXT;
+        ALTER TABLE hm_viewings ADD COLUMN updated_at TEXT;
+        CREATE TABLE IF NOT EXISTS hm_viewing_events (
+            id TEXT PRIMARY KEY, viewing_id TEXT NOT NULL REFERENCES hm_viewings(id),
+            actor_id TEXT NOT NULL, actor_role TEXT NOT NULL,
+            from_status TEXT, to_status TEXT NOT NULL,
+            reason TEXT, requested_at TEXT, created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS hm_viewing_events_viewing ON hm_viewing_events(viewing_id);
+        CREATE INDEX IF NOT EXISTS hm_viewings_handler ON hm_viewings(handler, status);
+    """),
+    (23, "listing_reports", """
+        CREATE TABLE IF NOT EXISTS hm_listing_reports (
+            id TEXT PRIMARY KEY, room_id TEXT NOT NULL, reporter_id TEXT NOT NULL,
+            reason TEXT NOT NULL, note TEXT, status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL, decided_at TEXT, decided_by TEXT,
+            UNIQUE(room_id, reporter_id)
+        );
+        CREATE INDEX IF NOT EXISTS hm_listing_reports_status ON hm_listing_reports(status);
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

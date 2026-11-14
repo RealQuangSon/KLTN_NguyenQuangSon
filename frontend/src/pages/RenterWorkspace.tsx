@@ -22,7 +22,6 @@ import {
   roomTitle,
 } from "../components/Shared";
 import { ProfileForm } from "../components/ProfileForm";
-import { profileFromDraft, profileUpdateFromChat } from "../profile";
 import { MapView } from "../components/MapView";
 import { SimulationPanel, SimulationResults } from "../components/Simulation";
 import type { Advice } from "../components/Advice";
@@ -37,16 +36,26 @@ type ClarificationOption = {
   label: string;
   patch: { set: Record<string, unknown> };
   source?: "model";
+  // HN-13.2: "patch" áp patch cấu trúc; "text" GỬI câu đó (tiền đọc tất định).
+  action?: "patch" | "text";
+  text?: string | null;
 };
 type Message = {
   role: "user" | "assistant";
   text: string;
+  // UX-06: tin của người dùng hiện ngay khi gửi; gửi lỗi thì đánh dấu để gửi lại.
+  failed?: boolean;
   // AG-11: câu hỏi làm rõ kèm chip — render trên đầu câu trả lời.
   clarification?: {
     question: string;
+    // HN-13.2: một câu vì sao câu trả lời làm đổi kết quả (model viết qua hậu
+    // kiểm hoặc mẫu kho) — FE hiển thị nhỏ dưới câu hỏi.
+    reason?: string | null;
     options: ClarificationOption[];
     decided_by: string;
   } | null;
+  // HN-13.2: giả định engine tự áp, diễn đạt thành câu — hiển thị RIÊNG.
+  assumptions?: string[] | null;
   // FE-07: reply của intent simulate_finance kèm thẻ mô phỏng hoặc nhắc xem lại danh sách.
   simulation?: ChatSimulation | null;
   needsResults?: boolean;
@@ -144,8 +153,25 @@ function RoomRefText({
     </p>
   );
 }
+// UX-06: nhãn tiếng Việt cho bước đang chạy, ánh xạ một chỗ (không lộ tên tool).
+const turnStepLabels: Record<string, string> = {
+  route: "Đang đọc yêu cầu",
+  update_needs: "Đang ghi nhu cầu",
+  search_rooms: "Đang lọc kho phòng",
+  confirm_and_search: "Đang xếp hạng",
+};
+const turnStepLabel = (name: string) => turnStepLabels[name] ?? "Đang xử lý";
 // "Đã xử lý qua N bước" kiểu workspace tham chiếu: bung được các bước pipeline
 // deterministic đã chạy thật (số liệu do máy chủ tính, không bịa).
+// Dòng bước đã chạy: bỏ tên bước nội bộ, giữ phần mô tả tiếng Việt.
+const stepText = (step: string) => {
+  const at = step.indexOf(": ");
+  if (at < 0) return step;
+  const name = step.slice(0, at);
+  return name in turnStepLabels || /^[a-z_]+$/.test(name)
+    ? step.slice(at + 2)
+    : step;
+};
 function StepsDisclosure({ steps }: { steps: string[] }) {
   const [open, setOpen] = useState(false);
   return (
@@ -167,7 +193,7 @@ function StepsDisclosure({ steps }: { steps: string[] }) {
       {open && (
         <ol>
           {steps.map((step, index) => (
-            <li key={index}>{step}</li>
+            <li key={index}>{stepText(step)}</li>
           ))}
         </ol>
       )}
@@ -197,6 +223,8 @@ function noMatchAnnouncement(result: Results, profile: Profile | null): string {
   const recap: string[] = [];
   const place = [profile?.area, profile?.city].filter(Boolean).join(", ");
   if (place) recap.push(`khu ${place}`);
+  if (profile?.max_rent_vnd)
+    recap.push(`tiền thuê đến ${money(profile.max_rent_vnd)}`);
   if (profile?.max_monthly_cost_vnd)
     recap.push(`trần tổng tháng ${money(profile.max_monthly_cost_vnd)}`);
   const mustAmenities = (
@@ -205,10 +233,6 @@ function noMatchAnnouncement(result: Results, profile: Profile | null): string {
   if (mustAmenities) recap.push(`${mustAmenities} tiện ích bắt buộc`);
   if (recap.length) lines.push(`Nhu cầu mình đã nắm: ${recap.join(" · ")}.`);
   if (summary) {
-    const held = Object.values(summary.verification ?? {}).reduce(
-      (total, count) => total + count,
-      0,
-    );
     const reasons = Object.entries(summary.rejected ?? {})
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
@@ -222,10 +246,6 @@ function noMatchAnnouncement(result: Results, profile: Profile | null): string {
         `Chưa có căn khớp đồng thời — bị loại chủ yếu vì ${reasons.join(", ")}.`,
       );
     else facts.push("Chưa có căn nào khớp đồng thời các điều kiện của bạn.");
-    if (held)
-      facts.push(
-        `Riêng ${held} tin bị giữ lại chờ xác minh số liệu (phí/vị trí) — chủ nhà cập nhật xong sẽ vào vòng sau.`,
-      );
     lines.push(facts.join(" "));
   } else {
     lines.push("Kho hiện chưa có căn khớp đồng thời các điều kiện của bạn.");
@@ -257,6 +277,10 @@ export function RenterWorkspace({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Thông báo thành công kiểu trang tìm kiếm: đặt lịch từ khung trợ lý xong phải
+  // có dòng xác nhận kèm đường dẫn tới /nguoi-thue/lich-xem (hộp thoại chỉ đóng
+  // là không đủ — bắt ở trình duyệt 14/11).
+  const [notice, setNotice] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [comparison, setComparison] = useState<Candidate[] | null>(null);
   const [advice, setAdvice] = useState<Advice | null>(null);
@@ -290,6 +314,12 @@ export function RenterWorkspace({
   > | null>(null);
   // Căn đã lưu của người thuê: nạp một lần khi vào workspace, tối ưu trên thẻ.
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  // Liên kết hai chiều thẻ ↔ marker: mapFocusId là lựa chọn bền (bấm marker
+  // hoặc thẻ), cardHoverId chỉ nổi trong lúc hover thẻ — không cuộn trang.
+  const [mapFocusId, setMapFocusId] = useState<string | null>(null);
+  const [cardHoverId, setCardHoverId] = useState<string | null>(null);
+  // Căn đang mở ở khung chi tiết (bấm thẻ nhỏ); null = chưa mở từ thẻ.
+  const [detailId, setDetailId] = useState<string | null>(null);
   useEffect(() => {
     const version = epoch.current;
     api
@@ -377,40 +407,49 @@ export function RenterWorkspace({
         setViewsLoading(false);
     }
   }, [api]);
-  const refresh = useCallback(async () => {
-    const sid = current.current;
-    if (!sid) return;
-    const e = epoch.current;
-    const marker = ++readMarker.current;
-    setLoading(true);
-    try {
-      const next = await api.get<Results>(`/sessions/${sid}/results`);
-      if (
-        live.current &&
-        e === epoch.current &&
-        current.current === sid &&
-        marker === readMarker.current
-      ) {
-        const old = resultRef.current;
+  // background: đọc lại định kỳ, không báo "đang tải" để khung kết quả không nhấp nháy.
+  const refresh = useCallback(
+    async (background = false) => {
+      const sid = current.current;
+      if (!sid) return;
+      const e = epoch.current;
+      const marker = ++readMarker.current;
+      if (!background) setLoading(true);
+      try {
+        const next = await api.get<Results>(`/sessions/${sid}/results`);
         if (
-          old?.run_id !== next.run_id ||
-          old?.status !== next.status ||
-          !visibleStatuses.includes(next.status)
+          live.current &&
+          e === epoch.current &&
+          current.current === sid &&
+          marker === readMarker.current
         ) {
-          setSelected([]);
-          setComparison(null);
-          setViewRoom(null);
-          setSimRoom(null);
+          const old = resultRef.current;
+          if (
+            old?.run_id !== next.run_id ||
+            old?.status !== next.status ||
+            !visibleStatuses.includes(next.status)
+          ) {
+            setSelected([]);
+            setComparison(null);
+            setViewRoom(null);
+            setSimRoom(null);
+          }
+          setResult(next);
         }
-        setResult(next);
+      } catch (err) {
+        if (live.current && e === epoch.current)
+          setError((err as Error).message);
+      } finally {
+        if (
+          live.current &&
+          e === epoch.current &&
+          marker === readMarker.current
+        )
+          setLoading(false);
       }
-    } catch (err) {
-      if (live.current && e === epoch.current) setError((err as Error).message);
-    } finally {
-      if (live.current && e === epoch.current && marker === readMarker.current)
-        setLoading(false);
-    }
-  }, [api]);
+    },
+    [api],
+  );
   useEffect(() => {
     const sid = sessionStorage.getItem(`homematch.session.${actor.id}`);
     if (!sid) return;
@@ -459,7 +498,7 @@ export function RenterWorkspace({
         return;
       }
       if (!lock.current && document.visibilityState !== "hidden")
-        void refresh();
+        void refresh(true);
     }, 5000);
     return () => clearInterval(timer);
   }, [result?.status, result?.run_id, refresh]);
@@ -502,7 +541,8 @@ export function RenterWorkspace({
       if (live.current) setBusy(false);
     }
   };
-  const create = () =>
+  // withFirstMessage: phiên mở kèm câu đầu thì không chèn câu chào (UX-06).
+  const create = (withFirstMessage = false) =>
     mutate(async () => {
       epoch.current++;
       setRestoring(false);
@@ -516,12 +556,16 @@ export function RenterWorkspace({
       const s = await api.post<Session>("/sessions");
       if (live.current) {
         apply(s);
-        putMessages(() => [
-          {
-            role: "assistant",
-            text: "Bạn muốn tìm phòng ở đâu, cho bao nhiêu người và tổng ngân sách mỗi tháng là bao nhiêu?",
-          },
-        ]);
+        putMessages(() =>
+          withFirstMessage
+            ? []
+            : [
+                {
+                  role: "assistant",
+                  text: "Bạn muốn tìm phòng ở đâu, cho bao nhiêu người và tổng ngân sách mỗi tháng là bao nhiêu?",
+                },
+              ],
+        );
         setEditing(false);
       }
     });
@@ -530,111 +574,130 @@ export function RenterWorkspace({
       const sid = current.current;
       const value = content.trim();
       if (!sid || !value) return;
-      // WS-02: ưu tiên stream bước xử lý; đứt luồng → thử lại ≤2 lần → fallback POST.
-      const response = await api.turn<Session & { steps?: string[] }>(
-        `/sessions/${sid}/messages`,
-        {
-          text: value,
-          // WS-01: ngữ cảnh workspace để agent hiểu "căn này"/"căn thứ 2".
-          workspace: {
-            view: agentView,
-            selected_room_id: selected[0] ?? null,
-            visible_room_ids: resultList
-              .map((item) => item.room_id)
-              .slice(0, 30),
-            focus_room_ids: selected.slice(0, 4),
-          },
-        },
-        (step) => {
-          if (live.current && current.current === sid)
-            setTurnStep(`${step.name} — ${step.detail}`);
-        },
-        (event) => {
-          // HN-10: delta nối dần câu trả lời; replace thay toàn bộ khi hậu kiểm
-          // phát hiện vi phạm (số bịa/guard) — done vẫn là nguồn sự thật cuối.
-          if (!live.current || current.current !== sid) return;
-          if (event.type === "replace") setStreamText(event.text);
-          else setStreamText((text) => (text ?? "") + event.text);
-        },
-      );
-      if (live.current && current.current === sid) {
-        setTurnStep(null);
-        setStreamText(null);
-        lastBudgetExplicit.current =
-          (response as { budget_explicit?: boolean }).budget_explicit === true
-            ? response.draft_revision
-            : null;
-        // WS-01: view do agent chọn — map/list/detail/cost áp dụng, keep giữ,
-        // clear dọn workspace; view lạ bỏ qua giữ view cũ (an toàn theo hợp đồng).
-        const nextView = (response as { view?: string }).view;
-        if (
-          nextView === "map" ||
-          nextView === "list" ||
-          nextView === "detail" ||
-          nextView === "cost"
-        )
-          setAgentView(nextView);
-        else if (nextView === "clear") {
-          setAgentView(null);
-          setSelected([]);
-          setViewPayload(null);
-        }
-        setViewPayload(
-          ((response as { view_payload?: Record<string, unknown> })
-            .view_payload ?? null) as Record<string, unknown> | null,
-        );
-        apply(response);
-        // AG-09: handover chủ nhà → chuyển sang Tin nhắn mở đúng hội thoại.
-        const handover = response as {
-          intent?: string;
-          conversation_id?: string;
-        };
-        if (handover.intent === "landlord_handover" && handover.conversation_id)
-          openConversation(handover.conversation_id, "/tin-nhan");
-        putMessages((m) => [
-          ...m,
-          { role: "user", text: value },
-          {
-            role: "assistant",
-            text:
-              (response.answers?.length || response.house_rules?.length
-                ? [
-                    ...(response.house_rules || []),
-                    ...(response.answers || []).map(
-                      (entry) => `${entry.title}: ${entry.answer}`,
-                    ),
-                    response.disclaimer || "",
-                  ]
-                    .filter(Boolean)
-                    .join("\n\n")
-                : "") ||
-              response.message ||
-              response.questions?.join("\n") ||
-              "Nhu cầu đã được ghi vào nháp. Kiểm tra biểu mẫu và xác nhận để tiếp tục.",
-            // FE-07: kèm thẻ mô phỏng khi máy chủ trả status "simulation".
-            simulation:
-              response.status === "simulation"
-                ? (response.simulation ?? null)
-                : null,
-            needsResults: response.status === "needs_results",
-            // AG-11: chip làm rõ từ kho thật (render trên đầu câu trả lời).
-            clarification:
-              (response as { clarification?: Message["clarification"] })
-                .clarification ?? null,
-            // WS-02: "Đã xử lý qua N bước" bung được theo bước thật.
-            steps: response.steps ?? undefined,
-          },
-        ]);
+      // UX-06: hiện tin của người dùng ngay; gửi lại thì thay bản lỗi cũ.
+      putMessages((m) => [
+        ...m.filter((item) => !(item.failed && item.text === value)),
+        { role: "user", text: value },
+      ]);
+      try {
+        await runTurn(sid, value);
+      } catch (err) {
+        if (live.current && current.current === sid)
+          putMessages((m) =>
+            m.map((item, index) =>
+              index === m.length - 1 &&
+              item.role === "user" &&
+              item.text === value
+                ? { ...item, failed: true }
+                : item,
+            ),
+          );
+        throw err;
       }
     });
+  const runTurn = async (sid: string, value: string) => {
+    // WS-02: ưu tiên stream bước xử lý; đứt luồng → thử lại ≤2 lần → fallback POST.
+    const response = await api.turn<Session & { steps?: string[] }>(
+      `/sessions/${sid}/messages`,
+      {
+        text: value,
+        // WS-01: ngữ cảnh workspace để agent hiểu "căn này"/"căn thứ 2".
+        workspace: {
+          view: agentView,
+          selected_room_id: selected[0] ?? null,
+          visible_room_ids: resultList.map((item) => item.room_id).slice(0, 30),
+          focus_room_ids: selected.slice(0, 4),
+        },
+      },
+      (step) => {
+        if (live.current && current.current === sid)
+          setTurnStep(turnStepLabel(step.name));
+      },
+      (event) => {
+        // HN-10: delta nối dần câu trả lời; replace thay toàn bộ khi hậu kiểm
+        // phát hiện vi phạm (số bịa/guard) — done vẫn là nguồn sự thật cuối.
+        if (!live.current || current.current !== sid) return;
+        if (event.type === "replace") setStreamText(event.text);
+        else setStreamText((text) => (text ?? "") + event.text);
+      },
+    );
+    if (live.current && current.current === sid) {
+      setTurnStep(null);
+      setStreamText(null);
+      // WS-01: view do agent chọn — map/list/detail/cost áp dụng, keep giữ,
+      // clear dọn workspace; view lạ bỏ qua giữ view cũ (an toàn theo hợp đồng).
+      const nextView = (response as { view?: string }).view;
+      if (
+        nextView === "map" ||
+        nextView === "list" ||
+        nextView === "detail" ||
+        nextView === "cost"
+      )
+        setAgentView(nextView);
+      else if (nextView === "clear") {
+        setAgentView(null);
+        setSelected([]);
+        setViewPayload(null);
+      }
+      setViewPayload(
+        ((response as { view_payload?: Record<string, unknown> })
+          .view_payload ?? null) as Record<string, unknown> | null,
+      );
+      apply(response);
+      // AG-09: handover chủ nhà → chuyển sang Tin nhắn mở đúng hội thoại.
+      const handover = response as {
+        intent?: string;
+        conversation_id?: string;
+      };
+      if (handover.intent === "landlord_handover" && handover.conversation_id)
+        openConversation(handover.conversation_id, "/tin-nhan");
+      putMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text:
+            (response.answers?.length || response.house_rules?.length
+              ? [
+                  ...(response.house_rules || []),
+                  ...(response.answers || []).map(
+                    (entry) => `${entry.title}: ${entry.answer}`,
+                  ),
+                  response.disclaimer || "",
+                ]
+                  .filter(Boolean)
+                  .join("\n\n")
+              : "") ||
+            response.message ||
+            response.questions?.join("\n") ||
+            "Nhu cầu đã được ghi vào nháp. Kiểm tra biểu mẫu và xác nhận để tiếp tục.",
+          // FE-07: kèm thẻ mô phỏng khi máy chủ trả status "simulation".
+          simulation:
+            response.status === "simulation"
+              ? (response.simulation ?? null)
+              : null,
+          needsResults: response.status === "needs_results",
+          // AG-11: chip làm rõ từ kho thật (render trên đầu câu trả lời).
+          clarification:
+            (response as { clarification?: Message["clarification"] })
+              .clarification ?? null,
+          // WS-02: "Đã xử lý qua N bước" bung được theo bước thật.
+          steps: response.steps ?? undefined,
+        },
+      ]);
+      // Gợi ý trả lời đổi theo nháp mới ngay cả khi lượt này chưa tạo run.
+      void refresh(true);
+    }
+  };
   // AG-11: bấm chip làm rõ → PATCH nháp với patch có cấu trúc (source=clarify,
   // server ghi confirmed kèm evidence clarify:rN); hiệu ứng tự xác nhận sẽ chạy
   // vòng tìm mới theo cách hiểu đã chọn. Không tự nới điều kiện cứng.
   const applyClarification = async (option: ClarificationOption) => {
     const sid = current.current;
     if (!sid || lock.current) return;
-    if (option.source === "model") {
-      await sendText(option.label);
+    if (option.source === "model" || option.action === "text") {
+      // HN-13.2: chip chữ (kể cả field=other patch rỗng) GỬI ĐÚNG câu đó —
+      // bấm vào phải làm việc thật, không PATCH rỗng rồi đứng im.
+      await sendText(option.text || option.label);
       return;
     }
     try {
@@ -645,6 +708,9 @@ export function RenterWorkspace({
         remove_preferences: [],
         source: "clarify",
       });
+      // Backend đã tự xác nhận và xếp hạng trong cùng yêu cầu: đọc lại phiên + kết quả.
+      const updated = await api.get<Session>(`/sessions/${sid}`);
+      if (live.current && current.current === sid) apply(updated);
       await refresh();
     } catch (err) {
       if (live.current) setError((err as Error).message);
@@ -653,97 +719,39 @@ export function RenterWorkspace({
   const send = async () => {
     const content = text.trim();
     if (!content) return;
-    if (await sendText(content)) setText("");
+    if (lock.current) return;
+    setText("");
+    await sendText(content);
   };
   // Màn trò chuyện mới: tạo phiên và gửi luôn câu đầu tiên trong một nhịp,
   // không có bước chặn "bắt đầu phiên"; lỗi bước nào cũng hiện qua notice.
   const [welcomeText, setWelcomeText] = useState("");
-  const autoConfirmedRev = useRef<number | null>(null);
-  // Nháp đã xử lý gần nhất của phiên: so với nháp mới để biết lượt chat vừa
-  // đổi trường nào. Phiên vừa khôi phục chỉ lấy làm mốc, không tự chạy lại.
-  const seenDraft = useRef<{ sid: string; draft: Draft } | null>(null);
-  // AG-02: revision mà lượt chat vừa ghi mức tiền tuyệt đối/tương đối — chỉ
-  // revision đó được phép đưa budget_hint vào trần khi tự xác nhận.
-  const lastBudgetExplicit = useRef<number | null>(null);
   const createAndSend = async (content: string) => {
     const value = content.trim();
     if (!value || busy) return;
-    if (await create()) {
+    if (await create(true)) {
       setWelcomeText("");
       await sendText(value);
     }
   };
-  // Tự xác nhận nháp của trợ lý khi đã đủ dữ liệu tối thiểu (thành phố + ngân
-  // sách): kết quả tự sinh như tham chiếu, không cần form. Lỗi (thiếu dữ liệu,
-  // 409 đổi nháp) bỏ qua im lặng — trợ lý hỏi thêm và lượt sau thử lại với
-  // draft_revision mới. Không dùng mutate để không bắn error notice làm nhiễu.
-  // Đã có hồ sơ xác nhận thì lượt chat đổi nhu cầu xác nhận lại bản cập nhật
-  // (profileUpdateFromChat) để chạy vòng tìm mới.
-  useEffect(() => {
-    if (!session || restoring) return;
-    if (autoConfirmedRev.current === session.draft_revision) return;
-    const sid = session.session_id;
-    const draft = session.draft;
-    const before =
-      seenDraft.current?.sid === sid ? seenDraft.current.draft : null;
-    const profile = !session.confirmed_profile
-      ? profileFromDraft(draft)
-      : before
-        ? profileUpdateFromChat(
-            session.confirmed_profile,
-            before,
-            draft,
-            lastBudgetExplicit.current === session.draft_revision,
-          )
-        : null;
-    if (!profile) {
-      seenDraft.current = { sid, draft };
-      return;
-    }
-    autoConfirmedRev.current = session.draft_revision;
-    void (async () => {
-      try {
-        const res = await api.post<Results>(`/sessions/${sid}/confirm`, {
-          expected_draft_revision: session.draft_revision,
-          profile,
-        });
-        // Chỉ dời mốc khi xác nhận thành công: lỗi thì lượt sau so lại từ mốc
-        // cũ nên thay đổi chưa áp dụng không bị mất.
-        seenDraft.current = { sid, draft };
-        const updated = await api.get<Session>(`/sessions/${sid}`);
-        if (live.current && current.current === sid) {
-          apply(updated);
-          // Phản hồi xác nhận phải là Results thật (có mảng results) mới gắn
-          // vào khung preview; sai cấu trúc thì bỏ để refresh tự kéo lại.
-          if (Array.isArray(res.results)) setResult(res);
-          setEditing(false);
-        }
-      } catch {
-        /* im lặng: nháp chưa đủ hoặc vừa đổi; lượt chat sau thử lại */
-      }
-    })();
-  }, [
-    session?.session_id,
-    session?.draft_revision,
-    session?.confirmed_profile,
-    restoring,
-    api,
-    apply,
-  ]);
+  // UX-02: tự xác nhận + xếp hạng do BACKEND làm ngay trong lượt chat/chip; frontend
+  // không dựng hồ sơ nữa, chỉ đọc lại phiên và kết quả sau mỗi lượt.
   // Nhu cầu khách chia sẻ trên trang chủ: mở phiên mới rồi gửi ngay câu đầu
   // tiên; nếu đã có phiên đang mở thì chỉ điền sẵn để khách quyết định gửi.
   useEffect(() => {
     if (!initialNeed || needHandled.current || restoring) return;
     needHandled.current = true;
-    onNeedHandled?.();
     const need = initialNeed;
     if (sessionStorage.getItem(`homematch.session.${actor.id}`)) {
+      onNeedHandled?.();
       setText(need);
       messageInput.current?.focus();
       return;
     }
+    // Chỉ xoá nhu cầu chờ sau khi câu đã gửi xong (UX-05).
     void (async () => {
-      if (await create()) await sendText(need);
+      if (await create(true)) await sendText(need);
+      onNeedHandled?.();
     })();
     // Chạy một lần sau khi việc khôi phục phiên kết thúc.
   }, [restoring]);
@@ -883,7 +891,7 @@ export function RenterWorkspace({
     ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, busy]);
-  // Sắp xếp tại máy khách trên danh sách đã duyệt; null giá xếp cuối.
+  // Sắp xếp tại máy khách trên danh sách đã công bố; null giá xếp cuối.
   // Hook phải chạy ở cả nhánh lịch xem để thứ tự hook không đổi.
   const sortedResult = useMemo<Results | null>(() => {
     if (!result || sort === "match") return result;
@@ -919,7 +927,9 @@ export function RenterWorkspace({
           <span className="eyebrow">THỜI GIAN DÀNH CHO NƠI Ở MỚI</span>
           <h1>Lịch xem phòng</h1>
           <p>
-            Đề xuất của bạn được quản lý xác nhận trước khi trở thành lịch hẹn.
+            Đây là thời gian bạn mong muốn. Bên phụ trách tin (chủ nhà hoặc bộ
+            phận điều phối với tin từ tin đăng gốc) sẽ xác nhận hoặc đề xuất giờ
+            khác.
           </p>
         </div>
         <ErrorNotice error={error} onClose={() => setError(null)} />
@@ -938,7 +948,38 @@ export function RenterWorkspace({
           {viewsLoading && !viewings.length ? (
             <LoadingState label="Đang tải lịch xem phòng…" />
           ) : (
-            <ViewingList items={viewings} />
+            <ViewingList
+              items={viewings}
+              onFeedback={(id, rating, note) => {
+                void mutate(async () => {
+                  await api.post(`/viewings/${id}/feedback`, {
+                    rating,
+                    note: note || null,
+                  });
+                  await loadViews();
+                });
+              }}
+              onAction={(id, action) => {
+                void mutate(async () => {
+                  // crawl.md sửa lỗi 4 (08/11): choose_time gửi giờ mới (ngày mai,
+                  // khung sáng, +07:00) để máy chủ cập nhật requested_at thật.
+                  const body =
+                    action === "choose_time"
+                      ? {
+                          action,
+                          requested_at: new Date(
+                            `${new Date(Date.now() + 86400000)
+                              .toISOString()
+                              .slice(0, 10)}T08:00:00+07:00`,
+                          ).toISOString(),
+                          time_slot: "morning",
+                        }
+                      : { action };
+                  await api.post(`/viewings/${id}/actions`, body);
+                  await loadViews();
+                });
+              }}
+            />
           )}
         </section>
       </>
@@ -952,6 +993,11 @@ export function RenterWorkspace({
     return -1;
   })();
   const resultList = sortedResult?.results ?? [];
+  const mapVisible = showMap && agentView !== "list";
+  // Chip do máy chủ chọn theo trạng thái phiên; lượt có chip làm rõ thì chỉ hiện chip đó.
+  const replyPrompts = messages[messages.length - 1]?.clarification
+    ? []
+    : (result?.suggested_prompts ?? []);
   const pins = resultList.map((item) => ({
     id: item.room_id,
     title: item.title,
@@ -960,7 +1006,26 @@ export function RenterWorkspace({
     uncertainty_m: item.uncertainty_m ?? null,
     location_accuracy: item.location_accuracy ?? "area_only",
     monthly: item.cost.monthly_total_vnd,
+    area: item.area,
+    city: item.city,
+    area_m2: item.area_m2,
+    bedrooms: item.bedrooms ?? null,
+    room_type: item.room_type ?? null,
   }));
+  // Bấm marker: làm nổi thẻ tương ứng và cuộn tới thẻ trong danh sách.
+  const handleMapSelect = (id: string) => {
+    setMapFocusId(id);
+    const card = document.querySelector(`[data-room-id="${CSS.escape(id)}"]`);
+    card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  // Bấm thẻ nhỏ: mở khung chi tiết (đánh đổi, cần xác minh, bảng phí, chat,
+  // đặt lịch) và làm nổi marker tương ứng.
+  const openDetail = (item: Candidate) => {
+    setDetailId(item.room_id);
+    setMapFocusId(item.room_id);
+    setAgentView("detail");
+  };
+  const mapSelectedId = cardHoverId ?? mapFocusId;
   if (restoring)
     return (
       <div className="agent-screen-load">
@@ -1118,15 +1183,6 @@ export function RenterWorkspace({
               </p>
             ) : (
               <>
-                {busy && turnStep && (
-                  <p
-                    className="chat-turn-step"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    Đang xử lý — bước: {turnStep}
-                  </p>
-                )}
                 {messages.map((m, i) => (
                   <div className={`chat-message ${m.role}`} key={i}>
                     <span className="visually-hidden">
@@ -1139,6 +1195,11 @@ export function RenterWorkspace({
                         aria-label="Lựa chọn làm rõ"
                       >
                         <strong>{m.clarification.question}</strong>
+                        {m.clarification.reason && (
+                          <small className="chat-clarify-reason">
+                            {m.clarification.reason}
+                          </small>
+                        )}
                         <div className="relax-chips">
                           {m.clarification.options.map((option) => (
                             <button
@@ -1161,6 +1222,24 @@ export function RenterWorkspace({
                       />
                     ) : (
                       <p>{m.text}</p>
+                    )}
+                    {m.role === "user" && m.failed && (
+                      <p className="chat-send-failed" role="alert">
+                        Chưa gửi được.{" "}
+                        <button
+                          type="button"
+                          className="button small outline"
+                          onClick={() => void sendText(m.text)}
+                        >
+                          Gửi lại
+                        </button>
+                      </p>
+                    )}
+                    {m.assumptions && m.assumptions.length > 0 && (
+                      <p className="chat-assumptions">
+                        {m.assumptions.join(" ")} Bạn có thể sửa trong “Nhu cầu
+                        của tôi”.
+                      </p>
                     )}
                     {m.steps && m.steps.length > 0 && (
                       <StepsDisclosure steps={m.steps} />
@@ -1236,20 +1315,23 @@ export function RenterWorkspace({
             )}
             {busy && (
               <div className="chat-typing" role="status">
-                <span aria-hidden="true">•••</span> Trợ lý đang xử lý…
+                <span aria-hidden="true">•••</span>{" "}
+                {turnStep ? `${turnStep}…` : "Trợ lý đang xử lý…"}
               </div>
             )}
-            {!busy && result?.steps?.length ? (
+            {!busy &&
+            result?.steps?.length &&
+            !messages.some((m) => m.steps?.length) ? (
               <StepsDisclosure steps={result.steps} />
             ) : null}
-            {resultVisible && showMap && (
-              <div className="chat-sys-chip">
-                <Icon name="pin" size={13} /> Đã mở bản đồ trong khung preview
-              </div>
-            )}
           </div>
           <div className="agent-chat-foot">
             <ErrorNotice error={error} onClose={() => setError(null)} />
+            {notice && (
+              <div className="notice success" role="status">
+                {notice} <Link to="/nguoi-thue/lich-xem">Xem lịch đã gửi</Link>
+              </div>
+            )}
             <form
               className="agent-composer"
               onSubmit={(e) => {
@@ -1294,35 +1376,24 @@ export function RenterWorkspace({
                 <Icon name="send" size={17} />
               </button>
             </form>
-            <div className="agent-quick" aria-label="Câu hỏi nhanh">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void sendText(
-                    "Tính giúp mình tổng chi phí thuê mỗi tháng và khoản ban đầu cho căn đầu tiên.",
-                  )
-                }
+            {replyPrompts.length > 0 && (
+              <div
+                className="agent-quick"
+                role="group"
+                aria-label="Gợi ý trả lời"
               >
-                Tính tổng chi phí
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void sendText("Gợi ý thêm các căn tương tự căn đầu tiên.")
-                }
-              >
-                Gợi ý căn tương tự
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void sendText("Mình muốn đổi khu vực tìm.")}
-              >
-                Đổi khu vực
-              </button>
-            </div>
+                {replyPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void sendText(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="agent-hint">
               Enter để gửi · Shift + Enter xuống dòng · Ngân sách chốt trong
               “Nhu cầu của tôi”.
@@ -1346,9 +1417,16 @@ export function RenterWorkspace({
               <button
                 type="button"
                 aria-label="Bản đồ"
-                aria-pressed={showMap}
+                aria-pressed={mapVisible}
                 disabled={!resultVisible}
-                onClick={() => setShowMap((v) => !v)}
+                onClick={() => {
+                  // Agent đang chọn dạng danh sách thì bấm là mở bản đồ, không phải tắt.
+                  setSideView("rooms");
+                  if (agentView === "list") {
+                    setAgentView(null);
+                    setShowMap(true);
+                  } else setShowMap((v) => !v);
+                }}
               >
                 <Icon name="pin" size={16} />
               </button>
@@ -1400,12 +1478,18 @@ export function RenterWorkspace({
               </div>
             ) : (
               <div className="agent-results">
-                {showMap && agentView !== "list" && (
+                {mapVisible && (
                   <div className="agent-map">
                     <span className="agent-map-chip">
                       {resultList.length} căn phù hợp
                     </span>
-                    <MapView pins={pins} />
+                    <MapView
+                      pins={pins}
+                      selectedId={mapSelectedId}
+                      onSelect={handleMapSelect}
+                      savedIds={savedIds}
+                      onToggleSave={toggleSave}
+                    />
                   </div>
                 )}
                 {(agentView === "detail" || agentView === "cost") && (
@@ -1426,13 +1510,17 @@ export function RenterWorkspace({
                       <button
                         type="button"
                         className="text-button"
-                        onClick={() => setAgentView(null)}
+                        onClick={() => {
+                          setAgentView(null);
+                          setDetailId(null);
+                        }}
                       >
                         <Icon name="refresh" size={13} /> Bố cục thường
                       </button>
                     </div>
                     {(() => {
                       const focusedId =
+                        detailId ??
                         selected[0] ??
                         (viewPayload?.room_id as string | undefined);
                       const focused =
@@ -1454,7 +1542,10 @@ export function RenterWorkspace({
                     })()}
                   </div>
                 )}
-                {agentView !== "map" && (
+                {/* Khung chi tiết (bấm thẻ) thay thế danh sách: bản đồ bên
+                    trái giữ nguyên, chi tiết chiếm cột phải. View "list" do
+                    agent chọn vẫn hiện danh sách (bản đồ đã ẩn). */}
+                {(agentView === null || agentView === "list") && (
                   <div className="agent-suggest">
                     <div className="agent-suggest-head">
                       <span>SẮP XẾP:</span>
@@ -1464,7 +1555,9 @@ export function RenterWorkspace({
                         onChange={(e) =>
                           setSort(
                             e.target.value as
-                              "match" | "price_asc" | "price_desc",
+                              | "match"
+                              | "price_asc"
+                              | "price_desc",
                           )
                         }
                       >
@@ -1502,6 +1595,9 @@ export function RenterWorkspace({
                           }}
                           savedIds={savedIds}
                           onToggleSave={toggleSave}
+                          highlightId={mapSelectedId}
+                          onHoverCard={setCardHoverId}
+                          onOpenCard={openDetail}
                         />
                       )}
                       {!editing &&
@@ -1561,11 +1657,14 @@ export function RenterWorkspace({
             onDone={() => {
               setViewRoom(null);
               void loadViews();
+              setNotice(
+                "Đã gửi lịch xem mong muốn. Bên phụ trách tin (chủ nhà hoặc điều phối với tin từ tin gốc) sẽ xác nhận hoặc đề xuất giờ khác; theo dõi ở mục Lịch xem.",
+              );
               putMessages((m) => [
                 ...m,
                 {
                   role: "assistant",
-                  text: "Đã ghi nhận yêu cầu xem phòng. Bạn có thể theo dõi ở mục Lịch xem; lịch còn chờ quản lý xác nhận.",
+                  text: "Đã ghi nhận yêu cầu xem phòng. Bạn có thể theo dõi ở mục Lịch xem; lịch còn chờ xác nhận của bên phụ trách tin.",
                 },
               ]);
             }}

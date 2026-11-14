@@ -103,10 +103,14 @@ def test_apartment_bedrooms_filter_and_unknown_needs_verification(tmp_path):
     small = {**DEMO_01, "id": "apt-1pn", "room_type": "apartment", "bedrooms": 1}
     catalog = catalog_with(tmp_path, apartment, unknown, small, DEMO_01)
     found, diagnostics = catalog.eligible_candidates(demo_profile(room_type="apartment", min_bedrooms=2))
-    assert [item.room_id for item in found] == ["apt-2pn"]
+    # D-12: bedroom chưa ghi KHÔNG bị giữ — hiện kèm nhãn bedrooms_unknown; chỉ căn
+    # 1PN bị loại vì điều kiện cứng min_bedrooms.
+    assert [item.room_id for item in found] == ["apt-2pn", "apt-unknown"]
     assert found[0].room_type == "apartment" and found[0].bedrooms == 2
+    unknown = next(item for item in found if item.room_id == "apt-unknown")
+    assert "bedrooms_unknown" in unknown.verification
     assert diagnostics["rejected"] == {"bedrooms": 1, "room_type": 1}
-    assert diagnostics["verification"] == {"bedrooms": 1}
+    assert diagnostics["verification"] == {}
 
 
 def published(service, renter, landlord, profile):

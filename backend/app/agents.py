@@ -17,7 +17,7 @@ from typing import Callable
 
 from pydantic import ValidationError
 
-from .agent_tools import TOOL_REGISTRY, public_result, tools_by_agent
+from .agent_tools import TOOL_REGISTRY, public_result, role_tools, tools_by_agent
 from .models import DomainError
 
 AGENT_TOOLS: dict[str, frozenset[str]] = tools_by_agent()
@@ -31,6 +31,9 @@ class ToolBox:
         self.max_steps = max_steps
         self.calls: list[dict] = []
         self.denied: list[dict] = []
+        # Multi-agent (HN-13): khi lượt chạy dưới một role, role cũng bị chặn ở
+        # lớp call() — song song với bộ tool đã lọc theo roster ở build_tools.
+        self.role: str | None = None
         self._lock = Lock()
 
     def call(self, agent: str, tool: str, function: Callable, *args, **kwargs):
@@ -49,11 +52,18 @@ class ToolBox:
 
         Graph cũ tiếp tục dùng call() để nhận object nghiệp vụ nguyên bản.
         Không ghi tham số lỗi hay nội dung exception vào phản hồi của provider.
+        HN-13: role (khi có) chặn ở biên model này — tầng hai sau bộ tool đã
+        lọc theo roster ở build_tools; code nội bộ gọi call() nên không bị vướng.
         """
         definition = TOOL_REGISTRY.get(name)
         if definition is None:
             return {"ok": False, "error": "tool_unavailable", "message": "Công cụ không có trong registry.",
                     "hint": "Chọn một công cụ trong danh sách được cấp."}
+        if self.role is not None and name not in role_tools(self.role):
+            self.denied.append({"agent": self.role, "tool": name})
+            return {"ok": False, "error": "tool_not_allowed",
+                    "message": f"Agent {self.role} không được dùng công cụ {name}.",
+                    "hint": "Chỉ dùng công cụ trong danh sách được cấp cho vai trò này."}
         try:
             parsed = definition.Args.model_validate(arguments)
             result = self.call(definition.agent, name, function,
@@ -66,7 +76,8 @@ class ToolBox:
         except DomainError as error:
             if error.code == "needs_clarification":
                 field = getattr(error, "field", "other")
-                if field not in {"destination_radius", "budget_scope", "area", "room_type", "people"}:
+                if field not in {"destination_radius", "budget_scope", "area", "room_type", "people",
+                                 "city", "budget_cap", "destination"}:
                     field = "other"
                 return {"ok": False, "error": error.code, "field": field,
                         "message": "Cần làm rõ nhu cầu trước khi tìm.",

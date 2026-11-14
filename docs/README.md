@@ -16,14 +16,13 @@
 | Agent, multi-agent, memory, tối ưu semantic | [Thiết kế agent](thiet-ke-agent.md) |
 | Kiến trúc đích, kiến trúc đang chạy | [Kiến trúc đích](kien-truc-homematch.md), [bản 0.4.0](kien-truc-trien-khai.md) |
 | API đang chạy, API cần bổ sung | [API 0.4.0](api-contract.md) + [OpenAPI](openapi.json), [API đích](api-san-pham-v1.md) |
-| Việc cần làm, thứ tự | [Kế hoạch triển khai](ke-hoach-trien-khai.md); [coding plan cho AI agent](coding-plan/README.md), chia BE, FE, Agent, Data |
+| Việc cần làm, thứ tự | [Kế hoạch triển khai](ke-hoach-trien-khai.md); [coding plan crawl Chợ Tốt](coding-plan/crawl.md); [coding plan luồng thuê end-to-end](coding-plan/e2e-thue-phong.md); [coding plan sửa luồng UX người thuê](coding-plan/sua-luong-ux.md) |
 | Code đang ở đâu, bằng chứng | [Trạng thái](trang-thai-trien-khai.md) |
-| Tham khảo HubHome | [Nghiên cứu](nghien-cuu-hubhome.md), [khảo sát đăng nhập 01/10](khao-sat-hubhome-da-dang-nhap.md), [khảo sát bổ sung chủ nhà + người thuê 03/11](khao-sat-hubhome-dashboard-chu-nha.md), [khảo sát giao diện & UX 03/11](khao-sat-hubhome-giao-dien-ux.md) |
 | Lần căn chỉnh docs 05/10 | [Rà soát](ra-soat-tai-lieu.md) |
 
 ## Quy ước
 
-- Mã yêu cầu `FR-xx`/`NFR-xx` ↔ tiêu chí `AC-xx` ↔ task `Tx.y`. Quyết định điều chỉnh đề bài là `D-0x`, giả định là `A-0x`. Mục nghiên cứu HubHome là `HH-xx`.
+- Mã yêu cầu `FR-xx`/`NFR-xx` ↔ tiêu chí `AC-xx` ↔ task `Tx.y`. Quyết định điều chỉnh đề bài là `D-0x`, giả định là `A-0x`.
 - **Hiện có**: có code và test. **Đích**: thiết kế chưa triển khai. Không ghi đạt nếu chưa có bằng chứng chạy thật kèm ngày và cấu hình.
 - Khi tài liệu mâu thuẫn, ưu tiên theo thứ tự: đề cương → đặc tả → yêu cầu/nghiệm thu → thiết kế/kiến trúc/API → kế hoạch. Với hành vi đang chạy, mã nguồn và `api-contract.md` là nguồn đối chiếu.
 

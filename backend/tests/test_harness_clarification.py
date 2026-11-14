@@ -158,7 +158,11 @@ def test_only_two_questions_before_first_results_survive_restart(agent, renter, 
                            SimpleNamespace(content="Bạn điền biểu mẫu nhu cầu nhé.", tool_calls=None)]), model="fixture"))
     try:
         reply = restarted.message(sid, renter, "gần điểm đến", turn_id="third")
-        assert not reply.get("questions") and "Nhu cầu của tôi" in reply["message"]
+        # HN-13.3.3: hết 2 câu hỏi nhưng draft đã đủ tối thiểu (city + mức tiền)
+        # → CHẠY TÌM trực tiếp (như auto-confirm của FE), không đẩy khách sang form.
+        assert not reply.get("questions") and (
+            "Đã xác nhận nhu cầu" in reply["message"] or "căn hợp nhất" in reply["message"]
+            or "hợp nhu cầu" in reply["message"])  # D-12
         assert restarted.repo.session(sid)["clarification_questions"] == 2
     finally:
         restarted.close()
@@ -202,15 +206,21 @@ def test_questions_in_final_text_obey_turn_and_session_limits(agent, renter):
     assert agent.repo.session(sid)["clarification_questions"] == 2
 
 
-def test_catalog_question_replaces_conflicting_model_question(agent, renter, monkeypatch):
+def test_model_question_without_ask_user_is_kept_without_guessing_chip(agent, renter, monkeypatch):
+    """HN-13.2: model tự hỏi trong câu trả lời mà không qua ask_user → GIỮ câu của
+    model, KHÔNG gắn chip kho đoán (chip có thể lệch câu hỏi); khách gõ tự do.
+    Chỉ số question_without_chip được ghi vào trace để bộ đo tính tỉ lệ."""
     force_ask(monkeypatch)
     sid = prepare(agent, renter)
     agent.interpreter.client = ModelClient([SimpleNamespace(
         content="Bạn muốn loại phòng nào?", tool_calls=None)])
     reply = agent.message(sid, renter, "gần điểm đến")
-    assert reply["clarification"]["field"] == "destination_radius"
-    assert reply["message"] == reply["clarification"]["question"]
-    assert "loại phòng" not in reply["message"]
+    assert "loại phòng" in (reply.get("message") or "")  # câu model giữ nguyên
+    assert not reply.get("clarification")  # không gắn chip đoán
+    rows = agent.repo.db.execute(
+        "SELECT s.summary FROM hm_agent_steps s JOIN hm_agent_turns t ON s.turn_row_id=t.id "
+        "WHERE t.session_id=? AND s.name='question_without_chip'", (sid,)).fetchall()
+    assert rows
 
 
 def test_failed_write_restores_transient_assumptions(agent, renter):

@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import App from "../App";
@@ -43,7 +49,7 @@ it("clears private data on logout and ignores an expired response from the prior
   render(<App />);
   await screen.findByText("renter-a");
   const user = userEvent.setup();
-  // Menu tài khoản kiểu tham chiếu HubHome: mở từ avatar cuối thanh rail.
+  // Menu tài khoản: mở từ avatar cuối thanh rail.
   await user.click(screen.getByRole("button", { name: "Tài khoản renter-a" }));
   await user.click(screen.getByRole("button", { name: "Đăng xuất" }));
   expect(sessionStorage.getItem("homematch.session.renter-a")).toBeNull();
@@ -81,8 +87,13 @@ it("manually retries a viewing with the exact payload/key instead of issuing a n
     />,
   );
   const user = userEvent.setup();
-  const time = new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16);
-  await user.type(screen.getByLabelText(/Thời gian xem/), time);
+  const time = new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10);
+  fireEvent.change(screen.getByLabelText(/Ngày muốn xem/), {
+    target: { value: time },
+  });
+  await user.type(screen.getByLabelText("Họ tên"), "Nguyễn Văn A");
+  await user.type(screen.getByLabelText("Số điện thoại"), "0901234567");
+  await user.click(screen.getByRole("checkbox"));
   await user.click(screen.getByRole("button", { name: "Gửi yêu cầu xem" }));
   await screen.findByText("Mất mạng");
   await user.click(
@@ -91,7 +102,20 @@ it("manually retries a viewing with the exact payload/key instead of issuing a n
   await waitFor(() => expect(done).toHaveBeenCalledTimes(1));
   expect(post).toHaveBeenCalledTimes(2);
   expect(post.mock.calls[0][1]).toEqual(post.mock.calls[1][1]);
+  const payload = post.mock.calls[0][1] as {
+    requested_at: string;
+    contact_name: string;
+    contact_phone: string;
+    contact_consent: boolean;
+    time_slot: string;
+  };
+  expect(payload.requested_at).toMatch(/Z$/);
+  // crawl.md E-07: form ghép ngày + khung giờ, bắt buộc liên hệ + đồng ý.
+  expect(payload.contact_name).toBe("Nguyễn Văn A");
+  expect(payload.contact_phone).toBe("0901234567");
+  expect(payload.contact_consent).toBe(true);
+  expect(payload.time_slot).toBe("morning");
   expect(
-    (post.mock.calls[0][1] as { requested_at: string }).requested_at,
-  ).toMatch(/Z$/);
+    payload.requested_at.startsWith(new Date(time).toISOString().slice(0, 10)),
+  ).toBe(true);
 });

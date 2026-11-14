@@ -2,51 +2,53 @@
   "api_budget_vnd": null,
   "code_hashes": {
     "backend/app/__init__.py": "26504cf15e830f4edfef0f6339701246b391e53358b093abf33a05365a5bacf8",
-    "backend/app/advisor.py": "7368fe7ecab32d7f6ee42e03a62ff8496775aec364455a3eec31802bf3ab49ce",
+    "backend/app/advisor.py": "d2e0585e466ff2a4ddbe8d118db33057ea8ce4a8e06015040ad5fad34411768e",
     "backend/app/agent_budget.py": "c7610069b644efa0b62aa194003a203f3d82b929a39368fd0698d1aee9a418ee",
-    "backend/app/agent_capability.py": "0ce6ff82e2405cc603e49de360d254e6129fd3980bd282b4391fabb348d5471f",
+    "backend/app/agent_capability.py": "58cafb63e23893cceba85e77d755777a38559f441549c5db69ba1087ce6e3128",
     "backend/app/agent_cassette.py": "46cdf9265dc5cb638fd0cff868df2fb9f5e59b11ef5a2910bd5d38a32e336f70",
     "backend/app/agent_executor.py": "889dcf2dc78f6619acbdd632ba5325360d040b1146ce123a3f6f9ab6598ab421",
-    "backend/app/agent_guard.py": "a87d9a0e316a357e3c81e7c502d45ee2be6c3c7879ada62fc94fe20d1558317b",
-    "backend/app/agent_loop.py": "070846fd1c664bdb852262e77d3bb2721ddc6caba2aba1a33e0ec11ac60a1ee1",
+    "backend/app/agent_guard.py": "fea023a4f173168faba3eec7b9415d5b2365025185035cfaa57a42528182cb6c",
+    "backend/app/agent_loop.py": "7d3c1614d19f9425adee2737cdb4ff433ce05efaba2e0e98cea94bf28f1bd56b",
     "backend/app/agent_provenance.py": "98bd2e7a3d269aba3b08fff0b54d6c270b2e79714e66e90d48786f002e9e1e4a",
-    "backend/app/agent_tools.py": "2b93efd67403995229aa5bd8307ca58f6f92d1fbdbfe0bcc20aeb55fed8aab3e",
-    "backend/app/agents.py": "4b69d99833663ade2ed3ccc04a61e6973173a65a40c6ddfc13893e02bd0f6f51",
+    "backend/app/agent_tools.py": "c3d1e6635a3d34991fe7f26c5fdede305fbe22cd2d053e92e3199feb6f031a15",
+    "backend/app/agents.py": "5e1c15e55f4254a227cc32b040bb8358fc141900827393dc4692fd7080fcaf21",
     "backend/app/auth.py": "323658688a98521451c2f2547c23193679acdd9e32b3ad173c52aba0be08cf4d",
-    "backend/app/automation.py": "c3648273330198317a40bb01832a538ca95de9bb43941eb9c15b688bc88a6d5b",
-    "backend/app/capabilities.py": "d8409cf14bfa448f1b40233f5c28c4f01ae48a980d734847c71c034e361f1f23",
-    "backend/app/catalog.py": "2fb2e9d36875c078056d83d15b4aa293104a577f3d2f6c784f6441abd45c66fe",
-    "backend/app/clarify.py": "41585fd7a5e8d4ea1a65e770a02e52f9d99e89e06973f54a46eba6f4750162f6",
+    "backend/app/automation.py": "c7b99b795003aeaff72b7835fdb909db42bfa8effac04de326fecab19af83868",
+    "backend/app/capabilities.py": "7b4a433eb0227e7abc400c74ac1a32e0bbc05469e44541af486efdf7beb0ae07",
+    "backend/app/catalog.py": "f309d95487da53cb11a2b98c2690025779d937e9432a5d2de654458dfc5b1252",
+    "backend/app/clarify.py": "47ae43f5392084a160a6e53cc9ccc64e0736f1b2af5968f9cbc748b0613edfe4",
     "backend/app/conversations.py": "51b10bea4209d23608deea2dace5a90a5197fa6235f01f106afd1ca5f648eece",
-    "backend/app/copilot.py": "a5cc311253fb61d4e2f3e49bc73a7d8ad4514dd24f0d6bfd27f0a36cf6d8c7ee",
+    "backend/app/copilot.py": "222a7d329b13c78b190ffd452dfbb1de766309f411702f827c9e408c250fcc84",
     "backend/app/cost_metrics.py": "347b0d062a3199a507f7767bc790d4c757ea2fcd2179e512e18658aa67b3af6a",
     "backend/app/costs.py": "79e8313a8953e889aea691856f33992a935b4975799a5a5610e7b993e08c68f3",
-    "backend/app/database.py": "fda9356c4199d89fca61db343f9d15593fe1080724093198145dfcbee1202f94",
-    "backend/app/decisions.py": "3b164903397f31fe9dab98f29f6898c64238e8e0ccb84976a57212df539fb025",
-    "backend/app/handbook.py": "89f1bc2e275c1447eb6c2633bb563f78c1370700e11b20c7f4c6859971a8af2e",
-    "backend/app/interpreter.py": "39c266bc459c9c9bbc114fbce9f50acb5c2d1b094bbcb2325656e80ae01a0ef7",
-    "backend/app/listings.py": "6a1a8f31edd1f0080b94eee918c948816ffba42fcd37a80be13ae1d5c135c9ac",
+    "backend/app/database.py": "651d4e124f04e2c4a282907c8563e6992308a9352ec6f6edd38eda1211729957",
+    "backend/app/decisions.py": "373b24c05d849091fcd171a31f934aea460fe4763da5c16d167b8fdbe4331190",
+    "backend/app/handbook.py": "ce24d4fb0b5f7d6c55fdcaa436da8b2ce4d853d79633ce1fb8954e1f7b87d274",
+    "backend/app/input_analyst.py": "de4974c2228ce429fc9bf2b102a8bf34f159da55d1423c2a79c20e2bd6fcc000",
+    "backend/app/interpreter.py": "b97d5b0e9a874a5d66f1027ac586b6933c4edd60f55a758c84d466d5a7be2ad7",
+    "backend/app/listings.py": "d9df911cb3bd5d28323d484a73ea4457a2f15a274c88de3d3e99dafa6f6c0900",
     "backend/app/locations.py": "65230342d38d017d14ef5faa651fde81be51ccdc06685c09638e3d181d449c1e",
-    "backend/app/main.py": "fcf1c0341d72087ccf8540617bbb1a585e08d7bd61bfd63028f89b8a696c9cc2",
+    "backend/app/main.py": "abe73723c6b341a34f45683b1fc929a6d21ed70e97f1328415994b23b9be97a7",
     "backend/app/media.py": "efb6e4b2fe9765d6d36f5f7068a1b120f10eec00dd12acc362b02e7949f2e918",
-    "backend/app/memory.py": "217aca5fbe8ed0578eed1afd1ba8d78fb2fb3abbdbecf802ccba93366e1e6db4",
-    "backend/app/migrations.py": "429590aa163e9ef039dd93e64f3abce164beeae30525ad140c113a0aafdf9df4",
-    "backend/app/models.py": "443fcdcebbb47a46e576ff6f5042dd35aa9f02f4de5b37fa4530c4687f46b21f",
+    "backend/app/memory.py": "657f7e05b942889eab6395d3b16bb8c3752899b4a5699698f25b1cf334c46bf5",
+    "backend/app/migrations.py": "bf898d67fe12ace1ba1d83a57a2a6f64ee60c9af8def76b4f3a816d742e69643",
+    "backend/app/models.py": "771dafd254b27c21f1fbbf84597187189f2bf649b93bff0a400b6a11695c9c07",
     "backend/app/notifications.py": "39b3fcac748c014fdae8fad5bf86c35ddf494e009472be7db27cd0f1ecf8d051",
     "backend/app/operations.py": "81b607e8a6b5882a400d04cc1ea0f0ea1648c4987568d6814f5529ed3d246ee6",
     "backend/app/organizations.py": "2c7af715a58ed0f60bf8d3ae6a5c2e2e9462c557729866cf1abd56f89c7259b9",
-    "backend/app/pms.py": "2faf16d8a3ab2448b23dc458aa1cc656b689a9a789897d37affea4fbbadc6423",
-    "backend/app/projection.py": "1c5ca25c99811aa3015ec204d93775654956c6bf9af10c41e79c8dc343baf6d4",
+    "backend/app/pms.py": "6a5bde1aefa2f257838515dab12482dba62a9bb086ff4f19072d123bc36e738c",
+    "backend/app/projection.py": "40a4e60076c91f69c001861efe0bd373610cc6d688b3b9465eaa9c9dfbadac59",
     "backend/app/promotions.py": "fc6dd06c41a5ac11d1377cef2f4210f8426f2772cb5c819cbc93ebe89f4fc712",
     "backend/app/provider_breaker.py": "745ae692cb037e1a93da17d43eda5b06690a545b8eabedf6e4c1211ca3fdbc19",
-    "backend/app/repository.py": "2d02009bc4948e05e88ed418361d9842ac924636d0d79792e361b675c893b212",
-    "backend/app/schemas.py": "a1a105020238f11ad786cce977e1d048c91c834023a7ff35e7ca19786a4f3c04",
+    "backend/app/repository.py": "f683dffdcf721ada5cd6d6cf481f16a05e0c03e4ed1fbbce8e6acf021233f755",
+    "backend/app/schemas.py": "a131790a0d9499af693a09f51d1479ab6c01d9ad10a8b855f41a835d51aa2a5e",
     "backend/app/semantic.py": "ab4f7793d1b7bd25eaca42bb04c9ac0275e10824abc6b151ca01ae99d729a5cd",
-    "backend/app/service.py": "b1b1aa6d386a6dc181d09cb63b6fafbe43ed69afb098c7887d20b3ec2eaaee8b",
-    "data/generate.py": "f0a782f9963d734566d0a8c26807d1c223dacc13fcadced05dcf111c0cdfe8f5",
+    "backend/app/service.py": "2b8aa98c899f05caabe33fb9633add9b8d86a17f6ed40d33a01c246e6af90a84",
+    "backend/app/trust.py": "e7a8d0a4b6247f305f1396bc424c76a186c1962c8ebb73bf04b1c382998784f2",
+    "data/generate.py": "94107fb41c93ad1c07858718656958afcfedb0d21233e355551f6208768f9a03",
     "eval/__init__.py": "9064bcade47312dfebf8ac237cd27a2a80bd7fcf9b3726826c9f1c2d686d2512",
     "eval/__main__.py": "9975ce39207918713cce2d3a10fd93535f7b6872ec8e0f68a0627f0c2c967dcb",
-    "eval/agent_eval.py": "5e59f361c7d33f16c8859bc6ed88707a4f262beb7cc6c695a693bf4d3c24058f",
+    "eval/agent_eval.py": "3a9954229dfbdc815cd0fe225d170d466c69344da12951176e589bedbbb91fe1",
     "eval/common.py": "dbe0aa7049ff4f5be02ce8a70a75641340f697ab51266b8c2263867d6ced3051",
     "eval/config/protocol.json": "9cc1c5a98b0b0612273706c85bd9f5137830915f46d70fd3b120bc3597a9271f",
     "eval/intents.py": "3d3b2988813c50f6e9369ec7b83e971d6c987b8364688b549547ea3bddcd91b5",
@@ -54,15 +56,15 @@
     "eval/labeling.py": "0170bf6bb9f8e19729fb696d13ca18182ee716e32c0e9a9851da69e187c2cfdb",
     "eval/measurement.py": "a913c726fd7e3c3a2ad44f895ed2195d3c9429a84946457db398cac90c2e6e86",
     "eval/metrics.py": "3973b9273c8b3c1d9fb60c7f19c44a4d5845a73111de34a96121c57408002bc9",
-    "eval/pipeline.py": "d4b78c24bfcda33da5f2a69d750ca6576ac739634b838d880ed50a2cf025438e",
+    "eval/pipeline.py": "61d0346e1cc19d7a19b4eeb9dccecd008987279eb41e147a82635886ab33ab2d",
     "eval/reporting.py": "785be3e03eff5580c3ef72cb96bab78a631851f0a425c40bd3722d3551031b2a",
-    "eval/suites.py": "00a53e436bf6db526015ed21447064979922dda1e63507fbf272511a8c812060",
+    "eval/suites.py": "eda9299b660f454abaeac0123419b9f041cc925487fb454bf8d14af653b78d3a",
     "requirements.lock": "d6994fedbbadf67ac3d60dac7ba6e6be02ac9c7dce0590f607637a299eb5c47b",
     "requirements.txt": "4f8e6c56349e5ad1ebad162e45176e58db0c3442e6367146e9a64bd1e01ec856"
   },
   "cost_vnd": 0,
   "gold_origin": "authored_synthetic_cases_not_real_customer_judgments",
-  "input_manifest_hash": "592be828a817e0005168ee933f0731b6331a3f512e1c89cfd9480bfa4af47b40",
+  "input_manifest_hash": "9ad86b883dfabbada1bbc0ddf47230694282215d6ba1f346b2371a083c64c590",
   "kind": "synthetic_gold_extraction_component",
   "metrics": {
     "ambiguity_note": "Unsupported inferred fields are FP; question correctness needs conversation traces, not extraction alone.",
@@ -150,7 +152,7 @@
         "soft_description": null
       },
       "group_id": "profile-001",
-      "machine_latency_ms": 0.65,
+      "machine_latency_ms": 77.4842,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -194,7 +196,7 @@
         "soft_description": null
       },
       "group_id": "profile-001",
-      "machine_latency_ms": 0.1862,
+      "machine_latency_ms": 3.9514,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -238,7 +240,7 @@
         "soft_description": null
       },
       "group_id": "profile-002",
-      "machine_latency_ms": 0.2752,
+      "machine_latency_ms": 3.15,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -281,7 +283,7 @@
         "soft_description": null
       },
       "group_id": "profile-003",
-      "machine_latency_ms": 0.1943,
+      "machine_latency_ms": 1.1002,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -323,7 +325,7 @@
         "soft_description": null
       },
       "group_id": "profile-004",
-      "machine_latency_ms": 0.1259,
+      "machine_latency_ms": 3.0713,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -365,7 +367,7 @@
         "soft_description": null
       },
       "group_id": "profile-005",
-      "machine_latency_ms": 0.086,
+      "machine_latency_ms": 0.6652,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -407,7 +409,7 @@
         "soft_description": null
       },
       "group_id": "profile-005",
-      "machine_latency_ms": 0.1119,
+      "machine_latency_ms": 0.337,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -449,7 +451,7 @@
         "soft_description": null
       },
       "group_id": "profile-006",
-      "machine_latency_ms": 0.1187,
+      "machine_latency_ms": 0.4505,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -492,7 +494,7 @@
         "soft_description": null
       },
       "group_id": "profile-007",
-      "machine_latency_ms": 0.1194,
+      "machine_latency_ms": 0.9927,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -536,7 +538,7 @@
         "soft_description": null
       },
       "group_id": "profile-008",
-      "machine_latency_ms": 0.1717,
+      "machine_latency_ms": 0.9362,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -580,7 +582,7 @@
         "soft_description": null
       },
       "group_id": "profile-009",
-      "machine_latency_ms": 0.0942,
+      "machine_latency_ms": 0.4082,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -624,7 +626,7 @@
         "soft_description": null
       },
       "group_id": "profile-009",
-      "machine_latency_ms": 0.1196,
+      "machine_latency_ms": 0.4168,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -665,7 +667,7 @@
         "soft_description": null
       },
       "group_id": "profile-010",
-      "machine_latency_ms": 0.1232,
+      "machine_latency_ms": 0.4322,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -705,7 +707,7 @@
         "soft_description": null
       },
       "group_id": "profile-031",
-      "machine_latency_ms": 0.1001,
+      "machine_latency_ms": 0.7507,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -748,7 +750,7 @@
         "soft_description": null
       },
       "group_id": "profile-032",
-      "machine_latency_ms": 0.1278,
+      "machine_latency_ms": 1.359,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -791,7 +793,7 @@
         "soft_description": null
       },
       "group_id": "profile-035",
-      "machine_latency_ms": 0.0574,
+      "machine_latency_ms": 1.185,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -833,7 +835,7 @@
         "soft_description": null
       },
       "group_id": "profile-036",
-      "machine_latency_ms": 0.1027,
+      "machine_latency_ms": 2.0524,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,
@@ -873,7 +875,7 @@
         "soft_description": null
       },
       "group_id": "profile-040",
-      "machine_latency_ms": 0.1288,
+      "machine_latency_ms": 1.5366,
       "mode": "demo_rules",
       "predicted": {
         "accept_estimated_data": false,

@@ -1,6 +1,6 @@
 # Kịch bản demo HomeMatch trên trình duyệt (FE-09)
 
-**Cập nhật:** 08/10/2026. Kịch bản này để **người dùng tự quay video demo**; agent chuẩn bị môi trường và đã xác minh các lệnh khởi động cũng như đăng nhập (xem Phần 8). Bám theo mục Demo của `README.md`, bổ sung các tính năng mới: đăng ký và duyệt chủ nhà (BE-03/FE-02), ticket hỗ trợ (BE-04/FE-03), chi phí AI quy VND (BE-05/FE-04), ảnh tin và ảnh sự cố (BE-06/FE-05), ưu đãi (BE-07/FE-06), mô phỏng vay qua chat (AG-02/FE-07) và màn `/quan-tri/ho-tro`.
+**Cập nhật:** 06/11/2026 (bỏ bước duyệt theo D-10, thêm D-11). Kịch bản này để **người dùng tự quay video demo**; agent chuẩn bị môi trường và đã xác minh các lệnh khởi động cũng như đăng nhập (xem Phần 8). Bám theo mục Demo của `README.md`, bổ sung các tính năng mới: đăng ký và duyệt chủ nhà (BE-03/FE-02), ticket hỗ trợ (BE-04/FE-03), chi phí AI quy VND (BE-05/FE-04), ảnh tin và ảnh sự cố (BE-06/FE-05), ưu đãi (BE-07/FE-06), mô phỏng vay qua chat (AG-02/FE-07) và màn `/quan-tri/ho-tro`.
 
 Kịch bản phủ:
 
@@ -8,7 +8,7 @@ Kịch bản phủ:
 |---|---|
 | 3 vai trò: người thuê, chủ nhà, quản trị viên | renter-a (P1, P3, P4), owner-a / chủ-demo (P2, P4, P5, P6), admin-a (P7) |
 | 5 phân hệ: cổng người thuê, tự động hóa, Admin Console, PMS & CRM, trợ lý AI chủ nhà | P1+P3, P7 (job + thông báo), P7, P2+P4, P5 |
-| Luồng duyệt theo chủ nhà và khách thấy dần `partially_published` | Bước 07–10 |
+| Kết quả tới khách ngay, chủ nhà nhận lead; sửa phòng không liên quan không làm mất kết quả (D-10, D-11) | Bước 04, 07, 08, 10 |
 | Đăng ký chủ nhà + admin duyệt (BE-03) | Bước 18–22 |
 | Ticket hỗ trợ + `/quan-tri/ho-tro` (BE-04) | Bước 05, 23 |
 | Chi phí AI VND (BE-05) | Bước 24 |
@@ -58,6 +58,7 @@ npm --prefix frontend run dev
 |---|---|---|
 | `renter-a` | Người thuê | `local-renter-a-password` |
 | `owner-a` | Chủ nhà TP.HCM (đã được duyệt sẵn) | `local-owner-a-password` |
+| `owner-c` | Chủ nhà Hà Nội, có phòng trong kết quả Cầu Giấy (Bước 07) | `local-owner-c-password` |
 | `admin-a` | Quản trị viên | `local-admin-a-password` |
 | `owner-demo` | Chủ nhà tự đăng ký trong Bước 18 | `demo-owner-2026` |
 
@@ -90,9 +91,11 @@ Chế độ `HOMEMATCH_LLM_MODE=demo` dùng trình hiểu ngôn ngữ ngoại tu
 - **Tài khoản:** `renter-a`.
 - **URL:** `http://127.0.0.1:5173/tro-ly-ai` (cùng trang, khung "Hồ sơ nhu cầu").
 - **Thao tác:** trong khung hồ sơ chọn Thành phố **Hà Nội**, Khu vực **Cầu Giấy**, Loại chỗ ở **Căn hộ**, Số phòng ngủ tối thiểu **1**; đặt **Ngân sách tổng tháng (VND)** `16000000`, **Tiền mặt sẵn có cho vào ở (VND)** `15000000`; ở khung "Năng lực tài chính" nhập **Thu nhập mỗi tháng (VND)** `30000000`; tích **"Nếu thiếu tiền vào ở, ước tính khoản vay ngắn hạn"** với **Lãi suất (%/năm)** `12` và **Số tháng trả góp** `12`. Bấm **Xác nhận & tìm phòng**.
-- **Kết quả mong đợi:** nhãn hồ sơ đổi thành `Đã xác nhận · v2`; vùng kết quả hiển thị "Đang tìm phòng" rồi chuyển `Chờ chủ nhà duyệt` — khách **chưa thấy phòng nào** vì chưa có chủ nhà nào duyệt.
+- **Kết quả mong đợi:** nhãn hồ sơ đổi thành `Đã xác nhận · v2`; danh sách phòng hiện **ngay trong lượt này**, không chờ ai duyệt; chuông có thông báo "Danh sách phòng phù hợp đã sẵn sàng". Với catalog tổng hợp và DB mới, hồ sơ này cho 3 căn của `owner-c` (đã chạy qua API, chưa chạy trên trình duyệt).
 
 ![](demo/buoc-04.png)
+
+**Kho Chợ Tốt (D-12, 08/11/2026):** khi nhiều tin thiếu phí hoặc sức chứa, kết quả vẫn hiện ngay, không còn bước bấm "Chấp nhận dữ liệu ước tính". Dòng đếm ở khung kết quả ghi "N căn khớp, đây là 5 căn xếp đầu" kèm liên kết "Xem đủ trong Tìm kiếm" (mở `/tim-kiem` cùng thành phố, khu, loại, trần, số người). Thẻ thiếu phí ghi "/tháng · ước tính"; thẻ thiếu sức chứa ghi "Sức chứa: chưa rõ"; phí không biết không bao giờ hiện 0.
 
 ### Bước 05 — Yêu cầu gặp người thật (tạo ticket hỗ trợ, BE-04)
 
@@ -105,7 +108,7 @@ Chế độ `HOMEMATCH_LLM_MODE=demo` dùng trình hiểu ngôn ngữ ngoại tu
 
 ---
 
-## Phần 2 — Chủ nhà: duyệt gợi ý, ảnh tin, ưu đãi (owner-a)
+## Phần 2 — Chủ nhà: khách tiềm năng, tình trạng phòng, ảnh tin, ưu đãi
 
 ### Bước 06 — Đăng nhập chủ nhà, tổng quan PMS
 
@@ -116,21 +119,21 @@ Chế độ `HOMEMATCH_LLM_MODE=demo` dùng trình hiểu ngôn ngữ ngoại tu
 
 ![](demo/buoc-06.png)
 
-### Bước 07 — Mở bản gợi ý cần duyệt
+### Bước 07 — Chủ nhà thấy khách tiềm năng từ gợi ý AI
 
-- **Tài khoản:** `owner-a`.
-- **URL:** `http://127.0.0.1:5173/chu-nha/duyet-goi-y`
-- **Thao tác:** bấm bản gợi ý của phiên `renter-a` (thẻ bên trái, trạng thái "Chờ chủ nhà duyệt", khu vực Cầu Giấy).
-- **Kết quả mong đợi:** khung chi tiết hiện hồ sơ v2 (thành phố, khu vực, số người, trần tổng tháng ≤ 16.000.000 đ, tiền mặt vào ở ≤ 15.000.000 đ, chấp nhận vay 12 tháng) và **chỉ danh sách phòng của owner-a** kèm băng tài chính (khuyến nghị / cần cân nhắc / vượt). Có dòng nhắc "Thu nhập của khách không hiển thị" — không có bất kỳ con số thu nhập nào.
+- **Tài khoản:** đăng xuất `owner-a`, đăng nhập `owner-c` / `local-owner-c-password`.
+- **URL:** `http://127.0.0.1:5173/chu-nha/khach-tiem-nang`
+- **Thao tác:** xem danh sách khách tiềm năng.
+- **Kết quả mong đợi:** có `renter-a` ở các phòng vừa lọt top 5, giai đoạn mới, mức "Mới xem · 0 điểm". Chủ nhà không phải duyệt gì; không có thu nhập hay tỷ lệ của khách.
 
 ![](demo/buoc-07.png)
 
-### Bước 08 — Duyệt phòng của mình
+### Bước 08 — Chủ nhà khác sửa phòng không liên quan
 
-- **Tài khoản:** `owner-a`.
-- **URL:** `http://127.0.0.1:5173/chu-nha/duyet-goi-y`
-- **Thao tác:** giữ nguyên thứ tự trợ lý đề xuất, tích các phòng muốn đưa vào, nhập **Lý do quyết định**: `Đã kiểm tra nguồn, tổng phí và tiêu chí bắt buộc` rồi bấm **Duyệt N phòng**.
-- **Kết quả mong đợi:** hiện thông báo xanh "Đã công bố đúng danh sách được duyệt cho người thuê." hoặc "Quyết định đã được máy chủ ghi nhận."; nếu shortlist còn phòng của chủ nhà khác chưa quyết định, trạng thái bản gợi ý đổi thành "Đã có chủ nhà duyệt một phần" (`partially_published`); nếu owner-a là chủ duyệt cuối thì thành "Đã duyệt".
+- **Tài khoản:** đăng xuất `owner-c`, đăng nhập `owner-a`.
+- **URL:** `http://127.0.0.1:5173/chu-nha/phong`
+- **Thao tác:** đổi tình trạng một phòng TP.HCM của owner-a. Phòng này không nằm trong danh sách Cầu Giấy của `renter-a`.
+- **Kết quả mong đợi:** lưu thành công. Bước 10 kiểm tra kết quả của `renter-a` không bị mất (D-11).
 
 ![](demo/buoc-08.png)
 
@@ -138,21 +141,21 @@ Chế độ `HOMEMATCH_LLM_MODE=demo` dùng trình hiểu ngôn ngữ ngoại tu
 
 - **Tài khoản:** `owner-a`.
 - **URL:** `http://127.0.0.1:5173/chu-nha/phong`
-- **Thao tác:** bấm **Sửa** ở một phòng vừa được duyệt; trong khung "Ảnh tin" chọn 2–3 file ảnh JPEG/PNG (mỗi file ≤ 5 MB), đợi tải lên, dùng nút ↑/↓ để đổi ảnh bìa; ở khung "Ưu đãi" nhập nội dung `Giảm 50% phí dịch vụ tháng đầu` và ngày hết hạn (hôm nay + 30 ngày), bấm **Lưu ưu đãi**.
+- **Thao tác:** bấm **Sửa** ở một phòng của owner-a; trong khung "Ảnh tin" chọn 2–3 file ảnh JPEG/PNG (mỗi file ≤ 5 MB), đợi tải lên, dùng nút ↑/↓ để đổi ảnh bìa; ở khung "Ưu đãi" nhập nội dung `Giảm 50% phí dịch vụ tháng đầu` và ngày hết hạn (hôm nay + 30 ngày), bấm **Lưu ưu đãi**.
 - **Kết quả mong đợi:** lưới ảnh hiện đủ, thông báo "Đã tải 3 ảnh. Ảnh đầu tiên là ảnh bìa của tin."; ưu đãi lưu thành công kèm ngày hết hạn; bấm **Lưu thay đổi** để đóng trình sửa.
 
 ![](demo/buoc-09.png)
 
 ---
 
-## Phần 3 — Người thuê thấy phòng xuất hiện dần và mô phỏng vay qua chat (renter-a)
+## Phần 3 — Người thuê vẫn giữ kết quả và mô phỏng vay qua chat (renter-a)
 
-### Bước 10 — Khách thấy phòng ngay khi một phần chủ nhà đã duyệt (`partially_published`)
+### Bước 10 — Khách vẫn giữ kết quả sau khi kho đổi (D-11)
 
 - **Tài khoản:** đăng xuất `owner-a`, đăng nhập lại `renter-a`.
 - **URL:** `http://127.0.0.1:5173/tro-ly-ai`
 - **Thao tác:** xem vùng kết quả và chuông thông báo ở góc phải trên.
-- **Kết quả mong đợi:** danh sách hiển thị **chỉ các phòng đã được duyệt** của owner-a; băng trạng thái ghi "Đã có chủ nhà duyệt một phần" (`partially_published`) khi còn chủ nhà chưa quyết định; chuông thông báo có "Chủ nhà duyệt phòng". Mỗi thẻ phòng có băng tài chính, không có chi tiết thu nhập.
+- **Kết quả mong đợi:** danh sách vẫn đủ các căn như Bước 04, đúng thứ tự, không phải xác nhận lại hồ sơ, vì các phòng owner-a vừa sửa không làm kết quả khác đi. Chỉ khi một căn trong danh sách đổi, hoặc có căn mới lọt vào danh sách, kết quả mới hết hiệu lực.
 
 ![](demo/buoc-10.png)
 
@@ -215,6 +218,27 @@ Chế độ `HOMEMATCH_LLM_MODE=demo` dùng trình hiểu ngôn ngữ ngoại tu
 ![](demo/buoc-16.png)
 
 ---
+
+## Phần 4b — Luồng thuê phòng end-to-end (crawl.md E-09, 08/11/2026)
+
+Hai nhánh bổ sung để quay demo luồng mới (chạy sau Phần 4, cùng DB):
+
+**Nhánh chủ nhà (owner-a ↔ renter-a):**
+1. renter-a mở tin owner-a từ tìm theo bộ lọc (`/tim-kiem`) → bấm "Đặt lịch xem": form dùng chung — chọn ngày + khung giờ (Sáng/Chiều/Tối), họ tên và SĐT điền sẵn, ô đồng ý chia sẻ liên hệ. Câu chữ nói rõ đây là thời gian **mong muốn**.
+2. Gửi xong: renter-a xem `/nguoi-thue/lich-xem` — trạng thái "Chờ xác nhận"; **chưa thấy SĐT hiện cho chủ nhà**.
+3. owner-a mở `/chu-nha/lich-xem` → lịch mới hiện với liên hệ bị ẩn → bấm "Xác nhận" → giờ owner-a thấy tên + SĐT khách.
+4. owner-a bấm "Đề xuất giờ khác" → renter-a thấy "Có đề xuất giờ mới" → bấm "Đồng ý giờ mới".
+5. owner-a bấm "Hoàn tất" → renter-a bấm "Gửi phản hồi" (1–5 sao).
+6. owner-a vào `/chu-nha/lich-xem`... hợp đồng tạo từ lịch: tin `completed` mở PMS → tạo hợp đồng mới — form đã điền sẵn phòng/người thuê (không gõ mã tài khoản). Gửi → renter-a chấp nhận → kích hoạt → ghi số điện nước → hóa đơn → renter-a "Báo đã chuyển" → owner-a xác nhận → phiếu thu.
+7. renter-a quay lại `/nguoi-thue/lich-xem` — lịch xem có link "Xem hợp đồng".
+
+**Nhánh tin cào (điều phối, admin-a):**
+1. Cần catalog Chợ Tốt (HOMEMATCH_CATALOG_PATH trỏ snapshot cào; trên DB mới). renter-a đặt lịch một tin cào → giao diện nói rõ: "HomeMatch sẽ liên hệ người đăng để xác nhận; đây chưa phải lịch đã chốt".
+2. admin-a vào `/quan-tri/dieu-phoi`: hàng đợi lịch với link tin gốc, nút "Xem SĐT khách" (mỗi lần xem ghi audit), các nút xác nhận/từ chối/hoàn tất. Ghi rõ: người điều phối TỰ liên hệ người đăng, không tự động gọi/nhắn.
+3. owner-a đăng nhập: không thấy lịch này ở bất kỳ đâu.
+4. admin-a xác nhận → hoàn tất; renter-a gửi phản hồi. Tin cào **không** có nút tạo hợp đồng: "Tin cào: hợp đồng ký trực tiếp với người đăng, ngoài hệ thống".
+
+**Nhánh lỗi (minh họa giữa luồng):** chủ nhà đánh dấu phòng hết trong lúc chờ → xác nhận lịch trả 409 `stale_viewing`; khách hủy lịch → mọi thao tác sau trả 409 `viewing_conflict`.
 
 ## Phần 5 — Trợ lý AI chủ nhà (owner-a)
 
@@ -317,7 +341,7 @@ Người quay nên đổi bề rộng cửa sổ (DevTools → Toggle device too
 
 | Bề rộng | Màn cần rà | Tiêu chí đạt |
 |---|---|---|
-| 360 px | `/tro-ly-ai`, `/tim-kiem` (khung xem nhanh), `/chu-nha/duyet-goi-y`, `/chu-nha/hoa-don`, `/quan-tri/ho-tro` | Không tràn ngang; mọi nút bấm được; bảng có cuộn ngang riêng trong khung, không làm vỡ trang; hộp thoại (lý do duyệt, ghi chú ticket) giữ focus và đóng bằng Escape |
+| 360 px | `/tro-ly-ai`, `/tim-kiem` (khung xem nhanh), `/chu-nha/khach-tiem-nang`, `/chu-nha/hoa-don`, `/quan-tri/ho-tro` | Không tràn ngang; mọi nút bấm được; bảng có cuộn ngang riêng trong khung, không làm vỡ trang; hộp thoại (lý do duyệt, ghi chú ticket) giữ focus và đóng bằng Escape |
 | 768 px | cùng các màn trên | Bố cục hai cột co giãn hợp lý; không có vùng chữ bị cắt |
 | 1280 px | toàn bộ kịch bản | Đây là bề rộng quay chính |
 

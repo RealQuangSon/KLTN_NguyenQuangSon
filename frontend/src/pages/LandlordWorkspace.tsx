@@ -245,6 +245,38 @@ export function LandlordWorkspace({
               manager
               busy={busy}
               onRespond={(id, status) => void respond(id, status)}
+              onAction={(id, action) => {
+                if (action === "propose") {
+                  // Đề xuất giờ khác: sáng ngày mai (giờ VN), E-01.4.
+                  const tomorrow = new Date(Date.now() + 86400000);
+                  const proposed = new Date(
+                    `${tomorrow.toISOString().slice(0, 10)}T09:00:00+07:00`,
+                  );
+                  void mutate(async () => {
+                    await api.post(`/viewings/${id}/actions`, {
+                      action: "propose",
+                      proposed_at: proposed.toISOString(),
+                      reason: "Chủ nhà đề xuất giờ khác",
+                    });
+                    if (live.current) {
+                      setNotice("Đã gửi đề xuất giờ mới cho khách.");
+                      await latestRefresh.current();
+                    }
+                  });
+                  return;
+                }
+                void mutate(async () => {
+                  await api.post(`/viewings/${id}/actions`, { action });
+                  if (live.current) {
+                    setNotice(
+                      action === "complete"
+                        ? "Đã đánh dấu buổi xem hoàn tất."
+                        : "Đã ghi nhận buổi xem không diễn ra.",
+                    );
+                    await latestRefresh.current();
+                  }
+                });
+              }}
             />
           )}
         </section>
@@ -330,7 +362,11 @@ export function LandlordWorkspace({
                             Sửa
                           </button>
                           <small>
-                            {room.area} · {room.area_m2} m² · v{room.revision}
+                            {room.area} ·{" "}
+                            {room.area_m2 == null
+                              ? "chưa rõ diện tích"
+                              : `${room.area_m2} m²`}{" "}
+                            · v{room.revision}
                           </small>
                           <details className="catalog-source">
                             <summary>Mô tả & nguồn</summary>

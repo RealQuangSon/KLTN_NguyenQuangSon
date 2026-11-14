@@ -1,0 +1,55 @@
+{
+  "kind": "relative_budget_semantics",
+  "version": 2,
+  "note": "HN-13.3-A2: 'thêm/bớt/cộng' → delta (chỉ áp khi có mức gốc); 'lên/xuống/còn' (không thêm) và 'giảm xuống X' → ĐẶT mức X",
+  "cases": [
+    {
+      "case_id": "RS01",
+      "text": "nới thêm 1 triệu",
+      "direction": "up",
+      "amount_vnd": 1000000
+    },
+    {
+      "case_id": "RS02",
+      "text": "nới lên 2 triệu đi",
+      "direction": "set",
+      "amount_vnd": 2000000
+    },
+    {
+      "case_id": "RS03",
+      "text": "nới lên 2 triệu",
+      "direction": "set",
+      "amount_vnd": 2000000
+    },
+    {
+      "case_id": "RS04",
+      "text": "giảm xuống 3,5 triệu",
+      "direction": "set",
+      "amount_vnd": 3500000
+    },
+    {
+      "case_id": "RS05",
+      "text": "bớt 500 nghìn",
+      "direction": "down",
+      "amount_vnd": 500000
+    },
+    {
+      "case_id": "RS06",
+      "text": "lên 6 triệu",
+      "direction": "set",
+      "amount_vnd": 6000000
+    },
+    {
+      "case_id": "RS07",
+      "text": "còn 4 triệu thôi",
+      "direction": "set",
+      "amount_vnd": 4000000
+    },
+    {
+      "case_id": "RS08",
+      "text": "giảm 500 nghìn",
+      "direction": "down",
+      "amount_vnd": 500000
+    }
+  ]
+}

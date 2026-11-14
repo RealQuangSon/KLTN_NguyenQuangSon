@@ -309,6 +309,7 @@ def run_clarify_suite(gold_path: Path = GOLD_CLARIFY_PATH, output: Path | None =
                     top1 = (rank == 0) if rank is not None else None
                 rows.append({"case_id": case["case_id"], "ambiguity": case["ambiguity"],
                              "should_ask": case["should_ask"], "asked": asked,
+                             "asked_field": (payload or {}).get("field"),
                              "correct": correct, "decided_by": decided_by,
                              "top1_matches_preferred": top1,
                              "options": [(option.get("id"),

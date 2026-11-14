@@ -8,7 +8,7 @@ Phiên bản 04/10/2026. Data phải phục vụ toàn vòng đời thuê **HM-0
 
 **Trạng thái 05/10/2026:** fixture packs v1 cho HM-01/02/07/08 (+HM-09) đã soạn tại `data/fixtures/v1/` (29 file, ~250 record, toàn bộ synthetic) kèm oracle billing độc lập và validator `data/validate_fixtures.py` (2550 assertions, gồm tính lại VND bằng Decimal/ROUND_HALF_UP riêng, không import backend). Hạn chế trung thực: oracle chưa có người kiểm tra chéo (`human_cross_check_status: pending` theo mô hình cost_cases); fixtures chưa được backend nạp/schema đối chiếu; chưa có case cho HM-03..06, HM-10; quy mô nhỏ, không phải kho thị trường. Hash các input frozen (`catalog/`, `profiles/`, `oracles/cost_cases.json`, manifests, `generate.py`) không đổi sau lần soạn này.
 
-Dữ liệu không xuất từ HubHome và không đại diện thị trường. [Research HubHome](../docs/nghien-cuu-hubhome.md) là bằng chứng chức năng/UX, không quyền sao chép catalog/ảnh/chats hoặc yêu cầu crawl. Viết plan này không thay hash/manifests/dataset hiện tại.
+Dữ liệu không xuất từ sản phẩm tham khảo và không đại diện thị trường. Research sản phẩm tham khảo là bằng chứng chức năng/UX, không quyền sao chép catalog/ảnh/chats hoặc yêu cầu crawl. Viết plan này không thay hash/manifests/dataset hiện tại.
 
 Data sở hữu dictionary/source/canonical quality, fixtures/gold/oracles và blind human labels. Backend sở hữu schema/migration/import/engine; Eval sở hữu runner/metric/freeze/run reports. Không lấy output backend/ranking/LLM làm oracle hay relevance gold.
 

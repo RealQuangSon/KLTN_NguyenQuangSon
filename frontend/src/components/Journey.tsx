@@ -4,7 +4,7 @@ export function Journey({ step = 0 }: { step?: number }) {
   const steps = [
     { title: "Chia sẻ nhu cầu", description: "Kể về nơi bạn muốn ở" },
     { title: "Xác nhận hồ sơ", description: "Bạn quyết định tiêu chí" },
-    { title: "Quản lý kiểm tra", description: "Rà soát phòng & chi phí" },
+    { title: "Nhận gợi ý", description: "Phòng xếp theo nhu cầu, kèm chi phí" },
     { title: "Chọn & xem phòng", description: "So sánh rồi hẹn xem" },
   ];
   return (

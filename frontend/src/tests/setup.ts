@@ -4,6 +4,8 @@ import { afterEach, beforeEach, vi } from "vitest";
 // Các test UI chạy song song trên nhiều worker; tăng thời gian chờ findBy* để
 // tránh lỗi ngẫu nhiên khi máy bận, không đổi hành vi được kiểm tra.
 configure({ asyncUtilTimeout: 4000 });
+// jsdom chưa có scrollIntoView; test nào cần kiểm tra thì tự spy.
+Element.prototype.scrollIntoView = () => {};
 beforeEach(() => {
   sessionStorage.clear();
   // Router đọc location thật; jsdom dùng chung window trong một file test,

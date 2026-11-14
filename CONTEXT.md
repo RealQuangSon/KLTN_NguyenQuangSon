@@ -20,8 +20,7 @@
 | Vay ngắn hạn | Ước tính trả góp đều cho phần tiền vào ở còn thiếu; không phải báo giá tín dụng |
 | B1 / P | Xếp hạng cấu trúc / B1 kết hợp semantic trên cùng tập đủ điều kiện |
 | Run | Một lần sinh danh sách gợi ý từ snapshot hồ sơ và kho |
-| HITL theo chủ nhà | Mỗi chủ nhà duyệt phòng của mình; khách thấy dần (`partially_published`); chốt khi mọi chủ đã quyết định |
-| Override | Chủ nhà bỏ phòng hoặc đổi thứ tự trong phần của mình; bắt buộc `override_reason` |
+| Công bố ngay | Kết quả tới khách ngay sau xếp hạng, không có bước duyệt (D-10); chủ nhà biết nhu cầu qua lead `recommended` |
 | Tin công khai | Phòng `published` của chủ nhà, tìm được bằng bộ lọc mà không cần duyệt danh sách AI |
 | Chuyển giao (handover) | Mở live chat với chủ nhà kèm ngữ cảnh: phòng, nhu cầu, băng, chat AI gần nhất đã che PII |
 | Transcript | Chat AI lưu có che SĐT, email, số tài khoản; giữ 90 ngày; admin mở thì ghi audit |

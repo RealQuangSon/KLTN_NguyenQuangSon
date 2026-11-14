@@ -18,7 +18,13 @@ interface MemoryState {
     fields: Record<string, unknown>;
     source_session: string;
     updated_at: string;
+    preference_details?: PreferenceDetail[];
   } | null;
+}
+interface PreferenceDetail {
+  key: string;
+  sessions: number;
+  from_saved: boolean;
 }
 interface SessionEntry {
   token_id: string;
@@ -32,6 +38,13 @@ const memoryLabels: Record<string, string> = {
   bedrooms: "Số phòng ngủ",
   preferences: "Tiện ích quan tâm",
   soft_description: "Mô tả ưu tiên",
+};
+// Nguồn của từng sở thích: máy chủ tính, trang này chỉ diễn đạt lại.
+const preferenceSource = ({ sessions, from_saved }: PreferenceDetail) => {
+  const parts = [];
+  if (sessions > 0) parts.push(`đã chọn trong ${sessions} phiên`);
+  if (from_saved) parts.push("gợi ý từ phòng đã lưu");
+  return parts.join(", ");
 };
 const memoryValue = (field: string, value: unknown) => {
   if (field === "preferences" && Array.isArray(value))
@@ -91,12 +104,16 @@ export function AccountPage({
       setBusy(false);
     }
   };
+  const preferenceDetails = memory?.memory?.preference_details ?? [];
   const remembered = memory?.memory
     ? Object.entries(memory.memory.fields).filter(
-        ([, value]) =>
-          value != null && !(Array.isArray(value) && value.length === 0),
+        ([field, value]) =>
+          value != null &&
+          !(Array.isArray(value) && value.length === 0) &&
+          !(field === "preferences" && preferenceDetails.length > 0),
       )
     : [];
+  const hasMemory = remembered.length > 0 || preferenceDetails.length > 0;
   return (
     <>
       <div className="page-heading">
@@ -176,7 +193,7 @@ export function AccountPage({
             {memory?.consented && (
               <>
                 <h2>Đang ghi nhớ</h2>
-                {remembered.length === 0 ? (
+                {!hasMemory ? (
                   <p className="subtle">
                     Chưa có gì. Sở thích sẽ được ghi nhớ sau lần xác nhận hồ sơ
                     tiếp theo.
@@ -200,9 +217,33 @@ export function AccountPage({
                         </button>
                       </li>
                     ))}
+                    {preferenceDetails.map((detail) => (
+                      <li key={detail.key}>
+                        <span>
+                          <strong>
+                            {amenities[detail.key] || detail.key}:
+                          </strong>{" "}
+                          {preferenceSource(detail)}
+                        </span>
+                        <button
+                          className="text-button"
+                          disabled={busy}
+                          aria-label={`Xóa sở thích ${amenities[detail.key] || detail.key}`}
+                          onClick={() =>
+                            void act(() =>
+                              api.delete(
+                                `/me/memory/preferences/${detail.key}`,
+                              ),
+                            )
+                          }
+                        >
+                          Xóa
+                        </button>
+                      </li>
+                    ))}
                   </ul>
                 )}
-                {remembered.length > 0 && (
+                {hasMemory && (
                   <button
                     className="button outline small"
                     disabled={busy}

@@ -48,11 +48,15 @@ it("lets a fresh renter type the first message right away: creates the session a
                 ...session("session-fresh"),
                 intent: "find_room",
                 status: "needs_clarification",
-                message: "Mình đã ghi nhận nhu cầu. Kiểm tra hồ sơ bên phải nhé.",
+                message:
+                  "Mình đã ghi nhận nhu cầu. Kiểm tra hồ sơ bên phải nhé.",
                 usage: { logical_calls: 1, tokens: 7, mode: "demo_rules" },
               },
             }) + "\n",
-            { status: 200, headers: { "Content-Type": "application/x-ndjson" } },
+            {
+              status: 200,
+              headers: { "Content-Type": "application/x-ndjson" },
+            },
           );
         if (url.endsWith("/sessions/session-fresh/messages"))
           return json({

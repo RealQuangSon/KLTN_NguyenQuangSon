@@ -17,6 +17,9 @@ def offline_mode(monkeypatch):
     monkeypatch.setenv("HOMEMATCH_JOBS_INTERVAL_SECONDS", "0")
     # HN-07: không ngủ backoff trong test; breaker sạch cho từng test.
     monkeypatch.setenv("HOMEMATCH_AGENT_RETRY_BACKOFF_S", "0")
+    # HN-13: mặc định tắt input analyst — hành vi một vòng lặp cũ cho mọi test;
+    # test multi-agent tự đặt jev|rules qua monkeypatch.
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "off")
     from backend.app import provider_breaker
     provider_breaker.reset()
 

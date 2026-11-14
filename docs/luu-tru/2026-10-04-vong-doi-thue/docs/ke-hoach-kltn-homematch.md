@@ -8,7 +8,7 @@
 
 Người tìm phòng diễn đạt nhu cầu bằng ngôn ngữ tự nhiên, trong khi catalog dùng địa chỉ, giá, tiện ích và tình trạng có cấu trúc. Giá thuê riêng chưa cho thấy chi phí theo tháng và tiền cần chuẩn bị khi vào ở. Sau khi chọn phòng, lịch xem, điều khoản, bàn giao, phí công tơ, thanh toán và sửa chữa cần được nối bằng dữ liệu/quyền/trạng thái rõ ràng.
 
-[Nghiên cứu HubHome](nghien-cuu-hubhome.md) ngày 04/10 và [khảo sát đăng nhập lịch sử](khao-sat-hubhome-da-dang-nhap.md) ngày 01/10 là nguồn tham khảo. Trải nghiệm chat–criteria–preview, nhóm chi phí, so sánh, bước người thật xác nhận và portal owner/rental operations giúp xác định phạm vi. Mô tả công bố hoặc màn hình trống không chứng minh chất lượng AI, backend hay khả năng vận hành toàn bộ của HubHome.
+Nghiên cứu sản phẩm tham khảo ngày 04/10 và khảo sát đăng nhập lịch sử ngày 01/10 là nguồn tham khảo. Trải nghiệm chat–criteria–preview, nhóm chi phí, so sánh, bước người thật xác nhận và portal owner/rental operations giúp xác định phạm vi. Mô tả công bố hoặc màn hình trống không chứng minh chất lượng AI, backend hay khả năng vận hành toàn bộ của sản phẩm tham khảo.
 
 Yêu cầu mới của người dùng là sản phẩm hoàn thiện. Đề cương này thay thế giới hạn MVP gọn của bản trước; không tự áp một thời hạn hoặc cam kết chất lượng mới.
 
@@ -74,7 +74,7 @@ Mở rộng sản phẩm cần billing engine và oracle riêng: actual meter/ra
 
 Mã hiện có 80 phòng tổng hợp TP.HCM, pilot 25, 30 gold profiles (10 dev/20 test) và 15 cost oracle cases. Đây là hiện vật development, chưa mặc định là tập test nghiên cứu đã freeze hoặc nhãn relevance độc lập đã chấm.
 
-Để v1 cần thêm fixtures bốn role/đơn vị, owner media/moderation, lịch, terms/acceptances, tenancy, readings, invoices/receipts/deposit và maintenance. Development/test dùng synthetic có nhãn. Public operation cần catalog/media được phép dùng, source register và kiểm tra độ mới; quyền xem HubHome không là quyền crawl/export dùng kho.
+Để v1 cần thêm fixtures bốn role/đơn vị, owner media/moderation, lịch, terms/acceptances, tenancy, readings, invoices/receipts/deposit và maintenance. Development/test dùng synthetic có nhãn. Public operation cần catalog/media được phép dùng, source register và kiểm tra độ mới; quyền xem sản phẩm tham khảo không là quyền crawl/export dùng kho.
 
 Mỗi record có ID/version/source/time/unit/privacy/synthetic phù hợp. Split theo profile gốc, không đặt paraphrase cùng người dùng ở dev/test. Gold extraction và oracle money do người kiểm độc lập rà; relevance labels khác field gold và cost oracle.
 
@@ -100,7 +100,7 @@ Nguồn metadata/abstract được đối chiếu ngày 04/10/2026; phần tổn
 - [A Survey on Conversational Recommender Systems](https://arxiv.org/abs/2004.00646): tham khảo phân loại tương tác, ý định và hướng đánh giá.
 - [Evaluating Conversational Recommender Systems: A Landscape of Research](https://arxiv.org/abs/2208.12061): phân biệt chất lượng thành phần với cảm nhận người dùng, làm cơ sở tách benchmark và study.
 - [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629): tham khảo việc phối hợp model và công cụ; không chứng minh cần nhiều agent hoặc dùng kết quả paper làm số của HomeMatch.
-- [Nghiên cứu HubHome](nghien-cuu-hubhome.md): nguồn sản phẩm/nghiệp vụ với mức bằng chứng cụ thể, không là benchmark thuật toán.
+- Nghiên cứu sản phẩm tham khảo: nguồn sản phẩm/nghiệp vụ với mức bằng chứng cụ thể, không là benchmark thuật toán.
 
 ## 10. Kế hoạch và bàn giao
 

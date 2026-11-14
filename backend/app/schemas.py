@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .models import Actor, Candidate, CostResult, DraftProfile, Model, Profile, Room
+from .models import Actor, CostResult, DraftProfile, Model, Profile, Room
 
 
 RunStatus = Literal["generating", "generation_failed", "published", "invalidated",
@@ -50,8 +50,10 @@ class Usage(Model):
 class MessageResult(SessionResult):
     intent: Literal["find_room", "calculate_cost", "simulate_finance", "human_support",
                     "landlord_handover", "handbook", "unknown"]
+    # Khi lượt chat tự chạy vòng tìm, status là trạng thái của run vừa tạo.
     status: Literal["needs_clarification", "cost_estimate", "support_requested", "handbook_answer",
-                    "simulation", "needs_results", "handover"]
+                    "simulation", "needs_results", "handover", "generating", "generation_failed",
+                    "published", "invalidated", "no_match", "needs_verification"]
     questions: list[str] | None = None
     interpreter_mode: str | None = None
     cost: CostResult | None = None
@@ -70,6 +72,12 @@ class MessageResult(SessionResult):
     # chế độ chạy ("loop" | "graph_fallback", chỉ có ở chế độ openai).
     steps: list[str] | None = None
     agent_mode: str | None = None
+    # HN-13 multi-agent: các role agent đã chạy trong lượt (needs|finance|ranking);
+    # lượt luật (fast path/graph) không chạy role nào → [], thiếu analyst → None.
+    agents: list[str] | None = None
+    # HN-13: phân tích đầu vào trước định tuyến {route, clarity, decided_by} —
+    # không văn bản thô, không tiền; None khi HOMEMATCH_INPUT_ANALYST=off.
+    input_analysis: dict | None = None
     # AG-02: true khi lượt này chứa mức tiền tuyệt đối/tương đối đã tính — FE chỉ
     # áp budget_hint vào trần khi thấy cờ này (chặn bug "nới thêm 1 triệu").
     budget_explicit: bool | None = None
@@ -81,6 +89,9 @@ class MessageResult(SessionResult):
     view: Literal["map", "list", "detail", "gallery", "compare", "cost", "route", "nearby",
                   "area", "trust", "contract", "booking", "visit", "saved", "keep", "clear"] | None = None
     view_payload: dict | None = None
+    # HN-13.2: giả định engine tự áp (bán kính, cách hiểu mức tiền…) diễn đạt
+    # thành câu người đọc — FE hiển thị RIÊNG, không nối vào câu trả lời nữa.
+    assumptions: list[str] | None = None
     # Mốc đã tra được (find_place) để FE ghim bản đồ; không chứa PII.
     anchor: dict | None = None
     # Tiêu chí server đang giữ (băng giá, loại, khu, tiện ích) để FE vẽ chip gỡ được.
@@ -98,11 +109,22 @@ class ResultsResult(Model):
     run_id: str | None = None
     status: RunStatus | Literal["awaiting_confirmation"]
     profile_version: int | None = None
-    results: list[Candidate]
+    # CA-05: dict thay vì Candidate để service.results() gắn source_images theo
+    # room_id LÚC TRẢ RESPONSE (giống photos của tìm theo bộ lọc) mà không lưu
+    # vào payload run đã xếp hạng hay eval/runs. Candidate không đổi.
+    results: list[dict]
     # Soft, renter-driven relaxation next steps on no_match/needs_verification runs.
     suggestions: list[str] | None = None
+    # Câu trả lời gợi ý ngắn cho khung chat, chọn theo trạng thái phiên (không LLM).
+    suggested_prompts: list[str] | None = None
     # Deterministic-engine provenance for the ranking read (catalog/method/run status).
     provenance: dict | None = None
+    # D-12: tổng số căn khớp (run chỉ giữ top 5), số căn đủ dữ liệu chi phí / ước tính,
+    # và đường dẫn /tim-kiem cùng bộ lọc. null với run lịch sử không có số này.
+    total_matches: int | None = None
+    exact_cost_matches: int | None = None
+    estimated_matches: int | None = None
+    search_path: str | None = None
     # Aggregate hard-filter counts (scanned/kept/rejected/verification) cho ca
     # kho rỗng — chỉ số liệu tổng hợp, không chứa danh tính phòng nào.
     diagnostics_summary: dict | None = None
@@ -119,7 +141,9 @@ class ResultsResult(Model):
 
 class CompareResult(Model):
     run_id: str
-    items: list[Candidate] = Field(min_length=2, max_length=3)
+    # CA-05: dict thay vì Candidate — items đến từ results() nên mang source_images
+    # gắn lúc trả response.
+    items: list[dict] = Field(min_length=2, max_length=3)
     # Deterministic pros/cons and a suggested pick within the confirmed budget.
     advice: dict | None = None
 
@@ -155,6 +179,7 @@ class StoredMemory(Model):
     fields: dict
     source_session: str
     updated_at: str
+    preference_details: list[dict] = []
 
 
 class MemoryResult(Model):
@@ -202,10 +227,29 @@ class ViewingResult(Model):
     run_id: str | None = None
     room_id: str
     requested_at: datetime
-    status: Literal["requested", "confirmed", "declined"]
+    # crawl.md E-01: vòng đời mở rộng requested → confirmed/declined/cancelled/
+    # reschedule_proposed → completed/no_show.
+    status: Literal["requested", "confirmed", "declined", "cancelled",
+                    "reschedule_proposed", "completed", "no_show"]
     landlord_id: str | None = None
     mode: Literal["offline", "online"] = "offline"
     meeting_url: str | None = None
+    # E-01/E-02: thông tin vòng đời; liên hệ khách chỉ mở cho đúng người đọc (R3).
+    handler: Literal["landlord", "concierge"] | None = None
+    time_slot: Literal["morning", "afternoon", "evening"] | None = None
+    note: str | None = None
+    proposed_at: datetime | None = None
+    feedback_rating: int | None = None
+    feedback_note: str | None = None
+    lease_id: str | None = None
+    # E-01: trạng thái hợp đồng gắn lịch xem; None khi chưa gắn hoặc chưa xác nhận.
+    lease_status: str | None = None
+    lease_visible: bool | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    contact_name: str | None = None
+    contact_phone: str | None = None
+    contact_shared: bool = False
 
 
 class SupportResult(Model):

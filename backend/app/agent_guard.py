@@ -75,8 +75,6 @@ def redact_tree(value: Any) -> Any:
 
 # Chat-triggered viewing preparation: deterministic phrase + room reference.
 VIEWING_TRIGGER = re.compile(r"dat lich|hen xem")
-ROOM_REFERENCE = re.compile(r"\bdemo[- ]?(\d{1,3})\b")
-
 
 def viewing_intent(text: str) -> bool:
     return bool(VIEWING_TRIGGER.search(folded(text)))
@@ -179,5 +177,5 @@ def quarantine_reply(scan: InjectionScan) -> dict:
 def viewing_prep_missing_room_reply() -> dict:
     return {"intent": "find_room", "status": "needs_clarification",
             "questions": ["Bạn muốn đặt lịch xem phòng nào? Cho biết mã phòng trong "
-                          "bản gợi ý đã duyệt (ví dụ demo-01)."],
+                          "danh sách gợi ý (ví dụ demo-01)."],
             "message": "Chưa chuẩn bị được yêu cầu lịch xem vì chưa có mã phòng."}

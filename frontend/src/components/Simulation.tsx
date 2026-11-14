@@ -3,9 +3,9 @@ import type { Api } from "../api";
 import type { Candidate, Cost, Profile } from "../types";
 import { bandLabels } from "../types";
 import { ErrorNotice, Icon, money, percent, roomTitle } from "./Shared";
-// Mô phỏng tối đa 3 kịch bản tài chính cho một căn đã duyệt (FR-08). Chỉ đọc:
+// Mô phỏng tối đa 3 kịch bản tài chính cho một căn đã công bố (FR-08). Chỉ đọc:
 // máy chủ tính bằng engine tài chính, không đổi hồ sơ đã xác nhận hay danh sách
-// đã duyệt. Muốn tìm theo kịch bản mới, khách phải xác nhận hồ sơ mới.
+// đã công bố. Muốn tìm theo kịch bản mới, khách phải xác nhận hồ sơ mới.
 type LoanMode = "profile" | "none" | "custom";
 interface Option {
   label: string;
