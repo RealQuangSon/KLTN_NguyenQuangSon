@@ -54,24 +54,25 @@ Có ba vai trò nghiệp vụ: `renter` (khách), `owner` (chủ nhà), `admin`.
 
 **Nguyên tắc dữ liệu:**
 - CAS theo revision cho nháp, hồ sơ, kho và tin.
-- Khóa chống gửi trùng cho duyệt, lịch xem, thông báo.
+- Khóa chống gửi trùng cho lịch xem, thông báo.
 - Hóa đơn đã phát hành không sửa được; thanh toán chỉ thêm bản ghi mới.
 - Hợp đồng có phiên bản; sửa hợp đồng thì phải chấp thuận lại.
 
-## Luồng duyệt theo chủ nhà
+## Luồng công bố gợi ý (D-10)
 
 ```mermaid
 sequenceDiagram
   participant R as Khách
   participant S as Service
   participant G as Graph
-  participant O as Các chủ nhà
+  participant O as Chủ nhà có phòng trong top 5
   R->>S: Confirm hồ sơ
-  S->>G: Xếp hạng → lưu nháp → interrupt
-  O->>S: Mỗi chủ quyết định phần phòng của mình
-  S-->>R: partially_published: phòng đã duyệt hiện dần
-  S->>S: Mọi chủ đã quyết định → ghi decision cuối
-  S->>G: Resume bằng event_id → kiểm phiên bản → chốt
+  S->>G: rank → save_draft → publish
+  G-->>R: published: kết quả và thông báo rooms_ready
+  G-->>O: Lead nguồn recommended
+  O->>S: Sửa phòng làm phiên bản kho đổi
+  S->>S: Lần đọc sau xếp hạng lại và so với run
+  S-->>R: Giống hệt: giữ danh sách. Khác: invalidated (D-11)
 ```
 
 ## Giới hạn vận hành

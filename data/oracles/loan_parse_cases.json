@@ -191,7 +191,7 @@
       "text": "vay 61 tháng thì sao"
     }
   ],
-  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật hoặc biểu giá thị trường.",
   "purpose": "Independent expected outputs for backend.app.interpreter.parse_loan_terms (AG-02); authored by hand, never derived from backend code.",
   "rules": {
     "annual_rate": "(\\d{1,2}(?:[.,]\\d{1,2})?)\\s*%; dấu phẩy thập phân đổi thành dấu chấm; hợp lệ 0–50, ngoài khoảng → null.",

@@ -32,8 +32,12 @@ CAPABILITIES: dict[str, frozenset[str]] = {
     "compare:run": frozenset({"renter"}),
     "viewing:prepare": frozenset({"renter"}),
     "viewing:request": frozenset({"renter"}),
-    "viewing:read": frozenset({"renter", "owner"}),
+    "viewing:read": frozenset({"renter", "owner", "admin"}),
     "viewing:respond": frozenset({"owner"}),
+    # crawl.md E-02/E-05: admin điều phối lịch tin cào và duyệt báo cáo tin.
+    "viewing:concierge": frozenset({"admin"}),
+    "report:create": frozenset({"renter", "owner"}),
+    "report:review": frozenset({"admin"}),
     # Danh sách cá nhân của người thuê: căn đã lưu và căn đã xem (trang cá nhân).
     "saved:read": frozenset({"renter"}),
     "saved:write": frozenset({"renter"}),

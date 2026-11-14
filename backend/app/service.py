@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlencode
 import hashlib
 import os
 import re
@@ -21,14 +22,15 @@ from langgraph.graph import END, START, StateGraph
 
 from .agent_budget import SessionTurnBudget
 from .agent_capability import Resource, require, require_session_role
-from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id, provider_fallback_reply,
-                          quarantine_reply, redact, redact_tree, resolve_room_reference,
-                          screen_injection, viewing_intent, viewing_prep_missing_room_reply)
+from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id,
+                          provider_fallback_reply, quarantine_reply, redact, redact_tree,
+                          resolve_room_reference, screen_injection, viewing_intent,
+                          viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
-from .agent_loop import (SUMMARY_SYSTEM_PROMPT, SAFE_REPLY, fast_path_reply,
+from .agent_loop import (apply_explicit_budget, SUMMARY_SYSTEM_PROMPT, SAFE_REPLY, confirm_data, confirm_template, fast_path_reply,
                          run_turn as run_agent_turn)
 from .agents import ToolBox
-from . import advisor, auth, automation, conversations, copilot, handbook, listings, media, memory, notifications, pms, promotions
+from . import advisor, auth, automation, conversations, copilot, handbook, input_analyst, listings, media, memory, notifications, pms, promotions, trust
 from .catalog import Catalog, StoredCatalog
 from .catalog import distance_m as catalog_distance_m
 from .costs import estimate_cost, estimate_with_affordability
@@ -38,7 +40,7 @@ from .locations import city_for_area, resolve_place
 from .models import (AMENITY_KEYS, DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination,
                      DomainError, DraftPatch, DraftProfile, Profile, RoomInput, RoomUpdate, Scenario,
                      SimulationRequest)
-from .repository import Repository
+from .repository import Repository, run_status_for
 from .organizations import record_audit
 from .operations import Metrics
 
@@ -55,6 +57,29 @@ CHAT_RETENTION_DAYS = int(os.getenv("HOMEMATCH_CHAT_RETENTION_DAYS", "90"))
 # a demo rule; production would use a trusted assignment table.
 LEGACY_ASSIGNEE = "manager-a"
 
+# crawl.md E-01: vòng đời lịch xem — nguồn duy nhất của các chuyển trạng thái
+# hợp lệ. {from: {to: vai trò được phép}}. Vai trò: "renter" (người thuê),
+# "handler" (chủ nhà với tin của chủ nhà, admin với tin điều phối).
+VIEWING_TRANSITIONS: dict[str, dict[str, str]] = {
+    # Sửa lỗi 3 (08/11): confirmed → reschedule_proposed CHỈ bên xử lý (người
+    # thuê không tự dời lịch rồi tự duyệt); renter đổi giờ lịch confirmed đi
+    # đường riêng về requested (chờ bên xử lý xác nhận lại); accept trên
+    # reschedule_proposed chỉ renter và chỉ khi đề xuất do bên xử lý tạo.
+    "requested": {"confirmed": "handler", "declined": "handler",
+                  "reschedule_proposed": "handler", "cancelled": "renter"},
+    "reschedule_proposed": {"confirmed": "renter", "cancelled": "renter",
+                            "requested": "renter"},
+    "confirmed": {"completed": "handler", "no_show": "handler",
+                  "cancelled": "renter", "reschedule_proposed": "handler",
+                  "requested": "renter"},
+}
+VIEWING_STATUSES = ("requested", "confirmed", "declined", "cancelled",
+                    "reschedule_proposed", "completed", "no_show")
+TIME_SLOTS = ("morning", "afternoon", "evening")
+# E-05: lý do báo cáo tin — danh sách cố định, câu chữ tự viết.
+REPORT_REASONS = ("scam_suspect", "already_rented", "wrong_info", "duplicate",
+                  "contact_missing", "other")
+
 # Lifecycle of handoff support tickets (hm_support), mirroring the PMS
 # TICKET_TRANSITIONS pattern. Reopening a resolved ticket is allowed.
 SUPPORT_TRANSITIONS = {
@@ -62,6 +87,12 @@ SUPPORT_TRANSITIONS = {
     "in_progress": frozenset({"resolved"}),
     "resolved": frozenset({"in_progress"}),
 }
+
+# Loan what-if card labels (AG-02); used by the graph finance node and the
+# finance agent's simulate_loan tool.
+SIMULATION_LABEL = "Mô phỏng vay qua chat"
+LOAN_BAND_VI = {"phu_hop": "trong mức khuyến nghị", "can_nhac": "cần cân nhắc",
+                "vuot": "vượt mức khuyến nghị", "chua_ro": "chưa rõ"}
 
 
 class ChatState(TypedDict, total=False):
@@ -74,6 +105,9 @@ class ChatState(TypedDict, total=False):
     # AG-02: tiền tương đối parse từ câu GỐC (trước redact) — key phải khai
     # báo trong schema, LangGraph mới giữ lại khi invoke.
     relative_budget: dict | None
+    # UX-01/03: khoảng tiền, diện tích, "rẻ nhất" đọc từ câu gốc (chỉ số liệu, không
+    # giữ nguyên văn vì state có thể vào checkpoint).
+    needs_extras: dict | None
     cost_input: dict | None
     response: dict
     provenance: dict
@@ -92,6 +126,8 @@ class HomeMatchService:
     def __init__(self, db_path: str | Path = ".local/homematch.sqlite",
                  catalog: Catalog | None = None, interpreter: Interpreter | None = None):
         self.lock = RLock()
+        # crawl.md E-04: kiểm chứng tin cache theo catalog.version.
+        self._trust = trust.TrustChecker()
         self.metrics = Metrics()
         self.repo = None
         self.checkpoint_connection = None
@@ -156,6 +192,10 @@ class HomeMatchService:
         self._traces: dict[str, dict] = {}
         # WS-01: ngữ cảnh workspace hiện tại của từng phiên (ephemeral, một worker).
         self._workspace: dict[str, dict] = {}
+        # HN-13.2: câu hỏi làm rõ đang chờ khách trả lời (field + câu hỏi + chip)
+        # — bộ nhớ tiến trình; mất khi khởi động lại chỉ làm analyst thiếu ngữ
+        # cảnh câu hỏi chờ, không gây lỗi (test riêng).
+        self._pending_clarification: dict[str, dict] = {}
         self.chat_graph = self._build_chat_graph()
         self.recommendation_graph = self._build_recommendation_graph()
 
@@ -187,10 +227,47 @@ class HomeMatchService:
     def _fresh(self, run: dict) -> bool:
         session = self.repo.session(run["session_id"])
         if (run["status"] == "invalidated" or session["profile_version"] != run["profile_version"]
-                or session["active_run_id"] != run["id"] or self.catalog.version != run["catalog_version"]):
+                or session["active_run_id"] != run["id"]
+                or (self.catalog.version != run["catalog_version"] and not self._still_current(run))):
             self.repo.invalidate(run["id"])
             return False
         return True
+
+    def _still_current(self, run: dict) -> bool:
+        """D-11: kho đổi chỉ làm hỏng danh sách khi xếp hạng lại cho ra danh sách khác.
+
+        Kho nhiều chủ nhà đổi liên tục; một phòng không liên quan không được xóa kết
+        quả của người thuê. So toàn bộ nội dung từng căn (thứ tự, revision, giá, phí,
+        lý do) nên căn đang hiện đổi gì cũng hết hiệu lực. Run chưa xong không được xét.
+        """
+        if run["status"] not in ("published", "no_match", "needs_verification"):
+            return False
+        version = self.catalog.version
+        items, diagnostics = self._match_with_fallback(Profile.model_validate_json(run["profile_json"]),
+                                                       self.catalog.match)
+        if run_status_for(items, diagnostics) != run["status"]:
+            return False
+        if [item.model_dump(mode="json") for item in items] != (run["items"] or []):
+            return False
+        refreshed = redact_tree({**(run["diagnostics"] or {}), "rejected": diagnostics["rejected"],
+                                 "verification": diagnostics["verification"],
+                                 **{key: diagnostics[key] for key in (
+                                     "total_matches", "exact_cost_matches", "estimated_matches")
+                                    if key in diagnostics}})
+        self.repo.revalidate_run(run["id"], run["catalog_version"], version, refreshed)
+        run.update(catalog_version=version, diagnostics=refreshed)
+        return True
+
+    def _match_with_fallback(self, profile: Profile, match) -> tuple[list, dict]:
+        """Chạy phương pháp đã cấu hình; P không dùng được thì về B1 và ghi rõ nhãn."""
+        try:
+            return match(profile, self.matching_method)
+        except DomainError as error:
+            if error.code != "semantic_unavailable":
+                raise
+        items, diagnostics = match(profile, "B1")
+        diagnostics.update(algorithm="B1_fallback", semantic_status="unavailable")
+        return items, diagnostics
 
     @staticmethod
     def _session_projection(session: dict) -> dict:
@@ -282,6 +359,11 @@ class HomeMatchService:
             explicit_route = fixed_intent(text)
             usage = {"logical_calls": 0, "tokens": None, "mode": self.interpreter.mode}
             provider_error = None
+            # HN-13.3.6 (lỗi lộ qua đo: fast_path "calls=4" trong 1,8 s): last_usage
+            # của lượt TRƯỚC còn nằm trên interpreter — reset đầu mỗi lượt để
+            # usage/trace/metrics không bị nhân số của lượt cũ.
+            if self.interpreter.mode == "openai":
+                self.interpreter.last_usage = {"logical_calls": 0, "tokens": None}
             # HN-05: mở bản ghi lượt; các điểm xảy ra sự kiện gọi _record_step,
             # ghi bền vào hm_agent_turns/hm_agent_steps ở cuối lượt.
             self._turn_recording = {"turn_id": turn_id, "started_at": conversations.utc_now(),
@@ -299,34 +381,92 @@ class HomeMatchService:
                 elif explicit_route is None and viewing_intent(text):
                     response, provenance = self._prepare_viewing(session, actor, text)
                 elif isinstance(self.interpreter, OpenAIInterpreter):
-                    # HN-01 đường tắt tất định: ý định rõ đi graph luật ngay; câu
-                    # luật hiểu đủ thì confirm không cần LLM; còn lại mới vào
-                    # vòng lặp agent (AG-13). Mọi đường đều không chết giữa chừng.
-                    fast = (self._explicit_fast_path(session, actor, text, explicit_route,
-                                                     cost_input)
-                            if explicit_route else
-                            fast_path_reply(self, session, actor, text, emit=emit, turn_id=turn_id))
-                    if fast is not None:
-                        response, provenance = fast
+                    # HN-01 đường tắt tất định + HN-13 multi-agent. HOMEMATCH_INPUT_ANALYST=off
+                    # giữ nguyên hành vi một vòng lặp cũ (test cũ, cassette không đổi);
+                    # jev|rules thì analyst định tuyến needs|finance|ranking|other:
+                    # - human_support/landlord_handover/handbook hoặc có cost_input →
+                    #   graph luật ngay (đường explicit cũ);
+                    # - simulate_finance/calculate_cost KHÔNG cost_input: đã có kết quả →
+                    #   agent tài chính, chưa có → graph như cũ (Jev không bị tốn lượt);
+                    # - route ranking: đã có kết quả → agent xếp hạng, chưa có → agent nhu cầu;
+                    # - route needs/other: clarity=reason → thẳng agent nhu cầu (bỏ qua
+                    #   fast path — câu luật "hiểu đủ" không được chặn model); clear → thử
+                    #   fast path trước, không được thì agent nhu cầu.
+                    # Mọi đường đều không chết giữa chừng.
+                    if input_analyst.analyst_mode() == "off":
+                        fast = (self._explicit_fast_path(session, actor, text, explicit_route,
+                                                         cost_input)
+                                if explicit_route else
+                                fast_path_reply(self, session, actor, text, emit=emit, turn_id=turn_id))
+                        if fast is not None:
+                            response, provenance = fast
+                        else:
+                            response, provenance, provider_error = self._agent_loop_turn(
+                                session, actor, text, explicit_route, cost_input,
+                                emit=emit, turn_id=turn_id, role="needs", attach_agents=False)
                     else:
-                        # AG-13: vòng lặp agent tự gọi tool; model lỗi/hết ngân sách
-                        # phiên → rơi về graph cũ, không bao giờ chết giữa chừng.
-                        try:
-                            response, provenance = run_agent_turn(self, session, actor, text, emit=emit, turn_id=turn_id)
-                        except DomainError as error:
-                            if error.code not in PROVIDER_FALLBACK_CODES:
-                                raise  # budget_exceeded đi thẳng 429 thân thiện (HN-06)
-                            provider_error = error.code
-                            try:
-                                response, provenance = self._chat_graph_turn(session, actor, text,
-                                                                             explicit_route, cost_input, spend=False)
-                            except DomainError as inner:
-                                if inner.code not in PROVIDER_FALLBACK_CODES:
-                                    raise
-                                # Graph cũ cũng lỗi provider → trả biểu mẫu có nhãn mã.
-                                response = provider_fallback_reply(inner.code)
-                                provenance = stamp("deterministic-engine", "provider_fallback")
-                            response = {**response, "agent_mode": "graph_fallback"}
+                        input_analysis: dict | None = None
+                        explicit_kept = (explicit_route in {"human_support", "landlord_handover",
+                                                            "handbook"} or cost_input is not None)
+                        if explicit_kept:
+                            response, provenance = self._explicit_fast_path(session, actor, text,
+                                                                            explicit_route, cost_input)
+                            input_analysis = {"route": "finance" if cost_input is not None else "other",
+                                              "clarity": "clear", "decided_by": "rules"}
+                        else:
+                            has_results = bool(self.results(session_id, actor)["results"])
+                            if explicit_route in {"simulate_finance", "calculate_cost"}:
+                                # Ý định rõ đã xác định route — luật quyết, không tốn lượt Jev.
+                                input_analysis = {"route": "finance", "clarity": "clear",
+                                                  "decided_by": "rules"}
+                                if not has_results:
+                                    response, provenance = self._explicit_fast_path(
+                                        session, actor, text, explicit_route, cost_input)
+                                else:
+                                    response, provenance, provider_error = self._agent_loop_turn(
+                                        session, actor, text, explicit_route, cost_input,
+                                        emit=emit, turn_id=turn_id, role="finance")
+                            else:
+                                input_analysis = input_analyst.analyze(
+                                    self, session, text, has_results=has_results,
+                                    phase=self._agent_phase(session_id), emit=emit)
+                                route = input_analysis["route"]
+                                if route == "finance" and not has_results:
+                                    # HN-13.2: chưa có kết quả mà câu KHÔNG phải ý định
+                                    # vay/tính chi phí rõ (đã xử lý ở nhánh explicit) →
+                                    # agent nhu cầu đọc mức tiền từ câu khách, không
+                                    # về graph (trước đây trả needs_results/hỏi lại).
+                                    response, provenance, provider_error = self._agent_loop_turn(
+                                        session, actor, text, explicit_route, cost_input,
+                                        emit=emit, turn_id=turn_id, role="needs")
+                                else:
+                                    if route == "ranking" and not has_results:
+                                        role = "needs"  # chưa có kết quả → sang agent nhu cầu
+                                    elif (route in {"needs", "other"}
+                                          and input_analysis["clarity"] == "clear"):
+                                        fast = fast_path_reply(self, session, actor, text,
+                                                               emit=emit, turn_id=turn_id)
+                                        if fast is not None:
+                                            response, provenance = fast
+                                            role = None  # luật đã chốt, không vào vòng lặp
+                                        else:
+                                            role = "needs"
+                                    else:
+                                        # finance đã có kết quả · ranking đã có kết quả ·
+                                        # needs/other mơ hồ (clarity=reason)
+                                        role = {"finance": "finance", "ranking": "ranking"}.get(route, "needs")
+                                    if role is not None:
+                                        response, provenance, provider_error = self._agent_loop_turn(
+                                            session, actor, text, explicit_route, cost_input,
+                                            emit=emit, turn_id=turn_id, role=role)
+                        if input_analysis is not None:
+                            # HN-13: input_analysis kèm mọi đường khi analyst bật;
+                            # agents do _agent_loop_turn gắn [role], các đường luật
+                            # thì [] (fast path có bàn giao xếp hạng → ["ranking"]).
+                            response = {**response, "input_analysis": input_analysis}
+                            if "agents" not in response:
+                                response["agents"] = ["ranking"] \
+                                    if (provenance or {}).get("handover_calls") else []
                 else:
                     if emit is not None:
                         emit({"name": "route", "kind": "router",
@@ -343,7 +483,11 @@ class HomeMatchService:
                 provider_error = error.code
                 response, provenance = provider_fallback_reply(error.code), stamp("deterministic-engine", "provider_fallback")
             finally:
-                if explicit_route is None and self.interpreter.mode == "openai":
+                # HN-13: lượt agent giờ có thể chạy cả qua explicit route (finance) —
+                # cập nhật usage khi vòng lặp agent hoặc graph interview đã gọi LLM.
+                if (self.interpreter.mode == "openai"
+                        and (explicit_route is None
+                             or (provenance or {}).get("node") in {"agent_loop", "interview"})):
                     usage.update(self.interpreter.last_usage)
                 self.metrics.provider_usage(usage)
             guard = {"injection_flagged": scan.flagged, "patterns": scan.patterns,
@@ -351,6 +495,17 @@ class HomeMatchService:
                      "budget": {"turns_used": self.budget.used(session_id),
                                 "turn_limit": self.budget.turn_limit,
                                 "spent_usd": self.budget.spent_usd(session_id)}}
+            # HN-13.2: câu hỏi đang chờ = chip của lượt này. Lượt không hỏi lại
+            # (khách nói sang việc khác hoặc trả lời xong) → xoá pending; tin bị
+            # cách ly không phải trả lời nên giữ nguyên. Mất khi restart chỉ làm
+            # analyst thiếu ngữ cảnh, không lỗi (test riêng).
+            clarification = response.get("clarification") or {}
+            if clarification.get("question") and (clarification.get("options") or []):
+                self._pending_clarification[session_id] = {
+                    "field": clarification.get("field"),
+                    "question": clarification.get("question")}
+            elif not scan.flagged:
+                self._pending_clarification.pop(session_id, None)
             self._traces.setdefault(session_id, {})["chat"] = {
                 "provenance": provenance, "guard": guard,
                 "input_redacted": redact(text),
@@ -364,9 +519,12 @@ class HomeMatchService:
 
     def _explicit_fast_path(self, session: dict, actor: Actor, text: str,
                             explicit_route: str, cost_input: CostRequest | None):
-        """HN-01: ý định rõ (chi phí/vay/handbook/handover/hỗ trợ) đi graph luật
-        ngay, không vòng LLM — các nhánh này không cần trích xuất của model.
-        Lỗi provider hiếm hoi của graph vẫn trả biểu mẫu có nhãn mã."""
+        """HN-01: ý định rõ đi graph luật ngay, không vòng LLM — các nhánh này không
+        cần trích xuất của model. HN-13 thu hẹp phạm vi: chỉ human_support,
+        landlord_handover, handbook và message có cost_input đi đường này;
+        simulate_finance/calculate_cost không cost_input được định tuyến sang agent
+        tài chính/graph ở caller. Lỗi provider hiếm hoi của graph vẫn trả biểu mẫu
+        có nhãn mã."""
         try:
             response, provenance = self._chat_graph_turn(session, actor, text,
                                                          explicit_route, cost_input, spend=False)
@@ -376,6 +534,34 @@ class HomeMatchService:
             response = provider_fallback_reply(error.code)
             provenance = stamp("deterministic-engine", "provider_fallback")
         return {**response, "agent_mode": "fast_path"}, provenance
+
+    def _agent_loop_turn(self, session: dict, actor: Actor, text: str,
+                         explicit_route: str | None, cost_input: CostRequest | None,
+                         *, emit, turn_id: str | None, role: str,
+                         attach_agents: bool = True) -> tuple[dict, dict, str | None]:
+        """HN-13: vòng lặp agent với role chuyên trách; model lỗi/hết phiên → rơi
+        về graph cũ (graph_fallback), không bao giờ chết giữa chừng. Trả thêm mã
+        lỗi provider (nếu có) cho guard của lượt. `attach_agents=False` dùng cho
+        nhánh off — DTO giữ đúng hình một vòng lặp cũ, không thêm trường nào."""
+        try:
+            response, provenance = run_agent_turn(self, session, actor, text,
+                                                  emit=emit, turn_id=turn_id, role=role)
+            return ({**response, "agents": [role]} if attach_agents else response), provenance, None
+        except DomainError as error:
+            if error.code not in PROVIDER_FALLBACK_CODES:
+                raise  # budget_exceeded đi thẳng 429 thân thiện (HN-06)
+            try:
+                response, provenance = self._chat_graph_turn(session, actor, text,
+                                                             explicit_route, cost_input, spend=False)
+            except DomainError as inner:
+                if inner.code not in PROVIDER_FALLBACK_CODES:
+                    raise
+                # Graph cũ cũng lỗi provider → trả biểu mẫu có nhãn mã.
+                response = provider_fallback_reply(inner.code)
+                provenance = stamp("deterministic-engine", "provider_fallback")
+            if not attach_agents:
+                return {**response, "agent_mode": "graph_fallback"}, provenance, error.code
+            return {**response, "agent_mode": "graph_fallback", "agents": []}, provenance, error.code
 
     def _store_transcript(self, session_id: str, user_id: str, text: str, response: dict, provenance: dict,
                           flagged: bool):
@@ -417,7 +603,8 @@ class HomeMatchService:
             "intent": explicit_route, "budget_hint": rent_budget_hint(text),
             # AG-02: parse tiền tương đối từ câu GỐC (trước redact — placeholder
             # đã tách số nên không đọc được trên state["text"]).
-            "relative_budget": relative_budget(text), "toolbox": ToolBox(),
+            "relative_budget": relative_budget(text),
+            "needs_extras": self._parse_text_needs(text), "toolbox": ToolBox(),
             "cost_input": cost_input.model_dump(mode="json") if cost_input else None})
         return dict(state["response"]), dict(state.get("provenance") or {})
 
@@ -453,7 +640,7 @@ class HomeMatchService:
             session = self.repo.session(session_id)
             draft = DraftProfile.model_validate_json(session["draft_json"])
             allowed = {"city", "area", "people", "room_type", "bedrooms", "preferences",
-                       "needs_destination", "accept_estimated_data", "soft_description", "destination"}
+                       "needs_destination", "soft_description", "destination"}
             touched = {key for key in set(patch) & allowed if getattr(draft, key) != patch[key]}
             if not touched:
                 return []
@@ -468,17 +655,74 @@ class HomeMatchService:
             self.repo.update_draft(session_id, updated, session["draft_revision"])
         return sorted(touched)
 
-    def _apply_chat_budget_hint(self, session_id: str, hint: int, expected_revision: int):
+    def _apply_chat_budget_hint(self, session_id: str, hint: int, expected_revision: int,
+                                scope: str | None = None):
         """Mức tiền trong câu khách (rent_budget_hint) ghi tất định vào nháp,
-        trạng thái inferred — bất biến: chỉ là gợi ý, chưa phải trần."""
+        trạng thái inferred — bất biến: chỉ là gợi ý, chưa phải trần. HN-13.2:
+        cách hiểu mức tiền ("tiền thuê"/"tổng tháng") cũng đọc tất định từ cùng
+        câu (kể cả câu chip khách bấm gửi), chỉ áp khi scope chưa có giá trị."""
         with self.repo.guard():
             session = self.repo.session(session_id)
             draft = DraftProfile.model_validate_json(session["draft_json"])
             draft.budget_hint_vnd = hint
             draft.field_status["budget_hint"] = "inferred"
             draft.evidence_ref["budget_hint"] = f"agent:r{expected_revision + 1}"
+            if scope and draft.budget_scope is None:
+                draft.budget_scope = scope
+                draft.field_status["budget_scope"] = "inferred"
+                draft.evidence_ref["budget_scope"] = f"agent:r{expected_revision + 1}"
             self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
                                    expected_revision)
+
+    def _apply_chat_extras(self, session_id: str, text: str) -> bool:
+        """UX-01/03: cận dưới tiền thuê ("3 đến 4 triệu"), diện tích mong muốn và
+        "rẻ nhất" đọc TẤT ĐỊNH từ câu khách (model không ghi), trạng thái inferred.
+        Trả True nếu nháp có đổi."""
+        with self.repo.guard():
+            session = self.repo.session(session_id)
+            draft = DraftProfile.model_validate_json(session["draft_json"])
+            touched = self._text_needs_into_draft(draft, self._parse_text_needs(text))
+            if not touched:
+                return False
+            evidence = f"chat:r{session['draft_revision'] + 1}"
+            for key in touched:
+                draft.field_status[key] = "inferred"
+                draft.evidence_ref[key] = evidence
+            self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
+                                   session["draft_revision"])
+        return True
+
+    @staticmethod
+    def _parse_text_needs(text: str) -> dict:
+        from .interpreter import (area_m2_hint, budget_approx_hint, budget_range, budget_scope_hint,
+                                  wants_cheapest)
+        return {"range": budget_range(text), "area": area_m2_hint(text), "cheapest": wants_cheapest(text),
+                "approx": budget_approx_hint(text),
+                "scope": budget_scope_hint(text)}
+
+    @staticmethod
+    def _text_needs_into_draft(draft: DraftProfile, extras: dict | None) -> set[str]:
+        touched: set[str] = set()
+        extras = extras or {}
+        span = extras.get("range")
+        if span and (draft.budget_min_vnd, draft.budget_hint_vnd) != tuple(span):
+            draft.budget_min_vnd, draft.budget_hint_vnd = span
+            touched |= {"budget_min", "budget_hint"}
+        area = extras.get("area")
+        if area and (draft.min_area_m2, draft.min_area_hard) != (area["value"], area["hard"]):
+            draft.min_area_m2, draft.min_area_hard = area["value"], area["hard"]
+            touched.add("min_area")
+        if extras.get("scope") and draft.budget_scope is None:
+            draft.budget_scope = extras["scope"]
+            touched.add("budget_scope")
+        if extras.get("cheapest") and not draft.prefer_cheapest:
+            draft.prefer_cheapest = True
+            touched.add("prefer_cheapest")
+        approx = extras.get("approx")
+        if approx is not None and draft.budget_approx != approx:
+            draft.budget_approx = approx
+            touched.add("budget_approx")
+        return touched
 
     def _confirmed_profile(self, session_id: str) -> Profile:
         session = self.repo.session(session_id)
@@ -486,7 +730,8 @@ class HomeMatchService:
             raise DomainError("no_profile", "Chưa có hồ sơ đã xác nhận.", 409)
         return Profile.model_validate_json(session["profile_json"])
 
-    def _profile_from_draft(self, session_id: str, session_row: dict | None = None) -> Profile | None:
+    def _profile_from_draft(self, session_id: str, session_row: dict | None = None,
+                            *, legacy_caps: bool = False) -> Profile | None:
         """Hồ sơ từ nháp (chưa ghi gì): lần đầu dùng mức tiền nháp làm trần như
         auto-confirm ở FE; sau khi đã xác nhận chỉ áp trường nháp có bằng chứng
         (chat/agent/form), KHÔNG đổi trần tiền — tiền chỉ là gợi ý tới khi khách
@@ -502,13 +747,25 @@ class HomeMatchService:
             # AG-11: budget_scope "rent" → hint là trần THUÊ (max_rent_vnd), trần
             # tổng tạm bằng hint (thận trọng, không bịa hệ số phí); total/None →
             # hint là trần tổng tháng (hành vi cũ).
-            if draft.budget_scope == "rent":
-                rent_cap, monthly_cap = draft.budget_hint_vnd, draft.budget_hint_vnd
-            else:
+            # UX-01 (Q1, 12/11): mức tiền không nói rõ phạm vi hiểu là TIỀN THUÊ; chỉ
+            # "tổng tháng/tổng chi phí" mới lọc theo tổng. Tiền thuê → không đặt
+            # trần tổng (None), tổng tháng chỉ hiện dạng ước tính.
+            if legacy_caps:
+                # Chỉ để clarify đếm tác động (hiệu chỉnh gold HN-08): scope chưa nêu = trần
+                # tổng; "rent" giữ thêm trần tổng bằng hint như trước.
+                rent_cap = draft.budget_hint_vnd if draft.budget_scope == "rent" else None
+                monthly_cap = draft.budget_hint_vnd
+            elif draft.budget_scope == "total":
                 rent_cap, monthly_cap = None, draft.budget_hint_vnd
+            else:
+                rent_cap, monthly_cap = draft.budget_hint_vnd, None
+            rent_floor = draft.budget_min_vnd if rent_cap is not None else None
             return Profile(city=draft.city, area=draft.area, room_type=draft.room_type or "room",
                            min_bedrooms=draft.bedrooms if (draft.room_type == "apartment" and draft.bedrooms) else None,
-                           max_monthly_cost_vnd=monthly_cap, max_rent_vnd=rent_cap, scenario=scenario,
+                           max_monthly_cost_vnd=monthly_cap, max_rent_vnd=rent_cap, min_rent_vnd=rent_floor,
+                           min_area_m2=draft.min_area_m2, min_area_hard=draft.min_area_hard,
+                           prefer_cheapest=draft.prefer_cheapest, budget_approx=draft.budget_approx,
+                           scenario=scenario,
                            preferences=list(draft.preferences), destination=draft.destination,
                            soft_description=draft.soft_description,
                            accept_estimated_data=draft.accept_estimated_data)
@@ -537,11 +794,25 @@ class HomeMatchService:
             updates["soft_description"] = draft.soft_description
         if scenario_update:
             updates["scenario"] = base.scenario.model_copy(update=scenario_update)
-        # AG-11: chip đổi budget_scope trên hồ sơ đã xác nhận.
+        # AG-11: chip đổi budget_scope trên hồ sơ đã xác nhận. UX-01: một mức tiền
+        # chỉ thuộc MỘT phạm vi, nên đổi sang phạm vi này thì bỏ trần phạm vi kia.
         if evidence.get("budget_scope") and draft.budget_scope == "rent" and draft.budget_hint_vnd:
             updates["max_rent_vnd"] = draft.budget_hint_vnd
+            updates["max_monthly_cost_vnd"] = None
+            updates["min_rent_vnd"] = draft.budget_min_vnd
         elif evidence.get("budget_scope") and draft.budget_scope == "total" and draft.budget_hint_vnd:
             updates["max_monthly_cost_vnd"] = draft.budget_hint_vnd
+            updates["max_rent_vnd"] = None
+            updates["min_rent_vnd"] = None
+        if evidence.get("budget_min") and base.max_rent_vnd is not None and not updates.get("max_monthly_cost_vnd"):
+            updates["min_rent_vnd"] = draft.budget_min_vnd
+        if evidence.get("min_area"):
+            updates["min_area_m2"] = draft.min_area_m2
+            updates["min_area_hard"] = draft.min_area_hard
+        if evidence.get("prefer_cheapest"):
+            updates["prefer_cheapest"] = draft.prefer_cheapest
+        if evidence.get("budget_approx"):
+            updates["budget_approx"] = draft.budget_approx
         return base.model_copy(update=updates) if updates else base
 
     def room_reference_in(self, ref: str, visible: dict) -> str | None:
@@ -555,8 +826,13 @@ class HomeMatchService:
 
     def _apply_clarification_choice(self, session_id: str, best: dict):
         """Tự chấp nhận cách hiểu phổ biến nhất (p_max ≥ ngưỡng): áp vào nháp ở
-        trạng thái inferred kèm nhãn clarify:auto — khách vẫn sửa được."""
+        trạng thái inferred kèm nhãn clarify:auto — khách vẫn sửa được.
+        HN-13.2: field ASK_ONLY (city/budget_cap/destination) KHÔNG bao giờ tự áp —
+        khách chưa nói gì về chúng, chip tồn tại để khách chọn."""
         interpretation = best["interpretation"]
+        from .clarify import ASK_ONLY_FIELDS, canonical_field
+        if canonical_field(interpretation.get("field", "")) in ASK_ONLY_FIELDS:
+            return None
         session = self.repo.session(session_id)
         draft = self._draft(session_id)
         field = {"destination_radius": "destination", "budget_scope": "budget"}.get(
@@ -574,7 +850,7 @@ class HomeMatchService:
                     or field in {"area", "room_type"} and getattr(base, field) and value != getattr(base, field)
                     or field == "people" and value < base.scenario.people
                     or field == "budget" and draft.budget_hint_vnd
-                    and (draft.budget_hint_vnd > base.max_monthly_cost_vnd
+                    and (base.max_monthly_cost_vnd is not None and draft.budget_hint_vnd > base.max_monthly_cost_vnd
                          or interpretation.get("scope") == "rent" and base.max_rent_vnd is not None
                          and draft.budget_hint_vnd > base.max_rent_vnd)):
                 return None
@@ -622,7 +898,9 @@ class HomeMatchService:
         if decision == "accept" and best is not None:
             label = self._apply_clarification_choice(session_id, best)
             if label is not None:
-                return {"assumed": clarify_layer.option_label(best), "field": clarification["field"],
+                # HN-13.2: giả định là CÂU NGƯỜI ĐỌC, không phải nhãn chip có số.
+                return {"assumed": clarify_layer.assumption_sentence(best) or clarify_layer.option_label(best),
+                        "field": clarification["field"],
                         "decided_by": decided_by}
         return clarify_layer.to_dto(clarification, decided_by)
 
@@ -658,6 +936,25 @@ class HomeMatchService:
         if not question:
             return
         if not self._can_ask_clarification(session_id):
+            # HN-13.3.3: hết quyền hỏi NHƯNG hồ sơ đã đủ dữ liệu tối thiểu → CHẠY TÌM
+            # luôn (deterministic), không đẩy khách sang form. Chỉ form khi chưa đủ.
+            profile = self._profile_from_draft(session_id)
+            if profile is not None:
+                try:
+                    fresh = self.repo.session(session_id)
+                    result = self.confirm(session_id, Actor(id=self.repo.session(session_id)["owner_id"],
+                                                             role="renter"),
+                                           profile, fresh["draft_revision"])
+                    response.update(clarification=None, questions=None,
+                        message=confirm_template(confirm_data(result, profile)),
+                        status=result["status"],
+                        suggested_prompts=self._suggested_prompts(session_id),
+                        criteria=self._criteria_projection(session_id))
+                    self._record_step("guard", "limit_confirm", True,
+                                      "Hết ngân sách câu hỏi nhưng nhu cầu đủ — đã chạy tìm trực tiếp")
+                    return
+                except DomainError:
+                    pass  # lỗi nghiệp vụ (CAS…) → giữ nhánh form bên dưới
             response.update(clarification=None, questions=None,
                 message="Mình cần thêm thông tin để tìm chính xác. Bạn điền các mục còn thiếu trong “Nhu cầu của tôi” rồi xác nhận nhé.")
             return
@@ -679,16 +976,42 @@ class HomeMatchService:
             "UPDATE hm_sessions SET clarification_questions=clarification_questions+1 WHERE id=?", (session_id,))
 
     def _suggested_prompts(self, session_id: str) -> list[str]:
-        """WS-01: gợi ý tiếp theo tất định theo trạng thái phiên (không LLM, không số lạ)."""
+        """HN-13.2: có câu hỏi đang chờ → KHÔNG chip trạng thái (chỉ chip của câu
+        đó, FE render từ clarification). awaiting_confirmation → chip động từ kho
+        (điểm mốc thật + mức tiền từ phân bố, tối đa 4, đều là chip chữ); các
+        trạng thái khác giữ chip published hiện có."""
+        pending = self._pending_clarification.get(session_id)
+        if pending:
+            return []
         try:
             owner = self.repo.session(session_id)["owner_id"]
-            result = self.results(session_id, Actor(id=owner, role="renter"))
+            results = self.results(session_id, Actor(id=owner, role="renter"))
         except DomainError:
             return []
-        if result["results"]:
-            return ["Đặt lịch xem căn này", "Tính tổng chi phí căn đầu tiên", "Còn căn nào rẻ hơn khu này?"]
-        if result["status"] == "no_match":
-            return ["Nới khu vực lân cận", "Cho mình xem căn thiếu bảng phí"]
+        if results["status"] == "awaiting_confirmation":
+            from .clarify import state_chips
+            return state_chips(self, session_id)
+        return results.get("suggested_prompts") or []
+
+    @staticmethod
+    def _next_prompts(session: dict, status: str, diagnostics: dict | None = None) -> list[str]:
+        """Câu trả lời gợi ý tất định theo điều agent đang chờ (không LLM, không số lạ từ kho).
+        Mỗi câu là tin nhắn người thuê gửi được ngay; không câu nào tự đổi điều kiện cứng.
+        HN-13.2: chip chờ xác nhận (thành phố/mức tiền cố định) bỏ — thay bằng chip
+        động từ kho ở _suggested_prompts (state_chips)."""
+        draft = DraftProfile.model_validate_json(session["draft_json"])
+        if status == "published":
+            prompts = ["Đặt lịch xem căn đầu tiên", "Tính tổng chi phí căn đầu tiên"]
+            # UX-09: ưu tiên điều người thuê vừa nêu mà danh sách chưa chắc đáp ứng.
+            wanted = re.search(r"(\d{2,3})\s*(?:m2|m²|mét vuông)", draft.soft_description or "", re.IGNORECASE)
+            prompts.append(f"Chỉ xem căn từ {wanted.group(1)} m²" if wanted else "So sánh hai căn đầu")
+            return prompts
+        if status in ("no_match", "needs_verification"):
+            prompts = []
+            if draft.budget_hint_vnd:
+                prompts.append("Nới ngân sách thêm 1 triệu")
+            prompts.append("Đổi khu vực khác")
+            return prompts
         return []
 
     def _criteria_projection(self, session_id: str) -> dict:
@@ -711,8 +1034,8 @@ class HomeMatchService:
         return {"draft": draft.model_dump(mode="json"),
                 "confirmed_profile": confirmed,
                 "recent_chat": [f"{row['speaker']}: {row['text']}" for row in reversed(rows)],
-                "notes": "draft.budget_hint_vnd là mức tiền khách nêu (gợi ý trần tổng tháng); "
-                         "destination chỉ đặt qua update_needs sau khi find_place tra được."}
+                "notes": "Mức tiền đã ghi là gợi ý trần tổng tháng do khách nêu; "
+                         "điểm đến chỉ đặt qua update_needs sau khi find_place tra được."}
 
     def _record_step(self, kind: str, name, ok: bool, summary: str, duration_ms: int = 0) -> None:
         """HN-05: gom một sự kiện của lượt đang chạy (llm|tool|guard|decision).
@@ -743,7 +1066,7 @@ class HomeMatchService:
             outcome = "answered"
         turn_id = recording.get("turn_id") or str(uuid4())
         try:
-            cursor = self.repo.db.execute(
+            self.repo.db.execute(
                 "INSERT INTO hm_agent_turns(turn_id,session_id,user_id,started_at,duration_ms,"
                 "agent_mode,model,llm_calls,input_tokens,output_tokens,cost_usd,decided_by,"
                 "outcome,error_code,phase) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -756,11 +1079,14 @@ class HomeMatchService:
                  (provenance or {}).get("cost_usd"),
                  clarification.get("decided_by"), outcome, provider_error,
                  (provenance or {}).get("phase")))
+            # psycopg has no lastrowid; the UNIQUE(session_id, turn_id) key works on both backends.
+            turn_row_id = self.repo.db.execute("SELECT id FROM hm_agent_turns WHERE session_id=? AND turn_id=?",
+                                               (session_id, turn_id)).fetchone()["id"]
             for seq, step in enumerate(recording.get("steps") or [], 1):
                 self.repo.db.execute(
                     "INSERT INTO hm_agent_steps(turn_row_id,seq,kind,name,duration_ms,ok,summary) "
                     "VALUES(?,?,?,?,?,?,?)",
-                    (cursor.lastrowid, seq, step["kind"], step["name"], step.get("duration_ms", 0),
+                    (turn_row_id, seq, step["kind"], step["name"], step.get("duration_ms", 0),
                      1 if step.get("ok", True) else 0, step.get("summary", "")))
         finally:
             self._turn_recording = None
@@ -869,6 +1195,8 @@ class HomeMatchService:
 
     def confirm(self, session_id: str, actor: Actor, profile: Profile, expected_revision: int) -> dict:
         with self.lock:
+            # HN-13.2: có run mới → câu hỏi đang chờ hết hiệu lực.
+            self._pending_clarification.pop(session_id, None)
             with self.repo.guard():
                 session = self._session_for(session_id, actor, "renter")
                 require("profile:confirm", actor, Resource.for_session(session))
@@ -877,13 +1205,38 @@ class HomeMatchService:
                     raise DomainError("invalid_amenity", "Chọn tiện ích trong từ điển được hỗ trợ.", 422)
                 if len(profile.preferences) != len(set(profile.preferences)) or len(profile.must_amenities) != len(set(profile.must_amenities)):
                     raise DomainError("invalid_amenity", "Tiện ích không được lặp lại.", 422)
+                offered = DraftProfile.model_validate_json(session["draft_json"]).preferences
                 session = self.repo.confirm_profile(session_id, expected_revision, profile)
                 run = self.repo.create_run(session, self.catalog.version)
             # Remember non-financial preferences only when the renter consented.
-            memory.remember(self.repo, actor.id, session_id, profile)
+            if memory.consented(self.repo, actor.id):
+                catalog = self.catalog.rooms()
+                saved_ids = set(self.repo.saved_room_ids(actor.id))
+                saved = memory.saved_signals([room for room in catalog if room.id in saved_ids], catalog)
+                memory.remember(self.repo, actor.id, session_id, profile, offered, saved)
             # The ledger must commit before the independently persisted graph starts.
             self._generate(run["id"])
             return self.results(session_id, actor)
+
+    def _auto_confirm(self, session_id: str, actor: Actor, budget_hint: int | None = None) -> dict | None:
+        """UX-02 (12/11): lượt chat/chip đủ dữ liệu (thành phố + mức tiền) thì BACKEND tự
+        xác nhận hồ sơ từ nháp và xếp hạng ngay trong cùng lượt — frontend không dựng hồ
+        sơ nữa. Đã có hồ sơ: chỉ áp trường nháp có bằng chứng; mức tiền chỉ đổi khi lượt
+        này vừa đọc mức tiền tường minh (`budget_hint`). Không có gì đổi hoặc chưa đủ dữ
+        liệu thì trả None; lỗi xung đột (409) cũng None để lượt sau thử lại."""
+        try:
+            profile = self._profile_from_draft(session_id)
+            if profile is None:
+                return None
+            session = self.repo.session(session_id)
+            if session["profile_json"]:
+                base = Profile.model_validate_json(session["profile_json"])
+                profile = apply_explicit_budget(self, session_id, profile, budget_hint)
+                if profile.model_dump() == base.model_dump():
+                    return None
+            return self.confirm(session_id, actor, profile, session["draft_revision"])
+        except DomainError:
+            return None
 
     def _generate(self, run_id: str):
         start = time.monotonic()
@@ -898,9 +1251,20 @@ class HomeMatchService:
                                     time.monotonic() - start)
 
     def patch_draft(self, session_id: str, actor: Actor, patch: DraftPatch) -> dict:
+        result = self._patch_draft(session_id, actor, patch)
+        # UX-02: chip làm rõ → tự xác nhận và xếp hạng ngay (form "Nhu cầu của tôi" vẫn
+        # chỉ ghi nháp, hồ sơ chốt khi người thuê bấm lưu → /confirm).
+        if getattr(patch, "source", "form") == "clarify":
+            if self._auto_confirm(session_id, actor) is not None:
+                return {**self.session(session_id, actor), "status": "published", "questions": None}
+        return result
+
+    def _patch_draft(self, session_id: str, actor: Actor, patch: DraftPatch) -> dict:
         with self.lock, self.repo.guard():
             session = self._session_for(session_id, actor, "renter")
             require("draft:patch", actor, Resource.for_session(session))
+            # HN-13.2: khách bấm chip / ghi nháp → câu hỏi đang chờ được trả lời.
+            self._pending_clarification.pop(session_id, None)
             fields = {"city", "area", "people", "preferences", "room_type", "bedrooms",
                       "needs_destination", "accept_estimated_data", "soft_description", "destination",
                       "budget_scope", "destination_radius_m"}
@@ -972,7 +1336,7 @@ class HomeMatchService:
             if draft.needs_destination:
                 notes.append("chưa rõ điểm đến nên tạm xếp theo khu vực — nhắn rõ tên trường/cơ sở để xếp gần hơn")
             if draft.budget_hint_vnd:
-                notes.append("mức tiền nhắc được hiểu là trần TỔNG THÁNG, mặc định 1 người 1 xe")
+                notes.append("mức tiền nhắc được hiểu là tiền thuê (nói “tổng tháng” nếu bạn muốn lọc theo tổng), mặc định 1 người 1 xe")
             tail = ("; ".join(notes) + " — sai thì sửa trong \"Nhu cầu của tôi\"") if notes else "bạn có thể nhắn thêm tiện ích muốn ưu tiên"
             # AG-03: chỉ hứa run mới khi lượt vừa ĐỔI nhu cầu; nhu cầu không đổi
             # thì nói thật là danh sách hiện tại vẫn đúng.
@@ -982,19 +1346,6 @@ class HomeMatchService:
         # AG-03: run hiện tại bị giữ vì thiếu sức chứa/bảng phí → hỏi rõ kèm số
         # tin, đề nghị "chấp nhận dữ liệu ước tính" (khách bấm mới bật, không
         # bao giờ bật ngầm).
-        if draft.city or draft.area:
-            if session["active_run_id"] and not draft.accept_estimated_data:
-                try:
-                    run = self.repo.run(session["active_run_id"])
-                except Exception:
-                    run = None
-                if run and run["status"] == "needs_verification":
-                    verification = (run.get("diagnostics") or {}).get("verification") or {}
-                    held = sum(count for key, count in verification.items()
-                               if key in {"availability_or_capacity", "monthly_fees", "initial_fees"})
-                    if held:
-                        questions.append(f"Có {held} tin thiếu sức chứa/bảng phí trong kho. "
-                                         "Nhắn “chấp nhận dữ liệu ước tính” để xem kèm nhãn ước tính?")
         return questions[:2]
 
     def results(self, session_id: str, actor: Actor) -> dict:
@@ -1002,12 +1353,26 @@ class HomeMatchService:
             session = self._session_for(session_id, actor, "renter")
             require("results:read", actor, Resource.for_session(session))
             if session["active_run_id"] is None:
-                return {"session_id": session_id, "status": "awaiting_confirmation", "results": []}
+                # HN-13.2: chip chờ xác nhận là chip ĐỘNG từ kho (state_chips).
+                from .clarify import state_chips
+                return {"session_id": session_id, "status": "awaiting_confirmation", "results": [],
+                        "suggested_prompts": state_chips(self, session_id)}
             run = self.repo.run(session["active_run_id"])
             if not self._fresh(run):
                 run = self.repo.run(run["id"])
             # Deliberately construct a small DTO: never return raw state/draft.
-            visible = list(run["items"]) if run["status"] == "published" else []
+            visible = [dict(item) for item in run["items"]] if run["status"] == "published" else []
+            if visible:
+                # CA-05 + crawl.md B-2: ảnh và video gắn theo room_id LÚC TRẢ
+                # RESPONSE (giống cách gắn photos của tìm theo bộ lọc), không lưu
+                # vào payload run đã xếp hạng và không đi vào eval/runs.
+                media_by_room = {room.id: {"source_images": room.source_images,
+                                           "source_videos": room.source_videos}
+                                 for room in self.catalog.rooms()}
+                for item in visible:
+                    media = media_by_room.get(item["room_id"], {})
+                    item["source_images"] = media.get("source_images", [])
+                    item["source_videos"] = media.get("source_videos", [])
             provenance = stamp("deterministic-engine", "rank", catalog_version=self.catalog.version,
                                matching_method=self.matching_method, run_status=run["status"])
             self._traces.setdefault(session_id, {})["results"] = {
@@ -1017,9 +1382,30 @@ class HomeMatchService:
             return {"session_id": session_id, "run_id": run["id"], "status": run["status"],
                     "profile_version": run["profile_version"], "results": visible,
                     "provenance": provenance,
+                    "suggested_prompts": self._next_prompts(session, run["status"], run.get("diagnostics")),
+                    **self._match_totals(run),
                     **self._transparency(run, visible),
                     **({"suggestions": self._relaxation_suggestions(run)}
                        if run["status"] in ("no_match", "needs_verification") else {})}
+
+    @staticmethod
+    def _match_totals(run: dict) -> dict:
+        """D-12: run giữ top 5 nhưng phải nói thật tổng số căn khớp, số căn có đủ dữ
+        liệu chi phí / số căn ước tính, và đường dẫn /tim-kiem cùng bộ lọc (null khi
+        run cũ không có số này)."""
+        diagnostics = run.get("diagnostics") or {}
+        total = diagnostics.get("total_matches")
+        link = None
+        if run.get("profile_json"):
+            profile = Profile.model_validate_json(run["profile_json"])
+            params = {"city": profile.city, "area": profile.area, "room_type": profile.room_type,
+                      "max_rent": profile.max_rent_vnd, "max_monthly": profile.max_monthly_cost_vnd,
+                      "people": profile.scenario.people}
+            link = "/tim-kiem?" + urlencode({key: value for key, value in params.items() if value})
+        return {"total_matches": total,
+                "exact_cost_matches": diagnostics.get("exact_cost_matches"),
+                "estimated_matches": diagnostics.get("estimated_matches"),
+                "search_path": link if total is not None else None}
 
     def _transparency(self, run: dict, visible: list) -> dict:
         """Số liệu tổng hợp và các bước pipeline đã chạy thật của run — minh bạch
@@ -1028,21 +1414,27 @@ class HomeMatchService:
         diagnostics = run.get("diagnostics") or {}
         rejected = {key: value for key, value in (diagnostics.get("rejected") or {}).items() if value}
         verification = {key: value for key, value in (diagnostics.get("verification") or {}).items() if value}
-        kept = len(visible) if run["status"] == "published" else len(run.get("items") or [])
+        kept = diagnostics.get("total_matches")
+        if kept is None:
+            kept = len(visible) if run["status"] == "published" else len(run.get("items") or [])
         scanned = kept + sum(rejected.values()) + sum(verification.values())
         summary = {"scanned": scanned, "kept": kept, "rejected": rejected, "verification": verification}
         filter_line = f"Lọc điều kiện cứng — loại {sum(rejected.values())} tin"
-        if verification:
-            filter_line += f"; giữ {sum(verification.values())} tin chờ xác minh số liệu"
+        estimated = diagnostics.get("estimated_matches")
+        if estimated:
+            filter_line += (f"; {estimated} căn có tổng tháng ước tính "
+                            "(phí thiếu theo giả định chuẩn, có nhãn)")
+        elif verification:
+            filter_line += f"; {sum(verification.values())} tin chờ xác minh số liệu (run cũ)"
         status_tail = {
             "generating": "Đang xếp hạng theo nhu cầu đã xác nhận",
-            "published": "Đã xếp hạng xong và công bố kết quả cho bạn",
+            "published": "Đã xếp hạng xong và hiện kết quả cho bạn",
             "no_match": "Không còn căn nào khớp — bạn có thể nới một tiêu chí để tìm lại",
             "needs_verification": "Giữ danh sách vì còn dữ liệu chưa xác minh",
             "invalidated": "Danh sách hết hiệu lực — xác nhận hồ sơ để chạy vòng mới",
             "generation_failed": "Tạo gợi ý bị gián đoạn — có thể chạy lại",
         }.get(run["status"], "")
-        steps = [f"Quét {scanned} tin đã công bố trong kho", filter_line,
+        steps = [f"Quét {scanned} tin trong kho", filter_line,
                  f"Xếp hạng theo phương pháp {self.matching_method} của engine deterministic"]
         if status_tail:
             steps.append(status_tail)
@@ -1066,10 +1458,9 @@ class HomeMatchService:
             if sum(rejected.get(key, 0) for key in ("rent_budget", "monthly_budget", "initial_budget",
                                                      "loan_principal", "loan_burden")):
                 suggestions.append("Có phòng bị loại vì vượt trần đã xác nhận; chỉ bạn được nâng trần tổng tháng/tiền vào ở, hệ thống không tự nới.")
-        if verification.get("monthly_fees") or verification.get("initial_fees") or verification.get("availability_or_capacity"):
-            suggestions.append("Nhiều phòng thiếu bảng phí hoặc sức chứa: nhắn \"chấp nhận dữ liệu ước tính\" để xem các phòng đó với dữ liệu giả định chuẩn (được gắn nhãn ước tính, cần xác minh khi xem).")
         if any(verification.values()):
-            suggestions.append("Có phòng đang bị giữ lại chờ xác minh số liệu; quản lý có thể kiểm tra và cập nhật kho.")
+            # Chỉ còn ở run lịch sử (trước D-12): xác nhận lại để xem các tin đó kèm nhãn ước tính.
+            suggestions.append("Lần tìm cũ này từng giữ một số tin thiếu dữ liệu; xác nhận lại hồ sơ để xem chúng kèm nhãn ước tính.")
         return suggestions[:4]
 
     def rerun(self, session_id: str, actor: Actor) -> dict:
@@ -1124,13 +1515,22 @@ class HomeMatchService:
             rows = self.repo.db.execute("SELECT id FROM hm_runs WHERE status IN ('generating','generation_failed')")
             return [self._admin_projection(self.repo.run(row["id"])) for row in rows]
 
+    @staticmethod
+    def _client_room(data: dict) -> dict:
+        """C1b/CA-05: đầu ra model_dump của Room không bao giờ mang poster_name —
+        tên người đăng chỉ trả qua khối contact của listing cho người đã đăng nhập.
+        Không dùng Field(exclude=True) vì model_dump_json còn dùng để lưu hm_rooms
+        và tính catalog_version."""
+        data.pop("poster_name", None)
+        return data
+
     def rooms(self, actor: Actor) -> dict:
         with self.lock, self.repo.guard():
             require("catalog:read", actor)
             rooms = self.catalog.rooms()
             if actor.role == "owner":
                 rooms = [room for room in rooms if room.landlord == actor.id]
-            data = [room.model_dump(mode="json") for room in rooms]
+            data = [self._client_room(room.model_dump(mode="json")) for room in rooms]
             photos, promos = media.photos_by_owner(self.repo, "room"), promotions.active_by_room(self.repo)
             for item in data:
                 item["photos"] = photos.get(item["id"], [])
@@ -1158,7 +1558,7 @@ class HomeMatchService:
             landlord = actor.id if actor.role == "owner" else None
             result = self._writable_catalog().change_status(room_id, request, landlord)
             self._sync_room_change(result["previous"], result["room"])
-            return {"room": result["room"], "catalog_version": result["catalog_version"]}
+            return {"room": self._client_room(result["room"]), "catalog_version": result["catalog_version"]}
 
     def create_room(self, actor: Actor, data: RoomInput) -> dict:
         with self.lock:
@@ -1168,7 +1568,9 @@ class HomeMatchService:
             # omits the field still creates a draft listing; only an explicit
             # publish request is rejected (decision recorded in BE-03 report).
             self._require_landlord_approved(actor, data.published)
-            return self._writable_catalog().create_room(actor.id, data)
+            result = self._writable_catalog().create_room(actor.id, data)
+            return {"room": self._client_room(result["room"]),
+                    "catalog_version": result["catalog_version"]}
 
     def update_room(self, room_id: str, actor: Actor, data: RoomUpdate) -> dict:
         with self.lock:
@@ -1179,7 +1581,7 @@ class HomeMatchService:
             self._require_landlord_approved(actor, data.published)
             result = self._writable_catalog().update_room(room_id, actor.id, data)
             self._sync_room_change(result["previous"], result["room"])
-            return {"room": result["room"], "catalog_version": result["catalog_version"]}
+            return {"room": self._client_room(result["room"]), "catalog_version": result["catalog_version"]}
 
     # --- Admin: landlord account review (BE-03) ---
 
@@ -1290,22 +1692,37 @@ class HomeMatchService:
             self.repo.record_view(room.id, actor.id if actor and actor.role == "renter" else None)
             if actor and actor.role == "renter":
                 pms.touch_lead(self.repo, room.landlord, actor.id, room.id, "view")
+            # crawl.md E-04/E-06: kiểm chứng tin + giá mỗi m² + chỗ ở tương tự —
+            # deterministic, KHÔNG vào xếp hạng (R4). Cache nhóm theo catalog.version.
+            self._trust.refresh(self.catalog.rooms(), self.catalog.version,
+                                set(self.repo.confirmed_report_room_ids()))
+            checks = self._trust.for_room(room)
+            specs = trust.listing_checks(room, self._trust.groups)
+            similar = [{"id": other.id, "title": other.title, "area": other.area,
+                        "city": other.city, "rent_vnd": other.quote.rent_vnd,
+                        "area_m2": other.area_m2, "source": other.source}
+                       for other in trust.similar_rooms(room, self.catalog.rooms())]
             return {**listings.listing_card(room, people), "house_rules": room.house_rules,
                     "landlord_id": room.landlord, "photos": media.photos(self.repo, "room", room.id),
                     "promotion": promotions.active(self.repo, room.id),
-                    "contact": self._listing_contact(room, actor)}
+                    "contact": self._listing_contact(room, actor),
+                    "trust": {**checks, **specs, "notice": trust.TRUST_NOTICE},
+                    "similar_rooms": similar}
 
     def _listing_contact(self, room, actor: Actor | None) -> dict:
         """How a renter reaches the poster. Crawled listings point to the original
         post: their landlord_id is a demo account, so its phone must not be shown
         as the real poster's. Own listings show the landlord-entered phone to
-        signed-in users only, so the public page cannot be scraped for it."""
+        signed-in users only, so the public page cannot be scraped for it.
+        CA-04/C1b: with a crawled listing, the poster's display name goes here and
+        nowhere else — signed-in renters only; anonymous visitors get null."""
         if room.source.startswith(listings.CRAWLED_SOURCE_PREFIXES):
             url = room.source if room.source.startswith("https://") else None
-            return {"kind": "external", "original_url": url, "phone": None, "phone_requires_login": False}
+            return {"kind": "external", "original_url": url, "phone": None, "phone_requires_login": False,
+                    "poster_name": room.poster_name if actor else None}
         phone = auth.landlord_phone(self.repo, room.landlord) if room.landlord else None
         return {"kind": "landlord", "original_url": None, "phone": phone if actor else None,
-                "phone_requires_login": bool(phone) and actor is None}
+                "phone_requires_login": bool(phone) and actor is None, "poster_name": None}
 
     # --- Danh sách cá nhân của người thuê: căn đã lưu / căn đã xem ---
 
@@ -1349,9 +1766,21 @@ class HomeMatchService:
             items = [listings.listing_card(room, people) for room in rooms]
             return {"items": items, "advice": advisor.advise(items, budget=budget, preferences=preferences)}
 
+    @staticmethod
+    def _resolve_viewing_handler(room) -> tuple[str, str | None]:
+        """E-02: tin cào (source thuộc CRAWLED_SOURCE_PREFIXES) do điều phối viên
+        xử lý — handler='concierge', landlord_id NULL; tin chủ nhà giữ nguyên."""
+        if room.source.startswith(listings.CRAWLED_SOURCE_PREFIXES):
+            return "concierge", None
+        return "landlord", room.landlord
+
     def request_listing_viewing(self, actor: Actor, room_id: str, requested_at: datetime,
-                                idempotency_key: str, mode: str = "offline") -> dict:
-        """Book straight from a published listing (filter search), without an AI shortlist."""
+                                idempotency_key: str, mode: str = "offline", *,
+                                contact: dict | None = None, time_slot: str | None = None,
+                                note: str | None = None) -> dict:
+        """Book straight from a published listing (filter search), without an AI shortlist.
+        crawl.md E-01/E-02: contact là tham số keyword để giữ các lời gọi vị trí
+        hiện có; tin cào vào hàng đợi điều phối (handler='concierge')."""
         with self.lock, self.repo.guard():
             require("viewing:request", actor)
             if not 1 <= len(idempotency_key) <= 100:
@@ -1360,14 +1789,19 @@ class HomeMatchService:
                 raise DomainError("invalid_mode", "Hình thức xem là offline hoặc online.", 422)
             if requested_at.tzinfo is None or requested_at <= datetime.now(timezone.utc):
                 raise DomainError("invalid_time", "Chọn thời điểm tương lai có múi giờ.", 422)
+            if time_slot is not None and time_slot not in TIME_SLOTS:
+                raise DomainError("invalid_time_slot", "Khung giờ phải là morning, afternoon hoặc evening.", 422)
             room = self._published_room(room_id)
             if room.available is False:
                 raise DomainError("not_available", "Phòng đã cọc hoặc đã thuê.", 409)
-            viewing = self.repo.create_direct_viewing(actor.id, room.id, room.landlord,
-                                                      requested_at.astimezone(timezone.utc).isoformat(),
-                                                      idempotency_key, mode)
+            handler, landlord_id = self._resolve_viewing_handler(room)
+            viewing = self.repo.create_direct_viewing(
+                actor.id, room.id, landlord_id,
+                requested_at.astimezone(timezone.utc).isoformat(),
+                idempotency_key, mode, contact=contact, handler=handler,
+                time_slot=time_slot, note=note)
             self._notify_viewing_requested(viewing)
-            return self._viewing_projection(viewing)
+            return self._viewing_projection(viewing, actor)
 
     def handbook_answer(self, question: str, room_id: str | None = None) -> dict:
         with self.lock:
@@ -1375,6 +1809,38 @@ class HomeMatchService:
                 raise DomainError("invalid_message", "Câu hỏi cần có 1–1000 ký tự.", 422)
             rules = self._published_room(room_id).house_rules if room_id else None
             return handbook.answer(redact(question), rules)
+
+    def estimate_pool_counts(self, profile: Profile) -> tuple[int, int]:
+        """(tổng căn khớp, trong đó số căn có tổng tháng ƯỚC TÍNH) trên CÙNG hồ sơ —
+        nguồn duy nhất cho search_rooms/confirm/chip. D-12: không còn "held"; tin thiếu
+        phí/sức chứa vào danh sách ngay kèm nhãn, nên chỉ đếm để nói thật."""
+        items, _ = self.catalog.rank(profile, self.matching_method)
+        estimated = sum(1 for item in items if any(v.startswith("fee_assumed") for v in item.verification))
+        return len(items), estimated
+
+    def estimate_only_lowest_rent(self, profile: Profile) -> int | None:
+        """Giá thuê THẤP NHẤT ĐÃ BIẾT trong số căn có tổng tháng ước tính (giá thuê,
+        chưa phải tổng tháng) — để trả lời 'phòng nào rẻ nhất' trong phạm vi dữ liệu thật."""
+        items, _ = self.catalog.rank(profile, self.matching_method)
+        rooms_by_id = {room.id: room for room in self.catalog.rooms()}
+        rents = [rooms_by_id[item.room_id].quote.rent_vnd for item in items
+                 if any(v.startswith("fee_assumed") for v in item.verification)
+                 and rooms_by_id.get(item.room_id) is not None
+                 and rooms_by_id[item.room_id].quote.rent_vnd is not None]
+        return min(rents) if rents else None
+
+    def _run_held_count(self, run_id: str | None) -> int:
+        """Số tin bị GIỮ chờ xác minh (thiếu bảng phí/sức chứa) của run — đếm bằng
+        code từ diagnostics, dùng để trả lời trung thực 'còn tin nhưng thiếu dữ liệu'
+        thay vì 'không có phòng' (HN-13.3)."""
+        if not run_id:
+            return 0
+        try:
+            run = self.repo.run(run_id)
+        except Exception:
+            return 0
+        verification = (run.get("diagnostics") or {}).get("verification") or {}
+        return sum(count for count in verification.values() if count)
 
     def _simulate_item(self, room, profile: Profile, *, scenario, cost_split: str, loan) -> dict:
         """One what-if cost for a room — the single calculation shared by
@@ -1406,8 +1872,95 @@ class HomeMatchService:
             return {"run_id": visible["run_id"], "room_id": room.id, "room_revision": room.revision,
                     "items": items}
 
+    def _finance_simulation(self, session_id: str, actor: Actor, text: str,
+                            toolbox: ToolBox) -> dict:
+        """Loan what-if từ câu khách (AG-02), trả payload phản hồi
+        {status, message, questions?, simulation?}. Dùng chung cho graph luật và
+        tool simulate_loan của agent tài chính (HN-13): gọi self.results() giữ
+        service.lock nên CHỈ chạy ở thread chính (tool khai báo writes=True).
+        Mọi số trong câu trả lời đến từ engine tài chính; thiếu lãi/kỳ hạn thì
+        hỏi, không mặc định. Hồ sơ đã xác nhận và run không đổi."""
+        from .costs import estimate_loan
+        from .interpreter import merge_loan_terms, parse_loan_terms
+        session = self.repo.session(session_id)
+        visible = self.results(session_id, actor)
+
+        def reply(**payload):
+            return payload
+
+        if not visible["results"]:
+            return reply(status="needs_results",
+                         message="Bạn cần có danh sách phòng trong kết quả hiện tại trước khi mô phỏng vay.")
+        parsed = parse_loan_terms(text)
+        profile = Profile.model_validate_json(session["profile_json"])
+        if parsed["term_months"] is not None and parsed["term_months"] > 36:
+            return reply(status="needs_clarification",
+                         questions=[f"Hiện mô phỏng được khoản vay từ 1 đến 36 tháng; bạn chọn lại kỳ hạn "
+                                    f"(câu vừa nêu {parsed['term_months']} tháng)."])
+        loan = merge_loan_terms(profile.loan, parsed)
+        if loan is None:
+            # No confirmed loan and the text lacks a number: ask, never default a rate.
+            if parsed["annual_rate"] is None:
+                return reply(status="needs_clarification",
+                             questions=["Bạn muốn vay với lãi suất bao nhiêu %/năm? Ví dụ: "
+                                        "“nếu vay 12 tháng lãi 12% thì sao”."],
+                             message="Cần mức lãi suất để mô phỏng khoản vay.")
+            return reply(status="needs_clarification",
+                         questions=["Bạn muốn vay trong bao nhiêu tháng (1–36 tháng)?"])
+        visible_by_id = {item["room_id"]: item for item in visible["results"]}
+        mentioned = resolve_room_reference(text, visible["results"])
+        if mentioned is None and mention_room_id(text):
+            raise DomainError("not_visible", "Chỉ mô phỏng phòng trong kết quả hiện tại.", 403)
+        item = visible_by_id.get(mentioned) or visible["results"][0]
+        room = next(room for room in self.catalog.rooms() if room.id == item["room_id"])
+        cost = toolbox.call("finance", "simulate_scenarios", self._simulate_item, room, profile,
+                            scenario=profile.scenario, cost_split=profile.cost_split, loan=loan)
+        affordability = cost.get("affordability") or {}
+        estimate = affordability.get("loan")
+        # HN-13.3-A3: khách nêu GỐC vay ("vay 10 triệu") → thẻ phải có gốc đó, do
+        # costs.estimate_loan tính (không để model tự tính, không mất số qua redact —
+        # parse trên câu GỐC trước khi placeholder tách tiền).
+        user_principal = (parse_loan_terms(text) or {}).get("principal_vnd")
+        if user_principal:
+            est = estimate_loan(user_principal, loan)
+            estimate = est.model_dump(mode="json")
+            estimate["principal_source"] = "theo số tiền bạn nêu"
+            # Thẻ mô phỏng trên FE đọc affordability.loan: khách nêu gốc thì thẻ phải hiện
+            # đúng khoản trả góp/tổng lãi do costs.estimate_loan tính (không còn "Không vay").
+            affordability = dict(cost.get("affordability") or {})
+            affordability["loan"] = {key: value for key, value in estimate.items() if key != "principal_source"}
+            cost["affordability"] = affordability
+        if estimate is not None:
+            rate_percent = float(loan.annual_rate * 100)
+            burden = affordability.get("burden_vnd")
+            burden_text = (f"Tổng chi phí tháng có trả góp: {copilot._money(burden)}" if burden is not None
+                           else "Tổng chi phí tháng chưa đủ dữ liệu vì còn thiếu phí")
+            message = (f"Mô phỏng cho {item['title'].split('. ')[0]} ({item['room_id']}): cần vay "
+                       f"{copilot._money(estimate['principal_vnd'])} trong {estimate['term_months']} tháng, "
+                       f"lãi {rate_percent:g}%/năm, trả góp {copilot._money(estimate['installment_vnd'])}/tháng "
+                       f"(tổng lãi {copilot._money(estimate['total_interest_vnd'])}). {burden_text} "
+                       f"({LOAN_BAND_VI[affordability['band']]}).")
+        else:
+            monthly = cost.get("monthly_total_vnd")
+            message = (f"Mô phỏng cho {item['title'].split('. ')[0]} ({item['room_id']}): với số tiền mặt bạn có, không phát "
+                       "sinh khoản vay"
+                       + (f"; tổng chi phí tháng {copilot._money(monthly)}." if monthly is not None
+                          else "; chưa đủ dữ liệu phí để tính tổng tháng."))
+        return reply(status="simulation", message=message,
+                     simulation={"room_id": item["room_id"], "room_title": item["title"],
+                                 "scenario": {"annual_rate": float(loan.annual_rate * 100),
+                                              "term_months": loan.term_months,
+                                              "principal_vnd": estimate["principal_vnd"] if estimate else None},
+                                 "loan": ({key: estimate[key] for key in (
+                                               "principal_vnd", "term_months", "installment_vnd",
+                                               "total_interest_vnd", "principal_source") if key in estimate}
+                                          if estimate else None),
+                                 "result": {"label": SIMULATION_LABEL, "cost": cost}})
+
     def request_viewing(self, session_id: str, actor: Actor, room_id: str,
-                        requested_at: datetime, idempotency_key: str, mode: str = "offline") -> dict:
+                        requested_at: datetime, idempotency_key: str, mode: str = "offline", *,
+                        contact: dict | None = None, time_slot: str | None = None,
+                        note: str | None = None) -> dict:
         with self.lock, self.repo.guard():
             session = self._session_for(session_id, actor, "renter")
             require("viewing:request", actor, Resource.for_session(session))
@@ -1417,69 +1970,358 @@ class HomeMatchService:
                 raise DomainError("invalid_time", "Chọn thời điểm tương lai có múi giờ.", 422)
             if mode not in {"offline", "online"}:
                 raise DomainError("invalid_mode", "Hình thức xem là offline hoặc online.", 422)
+            if time_slot is not None and time_slot not in TIME_SLOTS:
+                raise DomainError("invalid_time_slot", "Khung giờ phải là morning, afternoon hoặc evening.", 422)
             result = self.results(session_id, actor)
             visible = {item["room_id"]: item for item in result["results"]}
             if room_id not in visible:
                 raise DomainError("not_visible", "Phòng chưa thuộc bản gợi ý hiện tại.", 403)
-            landlord = visible[room_id].get("landlord_id") or DEFAULT_LANDLORD
+            room = next((room for room in self.catalog.rooms() if room.id == room_id), None)
+            if room is None:
+                raise DomainError("not_found", "Không tìm thấy phòng.", 404)
+            handler, landlord_id = self._resolve_viewing_handler(room)
             viewing = self.repo.create_viewing(session, result["run_id"], room_id,
                                                requested_at.astimezone(timezone.utc).isoformat(), idempotency_key,
-                                               landlord, mode)
+                                               landlord_id, mode, contact=contact, handler=handler,
+                                               time_slot=time_slot, note=note)
             self._notify_viewing_requested(viewing)
-            return self._viewing_projection(viewing)
+            return self._viewing_projection(viewing, actor)
+
+    # --- E-01/E-02: vòng đời lịch xem và điều phối tin cào ---
+
+    def _viewing_handler_role(self, viewing: dict) -> str:
+        """Bên xử lý của lịch: chủ nhà của tin hoặc admin điều phối (concierge).
+        Chỉ dùng để chọn role kiểm quyền trong VIEWING_TRANSITIONS."""
+        return "admin" if viewing.get("handler") == "concierge" else "owner"
+
+    def _is_viewing_handler(self, viewing: dict, actor: Actor) -> bool:
+        """Lỗi 1 (08/11): xác định bên xử lý theo BẢN GHI, không theo vai trò —
+        owner-b khác phải bị chặn trên lịch của owner-a. Lịch landlord: owner
+        đúng landlord_id; lịch concierge: admin có capability riêng."""
+        if viewing.get("handler") == "concierge":
+            try:
+                require("viewing:concierge", actor)
+            except DomainError:
+                return False
+            return actor.role == "admin"
+        return actor.role == "owner" and actor.id == viewing.get("landlord_id")
+
+    def viewing_contact_of(self, viewing: dict, actor: Actor) -> dict:
+        """R3: tên/SĐT khách — chủ nhà thấy khi lịch từ confirmed; điều phối
+        (admin) xem qua route riêng có audit; người thuê luôn thấy liên hệ của
+        chính mình. Mọi đường khác trả None."""
+        if not viewing.get("contact_name") and not viewing.get("contact_phone"):
+            return {"contact_name": None, "contact_phone": None}
+        if actor.id == viewing.get("owner_id"):
+            return {"contact_name": viewing.get("contact_name"),
+                    "contact_phone": viewing.get("contact_phone")}
+        if viewing.get("handler") == "landlord" and self._is_viewing_handler(viewing, actor) \
+                and viewing["status"] in {"confirmed", "completed", "no_show"}:
+            return {"contact_name": viewing.get("contact_name"),
+                    "contact_phone": viewing.get("contact_phone")}
+        # Sửa lỗi 2 (R3): admin KHÔNG nhận liên hệ qua projection nào — chỉ qua
+        # route xem SĐT riêng (/admin/viewings/{id}/contact) có record_audit.
+        return {"contact_name": None, "contact_phone": None}
+
+    def _viewing_projection(self, viewing: dict, actor: Actor | None = None) -> dict:
+        """Chiếu lịch xem theo vai người đọc (E-01.7): liên hệ khách chỉ mở cho
+        chủ nhà từ confirmed trở đi và cho chính người thuê; hàng đợi admin không
+        trả tên/SĐT — route xem SĐT riêng mới trả và mỗi lần xem đều audit."""
+        keys = ("id", "session_id", "run_id", "room_id", "requested_at", "status",
+                "landlord_id", "mode", "meeting_url", "handler", "time_slot",
+                "note", "proposed_at", "feedback_rating", "feedback_note",
+                "lease_id", "created_at", "updated_at", "lease_status", "lease_visible")
+        data = {key: viewing.get(key) for key in keys}
+        contact = self.viewing_contact_of(viewing, actor) if actor is not None             else {"contact_name": None, "contact_phone": None}
+        data.update(contact)
+        data["contact_shared"] = bool(data["contact_name"] or data["contact_phone"])
+        return data
 
     def respond_viewing(self, viewing_id: str, actor: Actor, status: str) -> dict:
+        """Đường cũ của chủ nhà (giữ cho test hiện có): chuyển qua vòng đời mới."""
         with self.lock, self.repo.guard():
             require("viewing:respond", actor)
             viewing = self.repo.viewing(viewing_id)
-            # Only the landlord of the viewed room answers the request.
-            if viewing["landlord_id"] != actor.id:
+            # Lỗi 1 (08/11): bên xử lý theo BẢN GHI — owner khác bị 403.
+            if not self._is_viewing_handler(viewing, actor):
                 raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
             if status not in {"confirmed", "declined"}:
                 raise DomainError("invalid_status", "Phản hồi phải là confirmed hoặc declined.", 422)
-            if status == "confirmed":
-                if viewing["run_id"] and not self._fresh(self.repo.run(viewing["run_id"])):
-                    raise DomainError("stale_viewing", "Kho phòng hoặc nhu cầu đã đổi; cần kiểm tra lại trước khi hẹn.")
-                if not viewing["run_id"]:
-                    room = next((room for room in self.catalog.rooms() if room.id == viewing["room_id"]), None)
-                    if room is None or not room.published or room.available is False:
-                        raise DomainError("stale_viewing", "Tin đã ẩn hoặc phòng không còn trống.")
-            updated = self.repo.respond_viewing(viewing_id, status)
+            self._check_stale_for_confirm(viewing)
+            updated = self._transition_viewing(viewing, status, actor,
+                                               reason="landlord respond")
+            if updated is None:
+                if viewing["status"] == status:
+                    return self._viewing_projection(viewing, actor)
+                raise DomainError("viewing_conflict", "Lịch xem đã ở trạng thái khác.", 409)
             notifications.notify(self.repo, updated["owner_id"], "viewing_" + status,
                                  "Lịch xem đã được xác nhận" if status == "confirmed" else "Chủ nhà chưa nhận lịch xem",
                                  f"Phòng {updated['room_id']}: "
                                  + ("chủ nhà đã xác nhận lịch xem." if status == "confirmed"
                                     else "chủ nhà chưa nhận thời gian này, bạn có thể chọn giờ khác."),
                                  f"viewing:{viewing_id}:{status}", "/nguoi-thue/lich-xem", email=True)
-            return self._viewing_projection(updated)
+            return self._viewing_projection(updated, actor)
+
+    def _check_stale_for_confirm(self, viewing: dict) -> None:
+        """E-01.6: giữ kiểm tra stale_viewing cho MỌI đường đi tới confirmed."""
+        if viewing.get("run_id") and not self._fresh(self.repo.run(viewing["run_id"])):
+            raise DomainError("stale_viewing", "Kho phòng hoặc nhu cầu đã đổi; cần kiểm tra lại trước khi hẹn.")
+        if not viewing.get("run_id"):
+            room = next((room for room in self.catalog.rooms() if room.id == viewing["room_id"]), None)
+            if room is None or not room.published or room.available is False:
+                raise DomainError("stale_viewing", "Tin đã ẩn hoặc phòng không còn trống.")
+
+    def _transition_viewing(self, viewing: dict, to_status: str, actor: Actor,
+                            reason: str | None = None, proposed_at: str | None = None,
+                            extra: dict | None = None,
+                            old_requested_at: str | None = None) -> dict | None:
+        handler_role = self._viewing_handler_role(viewing)
+        allowed_role = VIEWING_TRANSITIONS.get(viewing["status"], {}).get(to_status)
+        if allowed_role is None:
+            raise DomainError("viewing_conflict",
+                              f"Không chuyển được lịch xem từ {viewing['status']} sang {to_status}.", 409)
+        # Lỗi 1 (08/11): vai trong bảng chỉ định NHÓM; quyền thật kiểm theo bản
+        # ghi qua _is_viewing_handler — owner khác không thể thay chủ nhà.
+        if allowed_role == "handler" and not self._is_viewing_handler(viewing, actor):
+            raise DomainError("forbidden", "Chỉ bên xử lý lịch được thao tác này.", 403)
+        if allowed_role == "renter" and actor.id != viewing["owner_id"]:
+            raise DomainError("forbidden", "Chỉ người thuê được thao tác này.", 403)
+        return self.repo.transition_viewing(viewing["id"], viewing["status"], to_status,
+                                            actor.id, actor.role, reason, proposed_at, extra,
+                                            old_requested_at=old_requested_at)
+
+    def viewing_action(self, viewing_id: str, actor: Actor, action: str,
+                       reason: str | None = None, proposed_at: datetime | None = None,
+                       time_slot: str | None = None) -> dict:
+        """E-01.3/4: route hành động chung cho khách và bên xử lý. Lặp cùng
+        chuyển trạng thái (lịch đã ở trạng thái đích) trả kết quả hiện có."""
+        with self.lock, self.repo.guard():
+            require("viewing:read", actor)
+            viewing = self.repo.viewing(viewing_id)
+            handler_role = self._viewing_handler_role(viewing)
+            if actor.id != viewing["owner_id"] and actor.role != handler_role:
+                raise DomainError("forbidden", "Bạn không có quyền thao tác lịch này.", 403)
+            target = {"cancel": "cancelled", "accept": "confirmed", "choose_time": "requested",
+                      "propose": "reschedule_proposed", "confirm": "confirmed",
+                      "decline": "declined", "complete": "completed", "no_show": "no_show"}.get(action)
+            if target is None:
+                raise DomainError("invalid_action", "Hành động không hợp lệ.", 422)
+            # HN-13.3-A: vai trò kiểm TRƯỚC trạng thái — renter thử hành động
+            # handler-only (complete/no_show) phải 403, không 409 (e2e error-branch).
+            if action in {"complete", "no_show"} and actor.id == viewing["owner_id"] \
+                    and actor.role != handler_role:
+                raise DomainError("forbidden", "Chỉ bên xử lý lịch được thao tác này.", 403)
+            # Lỗi 1 (08/11): mọi hành động handler-only khác (propose/confirm/
+            # decline) cũng 403 trước trạng thái — owner-b không đụng lịch owner-a.
+            if action in {"propose", "confirm", "decline", "complete", "no_show"} \
+                    and not self._is_viewing_handler(viewing, actor):
+                raise DomainError("forbidden", "Chỉ bên xử lý lịch được thao tác này.", 403)
+            if time_slot is not None and time_slot not in TIME_SLOTS:
+                raise DomainError("invalid_time_slot", "Khung giờ phải là morning, afternoon hoặc evening.", 422)
+            proposed_iso = None
+            if target == "reschedule_proposed":
+                if proposed_at is None or proposed_at.tzinfo is None                         or proposed_at <= datetime.now(timezone.utc):
+                    raise DomainError("invalid_time", "Chọn thời điểm tương lai có múi giờ.", 422)
+                proposed_iso = proposed_at.astimezone(timezone.utc).isoformat()
+            if target == "confirmed" and action == "accept":
+                # Lỗi 3: chỉ accept khi đề xuất đến từ bên xử lý (propose luôn
+                # đặt proposed_at); lỗi 4: requested_at = giờ đề xuất.
+                if not viewing.get("proposed_at"):
+                    raise DomainError("viewing_conflict",
+                                      "Không có giờ đề xuất của bên xử lý để đồng ý.", 409)
+            if target == "confirmed":
+                # stale_viewing cho MỌI đường tới confirmed, kể cả khách đồng ý giờ mới.
+                self._check_stale_for_confirm(viewing)
+            if viewing["status"] == target:
+                # E-01.5: gọi lại đúng trạng thái đích hiện tại → kết quả cũ,
+                # không ghi thêm event.
+                return self._viewing_projection(viewing, actor)
+            reason_text = conversations.mask_pii(reason.strip()) if reason and reason.strip() else None
+            extra = {}
+            old_requested_at = viewing.get("requested_at")
+            if action == "accept" and viewing.get("proposed_at"):
+                # Lỗi 4: accept — giờ thật trở thành giờ đề xuất.
+                extra["requested_at"] = viewing["proposed_at"]
+                extra["proposed_at"] = None
+            if action == "choose_time":
+                # Lỗi 4: khách chọn giờ mới — cập nhật requested_at, xóa đề xuất.
+                if proposed_at is None or proposed_at.tzinfo is None                         or proposed_at <= datetime.now(timezone.utc):
+                    raise DomainError("invalid_time", "Chọn thời điểm tương lai có múi giờ.", 422)
+                extra["requested_at"] = proposed_at.astimezone(timezone.utc).isoformat()
+                extra["proposed_at"] = None
+                if time_slot:
+                    extra["time_slot"] = time_slot
+            updated = self._transition_viewing(viewing, target, actor, reason_text,
+                                               proposed_iso, extra or None,
+                                               old_requested_at=old_requested_at)
+            if updated is None:
+                raise DomainError("viewing_conflict", "Lịch xem đã ở trạng thái khác.", 409)
+            self._notify_viewing_action(viewing, updated, actor, action)
+            return self._viewing_projection(updated, actor)
+
+    def _notify_viewing_action(self, viewing: dict, updated: dict, actor: Actor, action: str) -> None:
+        handler_role = self._viewing_handler_role(viewing)
+        actor_is_renter = actor.id == viewing["owner_id"]
+        if actor_is_renter:
+            recipient, link = (viewing["landlord_id"], "/chu-nha/lich-xem")                 if viewing.get("landlord_id") else (None, None)
+            if recipient is None:
+                return  # concierge: không tự động báo cho ai (E-02.1)
+            messages = {
+                "cancel": ("Khách đã hủy lịch xem", "Khách đã hủy lịch xem phòng này."),
+                "accept": ("Khách đồng ý giờ đề xuất", "Khách đã đồng ý giờ đề xuất."),
+                "choose_time": ("Khách chọn giờ khác", "Khách đã chọn lại khung giờ mong muốn."),
+                "feedback": ("Khách gửi phản hồi sau khi xem", "Khách đã gửi đánh giá sau buổi xem."),
+            }
+        else:
+            recipient, link = viewing["owner_id"], "/nguoi-thue/lich-xem"
+            messages = {
+                "confirm": ("Lịch xem đã được xác nhận", "Lịch xem của bạn đã được xác nhận."),
+                "propose": ("Có đề xuất giờ mới", "Bên xem phòng đề xuất giờ khác; hãy xem và xác nhận."),
+                "decline": ("Lịch xem chưa được nhận", "Thời gian bạn chọn chưa được nhận."),
+                "complete": ("Buổi xem đã hoàn tất", "Buổi xem đã hoàn tất; bạn có thể gửi phản hồi."),
+                "no_show": ("Buổi xem không diễn ra", "Buổi xem được đánh dấu không diễn ra."),
+            }
+        title, body = messages.get(action, (None, None))
+        if not title:
+            return
+        notifications.notify(self.repo, recipient, "viewing_" + action, title,
+                             f"Phòng {updated['room_id']}: {body}",
+                             f"viewing:{updated['id']}:{updated['status']}", link)
+
+    def viewing_feedback(self, viewing_id: str, actor: Actor, rating: int,
+                         note: str | None = None) -> dict:
+        """E-01.3: phản hồi sau khi xem — chỉ người thuê, chỉ lịch completed."""
+        with self.lock, self.repo.guard():
+            require("viewing:read", actor)
+            viewing = self.repo.viewing(viewing_id)
+            if actor.id != viewing["owner_id"]:
+                raise DomainError("forbidden", "Chỉ người thuê gửi phản hồi.", 403)
+            if viewing["status"] != "completed":
+                raise DomainError("viewing_conflict", "Chỉ lịch đã hoàn tất mới gửi được phản hồi.", 409)
+            if not 1 <= rating <= 5:
+                raise DomainError("invalid_rating", "Đánh giá cần từ 1 đến 5.", 422)
+            note_text = conversations.mask_pii(note.strip()) if note and note.strip() else None
+            self.repo.set_viewing_feedback(viewing_id, rating, note_text)
+            self._notify_viewing_action(viewing, viewing, actor, "feedback")
+            return self._viewing_projection(self.repo.viewing(viewing_id), actor)
+
+    def viewing_full_address(self, viewing_id: str, actor: Actor) -> dict:
+        """E-03: bản địa chỉ đầy đủ cho khách của lịch confirmed/completed/no_show;
+        tin điều phối thì admin cũng xem được. Đường công khai chỉ có bản đã che."""
+        with self.lock, self.repo.guard():
+            require("viewing:read", actor)
+            viewing = self.repo.viewing(viewing_id)
+            if viewing["status"] not in {"confirmed", "completed", "no_show"}:
+                raise DomainError("viewing_conflict", "Địa chỉ đầy đủ mở sau khi lịch được xác nhận.", 409)
+            if actor.id != viewing["owner_id"] and actor.role != self._viewing_handler_role(viewing):
+                raise DomainError("forbidden", "Bạn không có quyền xem địa chỉ này.", 403)
+            room = next((room for room in self.catalog.rooms() if room.id == viewing["room_id"]), None)
+            if room is None:
+                raise DomainError("not_found", "Không tìm thấy phòng.", 404)
+            return {"room_id": room.id, "street": room.street,
+                    "ward": room.ward, "ward_2025": room.ward_2025,
+                    "area": room.area, "city": room.city,
+                    "notice": "Địa chỉ có thể còn sót trong mô tả; đây là che tự động."}
+
+    # --- E-05: báo cáo tin đăng ---
+
+    def report_listing(self, actor: Actor, room_id: str, reason: str, note: str | None = None) -> dict:
+        with self.lock, self.repo.guard():
+            require("report:create", actor)
+            if reason not in REPORT_REASONS:
+                raise DomainError("invalid_reason", "Lý do báo cáo không nằm trong danh sách.", 422)
+            room = self._published_room(room_id)
+            note_text = conversations.mask_pii(note.strip()) if note and note.strip() else None
+            report = self.repo.create_listing_report(room.id, actor.id, reason, note_text)
+            return {key: report.get(key) for key in ("id", "room_id", "reason", "note", "status", "created_at")}
+
+    def listing_reports_admin(self, actor: Actor, status: str = "pending") -> list[dict]:
+        with self.lock:
+            require("report:review", actor)
+            if status not in {"pending", "confirmed", "dismissed"}:
+                raise DomainError("invalid_status", "Trạng thái báo cáo không hợp lệ.", 422)
+            return [dict(row) for row in self.repo.listing_reports_by_status(status)]
+
+    def decide_listing_report(self, actor: Actor, report_id: str, decision: str) -> dict:
+        with self.lock, self.repo.guard():
+            require("report:review", actor)
+            if decision not in {"confirmed", "dismissed"}:
+                raise DomainError("invalid_decision", "Quyết định phải là confirmed hoặc dismissed.", 422)
+            report = self.repo.listing_report(report_id)
+            if report is None:
+                raise DomainError("not_found", "Không tìm thấy báo cáo.", 404)
+            # Không ẩn tin tự động theo số báo cáo (E-05.3): quyết định chỉ ghi trạng thái.
+            report = self.repo.decide_listing_report(report_id, decision, actor.id)
+            return {key: report.get(key) for key in ("id", "room_id", "status", "decided_at", "decided_by")}
+
+    # --- E-02: hàng đợi điều phối ---
+
+    def admin_viewings(self, actor: Actor) -> list[dict]:
+        with self.lock:
+            require("viewing:concierge", actor)
+            rows = self.repo.viewings_concierge_queue()
+            # Hàng đợi admin KHÔNG trả tên hay SĐT (R3).
+            return [{key: row.get(key) for key in ("id", "room_id", "requested_at", "status",
+                                                   "time_slot", "note", "proposed_at",
+                                                   "handler", "created_at", "updated_at",
+                                                   "feedback_rating", "feedback_note")}
+                    for row in rows]
+
+    def admin_viewing_contact(self, viewing_id: str, actor: Actor) -> dict:
+        """Route xem SĐT khách của lịch điều phối — admin duy nhất, audit mỗi lần."""
+        with self.lock, self.repo.guard():
+            require("viewing:concierge", actor)
+            viewing = self.repo.viewing(viewing_id)
+            if viewing.get("handler") != "concierge":
+                raise DomainError("not_found", "Không phải lịch điều phối.", 404)
+            record_audit(self.repo, actor, "viewing.contact_revealed", "viewing", viewing_id)
+            return {"viewing_id": viewing_id,
+                    "contact_name": viewing.get("contact_name"),
+                    "contact_phone": viewing.get("contact_phone"),
+                    "notice": "Mỗi lần xem liên hệ đều được ghi nhật ký kiểm duyệt."}
+
+    def viewing_history(self, viewing_id: str, actor: Actor) -> list[dict]:
+        with self.lock:
+            require("viewing:read", actor)
+            viewing = self.repo.viewing(viewing_id)
+            if actor.id != viewing["owner_id"] and actor.role != self._viewing_handler_role(viewing):
+                raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
+            return [{key: event.get(key) for key in ("actor_id", "actor_role", "from_status",
+                                                     "to_status", "reason", "requested_at", "created_at")}
+                    for event in self.repo.viewing_events(viewing_id)]
 
     def viewings(self, actor: Actor) -> list[dict]:
         with self.lock:
             require("viewing:read", actor)
-            return [self._viewing_projection(item) for item in self.repo.viewings(actor.id, actor.role)]
+            return [self._viewing_projection(item, actor) for item in self.repo.viewings(actor.id, actor.role)]
 
     def viewing(self, viewing_id: str, actor: Actor) -> dict:
         with self.lock:
             item = self.repo.viewing(viewing_id)
             require("viewing:read", actor)
-            if actor.role == "owner":
-                if item["landlord_id"] != actor.id:
+            # Lỗi 1 (08/11): quyền theo bản ghi — owner khác 403; admin chỉ với
+            # lịch concierge và qua _is_viewing_handler.
+            if actor.role == "admin":
+                if item.get("handler") != "concierge" or not self._is_viewing_handler(item, actor):
+                    raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
+            elif actor.role == "owner":
+                if not self._is_viewing_handler(item, actor):
                     raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
             elif actor.role != "renter" or item["owner_id"] != actor.id:
                 raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
-            return self._viewing_projection(item)
+            return self._viewing_projection(item, actor)
 
     def _notify_viewing_requested(self, viewing: dict):
-        pms.touch_lead(self.repo, viewing["landlord_id"], viewing["owner_id"], viewing["room_id"], "viewing", "viewing")
+        if viewing.get("handler") == "concierge":
+            # E-02.1: lịch điều phối KHÔNG báo tài khoản owner và KHÔNG touch_lead.
+            return
+        # HN-13.3-A: projection không trả owner_id (ViewingResult cấm) — đọc từ repo.
+        viewing_owner = (self.repo.viewing(viewing["id"]) or {}).get("owner_id")
+        pms.touch_lead(self.repo, viewing["landlord_id"], viewing_owner, viewing["room_id"], "viewing", "viewing")
         notifications.notify(self.repo, viewing["landlord_id"], "viewing_requested", "Yêu cầu xem phòng mới",
                              f"Khách muốn xem phòng {viewing['room_id']} "
                              + ("trực tuyến." if viewing["mode"] == "online" else "trực tiếp."),
                              f"viewing:{viewing['id']}:requested", "/chu-nha/lich-xem", email=True)
-
-    @staticmethod
-    def _viewing_projection(viewing: dict) -> dict:
-        return {key: viewing.get(key) for key in ("id", "session_id", "run_id", "room_id", "requested_at", "status",
-                                                 "landlord_id", "mode", "meeting_url")}
 
     @staticmethod
     def _support_projection(ticket: dict) -> dict:
@@ -1615,7 +2457,7 @@ class HomeMatchService:
             self._owner(actor)
             room = self._writable_catalog().room(data.room_id)
             item = pms.create_lease(self.repo, room, actor.id, data)
-            pms.touch_lead(self.repo, actor.id, data.renter_id, room.id, "lease", "negotiating")
+            pms.touch_lead(self.repo, actor.id, item["renter_id"], room.id, "lease", "negotiating")
             return item
 
     def update_lease(self, actor: Actor, lease_id: str, data: "pms.LeaseInput") -> dict:
@@ -2014,9 +2856,8 @@ class HomeMatchService:
         return {"configurable": {"thread_id": f"recommendation:{run_id}"}}
 
     def _build_chat_graph(self):
-        # Graph-only imports (AG-02): loan parsing stays with the interpreter and
-        # the finance room-id pattern with the guard, outside other service code.
-        from .interpreter import merge_loan_terms, parse_loan_terms
+        # Graph-only import (AG-02): the finance room-id pattern stays with the
+        # guard; loan parsing lives in _finance_simulation now.
 
         def route(state: ChatState):
             # Supervisor: explicit cost/support intents route without any model call;
@@ -2074,9 +2915,8 @@ class HomeMatchService:
             if extracted.get("needs_destination"):
                 draft.needs_destination = True
                 touched.add("needs_destination")
-            if extracted.get("accept_estimated_data"):
-                draft.accept_estimated_data = True
-                touched.add("accept_estimated_data")
+            # D-12: không còn bật "chấp nhận dữ liệu ước tính" qua chat — tin thiếu
+            # dữ liệu hiện ngay kèm nhãn; cờ chỉ còn để đọc hồ sơ cũ.
             # Cờ chỉ True khi lượt này THỰC SỰ áp được một mức tiền (tuyệt đối
             # hoặc tương đối đã tính) — FE chỉ được đưa hint vào trần khi thấy cờ.
             budget_explicit = False
@@ -2085,6 +2925,7 @@ class HomeMatchService:
             # "nới thêm 1 triệu" KHÔNG được đọc thành trần 1 triệu. Parse từ câu
             # GỐC (state["relative_budget"], state["text"] đã redact mất số);
             # cộng/trừ vào mức cũ đã nêu, chưa có mức cũ thì hỏi lại, không đoán.
+            touched |= self._text_needs_into_draft(draft, state.get("needs_extras"))
             change = state.get("relative_budget")
             if change:
                 # Câu nới/giảm: chỉ áp khi có mức cũ hoặc là mức mới rõ ("xuống N");
@@ -2129,81 +2970,32 @@ class HomeMatchService:
                     # Chip làm rõ render TRÊN ĐẦU câu trả lời ở FE; câu hỏi thường
                     # vẫn giữ nguyên bên dưới (không thay thế).
                     clarification = payload
-            return {"response": {"intent": "find_room", "status": "needs_clarification",
-                    "interpreter_mode": self.interpreter.mode, "questions": questions,
-                    "clarification": clarification,
-                    "budget_explicit": budget_explicit or None},
+            response = {"intent": "find_room", "status": "needs_clarification",
+                        "interpreter_mode": self.interpreter.mode, "questions": questions,
+                        "clarification": clarification,
+                        "budget_explicit": budget_explicit or None}
+            # UX-02: đủ dữ liệu thì xác nhận + xếp hạng NGAY trong lượt này (không chờ
+            # frontend); còn câu hỏi làm rõ đang chờ thì không tự chạy.
+            if not needs_budget_baseline and clarification is None:
+                auto = self._auto_confirm(
+                    session["id"], state["actor"],
+                    self._draft(session["id"]).budget_hint_vnd if budget_explicit else None)
+                if auto is not None:
+                    response.update(status=auto["status"], questions=None,
+                                    message=confirm_template(confirm_data(
+                                        auto, self._confirmed_profile(session["id"]))))
+            return {"response": response,
                     "provenance": stamp("interpreter", "interview", interpreter_mode=self.interpreter.mode,
                                         **state["toolbox"].summary("needs"))}
 
-        SIMULATION_LABEL = "Mô phỏng vay qua chat"
-        LOAN_BAND_VI = {"phu_hop": "trong mức khuyến nghị", "can_nhac": "cần cân nhắc",
-                        "vuot": "vượt mức khuyến nghị", "chua_ro": "chưa rõ"}
-
         def simulate_finance(state: ChatState):
-            """Loan what-if from chat (AG-02). Every number in the reply comes from
-            the deterministic finance tool; a missing rate is asked for, never
-            defaulted. The reply is templated Vietnamese, so no LLM call happens
-            on this path and the confirmed profile/run stay untouched."""
-            session = self.repo.session(state["session_id"])
-            visible = self.results(session["id"], state["actor"])
-
-            def reply(**payload):
-                return {"response": {"intent": "simulate_finance", **payload},
-                        "provenance": stamp("deterministic-engine", "finance",
-                                            **state["toolbox"].summary("finance"))}
-
-            if not visible["results"]:
-                return reply(status="needs_results",
-                             message="Bạn cần có danh sách phòng trong kết quả hiện tại trước khi mô phỏng vay.")
-            parsed = parse_loan_terms(state["text"])
-            profile = Profile.model_validate_json(session["profile_json"])
-            if parsed["term_months"] is not None and parsed["term_months"] > 36:
-                return reply(status="needs_clarification",
-                             questions=[f"Hiện mô phỏng được khoản vay từ 1 đến 36 tháng; bạn chọn lại kỳ hạn "
-                                        f"(câu vừa nêu {parsed['term_months']} tháng)."])
-            loan = merge_loan_terms(profile.loan, parsed)
-            if loan is None:
-                # No confirmed loan and the text lacks a number: ask, never default a rate.
-                if parsed["annual_rate"] is None:
-                    return reply(status="needs_clarification",
-                                 questions=["Bạn muốn vay với lãi suất bao nhiêu %/năm? Ví dụ: "
-                                            "“nếu vay 12 tháng lãi 12% thì sao”."],
-                                 message="Cần mức lãi suất để mô phỏng khoản vay.")
-                return reply(status="needs_clarification",
-                             questions=["Bạn muốn vay trong bao nhiêu tháng (1–36 tháng)?"])
-            visible_by_id = {item["room_id"]: item for item in visible["results"]}
-            mentioned = resolve_room_reference(state["text"], visible["results"])
-            if mentioned is None and mention_room_id(state["text"]):
-                raise DomainError("not_visible", "Chỉ mô phỏng phòng trong kết quả hiện tại.", 403)
-            item = visible_by_id.get(mentioned) or visible["results"][0]
-            room = next(room for room in self.catalog.rooms() if room.id == item["room_id"])
-            cost = state["toolbox"].call("finance", "simulate_scenarios", self._simulate_item, room, profile,
-                                         scenario=profile.scenario, cost_split=profile.cost_split, loan=loan)
-            affordability = cost.get("affordability") or {}
-            estimate = affordability.get("loan")
-            if estimate is not None:
-                rate_percent = float(loan.annual_rate * 100)
-                burden = affordability.get("burden_vnd")
-                burden_text = (f"Tổng chi phí tháng có trả góp: {copilot._money(burden)}" if burden is not None
-                               else "Tổng chi phí tháng chưa đủ dữ liệu vì còn thiếu phí")
-                message = (f"Mô phỏng cho {item['title']} ({item['room_id']}): cần vay "
-                           f"{copilot._money(estimate['principal_vnd'])} trong {estimate['term_months']} tháng, "
-                           f"lãi {rate_percent:g}%/năm, trả góp {copilot._money(estimate['installment_vnd'])}/tháng "
-                           f"(tổng lãi {copilot._money(estimate['total_interest_vnd'])}). {burden_text} "
-                           f"({LOAN_BAND_VI[affordability['band']]}).")
-            else:
-                monthly = cost.get("monthly_total_vnd")
-                message = (f"Mô phỏng cho {item['title']} ({item['room_id']}): với số tiền mặt bạn có, không phát "
-                           "sinh khoản vay"
-                           + (f"; tổng chi phí tháng {copilot._money(monthly)}." if monthly is not None
-                              else "; chưa đủ dữ liệu phí để tính tổng tháng."))
-            return reply(status="simulation", message=message,
-                         simulation={"room_id": item["room_id"], "room_title": item["title"],
-                                     "scenario": {"annual_rate": float(loan.annual_rate * 100),
-                                                  "term_months": loan.term_months,
-                                                  "principal_vnd": estimate["principal_vnd"] if estimate else None},
-                                     "result": {"label": SIMULATION_LABEL, "cost": cost}})
+            """Loan what-if node (AG-02): toàn logic nằm ở _finance_simulation để
+            tool simulate_loan của agent tài chính dùng lại đúng một bản."""
+            payload = self._finance_simulation(state["session_id"], state["actor"],
+                                               state["text"], state["toolbox"])
+            return {"response": {"intent": "simulate_finance", **payload},
+                    "provenance": stamp("deterministic-engine", "finance",
+                                        **state["toolbox"].summary("finance"))}
 
         def finance(state: ChatState):
             require("chat:message", state["actor"])
@@ -2299,15 +3091,10 @@ class HomeMatchService:
                 return {"items": [], "diagnostics": {"rejected": {}, "verification": {}}}
             profile = Profile.model_validate_json(run["profile_json"])
             toolbox = ToolBox()
-            try:
-                items, diagnostics = toolbox.call("ranking", "match_catalog", self.catalog.match,
-                                                  profile, self.matching_method)
-            except DomainError as error:
-                if error.code != "semantic_unavailable":
-                    raise
-                items, diagnostics = toolbox.call("ranking", "match_catalog", self.catalog.match, profile, "B1")
-                diagnostics["algorithm"] = "B1_fallback"
-                diagnostics["semantic_status"] = "unavailable"
+            # D-12: hoàn lại top_limit — run giữ 5 căn xếp đầu, tổng số khớp nằm ở
+            # diagnostics["total_matches"] để nói thật.
+            items, diagnostics = self._match_with_fallback(
+                profile, lambda *args: toolbox.call("ranking", "match_catalog", self.catalog.match, *args))
             diagnostics["agent"] = toolbox.summary("ranking")
             diagnostics["catalog_version"] = run["catalog_version"]
             diagnostics["requested_method"] = self.matching_method

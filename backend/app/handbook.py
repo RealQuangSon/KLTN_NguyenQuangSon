@@ -45,10 +45,11 @@ ENTRIES = [
      "answer": "Thu nhập bạn nhập chỉ dùng tính tỷ lệ chi phí; chủ nhà chỉ thấy mức đánh giá, không thấy con số. "
                "Bạn có thể bật hoặc tắt ghi nhớ sở thích và xóa dữ liệu ghi nhớ trong mục Tài khoản. "
                "Nội dung chat được lưu có che số điện thoại, email và giới hạn thời gian lưu."},
-    {"id": "review", "title": "Vì sao danh sách gợi ý cần chủ nhà duyệt",
+    {"id": "review", "title": "Danh sách gợi ý và việc chờ duyệt",
      "tags": ["duyet", "cho duyet", "goi y", "chu nha duyet", "danh sach"],
-     "answer": "Trợ lý chỉ đề xuất; mỗi chủ nhà kiểm tra phòng của mình (còn trống, đúng giá) trước khi bạn thấy. "
-               "Phòng hiện dần khi từng chủ nhà duyệt. Khi bạn đổi nhu cầu, danh sách cũ hết hiệu lực."},
+     "answer": "Không cần chờ ai duyệt: danh sách hiện ngay sau khi bạn xác nhận hồ sơ và hệ thống xếp hạng xong. "
+               "Giá và tình trạng lấy từ tin đăng, nên hãy hỏi lại chủ nhà trước khi đặt cọc. Danh sách cũ hết hiệu lực "
+               "khi bạn đổi nhu cầu hoặc khi kho đổi làm kết quả khác đi, ví dụ một căn trong danh sách vừa có người thuê."},
     {"id": "viewing", "title": "Đặt và hủy lịch xem phòng",
      "tags": ["lich xem", "xem phong", "xem truc tuyen", "online", "huy lich", "dat lich"],
      "answer": "Bạn chọn xem trực tiếp hoặc trực tuyến. Yêu cầu chỉ thành lịch hẹn khi chủ nhà xác nhận; lịch trực "

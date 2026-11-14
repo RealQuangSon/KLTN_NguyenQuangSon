@@ -15,28 +15,23 @@ Luồng đăng ký chủ nhà (08/10): đăng ký `account_type:"owner"` → xá
 
 Vòng đời ticket hỗ trợ (08/10): khách nhắn muốn gặp người thật trong chat tạo ticket `requested` → quản trị viên chuyển `in_progress` (người nhận việc là admin thực hiện) → `resolved` (bắt buộc kèm ghi chú); ticket `resolved` có thể mở lại về `in_progress`. Sai chuyển trạng thái bị chặn 409 `ticket_state`; mỗi lần đổi trạng thái khách nhận đúng một thông báo theo trạng thái.
 
-## 2. Từ nhu cầu đến phòng được duyệt
+## 2. Từ nhu cầu đến danh sách gợi ý
 
 ```mermaid
 sequenceDiagram
   participant K as Khách
   participant A as Agent (LangGraph)
-  participant C1 as Chủ nhà A
-  participant C2 as Chủ nhà B
+  participant C as Chủ nhà có phòng trong top 5
   K->>A: Chat nhu cầu
   A->>K: Hồ sơ nháp + câu hỏi
   K->>A: Xác nhận hồ sơ (form)
-  A->>A: Lọc cứng, B1/P, top 5 (phòng của A và B)
-  A-->>C1: Phòng của A trong danh sách
-  A-->>C2: Phòng của B trong danh sách
-  C1->>A: Duyệt phòng của A (+ lý do nếu đổi thứ tự)
-  A-->>K: partially_published: thấy phòng của A
-  C2->>A: Duyệt hoặc từ chối phòng của B
-  A->>A: Mọi chủ đã quyết định → resume graph → chốt
+  A->>A: Lọc cứng, B1/P, top 5
+  A-->>K: Công bố ngay: published và thông báo rooms_ready
+  A-->>C: Lead nguồn recommended (chỉ băng tài chính, không thu nhập)
   K->>A: So sánh có tư vấn, mô phỏng, chat với chủ nhà, đặt lịch
 ```
 
-Trạng thái danh sách: `generating` → `pending_review` → `partially_published` (một số chủ đã duyệt) → `reviewed` (mọi chủ đã quyết định) → `published` / `rejected` / `needs_revision`. Danh sách chuyển sang `invalidated` khi hồ sơ hoặc kho thay đổi.
+Trạng thái danh sách: `generating` → `published` / `no_match` / `needs_verification` (hoặc `generation_failed`). Danh sách chuyển sang `invalidated` khi hồ sơ đổi, hoặc khi kho đổi làm kết quả xếp hạng khác đi (D-11); chủ nhà sửa phòng không liên quan thì danh sách giữ nguyên.
 
 ## 3. Tìm trực tiếp và trao đổi
 

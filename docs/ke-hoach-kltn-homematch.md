@@ -25,11 +25,23 @@ Xây dựng một AI Agent:
 
 | Ràng buộc | Cách đáp ứng |
 |---|---|
-| HITL: người bán duyệt danh sách gợi ý trước khi trình khách | Áp dụng 05/10 rồi **bỏ 05/11 (D-10)**: nhiều chủ nhà, nhiều người thuê, duyệt từng căn không khả thi. Kết quả tới khách ngay sau xếp hạng; chủ nhà nhận lead khi căn lọt top 5. Danh sách vẫn gắn phiên bản hồ sơ và kho; hồ sơ hoặc kho đổi thì danh sách hết hiệu lực. |
+| HITL: người bán duyệt danh sách gợi ý trước khi trình khách | Áp dụng 05/10 rồi **bỏ 05/11 (D-10)**: nhiều chủ nhà, nhiều người thuê, duyệt từng căn không khả thi và bắt người thuê chờ làm hỏng trải nghiệm. Kết quả tới khách ngay sau xếp hạng; chủ nhà nhận lead khi căn lọt top 5. Danh sách vẫn gắn phiên bản hồ sơ và kho; hồ sơ đổi, hoặc kho đổi làm kết quả khác đi, thì danh sách hết hiệu lực (D-11). |
 | Minh bạch lý do gợi ý | Lý do, đánh đổi, điểm thành phần truy về dữ liệu căn và dòng chi phí, được kiểm bằng `eval grounding`. |
-| Không thiên vị căn tồn | Xếp hạng không dùng hoa hồng hay thời gian tồn; có kiểm thử phản thực tế. Chủ nhà bỏ hoặc đổi thứ tự phòng phải ghi lý do, và chỉ đổi được trong phần phòng của mình. |
+| Không thiên vị căn tồn | Xếp hạng không dùng hoa hồng hay thời gian tồn; có kiểm thử phản thực tế. |
 | Bảo mật thông tin tài chính | Chủ nhà chỉ thấy băng khả năng chi trả, không thấy thu nhập hay tỷ lệ. Tiền và liên hệ được tách khỏi prompt LLM và embedding. Chat lưu có che số điện thoại, email, số tài khoản; giữ 90 ngày. |
 | Tối ưu chi phí truy vấn ngữ nghĩa | Lọc cứng trước khi chấm semantic. Vector căn chỉ tính lại khi nội dung đổi. Cache embedding truy vấn bền. Giới hạn lượt gọi mỗi phiên. Đo lượt gọi và lượt trúng cache. |
+
+## D-12 (08/11/2026, ĐÃ DUYỆT, ĐÃ CODE)
+
+**Tin thiếu sức chứa hoặc bảng phí hiện ngay kèm nhãn, bỏ bước "bấm chấp nhận ước tính".**
+
+- Mỗi run giữ top 5 theo `RANKING_CONFIG` và trả thêm tổng số căn khớp (`diagnostics.total_matches`, DTO `total_matches`, `exact_cost_matches`, `estimated_matches`, `search_path` → `/tim-kiem` cùng bộ lọc). Câu chốt của agent nói rõ "N căn khớp, đây là 5 căn xếp đầu".
+- Nhãn từng tin: sức chứa thiếu ghi "chưa rõ" (`capacity_unknown`); tổng tháng dùng giả định chuẩn ghi "ước tính" (`fee_assumed:*`), không gộp với số đã biết (`monthly_known_vnd`); phí không biết vẫn `null`, không hiện 0.
+- Không còn sinh mới `needs_verification` do thiếu dữ liệu (`repository.run_status_for` chỉ trả `published`/`no_match`). Run cũ mang trạng thái đó vẫn đọc được; khi kho đổi, D-11 xếp hạng lại, thấy trạng thái khác và đánh dấu `invalidated`.
+- Bỏ chip, route chat và câu mời "Chấp nhận dữ liệu ước tính". `accept_estimated_data` chỉ còn là cờ lịch sử để đọc hồ sơ cũ, không còn ảnh hưởng lọc, xếp hạng hay hiển thị. Bỏ khái niệm `held` khỏi prompt/tool; giữ hai số thật "căn có đủ dữ liệu chi phí" và "căn ước tính".
+- Điều kiện cứng không đổi (trần tiền lọc trên tổng ước tính như tổng thường; `available=false` hoặc sức chứa rõ mà thiếu chỗ vẫn loại). Xếp hạng không đọc nguồn dữ liệu thương mại; `eval invariants` đạt.
+- Cách xếp hạng hiện tại với danh sách trộn căn có phí thật và căn ước tính: thành phần chi phí = `1 − tổng_tháng / trần` tính trên tổng tháng của từng căn; căn ước tính dùng tổng theo giả định chuẩn, **không cộng điểm và không trừ điểm** vì là ước tính. Chưa đặt hệ số mới; nếu cần phạt/thưởng thì là quyết định riêng.
+
 
 ## 4. Mục tiêu
 
@@ -103,6 +115,7 @@ Xây dựng một AI Agent:
 | D-07 | Tích hợp bên ngoài | Thay bằng phương án không cần tài khoản: bản đồ OSM; phòng họp Jitsi cho xem trực tuyến; email là stub ghi log; chia sẻ mạng xã hội bằng link và sao chép, không tự đăng; giọng nói bằng Web Speech API của trình duyệt; thanh toán đối soát thủ công, không qua cổng thanh toán | Thiết kế 05/10 |
 | D-08 | Hợp đồng điện tử | Chấp thuận theo phiên bản trong ứng dụng cùng văn bản in được; **không** phải chữ ký số có giá trị pháp lý | Thiết kế 05/10 |
 | D-09 | Triển khai lên cloud (Railway) | Chỉ chạy trên **localhost**; không deploy Railway, không build Docker. Chạy live GPT-4o/pgvector (nếu có) cũng làm trên máy local | Người dùng chọn 28/10 |
+| D-11 | Kho đổi bất kỳ là mọi danh sách hết hiệu lực | **Chỉ hết hiệu lực khi kết quả thật sự khác**: khi phiên bản kho đổi, xếp hạng lại theo hồ sơ của run và so với danh sách đã lưu; giống hệt thì giữ và ghi nhận phiên bản mới. Không có bước duyệt nên một chủ nhà sửa phòng không liên quan không được xóa kết quả của người thuê | Người dùng chọn 06/11 |
 
 ## 8. Phương pháp của trợ lý
 
@@ -126,7 +139,14 @@ Kho v2 hoàn toàn **tổng hợp**:
 
 Dữ liệu vận hành (hợp đồng, hóa đơn, tin nhắn, lượt xem) phát sinh khi dùng hệ thống.
 
-**Catalog demo (quyết định 30/10/2026; cập nhật 31/10/2026 theo crawler 2.3):** mục tiêu **mỗi thành phố 2.500 tin** (tổng 5.000, chỉnh bằng `--per-city`), phòng trọ và căn hộ mỗi loại một nửa, hai thành phố luôn bằng nhau. Lấy từ API công khai của Chợ Tốt (`robots.txt` cho phép), ưu tiên tin cá nhân (`f=p`), thiếu thì bù tin môi giới (`f=c`, `poster_kind` theo bộ lọc nguồn); tin trùng và tin "nhiều phòng / giá từ" bị lọc trước khi chọn theo hạn mức. Snapshot cố định có SHA-256 trên PostgreSQL online. Catalog này chỉ dùng để demo trên dữ liệu thật; **mọi số đo đánh giá vẫn chạy trên kho tổng hợp ở trên**. Không thu thập tên, SĐT, ảnh hay tài khoản người đăng; người thuê liên hệ người đăng qua link tin gốc. Không dùng dữ liệu HubHome. **Đã chạy thật crawler 2.3 ngày 01/11/2026** (snapshot `chotot-2026-11-01` trên Neon): 2.446 tin, hai thành phố cân bằng 1.223/1.223, 76% tin cá nhân, TP.HCM toàn tin cá nhân; Hà Nội cạn nguồn sau lọc nên G6 hạ cả hai xuống mức 1.223.
+**Catalog demo (quyết định 30/10/2026; cập nhật 07/11/2026 theo crawler 2.4):** mục tiêu **mỗi thành phố 2.500 tin** (chỉnh bằng `--per-city`; `--all` cào đủ mọi tin của 8 tổ hợp nguồn), phòng trọ và căn hộ, hai thành phố luôn bằng nhau. Lấy từ API công khai của Chợ Tốt (`robots.txt` cho phép), ưu tiên tin cá nhân (`f=p`), thiếu thì bù tin môi giới (`f=c`, `poster_kind` theo bộ lọc nguồn); tin trùng và tin "nhiều phòng / giá từ" bị lọc trước khi chọn theo hạn mức. Snapshot cố định có SHA-256 trên PostgreSQL online. Catalog này chỉ dùng để demo trên dữ liệu thật; **mọi số đo đánh giá vẫn chạy trên kho tổng hợp ở trên**. Không thu thập SĐT, avatar, mã/tên tài khoản người đăng và không gọi endpoint chi tiết; người thuê liên hệ người đăng qua link tin gốc. Từ 2.4: raw giữ mọi trường công khai của tin (URL ảnh `cdn.chotot.com` chỉ lưu URL) và tên hiển thị người đăng — tên này chỉ hiện trong khối liên hệ cho người đã đăng nhập. **Đã chạy thật crawler 2.3 ngày 01/11/2026** (snapshot `chotot-2026-11-01` trên Neon): 2.446 tin, hai thành phố cân bằng 1.223/1.223, 76% tin cá nhân, TP.HCM toàn tin cá nhân; Hà Nội cạn nguồn sau lọc nên G6 hạ cả hai xuống mức 1.223. **Lượt cào thật 2.4 (`--all`) CHƯA chạy.**
+
+**Giới hạn của dữ liệu cào (07/11/2026):**
+- Ảnh trên tin là ảnh của người đăng trên Chợ Tốt; HomeMatch chỉ **hiển thị qua liên kết** tới CDN của Chợ Tốt cho demo KLTN, không tải về, không lưu trữ và không phân phối lại.
+- Tên hiển thị người đăng là dữ liệu cá nhân lấy từ tin công khai, **chưa có sự đồng ý riêng** của người đăng; chỉ phục vụ demo KLTN và cần giảng viên hướng dẫn xác nhận trước khi dùng trong luận văn.
+- Ảnh có thể **tự chứa SĐT** (chữ in trên ảnh) hoặc khuôn mặt người; bước che văn bản (SĐT/email trong nội dung tin) không xử lý được nội dung ảnh.
+- Link ảnh có thể **chết** khi tin hết hạn hoặc người đăng xóa tin; giao diện rớt về hình minh họa khi ảnh lỗi.
+- `robots.txt` của Chợ Tốt ghi `ai-train=no`: dữ liệu cào **không dùng để huấn luyện mô hình**, chỉ dùng làm catalog demo và ngữ cảnh tra cứu.
 
 **Hạn chế về nguồn tin:** phần lớn tin cho thuê phòng ở Việt Nam đăng trong các group Facebook. Đề tài không thu thập nguồn này, vì điều khoản của Facebook cấm thu thập tự động và bài đăng chứa nhiều dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP). Catalog demo vì vậy chỉ phản ánh một phần thị trường. Chi tiết ở [kế hoạch dữ liệu](../data/PLAN.md).
 
@@ -153,4 +173,3 @@ Các giai đoạn GĐ1–GĐ3 và các đợt E1–E6 đã có code ngày 05/10 
 - [A Survey on Conversational Recommender Systems](https://arxiv.org/abs/2004.00646).
 - [Evaluating Conversational Recommender Systems: A Landscape of Research](https://arxiv.org/abs/2208.12061).
 - [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629).
-- [Nghiên cứu HubHome](nghien-cuu-hubhome.md): tham khảo trải nghiệm tìm phòng có trợ lý AI, cổng chủ nhà, hợp đồng, thu tiền.

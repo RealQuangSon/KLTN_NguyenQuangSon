@@ -245,7 +245,7 @@
   },
   "decision": "predicted = fixed_intent(text) or DemoInterpreter().extract(text).intent; matches the _build_chat_graph route node for the demo interpreter.",
   "gate": "measurement_only_no_accuracy_threshold",
-  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật hoặc biểu giá thị trường.",
   "purpose": "Gold intent routing cases for the chat graph; authored synthetic utterances, not human judgments.",
   "simulate_finance_status": "gold ahead of backend; AG-02 adds the intent, cases are expected to misroute until then"
 }

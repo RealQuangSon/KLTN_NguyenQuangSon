@@ -176,7 +176,7 @@ def test_no_match_offers_soft_suggestions_and_never_relaxes_automatically(servic
     normal = service.results(other, renter)
     assert normal["status"] == "published" and "suggestions" not in normal
     # Published runs expose the pipeline steps for process transparency.
-    assert normal["steps"] and any("công bố" in step for step in normal["steps"])
+    assert normal["steps"] and any("hiện kết quả" in step for step in normal["steps"])
     assert normal["diagnostics_summary"]["kept"] >= 1
 
 
@@ -229,7 +229,8 @@ def test_fee_assumptions_are_explicit_opt_in_unlocks_crawled_rooms(tmp_path, ren
     profile = Profile(city="TP.HCM", max_monthly_cost_vnd=5_000_000,
                       scenario=Scenario(people=1))
     held, diagnostics = catalog.eligible_candidates(profile)
-    assert held == [] and diagnostics["verification"]["availability_or_capacity"] == 1
+    # D-12: tin thiếu sức chứa/phí không bị giữ — vào danh sách ngay kèm nhãn.
+    assert len(held) == 1 and "capacity_unknown" in held[0].verification
     eager_profile = profile.model_copy(update={"accept_estimated_data": True})
     matched, _ = catalog.eligible_candidates(eager_profile)
     assert len(matched) == 1

@@ -110,9 +110,7 @@ export function SavedPage({ api }: { api: Api }) {
                     action={
                       <button
                         className="button small outline"
-                        onClick={() =>
-                          void unsave(item.room_id ?? item.id)
-                        }
+                        onClick={() => void unsave(item.room_id ?? item.id)}
                       >
                         Bỏ lưu
                       </button>

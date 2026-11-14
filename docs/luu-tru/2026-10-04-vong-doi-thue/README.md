@@ -1,10 +1,10 @@
 # HomeMatch — tìm và quản lý thuê phòng với trợ lý AI
 
-**Định hướng sản phẩm cập nhật 04/10/2026:** HomeMatch hoàn thiện toàn vòng đời thuê phòng/studio: tìm và so sánh → xem phòng → hợp đồng/bàn giao → công tơ/hóa đơn/đối soát → sửa chữa/gia hạn/trả phòng. Bốn vai trò đích là người thuê, chủ nhà, quản lý và quản trị viên. [Bộ docs sản phẩm](docs/README.md) viết lại từ nghiên cứu HubHome, với 10 module bắt buộc, yêu cầu, quy trình, API đích và tiêu chí nghiệm thu.
+**Định hướng sản phẩm cập nhật 04/10/2026:** HomeMatch hoàn thiện toàn vòng đời thuê phòng/studio: tìm và so sánh → xem phòng → hợp đồng/bàn giao → công tơ/hóa đơn/đối soát → sửa chữa/gia hạn/trả phòng. Bốn vai trò đích là người thuê, chủ nhà, quản lý và quản trị viên. [Bộ docs sản phẩm](docs/README.md) viết lại từ nghiên cứu sản phẩm tham khảo, với 10 module bắt buộc, yêu cầu, quy trình, API đích và tiêu chí nghiệm thu.
 
 **Mã hiện có là nền tảng local 0.3.0, chưa phải sản phẩm v1 hoàn thiện.** Đang chạy luồng hai vai trò: hỏi rõ → xác nhận nhu cầu/ngân sách → lọc/rank → quản lý duyệt → xem/so sánh/đề xuất lịch. Chức năng sau thuê và portal owner/admin cần triển khai theo [kế hoạch mới](docs/ke-hoach-trien-khai.md). Phạm vi phòng trọ cho thuê; không có vay mua căn hộ.
 
-Đã có React/TypeScript, FastAPI, hai LangGraph, finance engine, B1, auth seed, SQLite/PostgreSQL adapters và adapter GPT/embedding/pgvector tùy chọn. Kho 80 phòng TP.HCM **hoàn toàn tổng hợp**, không phải inventory HubHome. Bản local dùng rule/B1, không gọi API trả phí.
+Đã có React/TypeScript, FastAPI, hai LangGraph, finance engine, B1, auth seed, SQLite/PostgreSQL adapters và adapter GPT/embedding/pgvector tùy chọn. Kho 80 phòng TP.HCM **hoàn toàn tổng hợp**, không phải inventory sản phẩm tham khảo. Bản local dùng rule/B1, không gọi API trả phí.
 
 **Bằng chứng lịch sử:** báo cáo 01/10 ghi 121 Python tests (104 backend + 17 eval), 15 UI tests, TypeScript/build và HTTP thật trên SQLite/PostgreSQL; checkpoint/restart, migration và pgvector exact dùng dữ liệu/vector giả lập. Xem [báo cáo backend 0.3.0](docs/kiem-chung-backend.md), [hướng dẫn backend](backend/README.md) và [hướng dẫn frontend](frontend/README.md) cho phạm vi kiểm chứng theo đợt. Live GPT/P quality, restore, Docker/cloud và toàn bộ nghiệm thu v1 chưa có bằng chứng đủ; lần viết lại docs không chạy lại kiểm thử ứng dụng.
 
@@ -114,7 +114,7 @@ docs/       plans, surveys, architecture, contract, thesis design and evidence
 - [Đặc tả v1](docs/dac-ta-san-pham.md), [30 yêu cầu](docs/yeu-cau-san-pham.md), [quy trình](docs/quy-trinh-nghiep-vu.md), [nghiệm thu](docs/tieu-chi-nghiem-thu.md).
 - [Plan chi tiết](docs/ke-hoach-chi-tiet.md), [kế hoạch từng phần](docs/ke-hoach-tung-phan.md), [W-01–W-18](docs/ke-hoach-trien-khai.md), [API v1 đích](docs/api-san-pham-v1.md).
 - [Kiến trúc thiết kế](docs/kien-truc-homematch.md), [agent](docs/thiet-ke-agent.md), [đề cương](docs/ke-hoach-kltn-homematch.md).
-- [Rà soát docs](docs/ra-soat-tai-lieu.md), [khảo sát HubHome](docs/khao-sat-hubhome-da-dang-nhap.md), [từ điển](CONTEXT.md).
+- [Rà soát docs](docs/ra-soat-tai-lieu.md), khảo sát sản phẩm tham khảo, [từ điển](CONTEXT.md).
 
 Scope v1 bắt buộc thêm signup/reset/profile/consent, owner inventory/media/moderation, public/map, favorites/history, vòng đời lịch/hỗ trợ/thông báo, hợp đồng/tenancy, công tơ/hóa đơn/receipt/reconciliation, sửa chữa và admin/ops/privacy. Gateway tự động, legal e-sign, video-call platform, AI ảnh/giọng và toàn quốc là mở rộng. Giữ một API worker tới khi audit concurrency/checkpoint; research/report/slide/video cần evidence riêng.
 

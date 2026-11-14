@@ -31,7 +31,8 @@ def test_capability_matrix_covers_every_public_entry():
                 "results:read", "results:rerun", "compare:run", "viewing:prepare", "viewing:request",
                 "viewing:read", "viewing:respond", "support:handoff", "support:list", "support:manage",
                 "account:review_landlord", "run:retry", "catalog:read", "catalog:write",
-                "saved:read", "saved:write", "viewed:read"}
+                "saved:read", "saved:write", "viewed:read",
+        "viewing:concierge", "report:review", "report:create"}
     assert expected == set(CAPABILITIES)
 
 

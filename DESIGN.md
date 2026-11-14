@@ -46,7 +46,7 @@ Source hiện dùng bảng màu ấm theo lựa chọn của người dùng (`fr
 - Băng khả năng chi trả dùng cả màu, nhãn chữ và icon. Không dùng màu làm tín hiệu duy nhất.
 - Phông hệ thống hỗ trợ tiếng Việt. Input trên mobile ≥ 16px. Vùng chạm ≥ 44×44px.
 
-Hướng token cam sáng kiểu HubHome trong bản 04/10 không còn là mục tiêu. Xem bản lưu ở [luu-tru](docs/luu-tru/2026-10-04-vong-doi-thue/DESIGN.md).
+Hướng token cam sáng trong bản 04/10 không còn là mục tiêu. Xem bản lưu ở [luu-tru](docs/luu-tru/2026-10-04-vong-doi-thue/DESIGN.md).
 
 ## 4. Định dạng dữ liệu
 

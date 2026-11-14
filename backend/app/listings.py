@@ -7,6 +7,7 @@ monthly total is listed as unknown instead of being treated as cheap.
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -37,6 +38,51 @@ class ListingQuery(Model):
     sort: Literal["monthly_asc", "monthly_desc", "rent_asc", "area_desc", "posted_desc"] = "monthly_asc"
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=50)
+
+
+# --- E-03: che địa chỉ chi tiết ở lớp hiển thị ---------------------------------
+# Chỉ che khi có NGỮ CẢNH địa chỉ; không đụng 24/7, ngày 12/11, tiền 3tr5,
+# 200k/phòng, "số 2 người", "5 triệu". Snapshot bất biến: che lúc trả response.
+MASK = "[Địa chỉ đã che]"
+STREET_NUMBER_BEFORE = re.compile(
+    r"(\d{1,4}(?:/\d{1,4}){0,3})(\s+(?:[ttnn][ưú]?\s+)?"
+    r"(?:đường|Đường|phố|Phole|Phố)?\s*[A-Za-zÀ-ỹ])")
+WITH_CONTEXT_FRACTION = re.compile(
+    r"((?:\b[sS][oôốO]\s*|\b[nN]h[aàáA]\s*|\b[pP]h[oòôO][nñ]g\s*)"
+    r"(?:\d{1,4}/\d{1,4}(?:/\d{1,4}){0,2})\b)")
+# Ngoại lệ đã biết KHÔNG phải địa chỉ: "24/7" (mở cửa), ngày tháng D/M.
+NON_ADDRESS_FRACTION = re.compile(r"(?:^|[^\d/])(24/7)(?![\d/])")
+NOT_ADDRESS_BEFORE = re.compile(r"c[aá]ch\s+[^,.]{0,20}$")
+
+
+def mask_address(text: str | None, street: str | None = None) -> str | None:
+    """Best-effort che số nhà trong văn bản hiển thị. Chỉ nhắm số đứng trước
+    tên đường (khi biết `street`) và dạng 12/34A có ngữ cảnh "số"/"nhà"; không
+    đụng 24/7, ngày D/M, tiền. Không bảo đảm che hết — UI phải nói rõ."""
+    if not text:
+        return text
+    result = text
+    if street:
+        street_fold = " ".join(street.split())
+        for word in {street_fold, re.sub(r"^(?:Đường|đường|Quận|quận)\s+", "", street_fold)}:
+            if not word or len(word) < 4:
+                continue
+            escaped = re.escape(word)
+            # Số đứng NGAY TRƯỚC tên đường: "25/12 đường Bà Cut", "25 Đường Bà Cut".
+            pattern = re.compile(
+                rf"(\d{{1,4}}(?:/\d{{1,4}}){{0,3}})"
+                rf"(\s+(?:[đd][uu][oờ]ng\s+)?{escaped})", re.IGNORECASE)
+            result = pattern.sub(lambda match: f"{MASK}{match.group(2)}", result)
+    # Dạng phân số 12/34A chỉ che khi có "số"/"nhà" ngay trước (ngữ cảnh địa chỉ):
+    # "số 25/3A" → che; "24/7", "ngày 12/11" → không có ngữ cảnh → giữ nguyên.
+    def _mask_fraction(match):
+        fraction = match.group(1)
+        if fraction and NON_ADDRESS_FRACTION.search(fraction):
+            return match.group(0)
+        return match.group(0).replace(fraction, MASK) if fraction else match.group(0)
+
+    result = WITH_CONTEXT_FRACTION.sub(_mask_fraction, result)
+    return result
 
 
 def listing_card(room, people: int = 1) -> dict:
@@ -72,7 +118,9 @@ def search(rooms, query: ListingQuery) -> dict:
             continue
         if query.min_bedrooms and (room.bedrooms or 0) < query.min_bedrooms:
             continue
-        if query.min_area_m2 and room.area_m2 < query.min_area_m2:
+        if query.min_area_m2 is not None and (room.area_m2 is None
+                                              or room.area_m2 < query.min_area_m2):
+            # Tin không rõ diện tích không thỏa bộ lọc tối thiểu (không TypeError).
             continue
         if room.capacity is not None and room.capacity < query.people:
             continue

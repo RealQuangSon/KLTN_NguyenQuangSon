@@ -9,6 +9,7 @@ interface FormValues {
   room_type: RoomType;
   bedrooms: string;
   monthly: string;
+  rent: string;
   initial: string;
   income: string;
   split: boolean;
@@ -40,7 +41,11 @@ const initialValues = (
   area: confirmed?.area || draft.area || "",
   room_type: confirmed?.room_type || draft.room_type || "room",
   bedrooms: String(confirmed?.min_bedrooms ?? draft.bedrooms ?? ""),
-  monthly: confirmed ? String(confirmed.max_monthly_cost_vnd) : "",
+  monthly:
+    confirmed?.max_monthly_cost_vnd == null
+      ? ""
+      : String(confirmed.max_monthly_cost_vnd),
+  rent: confirmed?.max_rent_vnd == null ? "" : String(confirmed.max_rent_vnd),
   initial:
     confirmed?.max_initial_cash_vnd == null
       ? ""
@@ -88,6 +93,18 @@ const initialValues = (
   must: confirmed?.must_amenities || [],
   preferences: confirmed?.preferences || draft.preferences,
 });
+// Tóm tắt trần đã xác nhận: tiền thuê và/hoặc tổng tháng, nói rõ cái nào.
+const budgetSummary = (profile: Profile) =>
+  [
+    profile.max_rent_vnd != null
+      ? `Tiền thuê ${profile.min_rent_vnd ? `${money(profile.min_rent_vnd)} – ` : "đến "}${money(profile.max_rent_vnd)}`
+      : null,
+    profile.max_monthly_cost_vnd != null
+      ? `Tổng tháng đến ${money(profile.max_monthly_cost_vnd)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ") + " / tháng";
 export function ProfileForm({
   draft,
   revision,
@@ -117,6 +134,7 @@ export function ProfileForm({
 }) {
   const [values, setValues] = useState(() => initialValues(draft, confirmed));
   const [dirty, setDirty] = useState(false);
+  const [capError, setCapError] = useState<string | null>(null);
   const [seenRevision, setSeenRevision] = useState(revision);
   const previousConfirmed = useRef(confirmedVersion);
   useEffect(() => {
@@ -167,7 +185,18 @@ export function ProfileForm({
       values.room_type === "apartment" && values.bedrooms !== ""
         ? Number(values.bedrooms)
         : null,
-    max_monthly_cost_vnd: Number(values.monthly),
+    max_monthly_cost_vnd: values.monthly === "" ? null : Number(values.monthly),
+    max_rent_vnd: values.rent === "" ? null : Number(values.rent),
+    // Cận dưới tiền thuê, diện tích và "rẻ nhất" đến từ chat; form mang theo.
+    min_rent_vnd:
+      values.rent === ""
+        ? null
+        : (confirmed?.min_rent_vnd ?? draft.budget_min_vnd ?? null),
+    min_area_m2: confirmed?.min_area_m2 ?? draft.min_area_m2 ?? null,
+    min_area_hard: confirmed?.min_area_hard ?? draft.min_area_hard ?? false,
+    prefer_cheapest:
+      confirmed?.prefer_cheapest ?? draft.prefer_cheapest ?? false,
+    budget_approx: confirmed?.budget_approx ?? draft.budget_approx ?? false,
     max_initial_cash_vnd: values.initial === "" ? null : Number(values.initial),
     monthly_income_vnd: values.income === "" ? null : Number(values.income),
     cost_split: values.split && Number(values.people) > 1 ? "equal" : "none",
@@ -247,7 +276,7 @@ export function ProfileForm({
           <Icon name="shield" size={18} />
           <div>
             <strong>Ngân sách đã xác nhận</strong>
-            <span>{money(confirmed.max_monthly_cost_vnd)} / tháng</span>
+            <span>{budgetSummary(confirmed)}</span>
             <small>
               {dirty
                 ? "Bạn đang sửa nhu cầu. Xác nhận lại để cập nhật gợi ý."
@@ -286,6 +315,11 @@ export function ProfileForm({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (values.monthly === "" && values.rent === "") {
+            setCapError("Nhập trần tiền thuê hoặc trần tổng tháng.");
+            return;
+          }
+          setCapError(null);
           if (await onConfirm(profile())) {
             setDirty(false);
             onDirty(false);
@@ -360,7 +394,14 @@ export function ProfileForm({
           </label>
           {values.room_type === "apartment" &&
             numberField("Số phòng ngủ tối thiểu", "bedrooms", 1, 5, false)}
-          {numberField("Ngân sách tổng tháng (VND)", "monthly", 1)}
+          {numberField("Trần tiền thuê (VND)", "rent", 1, undefined, false)}
+          {numberField(
+            "Ngân sách tổng tháng (VND)",
+            "monthly",
+            1,
+            undefined,
+            false,
+          )}
           {numberField(
             "Tiền mặt sẵn có cho vào ở (VND)",
             "initial",
@@ -369,11 +410,16 @@ export function ProfileForm({
             false,
           )}
         </div>
+        {capError && (
+          <p className="notice error" role="alert">
+            {capError}
+          </p>
+        )}
         {draft.budget_hint_vnd != null && (
           <p className="input-hint">
-            Hội thoại nhắc {money(draft.budget_hint_vnd)}. Nhập trần{" "}
-            <strong>tổng tháng</strong> ở trên; tiền được nhắc chưa phải ngân
-            sách đã xác nhận.
+            Hội thoại nhắc {money(draft.budget_hint_vnd)}. Nhập vào{" "}
+            <strong>tiền thuê</strong> hoặc <strong>tổng tháng</strong> ở trên;
+            tiền được nhắc chưa phải ngân sách đã xác nhận.
           </p>
         )}
         <fieldset>

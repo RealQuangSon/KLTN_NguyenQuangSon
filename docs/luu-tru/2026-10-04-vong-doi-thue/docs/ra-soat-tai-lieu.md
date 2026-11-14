@@ -45,7 +45,7 @@ Các mức ảnh hưởng dưới đây áp dụng cho tài liệu thiết kế,
 - Kiểm 30 requirement ID và 30 acceptance ID không trùng, mapping AC trong requirements khớp danh mục nghiệm thu.
 - Kiểm đủ 12 nhóm HH của nghiên cứu, scope 10 HM xuyên các plan, UI spec 21 màn/16 UI-V và FE plan 18 task.
 - Rà độc lập các đường công bố/quyền/contract/tenancy/billing/cọc và nguồn nghiên cứu; sửa các điểm DOC-R01..10.
-- Đối chiếu tên/metadata/abstract ba nguồn học thuật trong đề cương qua trang gốc; nghiên cứu HubHome đọc website công khai, không thao tác tài khoản/giao dịch.
+- Đối chiếu tên/metadata/abstract ba nguồn học thuật trong đề cương qua trang gốc; nghiên cứu sản phẩm tham khảo đọc website công khai, không thao tác tài khoản/giao dịch.
 
 Kiểm tra đường dẫn không chứng minh website/link ngoài luôn truy cập được, không kiểm layout browser hoặc backend. Báo cáo tự động sau lần sửa cuối là bằng chứng cấu trúc docs; không thay kiểm chứng sản phẩm.
 

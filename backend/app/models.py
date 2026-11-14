@@ -109,7 +109,9 @@ class Room(Model):
     # Bedrooms only apply to apartments; null means unknown or not applicable.
     bedrooms: int | None = Field(default=None, ge=1, le=5)
     capacity: int | None = Field(default=None, ge=1)
-    area_m2: float = Field(gt=0)
+    # Diện tích có thể không rõ: tin cào không ghi và không đọc được từ nội dung
+    # thì null — không bao giờ điền số giả. RoomInput (chủ nhà tự đăng) vẫn bắt buộc.
+    area_m2: float | None = Field(default=None, gt=0)
     published: bool
     available: bool | None
     amenities: dict[str, bool | None]
@@ -138,6 +140,20 @@ class Room(Model):
     ward_2025: str | None = None
     street: str | None = None
     available_from: date | None = None
+    # URL ảnh trên CDN Chợ Tốt theo thứ tự của tin. Chỉ để hiển thị, không vào ranking/LLM/embedding.
+    source_images: list[str] = Field(default_factory=list, max_length=30)
+    # Video Cloudflare Stream của tin gốc: {url, thumbnail}, tối đa 3; chỉ URL
+    # https host videodelivery.net. Cũng chỉ để hiển thị.
+    source_videos: list[dict] = Field(default_factory=list, max_length=3)
+    toilets: int | None = Field(default=None, ge=0)
+    project_name: str | None = None
+    # Tầng/hướng/loại hình từ tin gốc; tin không ghi thì null, không suy mã.
+    floor: str | None = Field(default=None, max_length=60)
+    direction: str | None = Field(default=None, max_length=60)
+    balcony_direction: str | None = Field(default=None, max_length=60)
+    property_subtype: str | None = Field(default=None, max_length=120)
+    # Tên hiển thị trên tin gốc, chỉ trả qua khối contact cho người đã đăng nhập (C1b).
+    poster_name: str | None = Field(default=None, max_length=120)
 
     @property
     def landlord(self) -> str:
@@ -147,7 +163,8 @@ class Room(Model):
 FieldStatus = Literal["unknown", "inferred", "confirmed"]
 DRAFT_TRACKED_FIELDS = ("city", "area", "people", "preferences", "room_type", "bedrooms",
                         "needs_destination", "accept_estimated_data", "soft_description", "budget_hint",
-                        "destination", "budget_scope")
+                        "destination", "budget_scope", "budget_min", "min_area", "prefer_cheapest",
+                        "budget_approx")
 
 
 class DraftProfile(Model):
@@ -163,6 +180,15 @@ class DraftProfile(Model):
     # AG-11: cách hiểu mức tiền do chip làm rõ ("rent" = chỉ trần thuê,
     # "total" = trần tổng tháng); None coi như total (hành vi cũ).
     budget_scope: Literal["rent", "total"] | None = None
+    # UX-01/03 (12/11): cận dưới tiền thuê ("3 đến 4 triệu"), diện tích mong muốn
+    # (mềm; cứng khi khách nói "ít nhất/tối thiểu") và cờ "rẻ nhất" — đều đọc tất
+    # định từ câu khách, trạng thái inferred.
+    budget_min_vnd: int | None = Field(default=None, gt=0, strict=True)
+    min_area_m2: int | None = Field(default=None, ge=5, le=500, strict=True)
+    min_area_hard: bool = False
+    prefer_cheapest: bool = False
+    # 13/11: khách nói "tầm/khoảng X" → ưu tiên căn có giá gần mức X (mức X vẫn là trần).
+    budget_approx: bool = False
     needs_destination: bool = False
     # Bật chấp nhận dữ liệu ước tính từ hội thoại ("chấp nhận phí/dữ liệu ước tính").
     accept_estimated_data: bool = False
@@ -195,8 +221,19 @@ class Profile(Model):
     area: str | None = Field(default=None, max_length=64)
     room_type: RoomType = "room"
     min_bedrooms: int | None = Field(default=None, ge=1, le=5, strict=True)
-    max_monthly_cost_vnd: int = Field(gt=0, strict=True)
+    # UX-01: khách chỉ nêu tiền thuê thì trần tổng tháng có thể trống (None);
+    # phải có ít nhất một trong hai trần.
+    max_monthly_cost_vnd: int | None = Field(default=None, gt=0, strict=True)
     max_rent_vnd: int | None = Field(default=None, gt=0, strict=True)
+    # Cận dưới tiền thuê (mềm): căn rẻ hơn khoảng này không bị loại, chỉ bị trừ điểm.
+    min_rent_vnd: int | None = Field(default=None, gt=0, strict=True)
+    # UX-03: diện tích mong muốn; mềm mặc định, cứng khi min_area_hard.
+    min_area_m2: int | None = Field(default=None, ge=5, le=500, strict=True)
+    min_area_hard: bool = False
+    # Chỉ khi khách nói "rẻ nhất/càng rẻ càng tốt" thì điểm chi phí thưởng căn rẻ.
+    prefer_cheapest: bool = False
+    # Khách nói "tầm/khoảng X": điểm chi phí cao hơn cho căn có giá gần trần X hơn.
+    budget_approx: bool = False
     # Cash on hand for moving in; with `loan` set, a shortfall may be borrowed.
     max_initial_cash_vnd: int | None = Field(default=None, ge=0, strict=True)
     monthly_income_vnd: int | None = Field(default=None, gt=0, strict=True)
@@ -207,10 +244,15 @@ class Profile(Model):
     scenario: Scenario
     destination: Destination | None = None
     soft_description: str | None = Field(default=None, max_length=1000)
-    # Người thuê chủ động chấp nhận dữ liệu ước tính: phí thiếu trong tin được
-    # thay bằng giả định chuẩn có ghi nguồn, sức chứa chưa rõ coi như vừa số
-    # người đã nêu — phòng vẫn hiện kèm nhãn ước tính, không bao giờ bật ngầm.
+    # D-12 (08/11): cờ LỊCH SỬ — chỉ để đọc hồ sơ cũ. Tin thiếu phí/sức chứa luôn hiện
+    # ngay kèm nhãn ước tính; cờ này không còn ảnh hưởng lọc, xếp hạng hay hiển thị.
     accept_estimated_data: bool = False
+
+    @model_validator(mode="after")
+    def need_a_cap(self):
+        if self.max_monthly_cost_vnd is None and self.max_rent_vnd is None:
+            raise ValueError("Cần ít nhất một trần: tiền thuê hoặc tổng tháng.")
+        return self
 
 
 class CostLine(Model):
@@ -268,7 +310,8 @@ class Candidate(Model):
     title: str
     city: str
     area: str
-    area_m2: float
+    # Tin cào có thể không rõ diện tích: null, không bao giờ 0 hay số giả.
+    area_m2: float | None = None
     room_type: RoomType = "room"
     bedrooms: int | None = None
     landlord_id: str | None = None

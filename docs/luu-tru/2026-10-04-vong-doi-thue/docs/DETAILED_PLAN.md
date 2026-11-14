@@ -4,10 +4,10 @@
 
 ## DOC-V1-01 — Research và nguồn
 
-- [ ] Rà nguồn công khai HubHome, giữ ngày truy cập và phân loại từng phát hiện HH-01..12.
+- [ ] Rà nguồn công khai sản phẩm tham khảo, giữ ngày truy cập và phân loại từng phát hiện HH-01..12.
 - [ ] Giữ khảo sát đăng nhập lịch sử riêng; không sửa ca rỗng thành ca thành công.
 - [ ] Ghi các mâu thuẫn website: guide có hợp đồng/thu tiền nhưng FAQ/privacy tự mô tả prototype hoặc quy trình dự kiến.
-- [ ] Mỗi quyết định HomeMatch chỉ rõ là áp dụng bài học hoặc yêu cầu riêng; không tự gán backend/thuật toán/quality HubHome.
+- [ ] Mỗi quyết định HomeMatch chỉ rõ là áp dụng bài học hoặc yêu cầu riêng; không tự gán backend/thuật toán/quality sản phẩm tham khảo.
 - [ ] Quyền dùng inventory/media là đầu vào riêng, không suy từ quyền xem website.
 
 **AC:** mọi nhóm chức năng có nguồn và giới hạn; các kết luận chưa xác minh được nhận diện, không làm cơ sở claim production.

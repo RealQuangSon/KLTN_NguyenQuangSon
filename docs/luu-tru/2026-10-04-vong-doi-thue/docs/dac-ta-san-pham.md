@@ -8,7 +8,7 @@ HomeMatch là nền tảng tìm và quản lý thuê phòng trọ, studio tại 
 
 Sản phẩm giải quyết ba khoảng đứt trong hành trình thuê: nhu cầu diễn đạt tự nhiên chưa thành tiêu chí rõ; giá thuê chưa phản ánh tổng khoản phải chuẩn bị/trả hàng tháng; thông tin từ tìm phòng tới hợp đồng và vận hành bị tách rời. Mỗi quyết định phải truy về hồ sơ, phiên bản tin, điều khoản hoặc chứng từ liên quan.
 
-HubHome là nguồn tham khảo trải nghiệm và danh mục nghiệp vụ. [Nghiên cứu HubHome](nghien-cuu-hubhome.md) ghi riêng quan sát, công bố của website và phần chưa xác minh. Công nghệ backend, dữ liệu, số lượng công cụ hay chất lượng của HubHome không phải bằng chứng về HomeMatch.
+Sản phẩm tham khảo là nguồn tham khảo trải nghiệm và danh mục nghiệp vụ. Nghiên cứu sản phẩm tham khảo ghi riêng quan sát, công bố của website và phần chưa xác minh. Công nghệ backend, dữ liệu, số lượng công cụ hay chất lượng của sản phẩm tham khảo không phải bằng chứng về HomeMatch.
 
 ## 2. Người dùng và trách nhiệm
 
@@ -97,7 +97,7 @@ Tuyến tham quan trực tuyến có thể dùng ảnh/video hoặc link tour đ
 | A-03 | Email là kênh xác minh tài khoản và thông báo ngoài app | Trước P1/P3 nghiệm thu | Provider, tên miền, template và retry; in-app vẫn bắt buộc |
 | A-04 | Hợp đồng/chứng từ được ghi nhận trong app; chưa hứa e-sign hay giữ tiền hộ | Trước thử thuê thật | Điều khoản, chính sách, retention và quy trình tranh chấp |
 | A-05 | Có người vận hành moderation/support và giờ phục vụ được công bố | Trước P4 | SLA chờ duyệt/lịch/hỗ trợ; AI không thay thế người phụ trách |
-| A-06 | Có quyền sử dụng inventory, ảnh và tài liệu đưa vào sản phẩm | Trước public deployment | Không lấy kho HubHome chỉ từ quyền xem website |
+| A-06 | Có quyền sử dụng inventory, ảnh và tài liệu đưa vào sản phẩm | Trước public deployment | Không lấy kho sản phẩm tham khảo chỉ từ quyền xem website |
 | A-07 | Giữ phần nghiên cứu B1/P và extraction của khóa luận | Trước P5 freeze | Provider/ngân sách, nhãn độc lập và mẫu trường |
 
 Đây là giả định thiết kế, không phải cam kết đã được đối tác/giảng viên/nhà cung cấp phê duyệt. Khi thiếu đầu vào, vẫn phát triển và kiểm chứng bằng dữ liệu tổng hợp, đồng thời ghi rõ điều kiện chưa đủ để đưa bản đó vận hành thật.

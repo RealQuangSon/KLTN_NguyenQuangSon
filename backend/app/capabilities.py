@@ -53,6 +53,9 @@ ADMIN_CAPABILITIES = frozenset({
     "org.members.read",
     "org.members.manage",
     "audit.read",
+    # crawl.md E-02/E-05: điều phối lịch xem tin cào và duyệt báo cáo tin.
+    "viewing.concierge.manage",
+    "listing.report.review",
 })
 
 ROLE_CAPABILITIES: dict[Role, frozenset[str]] = {

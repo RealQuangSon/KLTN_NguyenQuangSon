@@ -92,7 +92,7 @@ const breadcrumbRoles: Record<Role, string> = {
 const sidebarNotes: Record<Role, { title: string; text: string }> = {
   renter: {
     title: "Yên tâm với từng lựa chọn",
-    text: "Mỗi phòng được chính chủ nhà duyệt trước khi giới thiệu tới bạn.",
+    text: "Danh sách gợi ý theo đúng nhu cầu bạn xác nhận, kèm lý do và chi phí từng căn.",
   },
   owner: {
     title: "Quyền theo sở hữu",
@@ -148,6 +148,11 @@ const navByRole: Record<Role, { path: string; label: string; icon: string }[]> =
       { path: "/quan-tri/ho-tro", label: "Yêu cầu hỗ trợ", icon: "clock" },
       { path: "/quan-tri/tai-khoan", label: "Người dùng", icon: "grid" },
       { path: "/quan-tri/tin-dang", label: "Tin đăng", icon: "home" },
+      {
+        path: "/quan-tri/dieu-phoi",
+        label: "Điều phối lịch xem",
+        icon: "calendar",
+      },
       { path: "/quan-tri/van-hanh", label: "Vận hành", icon: "refresh" },
       { path: "/tai-khoan/ho-so", label: "Hồ sơ", icon: "shield" },
     ],
@@ -204,6 +209,7 @@ function resolveRoute(rawPath: string): AppRoute {
     case "/quan-tri/ho-tro":
     case "/quan-tri/tai-khoan":
     case "/quan-tri/tin-dang":
+    case "/quan-tri/dieu-phoi":
     case "/quan-tri/van-hanh":
       return {
         kind: "admin",
@@ -241,8 +247,12 @@ function AppShell() {
     [pendingNeed, setPendingNeed] = useState<string | null>(null);
   const currentToken = useRef(token);
   currentToken.current = token;
+  // Token vừa nhận từ phản hồi đăng nhập: actor đã có, không cần màn "boot" kiểm
+  // /auth/me (nó gỡ RenterWorkspace giữa lúc đang gửi nhu cầu từ trang chủ).
+  const trustedToken = useRef<string | null>(null);
   const clear = useCallback(() => {
     currentToken.current = null;
+    trustedToken.current = null;
     clearLocal();
     setToken(null);
     setActor(null);
@@ -260,6 +270,10 @@ function AppShell() {
   );
   useEffect(() => {
     if (!token) {
+      setBoot(false);
+      return;
+    }
+    if (trustedToken.current === token) {
       setBoot(false);
       return;
     }
@@ -293,6 +307,7 @@ function AppShell() {
       clearLoginStorage();
       sessionStorage.setItem("homematch.token", accessToken);
       currentToken.current = accessToken;
+      trustedToken.current = accessToken;
       setToken(accessToken);
       setActor(nextActor);
       setError(null);
@@ -360,7 +375,7 @@ function AppShell() {
       <Redirect to="/dang-nhap" />
     );
   // Màn auth sau khi đã có phiên: đưa về cổng đúng vai trò. Riêng trang chủ
-  // giữ nguyên như tham chiếu HubHome — người đã đăng nhập vẫn xem được landing,
+  // giữ nguyên — người đã đăng nhập vẫn xem được landing,
   // CTA chuyển thành "mở trợ lý" thay vì đăng nhập lại.
   if (route.kind === "login" || route.kind === "register")
     return <Redirect to={roleHomes[actor.role]} />;
@@ -568,7 +583,7 @@ function AppShell() {
 }
 // Sidebar icon mảnh cho màn trợ lý người thuê: mỗi icon dẫn tới một trang thật
 // của ứng dụng; khi rời /tro-ly-ai, shell chuẩn (sidebar đầy đủ) đảm nhiệm điều hướng.
-// Avatar mở menu tài khoản kiểu tham chiếu HubHome: trang cá nhân, đổi trải
+// Avatar mở menu tài khoản: trang cá nhân, đổi trải
 // nghiệm, về trang chủ và Đăng xuất bằng chữ rõ ràng.
 function IconRail({
   actor,

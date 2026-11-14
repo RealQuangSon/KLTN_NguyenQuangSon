@@ -28,16 +28,55 @@ def folded(text: str) -> str:
     return "".join(char for char in value if not unicodedata.combining(char))
 
 
+_ACCEPT_ESTIMATED = re.compile(r"(?:chap nhan|dong y|bat)\s+(?:phi|du lieu\s+)?uoc tinh|phi uoc tinh|du lieu uoc tinh")
+_NEGATION = re.compile(r"\b(?:khong|ko|k|chua|dung|dnt|tu choi|thoi|dung co|chang|cung khong)\b")
+_QUESTION = re.compile(r"\?|\b(?:co nen|nen khong|co can|duoc khong|la gi|nghia la|sao|the nao|nhu the nao|bao nhieu)\b")
+
+
+def accept_estimated_intent(text: str) -> bool:
+    """HN-13.3-A1: chỉ True khi khách NÓI RÕ đồng ý xem dữ liệu ước tính. Câu phủ
+    định ("không chấp nhận…", "không đồng ý…") và câu hỏi ("có nên chấp nhận … không?")
+    không được bật cờ."""
+    value = folded(text)
+    if not _ACCEPT_ESTIMATED.search(value):
+        return False
+    if _NEGATION.search(value) or _QUESTION.search(value):
+        return False
+    return True
+
+
 def redact(text: str) -> str:
     # Defense in depth for demo text, not a general PII detector.
     return MONEY.sub("[TIEN_DA_TACH]", PHONE.sub("[LIEN_HE_DA_TACH]", EMAIL.sub("[EMAIL_DA_TACH]", text)))
 
 
 def budget_hint(text: str) -> int | None:
-    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b)", text, re.I)
+    """Trần tiền đọc được từ câu khách, tất định (AG-02). Hiểu thêm kiểu viết
+    phổ biến của người thuê: mốe lẻ đuôi ("3 triệu5", "3tr5"), "rưỡi"
+    ("5 triệu rưỡi") và slang triệu ("4 củ", "5 cây")."""
+    from decimal import Decimal
+    # "3 triệu5" / "3tr5": số lẻ 0-9 dính liền sau đơn vị là phần thập phân.
+    # Có khoảng trắng ("3 triệu 5") thì KHÔNG nhận — "3 triệu 2 người" là
+    # 3 triệu cho 2 người, không phải 3,2 triệu.
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr)(\d)(?!\d)", text, re.I)
+    if match:
+        amount = int(
+            (Decimal(match.group(1).replace(",", ".")) + Decimal(match.group(2)) / 10)
+            * 1_000_000,
+        )
+        if amount > 0:
+            return amount
+    # "5 triệu rưỡi" = 5,5 triệu.
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr)\s*rưỡi", text, re.I)
+    if match:
+        amount = int(
+            (Decimal(match.group(1).replace(",", ".")) + Decimal("0.5")) * 1_000_000,
+        )
+        if amount > 0:
+            return amount
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b|cây|cay\b)", text, re.I)
     if not match:
         return None
-    from decimal import Decimal
     amount = int(Decimal(match.group(1).replace(",", ".")) * 1_000_000)
     return amount if amount > 0 else None
 
@@ -49,11 +88,20 @@ def budget_hint(text: str) -> int | None:
 # hoặc sau khoảng trắng) — trước đây "Bình Thạnh 5 triệu" khớp nhầm "thạnh" chứa
 # "ha" và bị đọc thành "giảm xuống 5 triệu".
 _REL_UNIT = r"(\d+(?:[.,]\d+)?)\s*(triệu|trieu|tr\b|nghìn|nghin|ngan|k)"
+# HN-13.3-A2: có "thêm/cộng/bớt" quanh số → DELTA cộng/trừ vào mức gốc (thiếu
+# mức gốc thì KHÔNG áp, hỏi lại); có "lên/xuống/còn" (không thêm) hoặc "giảm
+# xuống X" → ĐẶT mức X; "tăng/nâng X" không kèm "lên" giữ nghĩa delta (oracle cũ).
+RELATIVE_BUDGET_UP_DELTA = re.compile(
+    r"(?:^|\s)(?:(?:nới|nơi|tăng|tang|nâng|nang)[^\d]{0,30}?|(?:lên|len)\s*|(?:cộng|cong)\s*)"
+    r"(?:thêm|them)\s*" + _REL_UNIT, re.I)
+RELATIVE_BUDGET_SET = re.compile(
+    r"(?:^|\s)(?:(?:nới|nơi|tăng|tang|nâng|nang)[^\d]{0,24}?(?:lên|len)|(?:lên|len|còn))"
+    r"(?:\s*(?:ngân sách|ngan sach|budget|mức tiền|muc tien|trần|tran))?\s*" + _REL_UNIT, re.I)
 RELATIVE_BUDGET_UP = re.compile(
-    r"(?:^|\s)(?:nới|nơi|lên|len|tăng|tang|nâng|nang)(?:\s*(?:thêm|them|cộng))?\s*" + _REL_UNIT,
-    re.I)
+    r"(?:^|\s)(?:nới|nơi|tăng|tang|nâng|nang)"
+    r"(?:\s*(?:ngân sách|ngan sach|budget|mức tiền|muc tien|trần|tran))?\s*" + _REL_UNIT, re.I)
 RELATIVE_BUDGET_DOWN_DELTA = re.compile(
-    r"(?:^|\s)(?:giảm|giam|hạ|ha)(?!\s*(?:xuống|xuong))[^\d]{0,16}?" + _REL_UNIT, re.I)
+    r"(?:^|\s)(?:giảm|giam|hạ|ha|bớt|bot)(?!\s*(?:xuống|xuong))[^\d]{0,16}?" + _REL_UNIT, re.I)
 RELATIVE_BUDGET_DOWN_SET = re.compile(
     r"(?:^|\s)(?:giảm|giam|hạ|ha)[^\d]{0,16}?(?:xuống|xuong)\s*" + _REL_UNIT, re.I)
 
@@ -65,8 +113,15 @@ def _relative_amount(raw: str, unit: str) -> int:
 
 
 def relative_budget(text: str) -> dict | None:
-    """Đọc mức tiền tương đối từ câu gốc. Trả {"direction": "up"|"down",
-    "amount_vnd": delta} hoặc None khi câu không nói nới/giảm."""
+    """Đọc mức tiền tương đối từ câu gốc. "lên/tăng/còn X" và "giảm xuống X" là
+    ĐẶT mức X (set); "nới (thêm) X"/"giảm/bớt X" là delta — caller CHỈ áp delta
+    khi có mức gốc. Trả {"direction": "set"|"up"|"down", "amount_vnd": X}."""
+    match = RELATIVE_BUDGET_UP_DELTA.search(text)
+    if match:
+        return {"direction": "up", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
+    match = RELATIVE_BUDGET_SET.search(text)
+    if match:
+        return {"direction": "set", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
     match = RELATIVE_BUDGET_UP.search(text)
     if match:
         return {"direction": "up", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
@@ -95,6 +150,72 @@ def rent_budget_hint(text: str) -> int | None:
     from decimal import Decimal
     amount = int(Decimal(match.group(1).replace(",", ".")) * 1_000)
     return amount if amount > 0 else None
+
+
+def budget_scope_hint(text: str) -> str | None:
+    """HN-13.2: cách hiểu mức tiền đọc TẤT ĐỊNH từ câu khách (kể cả câu chip
+    khách bấm gửi): "tiền thuê/giá thuê" → rent; "tổng tháng" → total. Không
+    đoán khi câu không nêu — budget_scope chỉ áp khi chưa có giá trị."""
+    value = folded(text)
+    if "tien thue" in value or "gia thue" in value:
+        return "rent"
+    if "tong thang" in value or "tong chi phi" in value:
+        return "total"
+    return None
+
+
+def budget_range(text: str) -> tuple[int, int] | None:
+    """UX-01: khoảng tiền "3 đến 4 triệu", "3-4tr", "từ 3 tới 4 triệu" → (thấp, cao).
+    Đơn vị ở số sau áp cho cả hai; chỉ nhận khi thấp < cao, không đoán."""
+    from decimal import Decimal
+    match = re.search(
+        r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b)?\s*(?:đến|den|tới|toi|-|–|—)\s*"
+        r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b)", text, re.I)
+    if not match:
+        return None
+    low = int(Decimal(match.group(1).replace(",", ".")) * 1_000_000)
+    high = int(Decimal(match.group(2).replace(",", ".")) * 1_000_000)
+    return (low, high) if 0 < low < high else None
+
+
+_AREA = re.compile(r"(\d{2,3}(?:[.,]\d)?)\s*(?:m2|m²|m\s*vuong|met\s*vuong|mét\s*vuông)", re.I)
+
+
+def area_m2_hint(text: str) -> dict | None:
+    """UX-03: diện tích mong muốn đọc tất định ("khoảng 20m2", "ít nhất 25 m²").
+    Mặc định MỀM; "ít nhất/tối thiểu" → cứng. Ngoài 5–500 m² thì bỏ."""
+    value_text = folded(text).replace("²", "2")
+    match = _AREA.search(value_text)
+    if not match:
+        return None
+    value = int(float(match.group(1).replace(",", ".")))
+    if not 5 <= value <= 500:
+        return None
+    before = value_text[max(0, match.start() - 25):match.start()]
+    return {"value": value, "hard": bool(re.search(r"(?:it nhat|toi thieu)", before))}
+
+
+_MONEY_UNIT = r"\d+(?:[.,]\d+)?\s*(?:trieu|tr\b|cu\b|k\b|nghin|ngan)"
+_APPROX = re.compile(r"(?:tam|khoang|quanh|xap xi|tren duoi|co chung|chung)\s+(?:gia\s+|muc\s+)?" + _MONEY_UNIT)
+_CEILING = re.compile(r"(?:duoi|toi da|khong qua|nho hon|it hon|max)\s+(?:gia\s+|muc\s+)?" + _MONEY_UNIT)
+
+
+def budget_approx_hint(text: str) -> bool | None:
+    """13/11: "tầm/khoảng 4 triệu" → True (ưu tiên căn gần mức đó); "dưới/tối đa 4 triệu"
+    hoặc một khoảng "3 đến 4 triệu" → False; câu không nêu mức tiền kiểu này → None
+    (giữ nguyên). Đọc tất định từ câu khách, không đoán."""
+    value = folded(text)
+    if budget_range(text) is not None or _CEILING.search(value):
+        return False
+    if _APPROX.search(value):
+        return True
+    return None
+
+
+def wants_cheapest(text: str) -> bool:
+    """UX-03: chỉ khi khách nói rõ mới thưởng căn rẻ."""
+    value = folded(text)
+    return "re nhat" in value or "cang re cang tot" in value
 
 
 def fixed_intent(text: str) -> str | None:
@@ -213,7 +334,7 @@ class DemoInterpreter:
             preferences=preferences,
             destination_text=destination.group(1).strip() if destination else None,
             needs_destination="gan truong" in value or "gan noi lam" in value,
-            accept_estimated_data=bool(re.search(r"(?:chap nhan|dong y|bat)\s+(?:phi|du lieu\s+)?uoc tinh|phi uoc tinh|du lieu uoc tinh", value)),
+            accept_estimated_data=accept_estimated_intent(text),
             remove_preferences=removed,
         )
 

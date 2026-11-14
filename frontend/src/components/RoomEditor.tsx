@@ -63,7 +63,8 @@ const fromRoom = (room: Room | null): Values => ({
   room_type: room?.room_type ?? "room",
   bedrooms: String(room?.bedrooms ?? ""),
   capacity: String(room?.capacity ?? 2),
-  area_m2: String(room?.area_m2 ?? 20),
+  // Tin cào thiếu diện tích thì bỏ trống, không điền sẵn số giả.
+  area_m2: String(room?.area_m2 ?? ""),
   rent: String(room?.quote.rent_vnd ?? ""),
   deposit: String(room?.quote.deposit_vnd ?? ""),
   advance: String(room?.quote.advance_months ?? 1),

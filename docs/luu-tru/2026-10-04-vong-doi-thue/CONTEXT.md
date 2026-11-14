@@ -7,7 +7,6 @@
 | Thuật ngữ | Nghĩa sử dụng trong repository |
 |---|---|
 | HomeMatch | Nền tảng tìm và quản lý thuê phòng/studio, có trợ lý AI và bàn giao người thật |
-| HubHome | Website nghiên cứu trải nghiệm/nghiệp vụ; không mặc định là nguồn inventory, API hoặc backend của HomeMatch |
 | Người thuê / renter | Người có nhu cầu hoặc là bên thuê của hợp đồng; chỉ đọc dữ liệu của mình và projection được phép |
 | Chủ nhà / owner | Người có quyền quản lý nguồn phòng trong một đơn vị; không tự đọc raw chat/ngân sách người thuê |
 | Quản lý / manager | Người được phân công tư vấn/kiểm duyệt/vận hành; quyền gắn tài nguyên và đơn vị |

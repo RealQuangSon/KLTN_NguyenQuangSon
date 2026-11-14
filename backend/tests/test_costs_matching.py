@@ -44,7 +44,8 @@ def test_full_cost_filters_cheap_rent_and_unknowns(profile):
     assert "demo-07" not in ids  # Unknown water charge.
     assert "demo-12" not in ids  # Unknown mandatory amenity.
     assert diagnostics["rejected"]["monthly_budget"] == 1
-    assert diagnostics["verification"]["monthly_fees"] == 1
+    # D-12: thiếu phí không còn bị giữ; tổng tháng tính theo giả định có nhãn.
+    assert diagnostics["verification"].get("monthly_fees", 0) == 0
 
 
 def test_zero_initial_budget_does_not_disable_filter(profile):
@@ -53,13 +54,15 @@ def test_zero_initial_budget_does_not_disable_filter(profile):
     assert items == []
 
 
-def test_location_boundary_requires_verification(profile):
+def test_location_boundary_is_rejected_under_d12(profile):
     # Synthetic rooms are close to this point, but have 100m location uncertainty.
     profile.destination = Destination(label="Điểm giả lập", latitude=10.735, longitude=106.721,
                                       uncertainty_m=0, max_distance_m=50)
     items, diagnostics = Catalog().match(profile)
     assert items == []
-    assert diagnostics["verification"]["distance_boundary"] > 0
+    # D-12: vùng biên không còn "chờ xác minh"; điều kiện khoảng cách là cứng.
+    assert diagnostics["rejected"]["distance"] > 0
+    assert diagnostics["verification"].get("distance_boundary", 0) == 0
 
 
 def test_tie_break_is_stable_and_explanations_have_sources(profile):

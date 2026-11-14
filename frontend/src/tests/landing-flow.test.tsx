@@ -56,7 +56,7 @@ it("carries the landing need through the login bounce into a fresh consultation"
   expect(screen.getByText(need)).toBeVisible();
   // Lượt công khai đầu tiên được trợ lý phản hồi ngay tại trang.
   expect(
-    await screen.findByText(/Mình đã ghi nhận nhu cầu/, {}, { timeout: 2500 }),
+    await screen.findByText(/Mình đã nhận câu này/, {}, { timeout: 2500 }),
   ).toBeVisible();
   // Từ lượt thứ hai, tiếp tục trò chuyện chuyển sang yêu cầu đăng nhập; phiên
   // sau đăng nhập bắt đầu từ đúng câu hỏi mới nhất.
@@ -135,7 +135,7 @@ it("drops the pending landing need when a landlord signs in", async () => {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), need);
   await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
-  await screen.findByText(/Mình đã ghi nhận nhu cầu/, {}, { timeout: 2500 });
+  await screen.findByText(/Mình đã nhận câu này/, {}, { timeout: 2500 });
   await user.type(
     screen.getByLabelText("Nhu cầu tìm phòng của bạn"),
     "Cho mình xem phòng gần chỗ làm",
@@ -153,4 +153,55 @@ it("drops the pending landing need when a landlord signs in", async () => {
   expect(
     post.mock.calls.filter(([url]) => url.endsWith("/sessions")),
   ).toHaveLength(0);
+}, 20000);
+it("sends the landing need exactly once even when /sessions and /auth/me are slow", async () => {
+  const posts: string[] = [];
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, options?: RequestInit) => {
+      const method = options?.method || "GET";
+      if (method === "GET") {
+        if (url.endsWith("/auth/me")) {
+          await delay(150);
+          return json({ id: "renter-a", role: "renter" });
+        }
+        return json([]);
+      }
+      posts.push(url);
+      if (url.endsWith("/auth/login"))
+        return json({
+          access_token: "token-r",
+          token_type: "bearer",
+          expires_at: "2099-01-01",
+          actor: { id: "renter-a", role: "renter" },
+        });
+      if (url.endsWith("/sessions/session-9/messages"))
+        return json({ ...session("session-9"), message: "Đã nhận câu hỏi." });
+      if (url.endsWith("/sessions")) {
+        await delay(300);
+        return json(session("session-9"));
+      }
+      return json({});
+    }),
+  );
+  render(<App />);
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), need);
+  await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
+  await screen.findByText(/Mình đã nhận câu này/, {}, { timeout: 2500 });
+  const followUp = "Cho mình xem thêm phòng ở Hà Nội dưới 4 triệu";
+  await user.type(screen.getByLabelText("Nhu cầu tìm phòng của bạn"), followUp);
+  await user.click(screen.getByRole("button", { name: "Gửi nhu cầu" }));
+  await screen.findByText(
+    "Bạn vừa chia sẻ nhu cầu với trợ lý",
+    {},
+    { timeout: 2500 },
+  );
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter-a");
+  await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
+  await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
+  await screen.findByText(/Đã nhận câu hỏi/, {}, { timeout: 5000 });
+  expect(posts.filter((u) => u.endsWith("/messages"))).toHaveLength(1);
+  expect(posts.filter((u) => u.endsWith("/sessions"))).toHaveLength(1);
 }, 20000);

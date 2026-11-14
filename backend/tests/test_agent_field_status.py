@@ -77,11 +77,13 @@ def test_filled_fields_are_not_reasked_and_destination_asks_details(service, ren
     sid = service.create_session(renter)["session_id"]
     reply = service.message(sid, renter,
                             "Tìm phòng trọ TP.HCM cho 2 người gần trường, tầm 3 triệu")
-    # Không hỏi lại mức tiền (hiểu là trần tổng tháng) hay số người (mặc định
-    # 1/1); điểm đến chưa rõ chỉ thành ghi chú, không chặn vòng tìm.
+    # Không hỏi lại mức tiền (hiểu là trần tổng tháng) hay số người (mặc định 1/1).
+    # HN-13.2: "gần trường" không nêu tên → chip ĐIỂM MỘC THẬT hỏi "gần đâu?".
     assert len(reply["questions"]) == 1
-    assert "trần TỔNG THÁNG" in reply["questions"][0]
-    assert "khu vực" in reply["questions"][0]
+    assert reply["questions"][0] == "Bạn muốn ở gần đâu?"
+    options = (reply.get("clarification") or {}).get("options") or []
+    assert options and all(option["text"].startswith("gần ") and option["count"] > 0
+                           for option in options)
     assert not any("thành phố nào" in question for question in reply["questions"])
     assert not any("bao nhiêu người" in question for question in reply["questions"])
 

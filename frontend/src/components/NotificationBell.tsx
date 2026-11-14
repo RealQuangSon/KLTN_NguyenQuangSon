@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Api } from "../api";
 import { Icon } from "./Shared";
-// Thông báo trong ứng dụng: nhắc lịch, phòng được duyệt, tin nhắn mới, phòng
+// Thông báo trong ứng dụng: nhắc lịch, danh sách phòng sẵn sàng, tin nhắn mới, phòng
 // đổi trạng thái/giá, gợi ý tương đương. Đọc lại mỗi 30 giây.
 interface Item {
   id: string;

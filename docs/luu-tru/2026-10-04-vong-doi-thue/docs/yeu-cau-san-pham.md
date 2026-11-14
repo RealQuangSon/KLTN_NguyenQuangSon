@@ -2,7 +2,7 @@
 
 **Cập nhật:** 04/10/2026. Toàn bộ 30 yêu cầu dưới đây là bắt buộc cho sản phẩm v1. Các chức năng chi tiết đi cùng yêu cầu phải được triển khai, không chỉ tạo màn hình hoặc endpoint rỗng.
 
-Nguồn `HH-*` tham chiếu [nghiên cứu HubHome](nghien-cuu-hubhome.md); nhãn **HM** là lựa chọn hoặc quy tắc riêng của HomeMatch. Một nguồn website chỉ giải thích vì sao có nhu cầu, không chứng minh khả năng thực tế của website hoặc của mã hiện tại. AC nằm ở [bộ nghiệm thu](tieu-chi-nghiem-thu.md).
+Nguồn `HH-*` tham chiếu nghiên cứu sản phẩm tham khảo; nhãn **HM** là lựa chọn hoặc quy tắc riêng của HomeMatch. Một nguồn website chỉ giải thích vì sao có nhu cầu, không chứng minh khả năng thực tế của website hoặc của mã hiện tại. AC nằm ở [bộ nghiệm thu](tieu-chi-nghiem-thu.md).
 
 ## Yêu cầu chức năng và truy vết
 

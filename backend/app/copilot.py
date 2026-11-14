@@ -34,8 +34,12 @@ def _money(value: int | None) -> str:
 
 
 def comparables(rooms, room, area_band: float = 0.35) -> list:
+    # So giá theo diện tích cần biết diện tích của cả hai phòng; null thì bỏ qua.
+    if room.area_m2 is None:
+        return []
     return [other for other in rooms if other.id != room.id and other.published and other.city == room.city
             and other.area == room.area and other.room_type == room.room_type
+            and other.area_m2 is not None
             and abs(other.area_m2 - room.area_m2) <= room.area_m2 * area_band]
 
 
@@ -44,7 +48,8 @@ def price_advice(rooms, room) -> dict:
     if len(peers) < 3:
         # Widen to the same city and type when the district has too few peers.
         peers = [other for other in rooms if other.id != room.id and other.published and other.city == room.city
-                 and other.room_type == room.room_type and abs(other.area_m2 - room.area_m2) <= room.area_m2 * 0.35]
+                 and other.room_type == room.room_type and room.area_m2 is not None
+                 and other.area_m2 is not None and abs(other.area_m2 - room.area_m2) <= room.area_m2 * 0.35]
         scope = f"cùng loại tại {room.city}"
     else:
         scope = f"cùng loại tại {room.area}"
@@ -70,7 +75,8 @@ def strengths(rooms, room) -> list[str]:
         points.append("giá tốt hơn mặt bằng khu vực")
     if room.room_type == "apartment" and room.bedrooms:
         points.append(f"{room.bedrooms} phòng ngủ")
-    points.append(f"{room.area_m2:g} m²")
+    if room.area_m2 is not None:
+        points.append(f"{room.area_m2:g} m²")
     points += [AMENITY_TEXT[name] for name, value in room.amenities.items() if value is True and name in AMENITY_TEXT]
     return points
 
@@ -90,8 +96,9 @@ def marketing_post(rooms, room, channel: str, listing_url: str) -> dict:
     if channel == "facebook":
         tags = " ".join("#" + re.sub(r"\W", "", fold(word).title()) for word in
                         (room.area, room.city, kind.split()[0], "ChoThue", "HomeMatch"))
+        area_line = f"📐 Diện tích: {room.area_m2:g} m²\n" if room.area_m2 is not None else ""
         text = (f"🏠 {kind.upper()} CHO THUÊ – {room.area.upper()}, {room.city.upper()}\n\n"
-                f"✨ {title}\n💰 Giá thuê: {rent}/tháng · Cọc: {deposit}\n📐 Diện tích: {room.area_m2:g} m²\n"
+                f"✨ {title}\n💰 Giá thuê: {rent}/tháng · Cọc: {deposit}\n{area_line}"
                 + "".join(f"✅ {point.capitalize()}\n" for point in points[:6])
                 + (f"🌿 {features}\n" if features else "")
                 + f"ℹ️ {fees_note}\n\n👉 Xem chi tiết & đặt lịch xem: {listing_url}\n\n{tags}")
@@ -99,8 +106,9 @@ def marketing_post(rooms, room, channel: str, listing_url: str) -> dict:
         text = (f"{kind} {room.area}, {room.city} – {rent}/tháng.\n"
                 f"{', '.join(points[:4]).capitalize()}.\n{fees_note}\nXem & hẹn lịch: {listing_url}")
     else:
+        area_line = f"- Diện tích: {room.area_m2:g} m²\n" if room.area_m2 is not None else ""
         text = (f"[Cho thuê] {kind} {room.area}, {room.city} – {rent}/tháng\n\n"
-                f"- Diện tích: {room.area_m2:g} m²\n- Giá thuê: {rent}/tháng; cọc {deposit}\n"
+                f"{area_line}- Giá thuê: {rent}/tháng; cọc {deposit}\n"
                 f"- Tiện ích: {', '.join(points) or 'liên hệ'}\n"
                 + (f"- Mô tả: {features}\n" if features else "")
                 + (f"- Nội quy: {room.house_rules}\n" if room.house_rules else "")
@@ -129,6 +137,9 @@ def _mentioned_room(question: str, own: list):
 
 
 def vacancy_report(repo, rooms, own) -> list[dict]:
+    # crawl.md E-03 (08/11): tiêu đề phòng trong báo cáo cho chủ nhà được che
+    # số nhà best-effort (phòng có thể là tin cào gán cho tài khoản demo).
+    from .listings import mask_address
     result = []
     for room in own:
         if room.occupancy in ("rented", "deposited") or room.available is False:
@@ -155,7 +166,8 @@ def vacancy_report(repo, rooms, own) -> list[dict]:
             reasons.append(f"{views} lượt xem nhưng chưa có ai đặt lịch")
         if not room.features_text:
             reasons.append("chưa có mô tả điểm nổi bật")
-        result.append({"room_id": room.id, "title": room.title.split(". ")[0], "views": views, "viewings": viewings,
+        result.append({"room_id": room.id, "title": mask_address(room.title.split(". ")[0], room.street),
+                       "views": views, "viewings": viewings,
                        "reasons": reasons or ["không thấy vấn đề rõ ràng trong dữ liệu; thử đăng lại tin đa kênh"]})
     return result
 

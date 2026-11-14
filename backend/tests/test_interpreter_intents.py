@@ -88,3 +88,23 @@ def test_openai_prompt_lists_every_amenity_key():
     from backend.app.models import AMENITY_KEYS
     for key in AMENITY_KEYS:
         assert key in SYSTEM_PROMPT
+
+
+# AG-02: trích tiền tất định phải hiểu các kiểu viết phổ biến của người thuê
+# (đo 06/11 trên 10 câu khó: "3 triệu5", "5 triệu rưỡi", "4 củ" bị mất hoặc đọc thiếu).
+def test_budget_hint_reads_tail_decimal_and_half():
+    from backend.app.interpreter import budget_hint
+    # "3 triệu5" / "3tr5" dính liền đơn vị = 3,5 triệu.
+    assert budget_hint("phòng trọ 3 triệu5 gần HUST") == 3_500_000
+    assert budget_hint("tìm studio 3tr5 quận 7") == 3_500_000
+    # "5 triệu rưỡi" = 5,5 triệu.
+    assert budget_hint("tầm 5 triệu rưỡi có thang máy") == 5_500_000
+    # Slang triệu: "4 củ", "5 cây".
+    assert budget_hint("dưới 4 củ gần bến xe") == 4_000_000
+    assert budget_hint("5 cây một tháng") == 5_000_000
+    # Có khoảng trắng thì đuôi số KHÔNG phải phần lẻ: "3 triệu 2 người" là 3 triệu.
+    assert budget_hint("phòng 3 triệu 2 người ở") == 3_000_000
+    # Các dạng cũ không đổi.
+    assert budget_hint("tầm 3,5 triệu") == 3_500_000
+    assert budget_hint("800k một tháng") is None or budget_hint("800k một tháng") == 800_000
+    assert budget_hint("không nói tiền") is None

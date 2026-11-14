@@ -107,3 +107,44 @@ it("shows remembered preferences without money and lets the renter delete them",
   await userEvent.click(within(item).getByRole("button", { name: "Xóa" }));
   expect(del).toHaveBeenCalledWith("/me/memory/area");
 });
+
+it("shows why each preference is remembered and deletes one at a time", async () => {
+  const api = new Api("test");
+  vi.spyOn(api, "get").mockImplementation((path: string) =>
+    Promise.resolve(
+      path === "/me/profile"
+        ? ({
+            email: null,
+            consents: { remember_sessions: true, save_history: false },
+          } as never)
+        : path === "/me/memory"
+          ? ({
+              consented: true,
+              memory: {
+                fields: { city: "Hà Nội", preferences: ["window", "balcony"] },
+                source_session: "s0",
+                updated_at: "2026-10-05T00:00:00Z",
+                preference_details: [
+                  { key: "window", sessions: 3, from_saved: false },
+                  { key: "balcony", sessions: 0, from_saved: true },
+                ],
+              },
+            } as never)
+          : ([] as never),
+    ),
+  );
+  const del = vi.spyOn(api, "delete").mockResolvedValue({});
+  render(
+    <AccountPage
+      actor={{ id: "renter-a", role: "renter" }}
+      section="ho-so"
+      api={api}
+    />,
+  );
+  expect(await screen.findByText(/đã chọn trong 3 phiên/)).toBeInTheDocument();
+  expect(screen.getByText(/gợi ý từ phòng đã lưu/)).toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole("button", { name: /Xóa sở thích Cửa sổ/ }),
+  );
+  expect(del).toHaveBeenCalledWith("/me/memory/preferences/window");
+});

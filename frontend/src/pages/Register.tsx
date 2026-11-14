@@ -90,8 +90,7 @@ export function Register() {
           </h1>
           <p>
             Tạo tài khoản để trò chuyện với trợ lý, lưu nhu cầu và nhận danh
-            sách phòng đã được duyệt — hoặc đăng ký làm chủ nhà để đăng tin cho
-            thuê.
+            sách phòng phù hợp — hoặc đăng ký làm chủ nhà để đăng tin cho thuê.
           </p>
         </div>
         <div className="login-art">

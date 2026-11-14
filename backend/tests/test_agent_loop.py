@@ -68,6 +68,12 @@ def test_loop_runs_tools_and_publishes_results_in_one_turn(service, renter):
     assert "find_place" in reply["steps"][0] and "confirm_and_search" in reply["steps"][2]
     draft = service.session(sid, renter)["draft"]
     assert draft["city"] == "Hà Nội" and draft["area"] == "Quận Hai Bà Trưng"
+
+    # crawl.md sửa-lỗi-1: lượt confirm_and_search đã tạo run — status trả về là
+    # TRẠNG THÁI THẬT của run (published/no_match/needs_verification), không còn
+    # needs_clarification mặc định.
+    assert reply["status"] in {"published", "no_match", "needs_verification"}, reply["status"]
+    assert reply["status"] != "needs_clarification"
     assert draft["destination"]["label"] == "Đại học Bách Khoa Hà Nội"
     assert draft["field_status"]["city"] == "inferred"
     session = service.session(sid, renter)

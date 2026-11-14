@@ -34,7 +34,7 @@ Ngoài ra, `trang-thai-trien-khai.md` mô tả code 0.3.0, trong khi code đã �
 | Kế hoạch | W-01…W-18 | GĐ1…GĐ5 |
 | File | 4 file kế hoạch trùng nhau ở `docs/` + 6 file `DETAILED_PLAN` | Gộp vào `ke-hoach-trien-khai.md` và các `PLAN.md` ngắn; bản cũ chuyển vào `luu-tru/` |
 
-Các file được giữ nguyên nội dung vì là bằng chứng lịch sử: `kiem-chung-*.md`, `release-manifest.json`, `khao-sat-hubhome-da-dang-nhap.md`. `nghien-cuu-hubhome.md` chỉ được thêm ghi chú phạm vi ở đầu.
+Các file được giữ nguyên nội dung vì là bằng chứng lịch sử: `kiem-chung-*.md`, `release-manifest.json`.
 
 ## 4. Còn mở
 

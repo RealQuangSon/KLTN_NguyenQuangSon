@@ -1167,7 +1167,7 @@
     }
   ],
   "expected_shape": "mỗi ca có expected_total_vnd hoặc expected_error; lines theo thứ tự dòng hóa đơn (rent trước, phí theo thứ tự quote); label chỉ để đọc, suite so tên khoản, số lượng, đơn giá và thành tiền.",
-  "notice": "Hoàn toàn giả lập; không phải phòng có thật, tin HubHome hoặc biểu giá thị trường.",
+  "notice": "Hoàn toàn giả lập; không phải phòng có thật hoặc biểu giá thị trường.",
   "purpose": "Hand-computed PMS invoice oracle; inputs mirror the lease quote snapshot, meter readings, occupants and vehicles that pms.invoice_lines consumes.",
   "rounding": "mỗi dòng nhân số lượng × đơn giá rồi làm tròn HALF_UP sang VND nguyên; phí included_in_rent ra dòng 0; đơn giá/chỉ số thiếu thì từ chối lập, không tính 0."
 }

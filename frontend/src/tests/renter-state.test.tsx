@@ -40,9 +40,11 @@ it("limits comparison to 3 visible rooms and sends the current selected IDs to t
       tab="search"
     />,
   );
+  const scrolled = vi.spyOn(Element.prototype, "scrollIntoView");
   const user = userEvent.setup();
   await screen.findByText("Phòng riêng room-1", {}, { timeout: 4000 });
-  const buttons = screen.getAllByRole("button", { name: /^So sánh$/ });
+  // Thẻ nhỏ dạng lưới: chip so sánh icon-only có nhãn "So sánh căn này".
+  const buttons = screen.getAllByRole("button", { name: /^So sánh căn này$/ });
   await user.click(buttons[0]);
   await user.click(buttons[1]);
   await user.click(buttons[2]);
@@ -52,7 +54,55 @@ it("limits comparison to 3 visible rooms and sends the current selected IDs to t
   expect(post).toHaveBeenCalledWith("/sessions/session-1/compare", {
     room_ids: ["room-1", "room-2", "room-3"],
   });
-  expect(await screen.findByText("So sánh các lựa chọn")).toBeVisible();
+  const heading = await screen.findByText("So sánh các lựa chọn");
+  expect(heading).toBeVisible();
+  // Bảng nằm dưới danh sách phòng: phải đưa vào tầm nhìn, nếu không nút bấm như không có tác dụng.
+  expect(scrolled.mock.contexts).toContain(heading.closest("section"));
+}, 20000);
+it("keeps the verification panel on screen while results are re-read in the background", async () => {
+  const api = new Api("test");
+  const current = session();
+  sessionStorage.setItem("homematch.session.renter-a", current.session_id);
+  const held = {
+    session_id: current.session_id,
+    run_id: "run-1",
+    status: "needs_verification",
+    results: [],
+  };
+  const slow = deferred<Results>();
+  let reads = 0;
+  vi.spyOn(api, "get").mockImplementation(async (path) => {
+    if (!path.endsWith("/results")) return current as never;
+    reads += 1;
+    return (reads === 1 ? held : slow.promise) as never;
+  });
+  const intervals: (() => void)[] = [];
+  const realInterval = window.setInterval.bind(window);
+  vi.spyOn(globalThis, "setInterval").mockImplementation(((
+    callback: () => void,
+    ms: number,
+  ) => {
+    if (ms === 5000) intervals.push(callback);
+    return realInterval(() => {}, 1_000_000);
+  }) as never);
+  render(
+    <RenterWorkspace
+      api={api}
+      actor={{ id: "renter-a", role: "renter" }}
+      tab="search"
+    />,
+  );
+  const panel = await screen.findByText("Cần xác minh thông tin");
+  await waitFor(() => expect(intervals.length).toBeGreaterThan(0));
+  act(() => intervals[intervals.length - 1]());
+  await waitFor(() => expect(reads).toBe(2));
+  expect(screen.queryByText("Đang soạn danh sách…")).toBeNull();
+  expect(panel).toBeInTheDocument();
+  await act(async () => {
+    slow.resolve(held as never);
+    await slow.promise;
+  });
+  expect(panel).toBeInTheDocument();
 }, 20000);
 it("ignores a delayed published result after a new session has replaced its scope", async () => {
   const api = new Api("test");
@@ -189,3 +239,39 @@ it("offers the newer conversation draft after prior confirmation even without a 
   );
   expect(props.onDirty).toHaveBeenCalledWith(true);
 });
+it("shows the reply chips the server chose and sends one when clicked", async () => {
+  const api = new Api("test");
+  const current = session();
+  sessionStorage.setItem("homematch.session.renter-a", current.session_id);
+  vi.spyOn(api, "get").mockImplementation(async (path) =>
+    path.endsWith("/results")
+      ? {
+          session_id: current.session_id,
+          run_id: "run-1",
+          status: "needs_verification",
+          results: [],
+          suggested_prompts: ["Nới ngân sách", "Đổi khu vực khác"],
+        }
+      : (current as never),
+  );
+  const turn = vi.spyOn(api, "turn").mockResolvedValue({
+    ...current,
+    intent: "find_room",
+    status: "needs_verification",
+    message: "Đã ghi nhận",
+  } as never);
+  render(
+    <RenterWorkspace
+      api={api}
+      actor={{ id: "renter-a", role: "renter" }}
+      tab="search"
+    />,
+  );
+  const chips = await screen.findByRole("group", { name: "Gợi ý trả lời" });
+  expect(chips).toHaveTextContent("Nới ngân sách");
+  expect(screen.queryByText("Tính tổng chi phí")).toBeNull();
+  await userEvent
+    .setup()
+    .click(screen.getByRole("button", { name: "Đổi khu vực khác" }));
+  expect(turn.mock.calls[0][1]).toMatchObject({ text: "Đổi khu vực khác" });
+}, 20000);

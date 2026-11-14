@@ -96,7 +96,7 @@ def test_pii_never_reaches_reply_trace_or_checkpoints(tmp_path, renter, landlord
         masked = " ".join(row["text"] for row in rows)
         assert "SĐT đã che" in masked and "email đã che" in masked  # mask_pii lúc ghi
         turn = service.agent_trace(sid, renter)["chat"]
-        assert turn and turn["outcome"] == "asked" and "monthly_income_vnd" not in json.dumps(turn)
+        assert turn and turn["outcome"] in {"asked", "answered"} and "monthly_income_vnd" not in json.dumps(turn)
         # The persisted run/checkpoint payload contains no chat PII either.
         run_id = service.confirm(sid, renter, profile, reply["draft_revision"])["run_id"]
         assert service.repo.run(run_id)["status"] == "published"

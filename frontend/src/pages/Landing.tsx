@@ -3,16 +3,15 @@ import { Brand } from "../components/Brand";
 import { Icon } from "../components/Shared";
 import { Journey } from "../components/Journey";
 import { Link } from "../router";
-// Màn mặc định là màn khởi đầu trợ lý, tham chiếu cảm giác hubhome.vn/tro-ly-ai
-// (đọc 30/10/2026): giữa trang là avatar sáng, heading lớn và ô trò chuyện. Luồng
+// Màn mặc định là màn khởi đầu trợ lý: giữa trang là avatar sáng, heading lớn và ô trò chuyện. Luồng
 // công khai: tin nhắn ĐẦU TIÊN được trợ lý phản hồi ngay tại trang (kèm hiệu ứng
 // đang soạn); từ tin nhắn THỨ HAI, tiếp tục trò chuyện yêu cầu đăng nhập — phiên
 // tư vấn sau đăng nhập bắt đầu từ đúng câu hỏi mới nhất. Phản hồi công khai là
 // văn bản chào mẫu, không giả kết quả tìm kiếm; phòng chỉ trả sau khi đăng nhập,
-// xác nhận hồ sơ và chủ nhà duyệt. Hình ảnh/thương hiệu là của HomeMatch.
+// xác nhận hồ sơ. Hình ảnh/thương hiệu là của HomeMatch.
 type Turn = { kind: "user" | "agent"; text: string };
 const AGENT_FIRST_REPLY =
-  "Mình đã ghi nhận nhu cầu của bạn. Khi đăng nhập, mình sẽ hỏi rõ phần còn thiếu — thành phố, số người, trần tổng tháng — rồi cùng bạn xác nhận hồ sơ trước khi tìm trong số phòng đã được chủ nhà duyệt.";
+  "Mình đã nhận câu này. Đăng nhập để mình tìm phòng theo đúng nhu cầu bạn vừa nêu.";
 const AGENT_LOGIN_REPLY =
   "Để trả lời tiếp, bạn cần đăng nhập tài khoản. Phiên tư vấn sẽ bắt đầu từ đúng câu bạn vừa hỏi.";
 const sampleAsks = [
@@ -83,7 +82,7 @@ export function Landing({
 }: {
   onNeed: (need: string) => void;
   onLogin: () => void;
-  // Đã đăng nhập vẫn xem được trang chủ (tham chiếu HubHome): nút auth chuyển
+  // Đã đăng nhập vẫn xem được trang chủ: nút auth chuyển
   // thành CTA mở trợ lý, nhu cầu đi thẳng vào phiên đang mở.
   loggedIn?: boolean;
 }) {
@@ -118,7 +117,10 @@ export function Landing({
       setTyping(true);
       timer.current = window.setTimeout(() => {
         setTyping(false);
-        setTurns((prev) => [...prev, { kind: "agent", text: AGENT_FIRST_REPLY }]);
+        setTurns((prev) => [
+          ...prev,
+          { kind: "agent", text: AGENT_FIRST_REPLY },
+        ]);
       }, 900);
     } else {
       // Từ lượt thứ hai: tiếp tục trò chuyện cần tài khoản; phiên sau đăng nhập
@@ -128,13 +130,18 @@ export function Landing({
       setTyping(true);
       timer.current = window.setTimeout(() => {
         setTyping(false);
-        setTurns((prev) => [...prev, { kind: "agent", text: AGENT_LOGIN_REPLY }]);
+        setTurns((prev) => [
+          ...prev,
+          { kind: "agent", text: AGENT_LOGIN_REPLY },
+        ]);
         timer.current = window.setTimeout(() => onNeed(need), 1100);
       }, 800);
     }
   };
   const started = turns.length > 0;
-  const lastUserText = [...turns].reverse().find((turn) => turn.kind === "user")?.text;
+  const lastUserText = [...turns]
+    .reverse()
+    .find((turn) => turn.kind === "user")?.text;
   return (
     <main className="landing">
       <header className="landing-header site-header">
@@ -166,8 +173,8 @@ export function Landing({
             </h1>
             <p className="hh-start-sub">
               Kể HomeMatch Agent biết bạn cần gì — khu vực, số người, ngân sách.
-              Hồ sơ do bạn xác nhận; gợi ý luôn được quản lý duyệt trước khi tới
-              tay bạn.
+              Hồ sơ do bạn xác nhận; gợi ý hiện ngay sau khi xếp hạng, kèm lý do
+              và chi phí từng căn.
             </p>
           </>
         )}
@@ -192,7 +199,10 @@ export function Landing({
               ),
             )}
             {typing && (
-              <div className="chat-message agent-reply hh-typing" aria-label="Trợ lý đang soạn">
+              <div
+                className="chat-message agent-reply hh-typing"
+                aria-label="Trợ lý đang soạn"
+              >
                 <span className="agent-avatar">
                   <Icon name="sparkles" size={16} />
                 </span>
@@ -204,7 +214,10 @@ export function Landing({
               </div>
             )}
             {!locked && (
-              <button className="button pill" onClick={() => onNeed(lastUserText ?? "")}>
+              <button
+                className="button pill"
+                onClick={() => onNeed(lastUserText ?? "")}
+              >
                 {loggedIn ? "Tiếp tục trong trợ lý" : "Đăng nhập để tiếp tục"}
                 <Icon name="arrow" size={18} />
               </button>
@@ -273,8 +286,9 @@ export function Landing({
               ))}
             </div>
             <p className="input-hint">
-              Lượt trò chuyện đầu được phản hồi ngay — từ lượt tiếp theo cần
-              đăng nhập. HomeMatch không lưu hội thoại trên trình duyệt của bạn.
+              Câu đầu tiên được ghi nhận ngay tại đây — để tìm phòng và trò
+              chuyện tiếp cần đăng nhập. HomeMatch không lưu hội thoại trên
+              trình duyệt của bạn.
             </p>
           </>
         )}
@@ -356,8 +370,8 @@ export function Landing({
           <span className="hh-eyebrow">Dành cho chủ nhà</span>
           <h2>Tin của bạn có người trông.</h2>
           <p>
-            Quản lý tin, duyệt gợi ý cho người thuê, theo hợp đồng, hóa đơn và
-            bảo trì trong một cổng vận hành duy nhất.
+            Quản lý tin, khách tiềm năng từ gợi ý AI, hợp đồng, hóa đơn và bảo
+            trì trong một cổng vận hành duy nhất.
           </p>
           <Link className="button pill light" to="/dang-nhap">
             Đăng nhập cổng chủ nhà
@@ -368,8 +382,8 @@ export function Landing({
         <Journey step={0} />
       </section>
       <footer className="landing-footer">
-        HomeMatch · Đề tài KLTN · Kho phòng giả lập · Chi phí là ước tính theo
-        kịch bản đã xác nhận
+        HomeMatch · Đề tài KLTN · Tin phòng thu thập từ nguồn công khai · Chi
+        phí là ước tính theo cách tính bạn chọn
       </footer>
     </main>
   );

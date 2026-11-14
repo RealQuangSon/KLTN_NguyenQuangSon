@@ -43,7 +43,7 @@ Research dev tiếp tục cùng sản phẩm. Test set nghiên cứu chỉ dùng
 - Chạy kiểm phù hợp: quyền/finance/state/replay/concurrency ở backend; tương tác/stale/error ở UI; browser API thật tại integration; restore/load tại release.
 - Lưu evidence theo release/data/config và cập nhật [trạng thái thực tế](trang-thai-trien-khai.md), không đánh dấu từ plan.
 - Dùng data synthetic cho dev/test, catalog có quyền cho vận hành; media/chats/checkpoints/secrets không vào gói public.
-- Cần đầu vào về inventory/provider/chính sách/nhân sự ở gate tương ứng; không suy ra đã có quyền tích hợp từ nghiên cứu HubHome.
+- Cần đầu vào về inventory/provider/chính sách/nhân sự ở gate tương ứng; không suy ra đã có quyền tích hợp từ nghiên cứu sản phẩm tham khảo.
 
 ## 5. Điểm bắt đầu từ mã hiện tại
 

@@ -23,7 +23,7 @@
 
 ## Phân biệt nguồn
 
-[API 0.3.0](api-contract.md), [kiến trúc local](kien-truc-trien-khai.md), các báo cáo kiểm chứng và manifest 01/10 là dữ liệu về nền tảng đang có. [API v1](api-san-pham-v1.md) và kiến trúc sản phẩm là thiết kế cần xây. Nghiên cứu HubHome có nguồn HH-01–HH-12 và ngày/giới hạn; không dùng URL website để xác nhận module HomeMatch đã chạy.
+[API 0.3.0](api-contract.md), [kiến trúc local](kien-truc-trien-khai.md), các báo cáo kiểm chứng và manifest 01/10 là dữ liệu về nền tảng đang có. [API v1](api-san-pham-v1.md) và kiến trúc sản phẩm là thiết kế cần xây. Nghiên cứu sản phẩm tham khảo có nguồn HH-01–HH-12 và ngày/giới hạn; không dùng URL website để xác nhận module HomeMatch đã chạy.
 
 ## Cổng và bằng chứng
 

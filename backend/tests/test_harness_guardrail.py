@@ -137,6 +137,20 @@ def test_contact_claim_requires_a_successful_handover_tool():
     assert relaxed == SAFE_OUTPUT_REPLY
 
 
+def test_guard_replaces_leaked_redaction_placeholders():
+    # Model nhắc lại placeholder tách tiền/PII thì không được tới tay người dùng
+    # (lỗi thật gặp 06/11: "[TIEN_DA_TACH]" hiện nguyên văn trong câu trả lời).
+    for answer in (
+        "Mình chưa thấy số tiền mới vì đang hiển thị thành “​[TIEN_DA_TACH]”.",
+        "Bạn muốn liên hệ theo [LIEN_HE_DA_TACH] nào?",
+        "Email [EMAIL_DA_TACH] của bạn là gì?",
+    ):
+        replaced, violation = guard_output(answer, ["search_rooms"])
+        assert replaced == SAFE_OUTPUT_REPLY and violation == "placeholder_leak"
+    # Văn bản thường không bị đổi.
+    assert guard_output("Mình hiểu mức tiền bạn nêu rồi.", ["search_rooms"])[1] is None
+
+
 def test_tool_payload_is_filtered_and_wrapped_as_untrusted(agent, renter, monkeypatch):
     class ProbeArgs(ToolArgs):
         ms: int = Field(gt=0, le=10)
@@ -148,8 +162,12 @@ def test_tool_payload_is_filtered_and_wrapped_as_untrusted(agent, renter, monkey
     probe = ToolDefinition(name="echo_probe", agent="needs", description="Trả dữ liệu giả.",
         Args=ProbeArgs, writes=False, timeout_s=8.0, view=None, capability="chat:message",
         sample_args={"ms": 1}, exposed=False, success_summary="Đã đọc dữ liệu.", handler=handler)
+    from backend.app.agent_tools import ROLE_ROSTER
     monkeypatch.setitem(TOOL_REGISTRY, "echo_probe", probe)
     monkeypatch.setitem(AGENT_TOOLS, "needs", AGENT_TOOLS["needs"] | {"echo_probe"})
+    monkeypatch.setitem(ROLE_ROSTER, "needs",
+                        {"system": ROLE_ROSTER["needs"]["system"],
+                         "tools": ROLE_ROSTER["needs"]["tools"] + ("echo_probe",)})
     agent.interpreter.client = FakeClient([
         message(tool_calls=[call("c1", "echo_probe", ms=1)]),
         message("Đã xem dữ liệu tin đăng."),

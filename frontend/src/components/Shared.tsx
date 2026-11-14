@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   ListingContact,
   Affordability,
@@ -12,13 +12,15 @@ import {
   amenities,
   bandLabels,
   fees,
+  occupancyLabels,
   posterLabels,
   roomTypeLabels,
   statusLabels,
-  verificationText,
+  verificationSummary,
   visibleStatuses,
 } from "../types";
 import { RoomIllustration } from "./RoomIllustration";
+import { CoverPhoto, displayPhotos } from "./PhotoGallery";
 import { AdviceBox, type Advice } from "./Advice";
 export const money = (amount: number | null | undefined) =>
   amount == null
@@ -76,7 +78,7 @@ export function PosterBadge({
 export function TermsBlock({ room }: { room: Room }) {
   const rows: [string, string | null][] = [
     ["Giá thuê", `${money(room.quote.rent_vnd)}/tháng`],
-    ["Diện tích", `${room.area_m2} m²`],
+    ["Diện tích", room.area_m2 == null ? null : `${room.area_m2} m²`],
     [
       "Tiền cọc",
       room.quote.deposit_vnd == null ? null : money(room.quote.deposit_vnd),
@@ -109,6 +111,65 @@ export function TermsBlock({ room }: { room: Room }) {
         ))}
       </ul>
     </div>
+  );
+}
+// crawl.md D: khối thông số của tin chi tiết. Mục tin không ghi hiện "Chưa có
+// thông tin" — không bao giờ 0, không bao giờ "null".
+export function SpecList({ room }: { room: Room }) {
+  const specs: [string, string | null][] = [
+    ["Loại phòng", room.room_type ? roomTypeLabels[room.room_type] : null],
+    ["Diện tích", room.area_m2 == null ? null : `${room.area_m2} m²`],
+    ["Phòng ngủ", room.bedrooms == null ? null : `${room.bedrooms} PN`],
+    ["Tầng", room.floor ?? null],
+    ["Hướng", room.direction ?? null],
+    ["Hướng ban công", room.balcony_direction ?? null],
+    ["Loại hình", room.property_subtype ?? null],
+    ["Nhà vệ sinh", room.toilets == null ? null : `${room.toilets}`],
+    ["Dự án", room.project_name ?? null],
+    ["Mã tin", room.id],
+    [
+      "Ngày đăng",
+      room.posted_at == null ? null : dayMonth(room.posted_at.slice(0, 10)),
+    ],
+    [
+      "Trạng thái",
+      room.occupancy
+        ? occupancyLabels[room.occupancy]
+        : room.available === false
+          ? "Không còn trống"
+          : "Còn trống",
+    ],
+  ];
+  return (
+    <ul className="spec-list" aria-label="Thông số của tin">
+      {specs.map(([label, value]) => (
+        <li key={label}>
+          <span className="spec-label">{label}</span>
+          <span className="spec-value">{value ?? "Chưa có thông tin"}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+// crawl.md D: tiện ích dạng lưới biểu tượng, chỉ hiện mục có căn cứ trong tin
+// (true); tin không nói tới tiện ích nào thì "Chưa có thông tin", không suy.
+export function AmenityGrid({
+  amenities: values,
+}: {
+  amenities: Record<string, boolean | null>;
+}) {
+  const present = Object.entries(values).filter(([, value]) => value === true);
+  if (!present.length)
+    return <p className="detail-missing">Chưa có thông tin</p>;
+  return (
+    <ul className="amenity-grid" role="list" aria-label="Tiện ích của phòng">
+      {present.map(([key]) => (
+        <li role="listitem" key={key}>
+          <Icon name="check" size={15} />
+          {amenities[key] || key}
+        </li>
+      ))}
+    </ul>
   );
 }
 // LF-05: chip tiện ích — true hiện bình thường, false gạch ngang, null không hiện.
@@ -170,12 +231,20 @@ export function DescriptionText({
   );
 }
 // Liên hệ người đăng: tin cào trỏ về tin gốc (chủ nhà trong app là tài khoản
-// demo); tin của chủ nhà có tài khoản hiện SĐT họ tự khai.
+// demo); tin của chủ nhà có tài khoản hiện SĐT họ tự khai. CA-04/C1b: tên người
+// đăng trên tin gốc chỉ có ở khối contact cho người đã đăng nhập — máy chủ quyết
+// định, khách ẩn danh nhận null. Tên này KHÔNG dùng cho tài khoản landlord_id
+// demo, chat hay lịch xem.
 export function ContactInfo({ contact }: { contact?: ListingContact }) {
   if (!contact) return null;
   if (contact.kind === "external")
     return contact.original_url ? (
       <p className="contact-info">
+        {contact.poster_name && (
+          <span className="poster-name">
+            Người đăng: {contact.poster_name} (theo tin gốc Chợ Tốt) ·{" "}
+          </span>
+        )}
         <a
           href={contact.original_url}
           target="_blank"
@@ -200,11 +269,32 @@ export function ContactInfo({ contact }: { contact?: ListingContact }) {
     );
   return null;
 }
+const feeKeyPattern =
+  /\b(first_rent|advance_rent|one_time|deposit|electricity|water|internet|service|moving|setup)\b/g;
+// Chuỗi lý do/đánh đổi từ máy chủ hiện cho người thuê bằng tiếng Việt thường
+// ngày: khóa tiện ích/khoản phí dịch sang nhãn, bỏ từ nội bộ, một kiểu số tiền.
 export const evidenceText = (text: string) =>
-  text.replace(
-    /\b(window|quiet|private_bathroom|parking|air_conditioning|washing_machine|balcony|furniture|pets_allowed|kitchen|wifi|elevator|security_24h|camera|loft|flexible_hours|no_shared_landlord|water_heater|fridge)\b/g,
-    (key) => amenities[key] || key,
-  );
+  text
+    .replace(
+      /\b(window|quiet|private_bathroom|parking|air_conditioning|washing_machine|balcony|furniture|pets_allowed|kitchen|wifi|elevator|security_24h|camera|loft|flexible_hours|no_shared_landlord|water_heater|fridge)\b/g,
+      (key) => amenities[key] || key,
+    )
+    .replace(feeKeyPattern, (key) => (fees[key] || key).toLowerCase())
+    .replace(/(\d{1,3}(?:,\d{3})+) VND/g, (_, digits: string) =>
+      money(Number(digits.replace(/,/g, ""))),
+    )
+    .replace(/ trong kịch bản đã xác nhận/g, " theo cách tính của bạn")
+    .replace(/Đáp ứng sở thích (.+?) theo nguồn tin\./g, "Tin ghi có $1.")
+    .replace(
+      /Sở thích (.+?): thiếu bằng chứng hoặc không có\./g,
+      "Tin chưa ghi $1.",
+    )
+    .replace(
+      /Tiền ban đầu chưa đầy đủ:/g,
+      "Tiền vào ở chưa đủ số liệu, còn thiếu:",
+    )
+    .replace(/đang theo giả định chuẩn/g, "đang được tạm tính")
+    .replace(/giả định chuẩn/g, "mức ước tính chung");
 export function Icon({
   name = "home",
   size = 20,
@@ -288,7 +378,7 @@ export function ErrorNotice({
 export function Badge({ status }: { status: string }) {
   return (
     <span
-      className={`badge ${status === "published" || status === "partially_published" || status === "confirmed" ? "success" : status === "invalidated" || status === "declined" ? "muted" : ""}`}
+      className={`badge ${status === "published" || status === "confirmed" ? "success" : status === "invalidated" || status === "declined" ? "muted" : ""}`}
     >
       {statusLabels[status] || status}
     </span>
@@ -355,32 +445,76 @@ export function AffordabilitySummary({
     </div>
   );
 }
+// crawl.md C-1: nguồn từng khoản chi phí hiện tiếng Việt, không để lộ mã nội
+// bộ (quote.rent_vnd, quote, missing, scenario) cho người dùng. Tên trường
+// trong API không đổi; nguồn giả định từ costs.py đã là văn bản tiếng Việt.
+export const costSourceText = (source: string) => {
+  if (source === "quote.rent_vnd" || source === "quote") return "Theo tin đăng";
+  if (source === "missing") return "Tin chưa ghi";
+  if (source === "scenario") return "Theo kịch bản của bạn";
+  if (source.startsWith("chotot://")) return "Theo nội dung tin gốc";
+  return source;
+};
+// "2 người, 1 xe, 140 kWh điện, 3 m³ nước mỗi tháng" — số có định dạng, khóa
+// lạ bị bỏ chứ không lộ ra ngoài.
+export const assumptionText = (assumptions: Record<string, unknown>) => {
+  const num = (key: string) => {
+    const value = Number(assumptions[key]);
+    return assumptions[key] == null || !Number.isFinite(value) ? null : value;
+  };
+  const vn = (value: number) => new Intl.NumberFormat("vi-VN").format(value);
+  const parts: string[] = [];
+  const people = num("people");
+  if (people != null) parts.push(`${vn(people)} người`);
+  const vehicles = num("vehicles");
+  if (vehicles != null) parts.push(`${vn(vehicles)} xe`);
+  const kwh = num("electricity_kwh");
+  if (kwh != null) parts.push(`${vn(kwh)} kWh điện`);
+  const water = num("water_m3");
+  if (water != null) parts.push(`${vn(water)} m³ nước`);
+  const once: string[] = [];
+  const moving = num("moving_vnd");
+  if (moving != null) once.push(`chuyển nhà ${money(moving)}`);
+  const setup = num("setup_vnd");
+  if (setup != null) once.push(`sắm sửa ${money(setup)}`);
+  return [
+    parts.length ? `${parts.join(", ")} mỗi tháng` : "",
+    once.length ? `một lần: ${once.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+};
 export function CostBreakdown({
   cost,
   compact = false,
+  hideTotals = false,
 }: {
   cost: Cost;
   compact?: boolean;
+  // UX-08: bảng phí mở rộng không lặp lại hai ô tổng đã hiện trên thẻ.
+  hideTotals?: boolean;
 }) {
   return (
     <div className="cost-breakdown">
-      <div className="cost-totals">
-        <div>
-          <span>Tổng mỗi tháng</span>
-          <strong>{money(cost.monthly_total_vnd)}</strong>
-          {cost.monthly_total_vnd === null && (
-            <small>Đã biết {money(cost.monthly_known_vnd)} · còn thiếu</small>
-          )}
+      {!hideTotals && (
+        <div className="cost-totals">
+          <div>
+            <span>Tổng mỗi tháng</span>
+            <strong>{money(cost.monthly_total_vnd)}</strong>
+            {cost.monthly_total_vnd === null && (
+              <small>Đã biết {money(cost.monthly_known_vnd)} · còn thiếu</small>
+            )}
+          </div>
+          <div>
+            <span>Tiền chuẩn bị vào ở</span>
+            <strong>{money(cost.initial_total_vnd)}</strong>
+            {cost.initial_total_vnd === null && (
+              <small>Đã biết {money(cost.initial_known_vnd)} · còn thiếu</small>
+            )}
+          </div>
         </div>
-        <div>
-          <span>Tiền chuẩn bị vào ở</span>
-          <strong>{money(cost.initial_total_vnd)}</strong>
-          {cost.initial_total_vnd === null && (
-            <small>Đã biết {money(cost.initial_known_vnd)} · còn thiếu</small>
-          )}
-        </div>
-      </div>
-      {cost.affordability && (
+      )}
+      {cost.affordability && cost.affordability.band !== "chua_ro" && (
         <AffordabilitySummary affordability={cost.affordability} />
       )}
       {!compact && (
@@ -401,7 +535,9 @@ export function CostBreakdown({
                     {line.included_in_rent && (
                       <small>Đã gồm trong tiền thuê</small>
                     )}
-                    <small className="source-text">{line.source}</small>
+                    <small className="source-text">
+                      {costSourceText(line.source)}
+                    </small>
                   </td>
                   <td>
                     {line.period === "monthly" ? "Hàng tháng" : "Ban đầu"}
@@ -414,13 +550,8 @@ export function CostBreakdown({
             </tbody>
           </table>
           <div className="assumptions">
-            Kịch bản đã xác nhận:{" "}
-            {Object.entries(cost.assumptions)
-              .map(
-                ([key, value]) =>
-                  `${({ people: "người", vehicles: "xe", electricity_kwh: "kWh điện", water_m3: "m³ nước", moving_vnd: "chuyển nhà", setup_vnd: "sắm sửa" } as Record<string, string>)[key] || key}: ${String(value)}`,
-              )
-              .join(" · ")}
+            Cách tính: {assumptionText(cost.assumptions)} — đổi trong “Nhu cầu
+            của tôi”.
           </div>
         </>
       )}
@@ -435,6 +566,39 @@ export function CostBreakdown({
       )}
     </div>
   );
+}
+// Chi tiết căn: các tiện ích tin chưa ghi gộp một dòng, bấm mới bung danh sách.
+function UnknownAmenities({ codes }: { codes: string[] }) {
+  const names = codes
+    .filter((code) => code.startsWith("amenity_unknown:"))
+    .map((code) => {
+      const key = code.slice("amenity_unknown:".length);
+      return amenities[key] || key;
+    });
+  if (!names.length) return null;
+  return (
+    <details className="unknown-amenities">
+      <summary>Tin chưa ghi {names.length} tiện ích — xem danh sách</summary>
+      <p>{names.join(", ")}</p>
+    </details>
+  );
+}
+// Giá chính của thẻ là tiền thuê theo tin đăng; tổng tháng là dòng phụ.
+const rentOf = (item: Candidate) =>
+  item.cost.lines.find(
+    (line) => line.name === "rent" && line.period === "monthly",
+  )?.amount_vnd ?? null;
+const isEstimated = (item: Candidate) =>
+  item.verification?.some((code) => code.startsWith("fee_assumed")) ?? false;
+// Tối đa 2 nhãn lý do + 1 nhãn lưu ý, ngắn gọn, không lặp dòng tổng tháng.
+export function reasonChips(item: Candidate) {
+  const reasons = item.reasons
+    .filter((r) => !r.startsWith("Tổng tháng"))
+    .map((r) => evidenceText(r).replace(/\.$/, ""))
+    .slice(0, 2);
+  const caution =
+    (item.tradeoffs[0] && evidenceText(item.tradeoffs[0])) || null;
+  return { reasons, caution: caution ? caution.replace(/\.$/, "") : null };
 }
 export function RoomCard({
   item,
@@ -457,12 +621,33 @@ export function RoomCard({
   onToggleSave?: () => void;
 }) {
   const [details, setDetails] = useState(false);
+  // CA-06: ảnh thật (chủ nhà trước, ảnh tin gốc Chợ Tốt sau); nhãn "Hình minh
+  // họa" chỉ khi không còn ảnh thật nào.
+  const cardPhotos = displayPhotos(item);
+  const sourceLink = item.source?.startsWith("https://") ? item.source : null;
   return (
     <article className={`room-card ${selected ? "selected" : ""}`}>
-      <div className="room-visual" aria-hidden="true">
-        <RoomIllustration />
-        <span className="room-area">{item.area_m2} m²</span>
-        <small className="room-image-label">Hình minh họa</small>
+      <div
+        className="room-visual"
+        aria-hidden={cardPhotos.length > 0 ? undefined : true}
+      >
+        <CoverPhoto item={item} title={roomTitle(item.title)} />
+        <span className="room-area">
+          {item.area_m2 == null ? "Chưa rõ diện tích" : `${item.area_m2} m²`}
+        </span>
+        {cardPhotos.length > 0 ? (
+          <small className="room-image-label">
+            {sourceLink ? (
+              <a href={sourceLink} target="_blank" rel="noopener noreferrer">
+                Ảnh từ tin gốc Chợ Tốt
+              </a>
+            ) : (
+              "Ảnh từ tin gốc Chợ Tốt"
+            )}
+          </small>
+        ) : (
+          <small className="room-image-label">Hình minh họa</small>
+        )}
       </div>
       <div className="room-content">
         <div className="room-topline">
@@ -483,6 +668,11 @@ export function RoomCard({
             <p>{item.title}</p>
           </details>
         )}
+        {rentOf(item) != null && (
+          <p className="room-rent">
+            Tiền thuê theo tin: <strong>{money(rentOf(item))}</strong>/tháng
+          </p>
+        )}
         <CostBreakdown cost={item.cost} compact />
         <ul className="reasons">
           {item.reasons.map((r, i) => (
@@ -498,17 +688,23 @@ export function RoomCard({
             {evidenceText(item.tradeoffs.join(" · "))}
           </p>
         )}
-        {item.verification && item.verification.length > 0 && (
+        {verificationSummary(
+          (item.verification ?? []).filter(
+            (code) => !code.startsWith("amenity_unknown:"),
+          ),
+        ).length > 0 && (
           <p className="tradeoff verification">
             <strong>Cần xác minh:</strong>{" "}
-            {item.verification.map(verificationText).join(" · ")}
+            {verificationSummary(
+              (item.verification ?? []).filter(
+                (code) => !code.startsWith("amenity_unknown:"),
+              ),
+            ).join(" · ")}
           </p>
         )}
+        <UnknownAmenities codes={item.verification ?? []} />
         <div className="evidence">
           <span>Nguồn: {item.source}</span>
-          <span>
-            Phiên bản {item.room_revision} · {item.algorithm}
-          </span>
         </div>
         <div className="room-actions">
           <button
@@ -558,11 +754,144 @@ export function RoomCard({
             </button>
           )}
         </div>
-        {details && <CostBreakdown cost={item.cost} />}
+        {details && <CostBreakdown cost={item.cost} hideTotals />}
       </div>
     </article>
   );
 }
+// Thẻ nhỏ dạng lưới cho danh sách cạnh bản đồ: ảnh minh họa, tên (giới hạn
+// dòng), khu vực, diện tích, số phòng ngủ, một dòng lý do, giá tháng và nút
+// lưu/so sánh. Bấm thân thẻ mở khung chi tiết; hover thẻ làm nổi marker trên
+// bản đồ (liên kết hai chiều qua onHover).
+export function RoomMiniCard({
+  item,
+  highlighted,
+  selected,
+  saved,
+  onOpen,
+  onSelect,
+  onToggleSave,
+  onHover,
+}: {
+  item: Candidate;
+  highlighted?: boolean;
+  selected?: boolean;
+  saved?: boolean;
+  onOpen?: () => void;
+  onSelect?: () => void;
+  onToggleSave?: () => void;
+  onHover?: (id: string | null) => void;
+}) {
+  const chips = reasonChips(item);
+  const rent = rentOf(item);
+  // CA-06: như RoomCard — ảnh thật thay hình minh họa, nhãn đổi theo ảnh.
+  const miniPhotos = displayPhotos(item);
+  const miniSourceLink = item.source?.startsWith("https://")
+    ? item.source
+    : null;
+  return (
+    <article
+      className={`room-mini${highlighted ? " highlighted" : ""}${selected ? " selected" : ""}`}
+      data-room-id={item.room_id}
+      onMouseEnter={() => onHover?.(item.room_id)}
+      onMouseLeave={() => onHover?.(null)}
+      onClick={onOpen}
+    >
+      <div
+        className="room-mini-visual"
+        aria-hidden={miniPhotos.length > 0 ? undefined : true}
+      >
+        <CoverPhoto item={item} title={roomTitle(item.title)} />
+        {miniPhotos.length > 0 ? (
+          <small className="room-image-label">
+            {miniSourceLink ? (
+              <a
+                href={miniSourceLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ảnh từ tin gốc Chợ Tốt
+              </a>
+            ) : (
+              "Ảnh từ tin gốc Chợ Tốt"
+            )}
+          </small>
+        ) : (
+          <small className="room-image-label">Hình minh họa</small>
+        )}
+        {item.synthetic && (
+          <span className="badge muted room-mini-flag">Dữ liệu giả lập</span>
+        )}
+      </div>
+      <div className="room-mini-body">
+        <h3 className="room-mini-title">{roomTitle(item.title)}</h3>
+        <p className="room-mini-meta">
+          {item.area} · {item.city} ·{" "}
+          {item.area_m2 == null ? "chưa rõ diện tích" : `${item.area_m2} m²`}
+          {item.bedrooms ? ` · ${item.bedrooms} PN` : ""}
+        </p>
+        {chips.reasons.length > 0 && (
+          <ul className="room-mini-chips" aria-label="Vì sao hợp">
+            {chips.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        )}
+        {chips.caution && (
+          <p className="room-mini-reason room-mini-caution">{chips.caution}</p>
+        )}
+        {item.verification?.includes("capacity_unknown") && (
+          <p className="room-mini-reason">Sức chứa: chưa rõ</p>
+        )}
+        <div className="room-mini-foot">
+          <strong className="room-mini-price">
+            {rent != null ? money(rent) : money(item.cost.monthly_total_vnd)}
+            <small>{rent != null ? "/tháng (tiền thuê)" : "/tháng"}</small>
+            {rent != null && item.cost.monthly_total_vnd != null && (
+              <small className="room-mini-total">
+                Tổng tháng {isEstimated(item) ? "ước tính " : ""}
+                {money(item.cost.monthly_total_vnd)}
+              </small>
+            )}
+          </strong>
+          <span className="room-mini-tools">
+            {onToggleSave && (
+              <button
+                type="button"
+                className={`icon-chip${saved ? " saved" : ""}`}
+                aria-pressed={Boolean(saved)}
+                aria-label={saved ? "Bỏ lưu căn này" : "Lưu căn này"}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleSave();
+                }}
+              >
+                <Icon name="heart" size={15} />
+              </button>
+            )}
+            {onSelect && (
+              <button
+                type="button"
+                className={`icon-chip${selected ? " active" : ""}`}
+                aria-pressed={Boolean(selected)}
+                aria-label={selected ? "Bỏ so sánh căn này" : "So sánh căn này"}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelect();
+                }}
+              >
+                <Icon name="compare" size={15} />
+              </button>
+            )}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+// Danh sách đề xuất đã công bố: thẻ nhỏ dạng lưới, giới hạn số căn hiển thị
+// trước, nút "Xem tất cả N căn" mở rộng; bấm thẻ mở khung chi tiết ở trang cha.
+const MINI_PREVIEW_COUNT = 8;
 export function PublishedResults({
   result,
   selected,
@@ -573,6 +902,9 @@ export function PublishedResults({
   onAskFollowUp,
   savedIds,
   onToggleSave,
+  highlightId,
+  onHoverCard,
+  onOpenCard,
 }: {
   result: Results | null;
   selected: string[];
@@ -586,6 +918,12 @@ export function PublishedResults({
   // Căn đã lưu của người thuê: bộ id hiện trạng + bật/tắt lưu ngay trên thẻ.
   savedIds?: string[];
   onToggleSave?: (roomId: string) => void;
+  // Liên kết hai chiều với bản đồ: căn đang nổi trên bản đồ được viền nổi.
+  highlightId?: string | null;
+  onHoverCard?: (id: string | null) => void;
+  // Bấm thân thẻ: mở khung chi tiết (đánh đổi, cần xác minh, bảng phí, chat,
+  // đặt lịch) — không mất tính năng nào của thẻ đầy đủ.
+  onOpenCard?: (item: Candidate) => void;
 }) {
   if (!result)
     return (
@@ -603,8 +941,9 @@ export function PublishedResults({
         "Nhu cầu hoặc kho phòng đã thay đổi. Xác nhận hồ sơ để tạo bản mới và tìm lại.",
       no_match:
         "Chưa có phòng đạt đầy đủ điều kiện. Bạn có thể chủ động sửa tiêu chí; hệ thống không tự nới ngân sách.",
+      // D-12: trạng thái cũ chỉ còn để đọc run lịch sử; tin thiếu dữ liệu nay hiện ngay kèm nhãn.
       needs_verification:
-        "Có phòng cần xác minh giá, phí hoặc điều kiện bắt buộc. Thiếu dữ liệu chưa có nghĩa là đạt yêu cầu.",
+        "Lần tìm cũ này từng giữ tin thiếu dữ liệu. Xác nhận lại hồ sơ để xem các tin đó kèm nhãn ước tính.",
       generation_failed:
         "Tạo gợi ý bị gián đoạn. Chạy lại vòng tìm hoặc liên hệ quản trị để khôi phục an toàn.",
     };
@@ -632,32 +971,6 @@ export function PublishedResults({
             </small>
           </div>
         )}
-        {Object.values(result.diagnostics_summary?.verification ?? {}).some(
-          (count) => count > 0,
-        ) &&
-          onAskFollowUp && (
-            <div className="suggestion-list">
-              <span className="eyebrow">PHÒNG THIẾU DỮ LIỆU</span>
-              <div className="relax-chips">
-                <button
-                  type="button"
-                  className="button small outline"
-                  onClick={() =>
-                    onAskFollowUp(
-                      "Chấp nhận dữ liệu ước tính — cho mình xem cả phòng thiếu bảng phí hoặc sức chứa, dữ liệu theo giả định chuẩn có nhãn ước tính nhé.",
-                    )
-                  }
-                >
-                  Chấp nhận dữ liệu ước tính
-                </button>
-              </div>
-              <small>
-                Dữ liệu thiếu trong tin (phí điện/nước, sức chứa…) được thay
-                bằng giả định chuẩn kèm nhãn ước tính; bạn kiểm tra lại khi xem
-                phòng.
-              </small>
-            </div>
-          )}
         {result.status === "no_match" && onAskFollowUp && (
           <div className="suggestion-list">
             <span className="eyebrow">NỚI MỘT TIÊU CHÍ ĐỂ TÌM LẠI</span>
@@ -705,29 +1018,97 @@ export function PublishedResults({
     );
   }
   return (
+    <MiniGrid
+      published={result}
+      selected={selected}
+      onSelect={onSelect}
+      savedIds={savedIds}
+      onToggleSave={onToggleSave}
+      highlightId={highlightId}
+      onHoverCard={onHoverCard}
+      onOpenCard={onOpenCard}
+    />
+  );
+}
+
+function MiniGrid({
+  published,
+  selected,
+  onSelect,
+  savedIds,
+  onToggleSave,
+  highlightId,
+  onHoverCard,
+  onOpenCard,
+}: {
+  published: Results;
+  selected: string[];
+  onSelect: (id: string) => void;
+  savedIds?: string[];
+  onToggleSave?: (roomId: string) => void;
+  highlightId?: string | null;
+  onHoverCard?: (id: string | null) => void;
+  onOpenCard?: (item: Candidate) => void;
+}) {
+  // useState phải nằm trong component riêng: PublishedResults có nhánh trả
+  // sớm theo trạng thái, gắn hook ở đó sẽ vỡ thứ tự hook.
+  const [showAll, setShowAll] = useState(false);
+  const total = published.results.length;
+  const shown = showAll ? total : Math.min(MINI_PREVIEW_COUNT, total);
+  return (
     <div className="room-list">
       {/* Đếm hiển thị kiểu workspace tham chiếu: người dùng biết số căn khớp
-          nhu cầu và số căn đang hiện (danh sách giới hạn 5 căn đầu). */}
+          nhu cầu và số căn đang hiện trước khi mở rộng. */}
       <p className="results-count">
-        Kết quả phù hợp: <strong>{result.results.length}</strong> căn
-        {result.results.length > 5 &&
-          ` · đang hiện 5 căn đầu, dùng tìm theo bộ lọc để xem thêm`}
+        {published.total_matches != null && published.total_matches > total ? (
+          <>
+            <strong>{published.total_matches}</strong> căn khớp, đây là{" "}
+            <strong>{total}</strong> căn xếp đầu
+            {published.search_path && (
+              <>
+                {" · "}
+                <a href={published.search_path}>Xem đủ trong Tìm kiếm</a>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            Kết quả phù hợp: <strong>{total}</strong> căn
+            {!showAll &&
+              total > MINI_PREVIEW_COUNT &&
+              ` · đang hiện ${MINI_PREVIEW_COUNT} căn đầu`}
+          </>
+        )}
+        {published.estimated_matches
+          ? ` · ${published.estimated_matches} căn có tổng tháng ước tính`
+          : ""}
       </p>
-      {result.results.slice(0, 5).map((item) => (
-        <RoomCard
-          key={item.room_id}
-          item={item}
-          selected={selected.includes(item.room_id)}
-          onSelect={() => onSelect(item.room_id)}
-          onViewing={() => onViewing(item)}
-          onSimulate={onSimulate ? () => onSimulate(item) : undefined}
-          onChat={onChat ? () => onChat(item) : undefined}
-          saved={savedIds?.includes(item.room_id)}
-          onToggleSave={
-            onToggleSave ? () => onToggleSave(item.room_id) : undefined
-          }
-        />
-      ))}
+      <div className="room-mini-grid">
+        {published.results.slice(0, shown).map((item) => (
+          <RoomMiniCard
+            key={item.room_id}
+            item={item}
+            highlighted={highlightId === item.room_id}
+            selected={selected.includes(item.room_id)}
+            saved={savedIds?.includes(item.room_id)}
+            onOpen={onOpenCard ? () => onOpenCard(item) : undefined}
+            onSelect={() => onSelect(item.room_id)}
+            onToggleSave={
+              onToggleSave ? () => onToggleSave(item.room_id) : undefined
+            }
+            onHover={onHoverCard}
+          />
+        ))}
+      </div>
+      {total > MINI_PREVIEW_COUNT && (
+        <button
+          type="button"
+          className="button outline small see-all-rooms"
+          onClick={() => setShowAll((v) => !v)}
+        >
+          {showAll ? "Rút gọn danh sách" : `Xem tất cả ${total} căn`}
+        </button>
+      )}
     </div>
   );
 }
@@ -788,6 +1169,15 @@ function CostBars({ items }: { items: Candidate[] }) {
     </div>
   );
 }
+// Đưa khối vừa hiện vào tầm nhìn mỗi khi `trigger` đổi; null nghĩa là khối đang ẩn.
+export function useScrollIntoView<T extends HTMLElement>(trigger: unknown) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    if (trigger != null)
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [trigger]);
+  return ref;
+}
 export function Comparison({
   items,
   advice,
@@ -797,6 +1187,7 @@ export function Comparison({
   advice?: Advice | null;
   onClose: () => void;
 }) {
+  const panel = useScrollIntoView<HTMLElement>(items);
   const best = {
     area: bestIds(items, (i) => i.area_m2, "high"),
     monthly: bestIds(items, (i) => i.cost.monthly_total_vnd, "low"),
@@ -805,7 +1196,7 @@ export function Comparison({
   const mark = (set: Set<string>, id: string) =>
     set.has(id) ? <span className="badge success best">Tốt nhất</span> : null;
   return (
-    <section className="panel comparison">
+    <section className="panel comparison" ref={panel}>
       <div className="section-heading">
         <div>
           <span className="eyebrow">CÙNG KỊCH BẢN ĐÃ XÁC NHẬN</span>
@@ -841,7 +1232,8 @@ export function Comparison({
               <th>Diện tích</th>
               {items.map((i) => (
                 <td key={i.room_id}>
-                  {i.area_m2} m² {mark(best.area, i.room_id)}
+                  {i.area_m2 == null ? "Chưa rõ diện tích" : `${i.area_m2} m²`}{" "}
+                  {mark(best.area, i.room_id)}
                 </td>
               ))}
             </tr>
@@ -918,7 +1310,7 @@ export function Comparison({
               <th>Cần xác minh</th>
               {items.map((i) => (
                 <td key={i.room_id}>
-                  {(i.verification || []).map(verificationText).join(", ") ||
+                  {verificationSummary(i.verification || []).join(", ") ||
                     "Không có mục chưa rõ"}
                 </td>
               ))}

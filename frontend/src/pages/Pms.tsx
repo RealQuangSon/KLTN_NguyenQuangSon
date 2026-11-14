@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Api } from "../api";
 import type { Photo, Room } from "../types";
 import { EmptyState, ErrorNotice, Icon, money } from "../components/Shared";
@@ -279,9 +279,18 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
     rooms: [] as Room[],
   });
   const [doc, setDoc] = useState<{ title: string; html: string } | null>(null);
+  // E-08: mở từ lịch xem đã hoàn tất (?viewing=…&room=…) → điền sẵn phòng, máy chủ
+  // lấy người thuê từ lịch; chủ nhà không phải gõ mã tài khoản.
+  const fromViewing = useMemo(() => {
+    if (side !== "landlord") return null;
+    const params = new URLSearchParams(window.location.search);
+    const viewing = params.get("viewing");
+    const room = params.get("room");
+    return viewing && room ? { viewing, room } : null;
+  }, [side]);
   const [form, setForm] = useState({
     renter_id: "",
-    room_id: "",
+    room_id: fromViewing?.room ?? "",
     start_date: "",
     end_date: "",
     occupants: "1",
@@ -314,23 +323,37 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
           aria-label="Tạo hợp đồng"
           onSubmit={(e) => {
             e.preventDefault();
-            void act(() =>
-              api.post("/landlord/leases", {
+            void act(async () => {
+              await api.post("/landlord/leases", {
                 ...form,
+                renter_id: fromViewing ? undefined : form.renter_id,
+                viewing_id: fromViewing?.viewing,
                 occupants: Number(form.occupants),
                 vehicles: Number(form.vehicles),
-              }),
-            );
+              });
+              // Tạo xong thì bỏ tham số lịch xem để form không tạo trùng lần nữa.
+              if (fromViewing)
+                window.history.replaceState(null, "", window.location.pathname);
+            });
           }}
         >
-          <label>
-            Người thuê (tài khoản)
-            <input
-              required
-              value={form.renter_id}
-              onChange={(e) => setForm({ ...form, renter_id: e.target.value })}
-            />
-          </label>
+          {fromViewing ? (
+            <p className="input-hint">
+              Soạn hợp đồng cho khách của lịch xem đã hoàn tất. Người thuê được
+              lấy từ lịch xem, bạn chỉ cần chọn thời hạn.
+            </p>
+          ) : (
+            <label>
+              Người thuê (tài khoản)
+              <input
+                required
+                value={form.renter_id}
+                onChange={(e) =>
+                  setForm({ ...form, renter_id: e.target.value })
+                }
+              />
+            </label>
+          )}
           <label>
             Phòng
             <select

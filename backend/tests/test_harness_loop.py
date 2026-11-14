@@ -53,8 +53,9 @@ def agent(tmp_path):
 
 
 def _register_probe(monkeypatch, timeout_s: float) -> None:
-    """Đăng ký tool giả sleep_probe theo đúng hợp đồng: registry + allowlist."""
+    """Đăng ký tool giả sleep_probe theo đúng hợp đồng: registry + allowlist + roster."""
     from backend.app.agents import AGENT_TOOLS
+    from backend.app.agent_tools import ROLE_ROSTER
 
     class ProbeArgs(ToolArgs):
         ms: int = Field(gt=0, le=5000)
@@ -66,6 +67,9 @@ def _register_probe(monkeypatch, timeout_s: float) -> None:
         handler=lambda service, session, actor, toolbox, ms: (time.sleep(ms / 1000), {"slept_ms": ms})[1])
     monkeypatch.setitem(TOOL_REGISTRY, "sleep_probe", probe)
     monkeypatch.setitem(AGENT_TOOLS, "needs", AGENT_TOOLS["needs"] | {"sleep_probe"})
+    monkeypatch.setitem(ROLE_ROSTER, "needs",
+                        {"system": ROLE_ROSTER["needs"]["system"],
+                         "tools": ROLE_ROSTER["needs"]["tools"] + ("sleep_probe",)})
 
 
 def test_read_only_tools_in_one_response_run_in_parallel(agent, renter, monkeypatch):
@@ -140,7 +144,11 @@ def test_model_request_carries_harness_params(agent, renter):
     agent.message(sid, renter, "phòng gần HUST đi")
     params = client.requests[0]
     assert params["parallel_tool_calls"] is True
-    assert params["reasoning"] == {"effort": "low"}
+    assert params["reasoning_effort"] == "low"
+    # FakeClient nhận mọi khóa; đối chiếu với SDK thật để không lọt tham số nó từ chối.
+    from inspect import signature
+    from openai.resources.chat.completions import Completions
+    assert set(params) <= set(signature(Completions.create).parameters)
     assert params["max_completion_tokens"] == 800
     assert "temperature" not in params  # model reasoning không nhận temperature
 
@@ -158,7 +166,11 @@ def test_turn_ends_with_template_after_confirm_without_extra_llm_call(agent, ren
         set={"budget_scope": "total", "room_type": "room", "people": 2}, source="clarify"))
     reply = agent.message(sid, renter, "phòng dưới 5 triệu")
     assert reply["agent_mode"] == "loop"
-    assert reply["message"].startswith(("Đã xác nhận nhu cầu", "Đã có kết quả", "Chưa có căn nào"))
+    # needs_verification từ 07/11 nói đúng thực tế "Chưa công bố được căn nào"
+    # (không còn "Đã có kết quả" mâu thuẫn) và nhắc đúng tên nút thật.
+    assert reply["message"].startswith(("Đã xác nhận nhu cầu", "Có ", "Chưa có căn nào"))
+    # D-12: không còn mẫu mời "chấp nhận dữ liệu ước tính".
+    assert "needs_verification" not in agent_loop.CONFIRM_TEMPLATES
     assert len(agent.interpreter.client.requests) == 2  # không gọi LLM lần 3 chỉ để "nói lại"
 
 
@@ -166,9 +178,17 @@ def test_confirm_template_only_uses_tool_numbers():
     from backend.app.agent_loop import CONFIRM_TEMPLATES
     assert "12" in confirm_template({"status": "published", "count": 12})
     assert confirm_template({"status": "published", "count": 0}) == CONFIRM_TEMPLATES["published"].format(count=0)
-    for status in ("needs_verification", "no_match"):
-        assert confirm_template({"status": status, "count": 0}) == CONFIRM_TEMPLATES[status]
-    assert confirm_template({"status": "weird", "count": 0}) == CONFIRM_TEMPLATES["no_match"]
+    # D-12: không còn câu mời "chấp nhận dữ liệu ước tính"; nhiều hơn top 5 căn khớp
+    # thì nói thật tổng số và rằng đây là các căn xếp đầu.
+    more = confirm_template({"status": "published", "count": 5, "total_matches": 51})
+    assert "51 căn khớp" in more and "5 căn hợp nhất" in more and "Chấp nhận" not in more
+    assert confirm_template({"status": "published", "count": 5, "total_matches": 5}) == \
+        CONFIRM_TEMPLATES["published"].format(count=5)
+    # run lịch sử needs_verification đọc như không có căn, không mời ước tính.
+    legacy = confirm_template({"status": "needs_verification", "count": 0, "held": 55})
+    assert legacy == CONFIRM_TEMPLATES["no_match"].format(count=0) and "ước tính" not in legacy
+    assert confirm_template({"status": "no_match", "count": 0, "held": 12}) == CONFIRM_TEMPLATES["no_match"]
+    assert confirm_template({"status": "weird", "count": 0, "held": 0}) == CONFIRM_TEMPLATES["no_match"].format(count=0)
 
 
 def test_chat_budget_hint_relative_wins_over_absolute():
@@ -259,3 +279,34 @@ def test_explicit_intent_runs_the_deterministic_graph_without_llm(agent, renter)
     assert client.requests == []
     assert reply["intent"] == "simulate_finance"
     assert reply["usage"]["logical_calls"] == 0
+
+
+def test_fast_path_reply_passes_the_http_response_schema(agent, monkeypatch):
+    """POST /messages lọc qua MessageResult; stream thì không, nên lỗi này từng chỉ lộ khi stream đứt."""
+    from fastapi.testclient import TestClient
+
+    from backend.app.main import create_app
+
+    _no_ambiguity(monkeypatch)
+    agent.interpreter.client = FakeClient([])
+    with TestClient(create_app(lambda: agent)) as client:
+        headers = {"Authorization": "Bearer demo-renter-a"}
+        sid = client.post("/sessions", headers=headers).json()["session_id"]
+        response = client.post(f"/sessions/{sid}/messages", headers=headers, json={"text": _find_room_sentence()})
+    assert response.status_code == 200
+    assert response.json()["agent_mode"] == "fast_path"
+    assert response.json()["status"] in ("published", "no_match", "needs_verification")
+
+
+def test_fast_path_reply_states_the_real_result_count(agent, renter, monkeypatch):
+    """Câu chốt lấy số căn từ kết quả thật; trước đây luôn đọc ra "0 căn" khi khung kết quả có căn."""
+    _no_ambiguity(monkeypatch)
+    agent.interpreter.client = FakeClient([])
+    sid = agent.create_session(renter)["session_id"]
+    reply = agent.message(sid, renter, "phòng trọ Quận 7 TP.HCM dưới 5 triệu cho 1 người")
+    results = agent.results(sid, renter)
+    assert reply["agent_mode"] == "fast_path" and results["status"] == "published" and results["results"]
+    # D-12: nhiều hơn 5 căn khớp → "N căn khớp, đây là 5 căn hợp nhất"; không thì "tìm được N căn".
+    total = results.get("total_matches") or len(results["results"])
+    assert (f"tìm được {len(results['results'])} căn" in reply["message"]
+            or f"Có {total} căn khớp; đây là {len(results['results'])} căn hợp nhất" in reply["message"])

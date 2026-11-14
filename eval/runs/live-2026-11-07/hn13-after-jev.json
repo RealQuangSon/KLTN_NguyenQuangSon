@@ -1,0 +1,234 @@
+{
+  "kind": "hn13_measure",
+  "model": "openai/gpt-6-luna",
+  "analyst_mode": "jev",
+  "measured_at": "2026-11-07T04:02:02.657424+00:00",
+  "llm_api": "chat_completions",
+  "note_cost": "provider báo usage.cost",
+  "unmeasured_rows": 0,
+  "rows": [
+    {
+      "index": 1,
+      "text": "gần trường, thoáng, tầm 3 triệu, ở với bạn",
+      "seeded_results": false,
+      "route": "needs",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "needs"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 2516,
+      "handover_tokens": null,
+      "cost_usd": 0.000159,
+      "latency_ms": 6680,
+      "message": "Bạn muốn tìm gần trường nào? Gửi tên trường hoặc địa chỉ giúp mình nhé.",
+      "questions": [
+        "Bạn muốn tìm gần trường nào? Gửi tên trường hoặc địa chỉ giúp mình nhé."
+      ]
+    },
+    {
+      "index": 2,
+      "text": "phòng nào đáng tiền hơn",
+      "seeded_results": true,
+      "route": "ranking",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "ranking"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 4543,
+      "handover_tokens": null,
+      "cost_usd": 0.000604,
+      "latency_ms": 7239,
+      "message": "Nếu hiểu “đáng tiền” là **chi phí thấp so với những gì đã biết**, phòng **063** nổi bật: tổng tháng thấp nhất (**2.525.000₫**) và tiền vào ở thấp nhất (**4.100.000₫**). Phòng rộng **22 m²**, sức chứa 2 người; có lối vào riêng, chỗ gửi xe và máy giặt. Lưu ý, dữ liệu vị trí chỉ xác nhận ở Quận 7, chưa xác minh cụ thể hơn.\n\nĐổi lại, **010** rộng nhất (**30 m²**) với tổng tháng **2.830.000₫**, nhưng g",
+      "questions": null
+    },
+    {
+      "index": 3,
+      "text": "vay 20 triệu lãi 10% thì sao",
+      "seeded_results": true,
+      "route": "finance",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "finance"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 6795,
+      "handover_tokens": null,
+      "cost_usd": 0.000867,
+      "latency_ms": 6756,
+      "message": "Mô phỏng vay chưa tính được: công cụ **simulate_loan** cần biết thời hạn vay **1–36 tháng**. Bạn muốn vay trong bao nhiêu tháng? Chưa có thẻ mô phỏng nên chưa thể nói khoản trả vay hay ảnh hưởng của lãi 10%.\n\nChi phí theo **estimate_cost** hiện tại:\n- Phòng 063: **2.525.000đ/tháng**, vào ở **4.100.000đ**.\n- Phòng 010: **2.830.000đ/tháng**, vào ở **4.500.000đ**.\n- Phòng 023: **2.955.000đ/tháng**, v",
+      "questions": null
+    },
+    {
+      "index": 4,
+      "text": "tìm phòng Quận 7 dưới 4 triệu cho 2 người có máy lạnh",
+      "seeded_results": false,
+      "route": "needs",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "needs"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 4,
+      "handover_calls": 0,
+      "model_calls_total": 4,
+      "tokens": 5407,
+      "handover_tokens": null,
+      "cost_usd": 0.000251,
+      "latency_ms": 8749,
+      "message": "Mình đã lọc sơ bộ theo **TP.HCM, Quận 7, 2 người, có máy lạnh**, với mức trần bạn nêu. Hiện có **14 phòng khớp**, giá thấp nhất **2.525.000đ/tháng**.\n\nMình đang hiểu Quận 7 là khu vực bạn muốn tìm, không phải điểm đến cụ thể. Nếu đúng, mình có thể xác nhận nhu cầu và xếp hạng các phòng phù hợp. Mình đang hiểu: Phòng trọ · 14 căn · từ 2.525.000 ₫. Bạn có thể sửa trong nhu cầu.",
+      "questions": null
+    },
+    {
+      "index": 5,
+      "text": "phòng gần HUST đi",
+      "seeded_results": false,
+      "route": "needs",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "needs"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 4,
+      "handover_calls": 0,
+      "model_calls_total": 4,
+      "tokens": 5234,
+      "handover_tokens": null,
+      "cost_usd": 0.000204,
+      "latency_ms": 9479,
+      "message": "Mình hiểu bạn muốn tìm phòng gần Đại học Bách khoa Hà Nội (HUST); mình đã ghi nhận Hà Nội và khu vực quanh trường. Hiện chưa đủ thông tin về mức tiền để tìm phòng. Bạn cho mình biết mức tiền tối đa mỗi tháng nhé? Mình đang hiểu: Tạm dùng bán kính 3 km quanh điểm đến. Bạn có thể sửa trong nhu cầu.",
+      "questions": null
+    },
+    {
+      "index": 6,
+      "text": "so sánh căn đầu và căn thứ hai giúp mình",
+      "seeded_results": true,
+      "route": "ranking",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "ranking"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 3158,
+      "handover_tokens": null,
+      "cost_usd": 0.000406,
+      "latency_ms": 6577,
+      "message": "Mình vừa kiểm tra nhu cầu của bạn qua các bước bên dưới; số liệu chi tiết xem trong khung kết quả hoặc hỏi mình thêm.",
+      "questions": null
+    },
+    {
+      "index": 7,
+      "text": "tính giúp mình tổng chi phí căn đầu tiên",
+      "seeded_results": true,
+      "route": "finance",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "finance"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 3502,
+      "handover_tokens": null,
+      "cost_usd": 0.000351,
+      "latency_ms": 4098,
+      "message": "Căn đầu tiên có **tổng chi phí mỗi tháng là 2.525.000đ**.  \n**Tiền cần chuẩn bị ban đầu là 4.100.000đ**, gồm tiền cọc, tháng thuê đầu tiên, chuyển nhà và setup.\n\nTheo công cụ `estimate_cost`, hiện không có khoản phí tháng hoặc phí ban đầu nào bị thiếu dữ liệu.",
+      "questions": null
+    },
+    {
+      "index": 8,
+      "text": "còn căn nào rẻ hơn khu này không?",
+      "seeded_results": true,
+      "route": "ranking",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "ranking"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 3623,
+      "handover_tokens": null,
+      "cost_usd": 0.000421,
+      "latency_ms": 5744,
+      "message": "Mình vừa kiểm tra nhu cầu của bạn qua các bước bên dưới; số liệu chi tiết xem trong khung kết quả hoặc hỏi mình thêm.",
+      "questions": null
+    },
+    {
+      "index": 9,
+      "text": "mình muốn ở Hà Nội, gần Hồ Gươm, tầm 5 triệu",
+      "seeded_results": false,
+      "route": "needs",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "needs"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 3,
+      "handover_calls": 0,
+      "model_calls_total": 3,
+      "tokens": 3770,
+      "handover_tokens": null,
+      "cost_usd": 0.000164,
+      "latency_ms": 8845,
+      "message": "Mình vừa kiểm tra nhu cầu của bạn qua các bước bên dưới; số liệu chi tiết xem trong khung kết quả hoặc hỏi mình thêm.",
+      "questions": null
+    },
+    {
+      "index": 10,
+      "text": "mình nên chuẩn bị giấy tờ gì khi thuê phòng?",
+      "seeded_results": false,
+      "route": "other",
+      "clarity": "reason",
+      "decided_by": "jev",
+      "agents": [
+        "needs"
+      ],
+      "agent_mode": "loop",
+      "status": "needs_clarification",
+      "llm_calls": 2,
+      "handover_calls": 0,
+      "model_calls_total": 2,
+      "tokens": 2718,
+      "handover_tokens": null,
+      "cost_usd": 0.000188,
+      "latency_ms": 5120,
+      "message": "Cẩm nang không nêu một danh sách giấy tờ bắt buộc cần mang khi thuê. Bạn nên hỏi chủ nhà trước khi ký xem họ cần giấy tờ gì; nếu cần đăng ký tạm trú, chủ nhà thường cung cấp giấy tờ chỗ ở hợp pháp, chẳng hạn hợp đồng thuê.\n\nKhi xem hợp đồng, kiểm tra kỹ thông tin hai bên, địa chỉ phòng, thời hạn, giá và kỳ thanh toán, các khoản phí, tiền cọc, cùng điều kiện gia hạn hoặc chấm dứt sớm. Thông tin này",
+      "questions": null
+    }
+  ],
+  "total_cost_usd_measured_rows": 0.0036
+}

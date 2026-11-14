@@ -1,27 +1,36 @@
 # Trạng thái và lỗi backend HomeMatch 0.4.0
 
-Bảng này mô tả hành vi đang chạy. Người duyệt là **chủ nhà** (`owner`) của từng phòng, "người thuê/renter" là **khách**. Mã lỗi đích (`invalid_loan`, `override_reason_required`, `tool_not_allowed`) nằm ở [API đích](api-san-pham-v1.md).
+Bảng này mô tả hành vi đang chạy. "Người thuê/renter" là **khách**; kết quả công bố ngay, không có bước duyệt (D-10). Mã lỗi đích (`invalid_loan`, `override_reason_required`, `tool_not_allowed`) nằm ở [API đích](api-san-pham-v1.md).
 
 ## Bản gợi ý
 
 | Status | Ý nghĩa | Hành động tiếp theo | Phòng hiển thị với người thuê |
 |---|---|---|---|
 | `awaiting_confirmation` | Chưa có run | Người thuê xác nhận hồ sơ | Rỗng |
-| `generating` | Đã lưu run, chưa tạo xong nháp | Quản lý có thể retry nếu process đã gián đoạn | Rỗng |
-| `generation_failed` | Generation/checkpoint lỗi | Manager retry tạo run mới, cần duyệt mới | Rỗng |
-| `pending_review` | Nháp đang chờ các chủ nhà có phòng trong danh sách | Từng chủ nhà duyệt phần phòng của mình | Rỗng |
-| `partially_published` | Đã có chủ nhà duyệt, còn chủ nhà khác chưa quyết định | Các chủ nhà còn lại duyệt | Phòng đã được duyệt (đúng thứ tự trong phần của từng chủ) |
-| `reviewed` | Mọi chủ nhà đã quyết định, chưa hoàn tất graph | Retry hoặc replay đúng payload/key | Phòng đã duyệt (nếu có) |
-| `published` | Manager approve và finalize thành công | Xem kết quả, compare/viewing | Subset đã duyệt theo đúng thứ tự |
-| `rejected` | Manager từ chối | Điều chỉnh/xác nhận hồ sơ để tạo run mới | Rỗng |
-| `needs_revision` | Manager yêu cầu sửa | Người thuê sửa và xác nhận lại | Rỗng |
+| `generating` | Đã lưu run, chưa tạo xong nháp | Người thuê chạy lại hoặc admin retry nếu process đã gián đoạn | Rỗng |
+| `generation_failed` | Generation/checkpoint lỗi | Người thuê chạy lại hoặc admin retry tạo run mới | Rỗng |
+| `published` | Xếp hạng xong và có căn đủ điều kiện | Xem kết quả, compare/viewing | Top căn theo đúng thứ tự xếp hạng |
 | `no_match` | Không có phòng đủ điều kiện | Điều chỉnh nhu cầu hoặc kho | Rỗng |
-| `needs_verification` | Không có phòng đủ bằng chứng cho điều kiện bắt buộc | Xác minh kho hoặc điều chỉnh nhu cầu | Rỗng |
-| `invalidated` | Hồ sơ/run hiện tại hoặc catalog đã thay đổi | Tạo và duyệt bản mới | Rỗng |
+| `needs_verification` | CHỈ run lịch sử (trước D-12, 08/11/2026): từng giữ tin thiếu dữ liệu. Không còn được sinh mới; tin thiếu phí/sức chứa nay `published` ngay kèm nhãn | Xác nhận lại hồ sơ để xem các tin đó kèm nhãn ước tính | Rỗng |
+| `invalidated` | Hồ sơ đổi, hoặc kho đổi làm kết quả xếp hạng khác đi (D-11) | Xác nhận hồ sơ để tạo bản mới | Rỗng |
 
-Profile/catalog/active run được kiểm lại khi đọc và trước finalize. Các trạng thái khác `published` không trả candidate, diagnostics hay quyết định nội bộ qua results của người thuê. Quản lý chỉ đọc/duyệt phiên được phân công.
+Profile/active run được kiểm lại khi đọc. Khi phiên bản kho khác với run, hệ thống xếp hạng lại rồi so với danh sách đã lưu: giống hệt thì giữ run và ghi phiên bản mới; khác thì `invalidated`. Run `generating` không được xét lại (D-11). Các trạng thái khác `published` không trả candidate, diagnostics hay quyết định nội bộ qua results của người thuê. Quản lý chỉ đọc/duyệt phiên được phân công.
 
-Chat có `needs_clarification`, `cost_estimate`, `support_requested`; đây là trạng thái phản hồi chat, tách khỏi trạng thái run. Viewing bắt đầu `requested`, sau phản hồi manager thành `confirmed` hoặc `declined`.
+Chat có `needs_clarification`, `cost_estimate`, `support_requested`; đây là trạng thái phản hồi chat, tách khỏi trạng thái run.
+
+## Vòng đời lịch xem (crawl.md E-01/E-02, 08/11/2026)
+
+Viewing bắt đầu `requested` rồi chuyển theo bảng dưới (chuyển sai → 409 `viewing_conflict`; lặp đúng trạng thái đích → trả kết quả cũ, không ghi event). Bên xử lý: chủ nhà với tin của mình (`handler=landlord`), admin điều phối với tin cào (`handler=concierge`).
+
+| Từ | Đến | Ai được phép |
+|---|---|---|
+| `requested` | `confirmed`, `declined`, `reschedule_proposed`, `cancelled` | handler xác nhận/từ chối/đề xuất giờ; người thuê hủy |
+| `reschedule_proposed` | `confirmed` (accept: chỉ khi đề xuất do bên xử lý tạo — `requested_at` nhận giờ đề xuất), `cancelled`, `requested` (choose_time: người thuê chọn giờ mới, `requested_at` cập nhật) | người thuê |
+| `confirmed` | `completed`, `no_show`, `cancelled` (người thuê hủy), `requested` (người thuê choose_time — đổi giờ rồi chờ bên xử lý xác nhận lại), `reschedule_proposed` (CHỈ bên xử lý đề xuất) | handler hoàn tất/vắng mặt; người thuê hủy/đổi giờ về requested |
+
+Sửa 08/11: người thuê KHÔNG tự dời lịch confirmed rồi tự duyệt — mọi đề xuất giờ mới đều do bên xử lý tạo; accept của người thuê chỉ hợp lệ khi có `proposed_at` (đề xuất từ bên xử lý). `accept`/`choose_time` cập nhật `requested_at` thật (giờ cũ → mới ghi vào `hm_viewing_events`) và xóa `proposed_at`. Hành động handler-only (`propose/confirm/decline/complete/no_show`) trả 403 TRƯỚC mọi kiểm tra trạng thái với người không phải bên xử lý (theo bản ghi: landlord đúng `landlord_id`, admin có capability `viewing:concierge`).
+
+Mọi đường tới `confirmed` đều chạy kiểm tra `stale_viewing`. Mỗi chuyển trạng thái ghi vào `hm_viewing_events` (ai, lúc nào, từ đâu → đâu, lý do) và có thông báo in-app với dedup key. Liên hệ khách (tên + SĐT, có đồng ý khi đặt): người thuê thấy của mình; chủ nhà chỉ thấy từ `confirmed`; lịch `concierge` chỉ lộ qua route xem SĐT riêng cho admin và mỗi lần xem ghi audit (`viewing.contact_revealed`).
 
 ## Trạng thái tài khoản chủ nhà (BE-03, 08/10/2026)
 
@@ -31,7 +40,6 @@ Chat có `needs_clarification`, `cost_estimate`, `support_requested`; đây là 
 |---|---|---|
 | `pending` | Chủ nhà tự đăng ký đã xác minh email, chưa được duyệt | Tạo/sửa tin nháp được; công khai tin bị chặn; chờ admin duyệt |
 | `approved` | Admin đã duyệt; được membership `owner` trong `org-demo` | Công khai tin bình thường |
-| `rejected` | Admin từ chối (kèm lý do trong thông báo) | Có thể được duyệt lại bởi admin |
 
 Lỗi mới: 403 `landlord_not_approved` — chủ nhà chưa được duyệt mà yêu cầu công khai tin; client hiển thị dòng chờ duyệt và khóa ô publish.
 

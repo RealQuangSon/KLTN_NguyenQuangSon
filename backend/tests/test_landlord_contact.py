@@ -2,7 +2,10 @@
 
 The phone is entered by the landlord on their own profile, never crawled. It is
 shown on their listings to signed-in users only; crawled listings point to the
-original post instead, because their landlord_id is a demo account.
+original post instead, because their landlord_id is a demo account. Since
+CA-04/C1b (crawler 2.4) the crawled poster's display name (`poster_name`) also
+lives only in this contact block for signed-in users; anonymous visitors get
+null and no other surface carries it.
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -49,9 +52,10 @@ def test_phone_shown_to_signed_in_users_only(client, service):
     client.patch("/me/profile", headers=OWNER_A, json={"contact_phone": "0901234567"})
     signed_in = client.get(f"/listings/{room.id}", headers=RENTER_A).json()["contact"]
     assert signed_in == {"kind": "landlord", "original_url": None, "phone": "0901234567",
-                         "phone_requires_login": False}
+                         "phone_requires_login": False, "poster_name": None}
     anonymous = client.get(f"/listings/{room.id}").json()["contact"]
     assert anonymous["phone"] is None and anonymous["phone_requires_login"] is True
+    assert anonymous["poster_name"] is None
 
 
 def test_no_phone_means_nothing_to_reveal(client, service):
@@ -68,4 +72,9 @@ def test_crawled_listing_links_original_and_hides_demo_phone(client, service, re
     client.patch("/me/profile", headers=OWNER_A, json={"contact_phone": "0901234567"})
     crawled = owner_a_room(service).model_copy(update={"source": source})
     assert service._listing_contact(crawled, renter) == {
-        "kind": "external", "original_url": url, "phone": None, "phone_requires_login": False}
+        "kind": "external", "original_url": url, "phone": None, "phone_requires_login": False,
+        "poster_name": None}
+    # CA-04/C1b: a real poster name reaches signed-in renters through contact only.
+    named = crawled.model_copy(update={"poster_name": "Người đăng mẫu"})
+    assert service._listing_contact(named, renter)["poster_name"] == "Người đăng mẫu"
+    assert service._listing_contact(named, None)["poster_name"] is None

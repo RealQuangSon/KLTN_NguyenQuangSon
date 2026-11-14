@@ -1,6 +1,6 @@
 # Đặc tả giao diện HomeMatch AI Agent
 
-**Cập nhật:** 30/10/2026 (trang đăng nhập theo bố cục tham chiếu hubhome.vn: chọn loại tài khoản, ô gạch chân, nút pill, cảnh phố CSS — icon/hình dùng bộ HomeMatch; FE-01–FE-07 từ 08/10: đăng ký chủ nhà, duyệt hồ sơ, ticket hỗ trợ, chi phí AI VND, ảnh tin & ảnh sự cố, ưu đãi, thẻ mô phỏng vay trong chat). Màn hình cho khách, chủ nhà và quản trị viên theo [đặc tả](../docs/dac-ta-san-pham.md) và [DESIGN.md](../DESIGN.md). Bản 04/10 được lưu ở [luu-tru](../docs/luu-tru/2026-10-04-vong-doi-thue/frontend/UI_SPEC.md).
+**Cập nhật:** 30/10/2026 (trang đăng nhập: chọn loại tài khoản, ô gạch chân, nút pill, cảnh phố CSS — icon/hình dùng bộ HomeMatch; FE-01–FE-07 từ 08/10: đăng ký chủ nhà, duyệt hồ sơ, ticket hỗ trợ, chi phí AI VND, ảnh tin & ảnh sự cố, ưu đãi, thẻ mô phỏng vay trong chat). Màn hình cho khách, chủ nhà và quản trị viên theo [đặc tả](../docs/dac-ta-san-pham.md) và [DESIGN.md](../DESIGN.md). Bản 04/10 được lưu ở [luu-tru](../docs/luu-tru/2026-10-04-vong-doi-thue/frontend/UI_SPEC.md).
 
 ## 1. Route
 

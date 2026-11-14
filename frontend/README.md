@@ -6,7 +6,7 @@ React + TypeScript nối FastAPI qua API thật. Đã có: trợ lý AI (chat, f
 
 Giao diện dùng cam đỏ và biểu tượng mái nhà HomeMatch theo lựa chọn của người dùng; xem [hướng thiết kế](../DESIGN.md). Có bố cục desktop/điện thoại, điều hướng dưới màn hình nhỏ, tiến trình bốn bước, gợi ý bắt đầu trò chuyện, gửi bằng Enter (Shift + Enter xuống dòng), tìm kiếm/lọc kho phòng và tổng quan từ dữ liệu API. Minh họa SVG không phải ảnh phòng. Hộp đặt lịch hỗ trợ Tab/Escape và trả focus khi đóng.
 
-**Kế hoạch 05/10/2026:** [PLAN.md](PLAN.md) và [UI_SPEC.md](UI_SPEC.md) theo đề tài và 5 phân hệ. [Preview độc lập](design/hubhome-preview.html) là hiện vật minh họa trước đây, không phải màn đã triển khai.
+**Kế hoạch 05/10/2026:** [PLAN.md](PLAN.md) và [UI_SPEC.md](UI_SPEC.md) theo đề tài và 5 phân hệ.
 
 ## Chạy local
 

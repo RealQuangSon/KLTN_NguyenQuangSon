@@ -1,6 +1,6 @@
 # HomeMatch — hướng thiết kế sản phẩm hoàn chỉnh
 
-**Cập nhật 04/10/2026.** HomeMatch phục vụ toàn bộ hành trình thuê: tìm chỗ ở → xem và lựa chọn → lập hợp đồng và bàn giao → sử dụng, thanh toán, sửa chữa → kết thúc thuê. Hướng thiết kế kế thừa nghiên cứu HubHome, giữ nhận diện HomeMatch và các kiểm soát riêng về gợi ý AI, chi phí và quyền. Đây là **chuẩn mục tiêu**, không phải tuyên bố source hiện tại đã hoàn thiện.
+**Cập nhật 04/10/2026.** HomeMatch phục vụ toàn bộ hành trình thuê: tìm chỗ ở → xem và lựa chọn → lập hợp đồng và bàn giao → sử dụng, thanh toán, sửa chữa → kết thúc thuê. Hướng thiết kế kế thừa nghiên cứu sản phẩm tham khảo, giữ nhận diện HomeMatch và các kiểm soát riêng về gợi ý AI, chi phí và quyền. Đây là **chuẩn mục tiêu**, không phải tuyên bố source hiện tại đã hoàn thiện.
 
 Đọc cùng [đặc tả sản phẩm](docs/dac-ta-san-pham.md), [yêu cầu sản phẩm](docs/yeu-cau-san-pham.md), [quy trình nghiệp vụ](docs/quy-trinh-nghiep-vu.md), [UI_SPEC](frontend/UI_SPEC.md) và [kế hoạch frontend](frontend/PLAN.md).
 
@@ -8,12 +8,12 @@
 
 | Cơ sở | Điều được dùng | Điều chưa được chứng minh |
 |---|---|---|
-| [Nghiên cứu công khai HubHome 04/10/2026](docs/nghien-cuu-hubhome.md) | HH-01…HH-12: UI công khai và mô tả trợ lý, owner portal, hợp đồng/thu tiền; truy vết yêu cầu riêng HomeMatch | Kiến trúc nội bộ, chất lượng AI, số nguồn cung và khả năng vận hành thực tế |
-| [Khảo sát đăng nhập 01/10/2026](docs/khao-sat-hubhome-da-dang-nhap.md) | Cách tổ chức người thuê: tổng quan, nhu cầu, tin lưu, đã xem, lịch, hợp đồng, hóa đơn, chi phí và sửa chữa | Phần lớn màn trống; chưa thử hợp đồng, công tơ, đối chiếu tiền hoặc sửa chữa có dữ liệu; chưa vào dashboard chủ nhà |
+| Nghiên cứu công khai sản phẩm tham khảo 04/10/2026 | HH-01…HH-12: UI công khai và mô tả trợ lý, owner portal, hợp đồng/thu tiền; truy vết yêu cầu riêng HomeMatch | Kiến trúc nội bộ, chất lượng AI, số nguồn cung và khả năng vận hành thực tế |
+| Khảo sát đăng nhập 01/10/2026 | Cách tổ chức người thuê: tổng quan, nhu cầu, tin lưu, đã xem, lịch, hợp đồng, hóa đơn, chi phí và sửa chữa | Phần lớn màn trống; chưa thử hợp đồng, công tơ, đối chiếu tiền hoặc sửa chữa có dữ liệu; chưa vào dashboard chủ nhà |
 | Đo giao diện công khai 02/10/2026, ghi tại UI_SPEC | Landing giữa trang, composer, rail, chat–preview, bảng token | Không phải đo toàn site; chưa có baseline card/compare có dữ liệu hoặc owner dashboard |
 | Source HomeMatch hiện tại | Landing/login, hai workspace renter/manager, chat/profile/confirm/HITL/results/compare/catalog status/viewing | Chưa có portal owner/admin, map/media, lịch sử tài khoản, lưu tin hoặc nghiệp vụ sau thuê |
 
-Các màn bổ sung là thiết kế HomeMatch rút ra từ nhu cầu toàn vòng đời thuê. Không dùng nội dung tự công bố của HubHome làm bằng chứng tính năng đã vận hành. [Preview độc lập](frontend/design/hubhome-preview.html) chỉ minh họa bố cục lịch sử; không đại diện cho toàn sản phẩm và không là bằng chứng tích hợp API.
+Các màn bổ sung là thiết kế HomeMatch rút ra từ nhu cầu toàn vòng đời thuê. Không dùng nội dung tự công bố của sản phẩm tham khảo làm bằng chứng tính năng đã vận hành. Preview độc lập chỉ minh họa bố cục lịch sử; không đại diện cho toàn sản phẩm và không là bằng chứng tích hợp API.
 
 ## 2. Nguyên tắc sản phẩm
 
@@ -52,7 +52,7 @@ Motion CSS 140–180ms ease-out, dịch 0–4px; ưu tiên giữ vị trí nội
 ## 5. Media, bản đồ và định dạng dữ liệu
 
 - Tái dùng wrapper SVG `Icon`: lưới 24px, stroke 1,6px, nét bo, `currentColor`; mọi icon action có accessible name. `RoomIllustration` là minh họa gốc và phải được ghi là minh họa khi thay ảnh phòng.
-- Ảnh phòng thật do owner/nguồn được phép cung cấp: có alt text, loading/error, thứ tự gallery và trạng thái moderation; không sao ảnh/logo/mascot hoặc kho tin HubHome.
+- Ảnh phòng thật do owner/nguồn được phép cung cấp: có alt text, loading/error, thứ tự gallery và trạng thái moderation; không sao ảnh/logo/mascot hoặc kho tin sản phẩm tham khảo.
 - Bản đồ dùng tọa độ/độ chính xác từ API và nhà cung cấp đã chọn. Vị trí gần đúng có nhãn/vùng sai số; không suy ra địa chỉ chính xác hoặc khoảng cách đường đi. Danh sách vẫn sử dụng được khi map lỗi.
 - Tour ảo có thể dùng gallery, video/tour link và lịch xem trực tuyến. Nền tảng video call riêng, voice/image AI, legal e-sign và cổng thanh toán là tích hợp tùy chọn, không thay các nghiệp vụ cốt lõi.
 - Chi phí do backend tính bằng quy tắc xác định. Giao diện dùng DTO và tiền VND đã làm tròn; không tự rank, tính tổng hoặc quyết định publication.
@@ -61,4 +61,4 @@ Motion CSS 140–180ms ease-out, dịch 0–4px; ưu tiên giữ vị trí nội
 
 [UI_SPEC](frontend/UI_SPEC.md) định nghĩa inventory màn/routes/trạng thái và UI-V01…UI-V16. [TEST_CHECKLIST](frontend/TEST_CHECKLIST.md) phân biệt bằng chứng cũ với checklist sản phẩm hoàn chỉnh. [DEMO_CHECKLIST](frontend/DEMO_CHECKLIST.md) có demo hiện có và demo toàn vòng đời cần triển khai.
 
-Nghiệm thu cần ảnh cùng viewport/trạng thái, kiểm thử API/browser các vai trò, bàn phím/mobile, quyền và phản hồi cũ. Chỉ đối chiếu HubHome ở vùng có baseline phù hợp; phần chưa quan sát được ghi là thiết kế HomeMatch. Không dùng phần trăm “giống” hoặc fixture tests để chứng minh sản phẩm đã vận hành, và không đánh dấu toàn bộ frontend hoàn tất khi mới chạy luồng tìm phòng.
+Nghiệm thu cần ảnh cùng viewport/trạng thái, kiểm thử API/browser các vai trò, bàn phím/mobile, quyền và phản hồi cũ. Chỉ đối chiếu sản phẩm tham khảo ở vùng có baseline phù hợp; phần chưa quan sát được ghi là thiết kế HomeMatch. Không dùng phần trăm “giống” hoặc fixture tests để chứng minh sản phẩm đã vận hành, và không đánh dấu toàn bộ frontend hoàn tất khi mới chạy luồng tìm phòng.

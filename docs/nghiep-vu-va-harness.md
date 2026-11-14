@@ -122,9 +122,9 @@ Nội bộ graph vẫn có tool riêng (`extract_needs`, `update_draft`, `read_m
 
 ### 2.5. Kết quả công bố ngay (D-10, 05/11/2026)
 
-- Khách xác nhận hồ sơ (`expected_draft_revision`) → `rank → publish` trong một lượt: có căn là `published` ngay, không có là `no_match`, thiếu dữ liệu là `needs_verification`. Không còn `interrupt()`, không còn trang duyệt của chủ nhà.
+- Khách xác nhận hồ sơ (`expected_draft_revision`) → `rank → publish` trong một lượt: có căn là `published` ngay (top 5, kèm tổng số căn khớp), không có là `no_match`; thiếu dữ liệu không còn là trạng thái riêng (D-12): tin thiếu phí/sức chứa hiện ngay kèm nhãn, `needs_verification` chỉ còn ở run lịch sử. Không còn `interrupt()`, không còn trang duyệt của chủ nhà.
 - Chủ nhà biết nhu cầu qua **lead**: căn của họ lọt top 5 → `touch_lead(source="recommended")` với băng khả năng chi trả, không thu nhập.
-- Hồ sơ mới xác nhận hoặc kho đổi version → kết quả, so sánh, lịch xem cũ `invalidated`.
+- Hồ sơ mới xác nhận → kết quả, so sánh, lịch xem cũ `invalidated`. Kho đổi version → xếp hạng lại và so với danh sách đã lưu: khác mới `invalidated`, giống hệt thì giữ (D-11).
 
 ### 2.6. Dữ liệu nhạy cảm và ghi nhớ
 
@@ -161,7 +161,7 @@ Nội bộ graph vẫn có tool riêng (`extract_needs`, `update_draft`, `read_m
 
 | Vấn đề | Trạng thái 06/11/2026 |
 |---|---|
-| Đa số tin Chợ Tốt thiếu phí | Vẫn còn — xác nhận thường `needs_verification`; budget_scope trên kho này gần như không phân biệt được (gold CL15-20 chưa hỏi được) |
+| Đa số tin Chợ Tốt thiếu phí | Vẫn còn — từ D-12 các tin này hiện ngay kèm nhãn "ước tính" (không còn `needs_verification`); budget_scope trên kho này gần như không phân biệt được (gold CL15-20 chưa hỏi được) |
 | `room_reference` chỉ nhận `demo-NN` | **Đã sửa** (AG-05): resolver nhận mọi nguồn id + thứ tự + tiêu đề |
 | Ngân sách và trace trong RAM | **Đã sửa** (HN-05): `hm_agent_turns/steps` bền; ngân sách phiên vẫn trong RAM (restart đếm lại lượt — chấp nhận cho một worker localhost) |
 | Chưa chạy đánh giá live (GPT/pgvector), chưa quay demo trình duyệt, chưa có nhãn và khảo sát | Vẫn còn — cần người dùng duyệt chạy live; xem `review/HARNESS-final.md` |

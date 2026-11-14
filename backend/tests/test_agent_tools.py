@@ -8,8 +8,9 @@ import pytest
 from pydantic import ValidationError
 
 from backend.app.agent_capability import CAPABILITIES, TOOL_CAPABILITIES
-from backend.app.agent_tools import (TOOL_REGISTRY, AskUserArgs, public_result, redact_result, tool_specs,
-                                     tools_by_agent, workspace_view)
+from backend.app.agent_tools import (AMENITY_LABELS, TOOL_REGISTRY, AskUserArgs, UpdateNeedsArgs,
+                                     public_result, redact_result, tool_specs, tools_by_agent,
+                                     workspace_view)
 from backend.app.agents import AGENT_TOOLS, ToolBox
 from backend.app.models import DomainError, DraftProfile
 
@@ -62,7 +63,7 @@ def test_registry_generates_allowlist_capability_and_only_exposed_specs():
     specs = tool_specs()
     assert {spec["function"]["name"] for spec in specs} == {
         name for name, definition in TOOL_REGISTRY.items() if definition.exposed}
-    assert len(specs) == 10
+    assert len(specs) == 12  # simulate_loan + compare_rooms (HN-13)
     assert "extract_needs" not in {spec["function"]["name"] for spec in specs}
 
 
@@ -196,3 +197,28 @@ def test_thread_safe_step_reservation_preserves_raw_graph_contract():
         results = list(pool.map(attempt, range(20)))
     assert len([value for value in results if value is not None]) == 6
     assert len(box.calls) == 6 and box.summary("ranking")["steps"] == 6
+
+
+def test_update_needs_schema_pins_amenity_enum_and_forbids_money_fields():
+    """Sửa luồng UX (14/11): model gọi sai update_needs hai lần mỗi lượt (trường tiền
+    bị cấm, tiện ích viết bằng lời) — schema gửi model phải chặn trước: enum tiện ích
+    đúng bằng AMENITY_KEYS kèm nghĩa tiếng Việt, mô tả công cụ cấm trường tiền.
+    Kiểm tra runtime giữ lax để hàng rào invalid_amenity trong agent_loop còn nguyên."""
+    from backend.app.models import AMENITY_KEYS
+
+    definition = TOOL_REGISTRY["update_needs"]
+    parameters = definition.spec()["function"]["parameters"]
+    preferences = parameters["$defs"]["NeedsPatch"]["properties"]["preferences"]
+    assert preferences["items"]["enum"] == list(AMENITY_KEYS)
+    # Nghĩa tiếng Việt cho từng khóa để model ánh xạ được ("máy lạnh" → air_conditioning).
+    for key in AMENITY_KEYS:
+        assert key in preferences["items"]["description"] and AMENITY_LABELS.get(key)
+    assert "máy lạnh" in preferences["items"]["description"]
+    # Mô tả công cụ cấm trường tiền; hệ thống tự đọc tiền từ câu khách.
+    assert "KHÔNG gửi bất kỳ trường tiền nào" in definition.description
+    assert "tự đọc tất định từ câu của khách" in definition.description
+    # Runtime vẫn nhận chuỗi lạ (handler invalid_amenity từ chối, không pydantic chặn trước).
+    assert UpdateNeedsArgs.model_validate({"patch": {"preferences": ["máy lạnh"]}}
+                                          ).patch.preferences == ["máy lạnh"]
+    assert UpdateNeedsArgs.model_validate({"patch": {"preferences": ["air_conditioning"]}}
+                                          ).patch.preferences == ["air_conditioning"]

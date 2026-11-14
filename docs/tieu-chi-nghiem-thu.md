@@ -14,10 +14,10 @@
 | AC-06 | FR-11 | Fallback ghi rõ nhãn; cache embedding truy vấn | `test_agents_memory.py` (chưa có vector thật) |
 | AC-07 | FR-12 | Mọi khẳng định có bằng chứng | `eval grounding` |
 | AC-08 | FR-13 | Phản thực tế hoa hồng và thời gian tồn; `override_reason`; chủ nhà chỉ đổi thứ tự trong phần phòng của mình | `test_workflow.py`, `test_landlord.py` |
-| AC-09 | FR-15–17 | Chủ nhà chỉ thấy phòng mình; khách thấy dần (`partially_published`); hết hiệu lực khi hồ sơ hoặc kho đổi; khởi động lại không mất quyết định | `test_landlord.py`, `test_backend_durability.py` |
+| AC-09 | FR-15–17 | Chủ nhà chỉ thấy phòng mình; khách thấy kết quả ngay sau xếp hạng; hết hiệu lực khi hồ sơ đổi hoặc kho đổi làm kết quả khác đi, phòng không liên quan đổi thì giữ nguyên; khởi động lại không mất kết quả | `test_landlord.py`, `test_backend_durability.py`, `test_catalog_freshness.py` |
 | AC-10 | FR-18–20 | Chỉ căn đã duyệt; so sánh có tư vấn; lịch xem gửi đúng chủ nhà | `test_workflow.py`, `test_tenant_portal.py` |
 | AC-11 | FR-21 | Tool ngoài danh sách bị chặn; giới hạn bước; provenance ghi agent | `test_agents_memory.py` |
-| AC-12 | FR-22 | Không đồng ý thì không ghi nhớ; không lưu tiền; rút đồng ý thì xóa | `test_agents_memory.py` |
+| AC-12 | FR-22 | Không đồng ý thì không ghi nhớ; không lưu tiền; rút đồng ý thì xóa; sở thích tích lũy qua các phiên, khách bỏ hoặc xóa thì không tự quay lại | `test_agents_memory.py` |
 | AC-13 | FR-24 | Kho v2 hợp lệ, có căn hộ, có Hà Nội | `eval validate`, `eval/tests` |
 | AC-14 | FR-25 | 401/403 đúng vai trò; chủ nhà không vào được API admin | `test_backend_contract.py` |
 

@@ -81,7 +81,7 @@
 
 ### AG-13 — Agent thật: LLM tự suy luận và tự gọi tool (P0, nền cho mọi task agent)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** dùng hợp đồng một endpoint + stream bước như HubHome (task WS-02): request mang **ngữ cảnh workspace** (view đang mở, căn đang chọn, ≤30 căn đang hiển thị, căn đính kèm ≤4, điểm đến, lịch đang đặt, GPS nếu khách bật); response là **chỉ thị giao diện** (WS-01) chứ không chỉ văn bản. Mỗi tool call phát một sự kiện `step` ngay khi chạy.
+> **Bổ sung:** dùng hợp đồng một endpoint + stream bước (task WS-02): request mang **ngữ cảnh workspace** (view đang mở, căn đang chọn, ≤30 căn đang hiển thị, căn đính kèm ≤4, điểm đến, lịch đang đặt, GPS nếu khách bật); response là **chỉ thị giao diện** (WS-01) chứ không chỉ văn bản. Mỗi tool call phát một sự kiện `step` ngay khi chạy.
 
 **Vì sao:** hiện LLM chỉ là bộ trích xuất JSON trong một graph cố định, prompt còn cấm dùng hiểu biết chung ("giữ null khi chưa nói quận") và agent không có tool tra cứu → "gần HUST" bị mất dù model biết HUST ở Đại Cồ Việt, Hai Bà Trưng. Yêu cầu của người dùng (05/11/2026): agent phải **tự hiểu như một AI bình thường** — dùng kiến thức chung, suy luận, tự quyết định gọi tool nào.
 
@@ -98,7 +98,7 @@
    - `room_details(room_ref)` (dùng resolver AG-05), `estimate_cost(room_id)` (`costs.py`), `search_handbook(question)`, `open_landlord_chat(room_ref)` (AG-09), `prepare_viewing(room_ref, time_text)` (AG-06, chỉ chuẩn bị, khách bấm mới tạo).
 3. **Prompt mới:** bỏ quy tắc cấm suy luận; thay bằng: "Dùng hiểu biết chung để hiểu địa danh, khu vực, nhu cầu ngầm; khi suy ra điều khách chưa nói, gọi tool để kiểm và nói lại giả định. Không tự bịa số tiền, không tự nới điều kiện cứng, mọi con số trong câu trả lời phải lấy từ kết quả tool."
 4. **Câu trả lời:** văn bản tự nhiên của model + khối có cấu trúc (`clarification`, `results_ref`, `steps`) cho FE; hậu kiểm: số trong văn bản phải khớp số từ tool (regex), sai → thay bằng câu template.
-5. **Minh bạch:** `steps` = danh sách tool đã gọi (tên + tóm tắt kết quả, không PII) → FE hiện "Đã xử lý qua N bước" như HubHome.
+5. **Minh bạch:** `steps` = danh sách tool đã gọi (tên + tóm tắt kết quả, không PII) → FE hiện "Đã xử lý qua N bước".
 6. **Đường lui:** `HOMEMATCH_LLM_MODE=demo` hoặc model lỗi/hết ngân sách phiên → dùng graph cũ (`route → interview`) như hiện tại; ghi `agent_mode="loop"|"graph_fallback"`.
 7. **Ngân sách và tốc độ:** đếm token/tool call vào `agent_budget`; mục tiêu p50 ≤ 4 s/lượt ở chế độ openai (AG-10 tối ưu tiếp).
 
@@ -110,7 +110,7 @@
 
 ### WS-01 — Agent điều khiển workspace (P0, cùng AG-13)
 
-**Mục tiêu (theo HubHome):** mỗi câu trả lời của agent kèm **chỉ thị giao diện**; khung preview tự mở đúng view, chat có chip "↗ Đã mở … trong workspace".
+**Mục tiêu:** mỗi câu trả lời của agent kèm **chỉ thị giao diện**; khung preview tự mở đúng view, chat có chip "↗ Đã mở … trong workspace".
 **Hợp đồng response** (`schemas.AgentTurn`): `answer: list[str]` (nhiều bubble), `matches`, `total_matches`, `view: map|list|detail|gallery|compare|cost|route|nearby|area|trust|contract|booking|visit|saved|keep|clear`, payload theo view (`detail`, `cost`, `route`, `nearby`, `area`, `trust`, `contract`, `pending_booking[]`, `handoff`), `anchor` (mốc đã geocode), `criteria` (tiêu chí server giữ), `clarification` (AG-11), `suggested_prompts[]`, `steps[]`, `source_label`, `turn_id`.
 **Request** thêm `workspace: {view, selected_room_id, visible_room_ids[≤30], focus_room_ids[≤4], destination?, booking_room_ids?, gps?}` để agent hiểu "căn này", "căn thứ 2", "từ chỗ mình".
 **FE:** `RenterWorkspace` tách view router cho preview; mỗi view là component riêng (dùng lại `MapView`, `RoomCard`, so sánh, `Simulation`); `keep` giữ view hiện tại, `clear` dọn workspace.
@@ -118,29 +118,29 @@
 
 ### WS-02 — Stream các bước xử lý (P0, cùng AG-13)
 
-**Theo HubHome:** response `application/x-ndjson`: dòng `{"type":"step","step":{"name","kind":"router|tool|pin|guardrail|system","detail","result"}}` phát ngay khi mỗi bước chạy, dòng cuối `{"type":"done","data":AgentTurn}`. FE hiện "Đang … — bước N" theo bước thật (không đoán theo từ khóa) và sau đó "Đã xử lý qua N bước" bung được; bước do hệ thống tự thêm (guardrail, ghim bản đồ) gắn nhãn "hệ thống tự bổ sung".
+**Thiết kế:** response `application/x-ndjson`: dòng `{"type":"step","step":{"name","kind":"router|tool|pin|guardrail|system","detail","result"}}` phát ngay khi mỗi bước chạy, dòng cuối `{"type":"done","data":AgentTurn}`. FE hiện "Đang … — bước N" theo bước thật (không đoán theo từ khóa) và sau đó "Đã xử lý qua N bước" bung được; bước do hệ thống tự thêm (guardrail, ghim bản đồ) gắn nhãn "hệ thống tự bổ sung".
 **BE:** `StreamingResponse` từ vòng lặp AG-13 (một worker vẫn đủ); timeout lượt 60 s; client thử lại tối đa 2 lần khi stream đứt, báo lỗi thân thiện.
 **Test:** thứ tự sự kiện; stream đứt → retry; nội dung bước không chứa PII/tiền/thu nhập.
 
-### WS-03 — Composer kiểu HubHome (P1)
+### WS-03 — Composer đa năng (P1)
 
 Menu "+" (Đính kèm ảnh, Nói), nút **"Gần tôi"** (GPS, bật/tắt rõ ràng, lỗi quyền thì nói thẳng), **"Tìm nhanh"** (bộ lọc nhanh điền câu vào ô), lệnh `/moi`, `/tieuchi`, `/quen` có gợi ý khi gõ `/`; placeholder đổi theo ngữ cảnh ("Hỏi về “{tên căn}”…", "Nhắn cho {chủ nhà}…"); hàng chip tiêu chí đang áp dụng (≤ ngân sách, loại, khu, tiện ích) gỡ được từng chip.
 
 ### AG-14 — Nhận xét chủ động khi mở một căn (P1)
 
-**Theo HubHome** (`/api/can/doi-chieu`): khi khách mở chi tiết căn, server so căn với nhóm đang hiển thị (giá/tháng, giá/m², hạng trong danh sách, tiện ích) và chèn **một** tin nhắn trợ lý ngắn + chip hỏi tiếp ("Còn căn nào rẻ hơn khu này?", "Tính tổng chi phí căn này", "Đặt lịch xem").
+**Thiết kế:** khi khách mở chi tiết căn, server so căn với nhóm đang hiển thị (giá/tháng, giá/m², hạng trong danh sách, tiện ích) và chèn **một** tin nhắn trợ lý ngắn + chip hỏi tiếp ("Còn căn nào rẻ hơn khu này?", "Tính tổng chi phí căn này", "Đặt lịch xem").
 **HomeMatch:** `POST /v1/sessions/{id}/rooms/{room_id}/insight` → số liệu do code tính (trung vị giá cùng khu + loại từ kho Chợ Tốt, chênh lệch %, xếp hạng); LLM chỉ diễn đạt; không số nào ngoài kết quả tool. Không gọi lại khi mở lại cùng căn trong 10 phút.
 **Test:** trung vị đúng trên kho mẫu; nhóm < 5 căn → không nêu trung vị; câu trả lời không chứa số lạ.
 
 ### MP-02 — Tiện ích xung quanh và phân tích khu vực (P1, sau MP-01)
 
-**Theo HubHome:** view **"Tiện ích xung quanh"** (nhóm: chợ/siêu thị, trường, bệnh viện, bến xe buýt…; mỗi điểm km + phút đi bộ, ghi "khoảng cách đường chim bay", "vị trí xấp xỉ theo khu" nếu căn không chính xác) với hai nút "Xem đường đi cụ thể" và "Phân tích khu vực"; view **"Khu vực"** cho câu "khu này sống thế nào".
+**Thiết kế:** view **"Tiện ích xung quanh"** (nhóm: chợ/siêu thị, trường, bệnh viện, bến xe buýt…; mỗi điểm km + phút đi bộ, ghi "khoảng cách đường chim bay", "vị trí xấp xỉ theo khu" nếu căn không chính xác) với hai nút "Xem đường đi cụ thể" và "Phân tích khu vực"; view **"Khu vực"** cho câu "khu này sống thế nào".
 **HomeMatch:** dữ liệu POI tĩnh `data/poi/{hn,hcm}.geojson` lấy một lần từ OpenStreetMap (ODbL, ghi attribution), không gọi API trả phí lúc chạy; tool `nearby(room_id, kinds[])` (chim bay + phút đi bộ = km/4,8 km/h, ghi rõ ước lượng); `area_profile(district)` tổng hợp số liệu tất định từ kho (giá trung vị theo loại, số tin, mật độ POI). LLM chỉ diễn đạt, không bịa về an ninh/ngập lụt.
 **Test:** khoảng cách đúng; căn `approximate` hiện cảnh báo; không có số ngoài tool.
 
 ### AG-15 — Tín hiệu tin cậy của tin đăng (P1)
 
-**Theo HubHome:** view **"Tín hiệu tin cậy"**: danh sách tín hiệu `tot | canh_bao | khong_ro`, tóm tắt "N điểm cần hỏi rõ, M mục chưa kiểm được (tự động từ dữ liệu, không phải chứng nhận)", form báo tin sai.
+**Thiết kế:** view **"Tín hiệu tin cậy"**: danh sách tín hiệu `tot | canh_bao | khong_ro`, tóm tắt "N điểm cần hỏi rõ, M mục chưa kiểm được (tự động từ dữ liệu, không phải chứng nhận)", form báo tin sai.
 **HomeMatch:** `trust.py` tất định trên dữ liệu Chợ Tốt: giá lệch > 40 % trung vị cùng khu/loại, cọc > 3 tháng, thiếu sức chứa/phí, người đăng là môi giới, tin trùng ảnh/tiêu đề, tin cũ > 60 ngày, chủ nhà đã/ chưa xác minh trên HomeMatch. **Không** dùng để xếp hạng (bất biến F2: ranking không đọc `posted_at`/`poster_kind`) — chỉ hiển thị. `POST /v1/listings/{id}/report` cho khách báo tin sai → admin.
 **Test:** từng luật dương/âm; `eval invariants` vẫn qua (ranking không đổi).
 
@@ -157,9 +157,9 @@ Menu "+" (Đính kèm ảnh, Nói), nút **"Gần tôi"** (GPS, bật/tắt rõ 
 
 ### AG-11 — Phỏng vấn nhu cầu: LLM phân tích + kho phòng + Jev quyết định (P0)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome chỉ có **quick-reply dạng chữ, đặt dưới ô nhập, bấm là gửi lại câu cho agent đọc** (tối đa 7, gợi ý của server trước, chip theo căn đang xem sau), và trong khảo sát A3 nó **không hỏi lại** tên trường. HomeMatch làm hơn: chip **trên đầu** câu trả lời, mang `patch` có cấu trúc, có số căn thật, thứ tự do Jev chấm. Vẫn giữ thêm hàng quick-reply theo ngữ cảnh dưới ô nhập như HubHome (dedup, tối đa 7).
+> **Bổ sung:** chip đặt **trên đầu** câu trả lời, mang `patch` có cấu trúc, có số căn thật, thứ tự do Jev chấm. Giữ thêm hàng quick-reply theo ngữ cảnh dưới ô nhập (dedup, tối đa 7).
 
-**Mục tiêu:** agent tự phân tích câu nói, phát hiện chỗ mơ hồ và **hỏi lại kiểu HubHome**: câu hỏi ngắn, các lựa chọn trả lời đặt **lên đầu** (chip bấm được), xếp theo khả năng đúng. Chỉ hỏi khi câu trả lời thực sự làm đổi kết quả.
+**Mục tiêu:** agent tự phân tích câu nói, phát hiện chỗ mơ hồ và **hỏi lại**: câu hỏi ngắn, các lựa chọn trả lời đặt **lên đầu** (chip bấm được), xếp theo khả năng đúng. Chỉ hỏi khi câu trả lời thực sự làm đổi kết quả.
 
 **Jev là gì (đã đọc docs 05/11/2026):** `typesafe/jev-1.14`, mô hình ra quyết định có kiểu trên OpenRouter Decisions API (`POST https://openrouter.ai/api/alpha/decisions`, Bearer = key OpenRouter). Request `{model, state, questions}`; loại câu hỏi `choice` (chọn 1 trong `criteria`), `noul` (đúng/sai), `score` (thang), `box` (vùng ảnh). Trả **nhãn + xác suất từng phương án + confidence + `usage.cost`**, không trả văn bản/giải thích. Giá chỉ tính token vào (~0,042 USD/1M). API alpha, một nhà cung cấp → bắt buộc có đường lui. Docs: https://openrouter.ai/docs/guides/community/jev
 
@@ -207,7 +207,7 @@ Mỗi mục dùng chung hạ tầng AG-11 (phân tích → lựa chọn từ kho
 
 ### AG-01 — Hiểu điểm đến (P0)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome geocode qua proxy backend (`/api/goong/geocode`), ghim **mốc** lên bản đồ (pin + đường nét đứt tới căn) và nói lại "Mình hiểu mốc là …"; khảo sát C1 cho thấy nó geocode nhầm "HUST" thành quán "Hust Shop" ở Hoàng Mai → HomeMatch phải **tra danh mục địa danh trước, Goong sau**, ưu tiên loại POI (trường/bệnh viện/KCN) và luôn cho khách bấm sửa mốc.
+> **Bổ sung:** geocode qua proxy backend, ghim **mốc** lên bản đồ (pin + đường nét đứt tới căn) và nói lại "Mình hiểu mốc là …"; geocode thuần dễ nhầm "HUST" thành một quán tên "Hust Shop" → phải **tra danh mục địa danh trước, Goong sau**, ưu tiên loại POI (trường/bệnh viện/KCN) và luôn cho khách bấm sửa mốc.
 
 **Mục tiêu:** "gần HUST / Bách Khoa / ĐH Quốc gia / Times City" thành `destination` có tọa độ để xếp theo khoảng cách.
 **Bước:**
@@ -222,7 +222,7 @@ Mỗi mục dùng chung hạ tầng AG-11 (phân tích → lựa chọn từ kho
 
 ### MP-01 — Đường đi trên bản đồ (P1, sau AG-01)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome có view **Lộ trình** riêng: nhiều phương án ("Lộ trình 1 (Đề xuất)" gắn nhãn TỐI ƯU, LT2…), mỗi phương án km + phút, bấm để đổi tuyến đang vẽ; ghi rõ "theo đường đi" hay "đường chim bay"; nút bật **ảnh vệ tinh** (style `goong_satellite`); nút **"Gần tôi"** (GPS trình duyệt, chỉ khi khách bấm) → "Tìm phòng quanh chỗ bạn" và "Đường đi từ chỗ bạn tới căn đang xem". Thêm cả ba vào MP-01: `alternatives=true` của Goong → mảng phương án; tọa độ GPS **không lưu**, chỉ dùng trong lượt.
+> **Bổ sung:** view **Lộ trình** riêng: nhiều phương án ("Lộ trình 1 (Đề xuất)" gắn nhãn TỐI ƯU, LT2…), mỗi phương án km + phút, bấm để đổi tuyến đang vẽ; ghi rõ "theo đường đi" hay "đường chim bay"; nút bật **ảnh vệ tinh** (style `goong_satellite`); nút **"Gần tôi"** (GPS trình duyệt, chỉ khi khách bấm) → "Tìm phòng quanh chỗ bạn" và "Đường đi từ chỗ bạn tới căn đang xem". Thêm cả ba vào MP-01: `alternatives=true` của Goong → mảng phương án; tọa độ GPS **không lưu**, chỉ dùng trong lượt.
 
 **Mục tiêu:** khi hồ sơ có điểm đến (AG-01, vd. HUST), bản đồ trong workspace vẽ **đường đi thực tế** từ căn tới điểm đến, kèm quãng đường và thời gian theo phương tiện; thẻ căn hiện "🛵 3,2 km · 11 phút".
 
@@ -266,7 +266,7 @@ Thêm: câu "Kết quả sẽ tự hiện…" ở `_questions` chỉ nói khi th
 
 ### AG-09 — Handover sang chủ nhà từ câu chat (P0)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome có `pendingHandoff` → chuyển khung chat sang **người thật** ngay trong workspace (polling `/api/nguoi-that`), ô nhập đổi thành "Nhắn cho {tên}…". HomeMatch làm tương tự: sau handover, khung chat hiện hội thoại với chủ nhà **ngay trong workspace** (không bắt chuyển trang), có nút quay lại trợ lý.
+> **Bổ sung:** sau handover, ô nhập đổi thành "Nhắn cho {tên}…"; khung chat hiện hội thoại với chủ nhà **ngay trong workspace** (không bắt chuyển trang), có nút quay lại trợ lý.
 
 **Bước:**
 1. `fixed_intent`: tách "chat/nói chuyện/gặp **chủ nhà**" thành intent mới `landlord_handover`; "người thật/nhân viên/quản trị" giữ `human_support` (admin).
@@ -279,14 +279,14 @@ Thêm: câu "Kết quả sẽ tự hiện…" ở `_questions` chỉ nói khi th
 
 ### AG-06 — Đặt lịch trọn trong chat (P1)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome trả `pendingBooking(s)` → panel đặt lịch **điền sẵn** căn, ngày, giờ, hình thức (`tan_noi`/`truc_tuyen`) với lưới khung giờ 09:00–19:00; đặt nhiều căn một lần; hủy lịch qua chat. Làm giống: tool `prepare_viewing` trả `pending_booking`, FE mở panel điền sẵn, khách bấm mới tạo.
+> **Bổ sung:** panel đặt lịch **điền sẵn** căn, ngày, giờ, hình thức (tại nơi/trực tuyến) với lưới khung giờ 09:00–19:00; đặt nhiều căn một lần; hủy lịch qua chat. Tool `prepare_viewing` trả `pending_booking`, FE mở panel điền sẵn, khách bấm mới tạo.
 
 **Bước:** `_prepare_viewing` hiểu thời gian ("8h tối mai", "thứ 7 lúc 9 giờ", "online") bằng parser tất định `parse_viewing_time(text, now, tz=Asia/Ho_Chi_Minh)`; đủ căn + giờ → trả thẻ xác nhận (căn, giờ, hình thức). Khách bấm "Xác nhận" → FE gọi API viewing hiện có với `idempotency_key`. Agent **không** tự tạo lịch khi khách chưa bấm.
 **Test:** ≥ 15 câu thời gian; giờ quá khứ bị từ chối; trùng lịch → thông báo.
 
 ### FL-01 — Xem nhà online (P1)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** sau buổi xem, HubHome hiện panel "Cảm nhận sau khi xem" (gửi vào chat để agent dùng tiếp) và nút "Mở phòng xem trực tuyến". Thêm: sau giờ hẹn, panel cảm nhận → tin nhắn có cấu trúc `{room_id, rating, note}` → agent cập nhật ưu tiên mềm và gợi ý bước tiếp (chốt căn / xem căn khác).
+> **Bổ sung:** sau giờ hẹn, panel cảm nhận → tin nhắn có cấu trúc `{room_id, rating, note}` → agent cập nhật ưu tiên mềm và gợi ý bước tiếp (chốt căn / xem căn khác).
 
 **Bước:** trang `Lịch xem` của khách và chủ nhà: nút "Vào phòng xem online" bật từ 10 phút trước giờ hẹn tới 60 phút sau; mở link Jitsi trong tab mới. `POST /viewings/{id}/join` ghi `joined_at` từng bên (cột mới, migration v15). Sau giờ hẹn, khách được hỏi "Bạn muốn chốt căn này?" (dẫn tới FL-02).
 **Test:** cửa sổ thời gian; quyền theo bản ghi; join idempotent.
@@ -299,7 +299,7 @@ Thêm: câu "Kết quả sẽ tự hiện…" ở `_questions` chỉ nói khi th
 
 ### AG-07 — Review hợp đồng (P1)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome có view **"Bản nháp hợp đồng"**: chỉ soạn khi chủ nhà đã khai đủ mục bắt buộc; thiếu thì liệt kê mục thiếu và nút **"Hỏi agent nên hỏi chủ nhà thế nào"**; mục không có dữ liệu ghi "Hai bên tự điền — không có dữ liệu". Áp dụng cùng nguyên tắc cho bản review: mục thiếu hiện rõ, không tự điền thay.
+> **Bổ sung:** bản nháp hợp đồng chỉ soạn khi chủ nhà đã khai đủ mục bắt buộc; thiếu thì liệt kê mục thiếu; mục không có dữ liệu ghi "Hai bên tự điền". Áp dụng cùng nguyên tắc cho bản review: mục thiếu hiện rõ, không tự điền thay.
 
 **Mục tiêu:** khách mở lease thấy "Trợ lý đọc hợp đồng": tóm tắt, bảng số liệu, điểm cần lưu ý.
 **Bước:**
@@ -348,7 +348,7 @@ Tạo `backend/app/flows.py`: registry `FLOWS` (id, tên, trigger, người nh�
 
 ### AG-04 — Tìm bằng ảnh (P1)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome nén ảnh ở **client** (cạnh dài ≤1024 px, JPEG chất lượng 0,82, base64) rồi gửi chung request chat; câu mặc định "Tìm căn giống ảnh này giúp mình". Làm giống để giảm dung lượng và độ trễ.
+> **Bổ sung:** nén ảnh ở **client** (cạnh dài ≤1024 px, JPEG chất lượng 0,82, base64) rồi gửi chung request chat, để giảm dung lượng và độ trễ.
 
 **Bước:**
 1. `POST /sessions/{id}/image` (multipart, JPEG/PNG/WebP ≤ 5 MB, kiểm magic bytes như `media.py`). Ảnh **không lưu** quá thời gian xử lý; chỉ lưu kết quả trích xuất.
@@ -361,7 +361,7 @@ Tạo `backend/app/flows.py`: registry `FLOWS` (id, tên, trigger, người nh�
 
 ### PR-01 — Lịch sử trò chuyện (P1)
 
-> **Bổ sung từ nghiên cứu HubHome (§5):** HubHome lưu lịch sử 15 cuộc gần nhất **trên máy**, lệnh `/moi` (bắt đầu lại, cuộc cũ vẫn xem được), `/tieuchi` (xem và gỡ tiêu chí đang lọc), `/quen` (quên hồ sơ, có xác nhận, không xóa lịch sử và lịch hẹn). HomeMatch lưu ở server (PR-01) và thêm ba lệnh này vào composer (WS-03).
+> **Bổ sung:** lịch sử lưu ở server (PR-01); composer (WS-03) có ba lệnh: bắt đầu lại (cuộc cũ vẫn xem được), xem và gỡ tiêu chí đang lọc, quên hồ sơ (có xác nhận, không xóa lịch sử và lịch hẹn).
 
 **BE:** `GET /me/conversations/ai` → danh sách phiên AI của khách (`session_id`, câu đầu đã che PII, số lượt, thời gian, trạng thái run); `GET /me/conversations/ai/{session_id}` → các lượt từ `hm_chat_transcripts` (đã PII-mask, tôn trọng retention). Chỉ chủ phiên xem được.
 **FE:** trang cá nhân tab "Lịch sử trò chuyện"; bấm một phiên → mở lại `/tro-ly-ai` với phiên đó (thay cho bản lưu `sessionStorage`). Khung chat tải lượt từ server.
@@ -494,44 +494,14 @@ Viết lại `docs/thiet-ke-agent.md` và `docs/nghiep-vu-va-harness.md` theo ki
 
 **Xong harness khi:** (1) "Tìm phòng trọ dưới 4 triệu gần HUST" live trên kho Neon: hỏi bán kính bằng chip có số căn thật, Jev xếp thứ tự, bấm chip → kết quả + bản đồ, tổng thời gian lượt đầu ≤ 6 s; (2) 20 lượt liên tiếp trong một phiên không hết ngân sách; (3) `eval agent --mode demo` chạy đủ 40 kịch bản, báo cáo p50/p95/chi phí; (4) mọi lượt có trace bền xem được ở trang admin; (5) `bash infra/check-local.sh` exit 0.
 
-## 5. Nghiên cứu HubHome (05/11/2026)
-
-**Phương pháp:** đọc trang công khai `hubhome.vn`, `/tro-ly-ai` và 13 file JS giao diện công khai (`/_next/static/chunks/*`), kết hợp các khảo sát trước trong `docs/khao-sat-hubhome-*.md` (01/10, 03/11, 04/11). Không đăng nhập, không gửi tin nhắn tới agent của họ, không cào dữ liệu tin. `robots.txt` của HubHome: `use=reference`, `ai-train=no` — chỉ dùng để tham khảo thiết kế, không sao chép tài sản (logo, mascot, câu chữ), không huấn luyện mô hình. Mọi điều dưới đây suy từ code phía client; logic server của họ **không** được kiểm chứng.
-
-**Kiến trúc agent nhìn từ client:**
-
-| Khía cạnh | HubHome | HomeMatch hiện tại | Task |
-|---|---|---|---|
-| Endpoint | Một `POST /api/ai-assistant`, stream NDJSON: `{loai:"buoc"}` từng bước rồi `{loai:"xong",data}`; timeout 75 s, thử lại 2 lần | Nhiều endpoint, trả một lần | WS-02 |
-| Ngữ cảnh gửi lên | `message`, `image`, 8 lượt gần nhất, `criteria`, `journey`, `dossiers`, `shortlist`, `focus` (≤4 căn), `workspace` (view, căn chọn, ≤30 căn đang hiện, điểm đến, lịch), `gps`, đồng ý lưu hồ sơ | Chỉ `text` | WS-01, AG-13 |
-| Phản hồi | Agent **chọn view**: `detail, gallery, decision, cost, nearby, trust, hop_dong, area, route, compare, saved`; `actions` OPEN/CLEAR/KEEP_WORKSPACE; `anchor`, `near_miss`, `criteria`, `pendingBooking(s)`, `pendingHandoff`, `suggestedPrompts`, `trace` | Văn bản + câu hỏi; FE tự quyết | WS-01 |
-| Các bước | Hiện trực tiếp "bước N", rồi "Đã xử lý qua N bước" (router, tool, ghim bản đồ, guardrail; bước hệ thống tự thêm có nhãn) | 4 bước dựng lại sau khi run xong | WS-02 |
-| Hỏi lại / lựa chọn | Quick-reply chữ dưới ô nhập (≤7, server trước, chip theo căn sau), bấm = gửi câu; không thấy câu hỏi lại có cấu trúc | Chỉ hỏi "thành phố nào?" | AG-11 (làm hơn) |
-| Địa điểm | Proxy `/api/goong/geocode`, `/api/quan-gan` (quận từ GPS), `/api/dia-gioi` (ranh giới); ghim mốc + đường nét đứt; C1 geocode nhầm HUST | Không có | AG-01, MP-01 |
-| Đường đi | View Lộ trình: nhiều phương án, km/phút, "theo đường đi"/"chim bay", vệ tinh; "Đường đi từ chỗ bạn" (GPS) | Không có | MP-01 |
-| Quanh căn / khu vực | View tiện ích xung quanh (km, phút đi bộ, chim bay), phân tích khu vực | Không có | MP-02 |
-| Nhận xét chủ động | Mở căn → `/api/can/doi-chieu` so với nhóm, chèn tin nhắn + chip | Không có | AG-14 |
-| Tin cậy | Nhãn "Chính chủ đã xác minh / Chưa xác minh", view tín hiệu tin cậy, báo tin sai | Không có | AG-15 |
-| So sánh | ≤4 căn, giá/m², nhãn "rẻ nhất", "đáng tiền", "Tổng kết nhanh — Phù hợp nếu bạn muốn…" | ≤3 căn, bảng chi phí | (bổ sung vào so sánh hiện có) |
-| Đặt lịch | Panel điền sẵn từ chat, lưới giờ 09:00–19:00, tại nơi/trực tuyến, nhiều căn, hủy qua chat, cảm nhận sau xem | Form, chat chỉ "chuẩn bị" | AG-06, FL-01 |
-| Hợp đồng | Bản nháp chỉ khi chủ nhà khai đủ; liệt kê mục thiếu; "Hỏi agent nên hỏi chủ nhà thế nào" | Lease click-accept, không có trợ lý | AG-07 |
-| Người thật | `pendingHandoff` → chat người thật ngay trong workspace | Trang Tin nhắn riêng | AG-09 |
-| Ảnh / giọng nói / GPS | Ảnh nén client ≤1024 px; Web Speech vi-VN; "Gần tôi" | Giọng nói có; ảnh, GPS chưa | AG-04, WS-03 |
-| Phản hồi | 👍/👎 từng câu và **từng tin** gửi server (`/api/feedback`) | 👍/👎 câu, chỉ lưu máy | EV-01 (nhãn relevance) |
-| Bộ nhớ | Hồ sơ trên máy 30 ngày khi đồng ý, `/quen`, lịch sử 15 cuộc | Memory server có đồng ý | PR-01, WS-03 |
-
-**HomeMatch giữ khác biệt có chủ đích:** tiền chỉ do `costs.py` tính và có oracle; mọi lựa chọn hỏi lại lấy từ kho thật và có `patch` cấu trúc (HubHome chỉ gửi lại chữ); Jev quyết định khi nào hỏi; dữ liệu tin cậy không ảnh hưởng xếp hạng; không lưu GPS.
-
-**Giới hạn của nghiên cứu này:** chỉ đọc code client đã build; tên trường suy từ code rút gọn; chưa quan sát hành vi thật của từng view trong phiên này (không có trình duyệt). Trước khi đưa vào luận văn, nên xác nhận lại bằng phiên dùng thật có ảnh chụp (bổ sung vào `docs/khao-sat-hubhome-giao-dien-ux.md`).
-
-## 6. Điều kiện hoàn tất chung cho mỗi task
+## 5. Điều kiện hoàn tất chung cho mỗi task
 
 1. `bash infra/check-local.sh` exit 0 (pytest, vitest, typecheck, build, demo, smoke).
 2. API mới cập nhật `docs/api-contract.md` và sinh lại `docs/openapi.json`; trạng thái FR cập nhật trong `docs/yeu-cau-san-pham.md` và `docs/trang-thai-trien-khai.md` (ghi rõ đã chạy gì, không tuyên bố live/PG/E2E nếu chưa chạy).
 3. Migration có test SQLite; chạy PG khi có `HOMEMATCH_TEST_DATABASE_URL`.
 4. Prettier cho file FE đã sửa (chỉ phần mình sửa).
 
-## 7. Ngoài phạm vi / để sau
+## 6. Ngoài phạm vi / để sau
 
 - Cổng thanh toán, email/SMS thật, chữ ký điện tử pháp lý, đăng mạng xã hội tự động (D-07, D-08).
 - Deploy Railway/Docker (D-09).

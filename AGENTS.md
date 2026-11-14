@@ -35,7 +35,7 @@ Use four-space Python indentation, `snake_case`, `PascalCase` classes, type hint
 
 ## Testing Guidelines
 
-Name pytest files `test_*.py` and UI tests `*.test.tsx`. Use temporary DBs, close connections and default to offline providers. Test changed behaviors: null/zero costs, hard filters, ownership, HITL visibility, stale replies/versions, CAS, keys and restart. No numerical coverage threshold exists. Fixture tests do not prove live model quality, browser integration or PG behavior.
+Name pytest files `test_*.py` and UI tests `*.test.tsx`. Use temporary DBs, close connections and default to offline providers. Test changed behaviors: null/zero costs, hard filters, ownership, result visibility, stale replies/versions, CAS, keys and restart. No numerical coverage threshold exists. Fixture tests do not prove live model quality, browser integration or PG behavior.
 
 ## Commit & Pull Request Guidelines
 

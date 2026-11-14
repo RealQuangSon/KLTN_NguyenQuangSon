@@ -6,7 +6,7 @@ Phiên bản 04/10/2026. Đọc [PLAN](PLAN.md), [README hiện tại](README.md
 
 - Khóa vocabulary room/property/listing, renter/organization, role/assignment, source mode public_catalog/ai_recommendation.
 - Khóa unit/null/zero/evidence/version/timezone/financial snapshot và state dictionary từng HM.
-- Source register ghi quyền/phạm vi sử dụng/tái phân phối/ngày/real-synthetic; khảo sát HubHome không quyền export/crawl.
+- Source register ghi quyền/phạm vi sử dụng/tái phân phối/ngày/real-synthetic; khảo sát sản phẩm tham khảo không quyền export/crawl.
 - Phân public/private/sensitive/transactional data, retention/export/delete và media metadata.
 - Giữ dataset development/manifests hiện tại. Tạo dataset version mới khi mở rộng, không overwrite frozen inputs.
 

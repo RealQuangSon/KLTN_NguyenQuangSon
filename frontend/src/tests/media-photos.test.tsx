@@ -1,11 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { Api } from "../api";
 import { RoomEditor } from "../components/RoomEditor";
 import { CoverPhoto, PhotoGallery } from "../components/PhotoGallery";
+import { ContactInfo, RoomMiniCard } from "../components/Shared";
 import { MaintenancePage } from "../pages/Pms";
-import type { Photo, Room } from "../types";
+import type { Candidate, Photo, Room } from "../types";
 // FE-05: upload ảnh tin (hợp đồng README §7.5), gallery bàn phím, minh họa khi
 // không có ảnh, ảnh sự cố tải bằng token. Mock theo mẫu inbox-admin.test.tsx.
 const room: Room = {
@@ -161,7 +162,7 @@ it("renders the gallery, navigates with the right arrow key and shows the illust
     { id: "m2", url: "/media/m2" },
   ];
   const { rerender } = render(
-    <PhotoGallery photos={photos} title="Studio Q7" />,
+    <PhotoGallery item={{ photos }} title="Studio Q7" />,
   );
   expect(screen.getByAltText("Ảnh 1/2 — Studio Q7")).toHaveAttribute(
     "src",
@@ -172,17 +173,150 @@ it("renders the gallery, navigates with the right arrow key and shows the illust
   await user.type(gallery, "{ArrowRight}");
   expect(screen.getByAltText("Ảnh 2/2 — Studio Q7")).toBeInTheDocument();
   // Không có ảnh: giữ hình minh họa thay vì ô trống.
-  rerender(<PhotoGallery photos={[]} title="Studio Q7" />);
+  rerender(<PhotoGallery item={{ photos: [] }} title="Studio Q7" />);
   expect(
     document.querySelector(".photo-gallery.empty .room-illustration"),
   ).toBeTruthy();
   // Ảnh bìa thẻ phòng: ảnh đầu hoặc minh họa.
   const { container } = render(
-    <CoverPhoto photos={undefined} title="Studio Q7" />,
+    <CoverPhoto item={undefined} title="Studio Q7" />,
   );
   expect(
     container.querySelector(".card-photo .room-illustration"),
   ).toBeTruthy();
+});
+
+// CA-06: ảnh tin gốc Chợ Tốt — URL nguyên bản, ưu tiên sau ảnh chủ nhà,
+// lỗi thì rớt về minh họa, chú thích kèm link tin gốc.
+const crawlRoom: Room = {
+  ...room,
+  id: "chotot-777",
+  source: "https://www.chotot.com/87761677.htm",
+  synthetic: false,
+  photos: [{ id: "m1", url: "/media/m1" }],
+  source_images: [
+    "https://cdn.chotot.com/a/1.jpg",
+    "https://cdn.chotot.com/a/2.jpg",
+  ],
+};
+const candidateBase: Candidate = {
+  room_id: "chotot-777",
+  room_revision: 1,
+  title: "Phòng crawled Quận 7. Giá tốt",
+  city: "TP.HCM",
+  area: "Quận 7",
+  area_m2: 20,
+  cost: {
+    monthly_known_vnd: 900000,
+    monthly_total_vnd: 900000,
+    initial_known_vnd: 900000,
+    initial_total_vnd: 900000,
+    missing_monthly: [],
+    missing_initial: [],
+    lines: [],
+    assumptions: {},
+  },
+  score: 1,
+  components: {},
+  reasons: ["Đáp ứng sở thích kitchen theo nguồn tin."],
+  tradeoffs: [],
+  source: "https://www.chotot.com/87761677.htm",
+  synthetic: false,
+  algorithm: "structured_baseline_v1",
+};
+it("prefers landlord photos and sends crawl images to their original CDN URL", () => {
+  const { container } = render(
+    <PhotoGallery
+      item={crawlRoom}
+      title="Phòng crawled"
+      source={crawlRoom.source}
+    />,
+  );
+  // Ảnh chủ nhà đứng trước và đi qua /api; ảnh ngoài giữ URL nguyên bản.
+  expect(screen.getByAltText("Ảnh 1/3 — Phòng crawled")).toHaveAttribute(
+    "src",
+    "/api/media/m1",
+  );
+  const sources = Array.from(container.querySelectorAll("img")).map((img) =>
+    img.getAttribute("src"),
+  );
+  expect(sources).toContain("https://cdn.chotot.com/a/1.jpg");
+  expect(sources).not.toContain("/api/https://cdn.chotot.com/a/1.jpg");
+  expect(screen.getByText(/Ảnh từ tin gốc Chợ Tốt/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Xem tin gốc" })).toHaveAttribute(
+    "href",
+    "https://www.chotot.com/87761677.htm",
+  );
+});
+it("drops a broken crawl image and falls back to the illustration when none remain", async () => {
+  const brokenOnly = {
+    photos: [],
+    source_images: ["https://cdn.chotot.com/dead/1.jpg"],
+  };
+  const { container } = render(
+    <PhotoGallery item={brokenOnly} title="Phòng crawled" source={null} />,
+  );
+  const image = screen.getByAltText("Ảnh 1/1 — Phòng crawled");
+  expect(image).toHaveAttribute("src", "https://cdn.chotot.com/dead/1.jpg");
+  fireEvent.error(image);
+  // Hết ảnh thật: về hình minh họa, không ô trống/biểu tượng ảnh hỏng.
+  await waitFor(() =>
+    expect(
+      document.querySelector(".photo-gallery.empty .room-illustration"),
+    ).toBeTruthy(),
+  );
+  expect(container.querySelector("img")).toBeNull();
+});
+it("covers cards with the first available photo and labels the illustration only when empty", () => {
+  const { container } = render(
+    <RoomMiniCard
+      item={{
+        ...candidateBase,
+        source_images: ["https://cdn.chotot.com/a/1.jpg"],
+      }}
+    />,
+  );
+  expect(container.querySelector("img")).toHaveAttribute(
+    "src",
+    "https://cdn.chotot.com/a/1.jpg",
+  );
+  expect(container.textContent).not.toContain("Hình minh họa");
+  expect(container.textContent).toContain("Ảnh từ tin gốc Chợ Tốt");
+  const noPhoto = render(<RoomMiniCard item={{ ...candidateBase }} />);
+  expect(
+    noPhoto.container.querySelector(".room-mini-visual .room-illustration"),
+  ).toBeTruthy();
+  expect(noPhoto.container.textContent).toContain("Hình minh họa");
+});
+it("shows the crawled poster name only through the contact block", () => {
+  const contact = {
+    kind: "external" as const,
+    original_url: "https://www.chotot.com/87761677.htm",
+    phone: null,
+    phone_requires_login: false,
+    poster_name: "Người đăng mẫu",
+  };
+  render(<ContactInfo contact={contact} />);
+  expect(screen.getByText(/Người đăng: Người đăng mẫu/)).toBeInTheDocument();
+  const anonymous = { ...contact, poster_name: null };
+  const { container } = render(<ContactInfo contact={anonymous} />);
+  expect(container.textContent).not.toContain("Người đăng mẫu");
+});
+it("keeps RoomEditor managing landlord photos only, with no delete for crawl images", async () => {
+  const api = new Api("t");
+  vi.spyOn(api, "get").mockResolvedValue({ ...crawlRoom, photos: [] } as never);
+  render(
+    <RoomEditor
+      api={api}
+      room={crawlRoom}
+      onSubmit={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  );
+  await screen.findByLabelText(/Chọn ảnh/);
+  // Ảnh ngoài không vào media editor: không có nút xóa/sắp xếp nào.
+  expect(screen.queryByRole("button", { name: /Xóa ảnh/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Đưa ảnh/ })).toBeNull();
 });
 const lease = {
   id: "l1",

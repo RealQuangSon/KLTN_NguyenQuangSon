@@ -46,8 +46,12 @@ def money(value: int | None) -> str:
 # ---------------------------------------------------------------- inputs
 
 class LeaseInput(Model):
-    renter_id: str = Field(min_length=1, max_length=64)
+    # Để trống được khi có viewing_id: máy chủ lấy người thuê từ lịch xem.
+    renter_id: str | None = Field(default=None, min_length=1, max_length=64)
     room_id: str = Field(min_length=1, max_length=100)
+    # crawl.md E-08: tạo hợp đồng từ lịch xem đã hoàn tất — renter_id lấy từ
+    # lịch; tùy chọn nên lời gọi cũ không vỡ.
+    viewing_id: str | None = Field(default=None, min_length=1, max_length=100)
     start_date: date
     end_date: date
     rent_vnd: int | None = Field(default=None, gt=0)
@@ -153,9 +157,27 @@ def create_lease(repo, room, landlord_id: str, data: LeaseInput, renewal_of: str
         raise DomainError("not_found", "Không tìm thấy phòng.", 404)
     if data.end_date <= data.start_date:
         raise DomainError("invalid_period", "Ngày kết thúc phải sau ngày bắt đầu.", 422)
-    renter = repo.db.execute("SELECT role FROM hm_users WHERE id=?", (data.renter_id,)).fetchone()
+    viewing = None
+    if data.viewing_id:
+        viewing = repo.db.execute("SELECT * FROM hm_viewings WHERE id=?", (data.viewing_id,)).fetchone()
+    # Tạo từ lịch xem mà không gửi renter_id → lấy khách của lịch (chủ nhà không phải gõ mã tài khoản).
+    renter_id = data.renter_id or (viewing["owner_id"] if viewing is not None else None)
+    if not renter_id:
+        raise DomainError("invalid_renter", "Cần chọn người thuê hoặc tạo từ một lịch xem đã hoàn tất.", 422)
+    renter = repo.db.execute("SELECT role FROM hm_users WHERE id=?", (renter_id,)).fetchone()
     if renter is None or renter["role"] != "renter":
         raise DomainError("invalid_renter", "Không tìm thấy tài khoản người thuê.", 422)
+    # crawl.md E-08.2: tạo từ lịch xem — lịch phải thuộc chủ nhà, đúng phòng và
+    # đã completed; renter_id lấy từ lịch (client không tự gõ mã tài khoản).
+    if data.viewing_id:
+        if viewing is None:
+            raise DomainError("viewing_not_found", "Không tìm thấy lịch xem.", 404)
+        if viewing["landlord_id"] != landlord_id or viewing["room_id"] != data.room_id:
+            raise DomainError("viewing_mismatch", "Lịch xem không thuộc phòng/chủ nhà này.", 403)
+        if viewing["status"] != "completed":
+            raise DomainError("viewing_not_completed", "Chỉ lịch xem đã hoàn tất mới tạo được hợp đồng.", 409)
+        if viewing["owner_id"] != renter_id:
+            raise DomainError("invalid_renter", "Người thuê phải là khách của lịch xem này.", 422)
     if _overlaps(repo, room.id, data.start_date, data.end_date, ignore=renewal_of):
         raise DomainError("lease_overlap", "Phòng đã có hợp đồng trong khoảng thời gian này.", 409)
     now = utc_now()
@@ -164,18 +186,22 @@ def create_lease(repo, room, landlord_id: str, data: LeaseInput, renewal_of: str
         repo.db.execute("INSERT INTO hm_leases(id,landlord_id,renter_id,room_id,start_date,end_date,rent_vnd,"
                         "deposit_vnd,payment_day,occupants,vehicles,terms,status,version,renewal_of,quote_json,"
                         "created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'draft',1,?,?,?,?)",
-                        (lease_id, landlord_id, data.renter_id, room.id, data.start_date.isoformat(),
+                        (lease_id, landlord_id, renter_id, room.id, data.start_date.isoformat(),
                          data.end_date.isoformat(), data.rent_vnd or room.quote.rent_vnd,
                          data.deposit_vnd if data.deposit_vnd is not None else (room.quote.deposit_vnd or 0),
                          data.payment_day, data.occupants, data.vehicles, data.terms or DEFAULT_TERMS,
                          renewal_of, room.quote.model_dump_json(), now, now))
+    if data.viewing_id:
+        with repo.db:
+            repo.db.execute("UPDATE hm_viewings SET lease_id=?, updated_at=? WHERE id=?",
+                            (lease_id, utc_now(), data.viewing_id))
     return lease(repo, lease_id)
 
 
 def update_lease(repo, item: dict, data: LeaseInput) -> dict:
     if item["status"] not in ("draft", "sent"):
         raise DomainError("lease_locked", "Chỉ sửa được hợp đồng chưa hiệu lực.", 409)
-    if data.room_id != item["room_id"] or data.renter_id != item["renter_id"]:
+    if data.room_id != item["room_id"] or (data.renter_id or item["renter_id"]) != item["renter_id"]:
         raise DomainError("invalid_request", "Không đổi phòng hoặc người thuê của hợp đồng.", 422)
     if data.end_date <= data.start_date:
         raise DomainError("invalid_period", "Ngày kết thúc phải sau ngày bắt đầu.", 422)
@@ -541,17 +567,27 @@ def dashboard(repo, rooms: list, landlord_id: str, today: date | None = None) ->
 
 
 def analytics(repo, rooms: list, landlord_id: str) -> dict:
+    # Gộp theo phòng bằng 4 truy vấn (không truy vấn từng phòng): với kho lớn trên Neon,
+    # bản cũ chạy 4 truy vấn/phòng và giữ khóa DB nhiều phút, làm treo cả API.
+    def by_room(sql: str) -> dict:
+        return {row["room_id"]: row for row in repo.db.execute(sql).fetchall()}
+
+    views_by = by_room("SELECT room_id, COUNT(*) AS n, COUNT(DISTINCT user_id) AS u "
+                       "FROM hm_room_views GROUP BY room_id")
+    viewings_by = by_room("SELECT room_id, COUNT(*) AS n, "
+                          "SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END) AS c "
+                          "FROM hm_viewings GROUP BY room_id")
+    won_by = by_room("SELECT room_id, COUNT(*) AS n FROM hm_leases "
+                     "WHERE status IN ('active','ended') GROUP BY room_id")
+    revenue_by = by_room("SELECT l.room_id AS room_id, COALESCE(SUM(p.amount_vnd),0) AS v "
+                         "FROM hm_payments p JOIN hm_invoices i ON i.id=p.invoice_id "
+                         "JOIN hm_leases l ON l.id=i.lease_id GROUP BY l.room_id")
     result = []
     for room in (room for room in rooms if room.landlord == landlord_id):
-        views = repo.db.execute("SELECT COUNT(*) AS n, COUNT(DISTINCT user_id) AS u FROM hm_room_views WHERE room_id=?",
-                                (room.id,)).fetchone()
-        viewings = repo.db.execute("SELECT COUNT(*) AS n, SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END) AS c "
-                                   "FROM hm_viewings WHERE room_id=?", (room.id,)).fetchone()
-        won = repo.db.execute("SELECT COUNT(*) AS n FROM hm_leases WHERE room_id=? AND status IN ('active','ended')",
-                              (room.id,)).fetchone()["n"]
-        revenue = repo.db.execute("SELECT COALESCE(SUM(p.amount_vnd),0) AS v FROM hm_payments p JOIN hm_invoices i "
-                                  "ON i.id=p.invoice_id JOIN hm_leases l ON l.id=i.lease_id WHERE l.room_id=?",
-                                  (room.id,)).fetchone()["v"]
+        views = views_by.get(room.id) or {"n": 0, "u": 0}
+        viewings = viewings_by.get(room.id) or {"n": 0, "c": 0}
+        won = (won_by.get(room.id) or {"n": 0})["n"]
+        revenue = (revenue_by.get(room.id) or {"v": 0})["v"]
         requested = viewings["n"] or 0
         result.append({"room_id": room.id, "title": room.title.split(". ")[0], "views": views["n"],
                        "unique_viewers": views["u"], "viewings_requested": requested,

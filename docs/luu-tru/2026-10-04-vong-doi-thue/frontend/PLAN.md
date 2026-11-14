@@ -8,7 +8,7 @@
 
 Source React/TypeScript hiện có landing/login, renter search/viewings, manager review/catalog/viewings, API client và các kiểm soát pending/null/0/stale/CAS/key. API backend hiện tại 0.3.0, role chỉ renter/manager, navigation là state tab. Chưa có route/deep link, owner/admin, public discovery/map/media, favorites/saved searches/account history/notifications hoặc hợp đồng/công tơ/hóa đơn/sửa chữa. Theme cam đỏ/nền ngà và landing hai cột chưa theo token/layout mục tiêu.
 
-Bằng chứng ngày 02/10 trong [TEST_CHECKLIST](TEST_CHECKLIST.md) là baseline của source cũ; fixtures và [preview độc lập](design/hubhome-preview.html) không chứng minh target đã được triển khai. Mọi task dưới đây là việc cần thực hiện/kiểm chứng, không tự nhận hoàn tất từ việc viết lại docs.
+Bằng chứng ngày 02/10 trong [TEST_CHECKLIST](TEST_CHECKLIST.md) là baseline của source cũ; fixtures và preview độc lập không chứng minh target đã được triển khai. Mọi task dưới đây là việc cần thực hiện/kiểm chứng, không tự nhận hoàn tất từ việc viết lại docs.
 
 ## 2. Phạm vi và dependencies
 
@@ -66,7 +66,7 @@ Chốt DTO/action trước xây màn có mutation. Khi backend chưa có API, FE
 - Contract activate sau chấp thuận đúng version của renter và owner/manager được ủy quyền; tenancy active sau move-in checklist. Legal e-sign là tùy chọn, document/consent/audit là bắt buộc.
 - Báo đã chuyển tiền và xác nhận đã nhận là hai thao tác; manual recording/reconciliation bắt buộc. Cổng thanh toán không phải điều kiện để có sổ đối chiếu đúng.
 - Tour/media/link và lịch trực tuyến có thể hoàn thành trải nghiệm xem từ xa; không bắt xây nền tảng video call riêng. Voice/image AI không là điều kiện để nghiệp vụ core đạt.
-- Không sao assets/data HubHome; layout tham chiếu có nguồn, phần bổ sung có nhãn thiết kế HomeMatch. Độ giống không thay quyền/tiền/trạng thái.
+- Không sao assets/data sản phẩm tham khảo; layout tham chiếu có nguồn, phần bổ sung có nhãn thiết kế HomeMatch. Độ giống không thay quyền/tiền/trạng thái.
 
 ## 6. Truy vết và nghiệm thu
 

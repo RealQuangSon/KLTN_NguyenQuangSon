@@ -6,7 +6,7 @@
 set -euo pipefail
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
-SNAPSHOT=${HOMEMATCH_CHOTOT_SNAPSHOT:-chotot-2026-10-30}
+SNAPSHOT=${HOMEMATCH_CHOTOT_SNAPSHOT:-chotot-2026-11-07-5k-r2}
 PORT=${1:-8000}
 
 [ -f .env ] || { echo "Thiếu .env (copy từ .env.example)." >&2; exit 1; }

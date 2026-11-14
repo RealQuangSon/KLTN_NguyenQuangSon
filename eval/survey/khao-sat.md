@@ -1,6 +1,6 @@
 # Khảo sát người dùng HomeMatch (GĐ5) — biểu mẫu chính thức
 
-**Đối tượng:** 5–10 người dùng thử kịch bản demo đầu-cuối (tìm phòng → duyệt → gợi ý → chi phí).
+**Đối tượng:** 5–10 người dùng thử kịch bản demo đầu-cuối (tìm phòng → gợi ý → chi phí).
 **Đồng ý:** mỗi người trả lời cần được xin phép trước; kết quả ẩn danh, chỉ dùng cho đề tài.
 **Cách ghi:** điền CSV với các cột dưới đây (một dòng một người); chạy
 `python -m eval survey-report --csv <file>.csv` để tính trung bình và độ lệch chuẩn.

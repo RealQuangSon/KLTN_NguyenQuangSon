@@ -1,0 +1,97 @@
+{
+  "kind": "hn13_dialogs",
+  "version": 1,
+  "note": "Bộ hội thoại nhiều lượt đo hỏi lại/chip (HN-13.2). Lượt 'chip' mô phỏng đúng FE: PATCH draft (source=clarify) rồi POST /confirm khi đủ dữ liệu tối thiểu; nếu lượt trước không có chip thì lùi về gõ chữ (ghi fallback).",
+  "conversations": [
+    {
+      "id": "vague-no-city",
+      "name": "Mơ hồ, không có thành phố",
+      "turns": [
+        {"text": "cho mình xin phòng ở rẻ thôi"},
+        {"text": "TP.HCM, Quận 7"},
+        {"text": "dưới 4 triệu cho 1 người"}
+      ]
+    },
+    {
+      "id": "landmark-in-catalog",
+      "name": "Địa danh có trong danh mục",
+      "turns": [
+        {"text": "tìm phòng gần Đại học Quốc gia Hà Nội"},
+        {"text": "tổng tháng dưới 5 triệu"},
+        {"text": "chốt luôn cho 1 người"}
+      ]
+    },
+    {
+      "id": "landmark-ho-guom",
+      "name": "Địa danh ngoài danh mục: Hồ Gươm",
+      "turns": [
+        {"text": "phòng gần Hồ Gươm Hà Nội tầm 5 triệu"},
+        {"text": "ở Hoàn Kiếm cũng được"},
+        {"text": "1 người, tìm giúp mình"}
+      ]
+    },
+    {
+      "id": "landmark-ben-thanh",
+      "name": "Địa danh ngoài danh mục: Bến Thành",
+      "turns": [
+        {"text": "phòng gần chợ Bến Thành, 2 người"},
+        {"text": "Quận 1 được"},
+        {"text": "tổng tháng 6 triệu"}
+      ]
+    },
+    {
+      "id": "budget-people-first",
+      "name": "Ngân sách và số người ngay câu đầu",
+      "turns": [
+        {"text": "phòng Quận 7 TP.HCM dưới 4 triệu cho 2 người có máy lạnh"},
+        {"text": "phòng nào đáng tiền hơn?"},
+        {"text": "giảm xuống 3,5 triệu thì sao?"}
+      ]
+    },
+    {
+      "id": "answer-by-chip",
+      "name": "Khách trả lời bằng cách bấm chip",
+      "turns": [
+        {"text": "phòng trọ dưới 4 triệu"},
+        {"chip": 0},
+        {"text": "phòng nào rẻ nhất?"}
+      ]
+    },
+    {
+      "id": "answer-free-text",
+      "name": "Khách trả lời bằng câu gõ tự do",
+      "turns": [
+        {"text": "cần phòng gần trường đại học, 3 triệu"},
+        {"text": "tổng tháng, 1 người"},
+        {"text": "Quận Cầu Giấy Hà Nội nhé"}
+      ]
+    },
+    {
+      "id": "change-mind",
+      "name": "Khách đổi ý giữa chừng",
+      "turns": [
+        {"text": "phòng Hà Nội Cầu Giấy 4 triệu"},
+        {"text": "thôi đổi sang Quận 7 TP.HCM"},
+        {"text": "dưới 4 triệu cho 1 người"}
+      ]
+    },
+    {
+      "id": "no-match",
+      "name": "Không có căn khớp",
+      "turns": [
+        {"text": "phòng Quận 1 TP.HCM dưới 500 nghìn một tháng"},
+        {"text": "chấp nhận dữ liệu ước tính"},
+        {"text": "nới lên 2 triệu đi"}
+      ]
+    },
+    {
+      "id": "self-publish-handover",
+      "name": "Lượt tự publish (bàn giao xếp hạng) rồi hỏi xếp hạng và vay",
+      "turns": [
+        {"text": "tìm phòng trọ Quận 7 TP.HCM dưới 5 triệu cho 1 người"},
+        {"text": "phòng nào đáng tiền hơn?"},
+        {"text": "vay 10 triệu lãi 10% trong 12 tháng thì sao?"}
+      ]
+    }
+  ]
+}

@@ -40,18 +40,22 @@ def test_destination_radius_ambiguity_asks_with_real_counts(service, renter):
     clarification = clarify.build_clarification(service, sid, field="destination_radius")
     assert clarification is not None and clarification["field"] == "destination_radius"
     radii = {option["interpretation"]["radius_m"] for option in clarification["options"]}
-    assert radii == {2000, 5000}
+    # HN-13.2: mức ĐANG TẠM DÙNG (3 km mặc định) phải nằm trong chip.
+    assert radii == {2000, 3000, 5000}
     # Bán kính 2 km là tập con của 5 km nhưng top-5 phải khác nhau (đáng hỏi).
-    first, second = clarification["options"]
+    by_radius = {option["interpretation"]["radius_m"]: option for option in clarification["options"]}
+    first, second = by_radius[2000], by_radius[5000]
     assert set(first["top"]) != set(second["top"])
     assert abs(sum(option["probability"] for option in clarification["options"]) - 1) < 0.01
     # Lượt chat tiếp theo gắn DTO lên đầu câu trả lời (chip có số căn thật).
     reply = service.message(sid, renter, "cho mình hỏi giá khu này luôn")
     dto = reply.get("clarification")
-    assert dto and dto["question"] == clarify.question_for("destination")
+    # HN-13.2: alias "destination"→radius đã bỏ (destination là field riêng);
+    # chip ở đây là destination_radius nên dùng question_for đúng field.
+    assert dto and dto["question"] == clarify.question_for("destination_radius")
     assert dto["decided_by"] in {"rules", "jev", "fallback"}
     assert all("căn" in option["label"] for option in dto["options"])
-    assert all(option["patch"]["set"].get("destination_radius_m") in {2000, 5000}
+    assert all(option["patch"]["set"].get("destination_radius_m") in {2000, 3000, 5000}
                for option in dto["options"])
 
 
@@ -218,7 +222,7 @@ def test_new_field_options_have_real_counts_costs_and_patches(service, renter, f
 def test_counts_cover_full_eligible_set_instead_of_only_top_five(service, renter):
     sid, draft = _draft_for_field(service, renter, "area")
     profile = service._profile_from_draft(sid)
-    top, count, minimum = clarify._match_top(service, profile)
+    top, count, minimum, held = clarify._match_top(service, profile)
     candidates, _ = service.catalog.rank(profile, service.matching_method)
     assert count == len(candidates) > 5 and len(top) == 5
     assert minimum == min(item.cost.monthly_total_vnd for item in candidates
@@ -244,7 +248,10 @@ def test_distinct_ambiguity_fields_are_never_mixed(service, renter):
     assert clarification is not None and clarification["field"] == "destination_radius"
     assert {option["field"] for option in clarification["options"]} == {"destination_radius"}
     assert all(option["kind"] == "radius" for option in clarification["options"])
-    assert clarify.build_clarification(service, sid, field="destination")["field"] == "destination_radius"
+    # HN-13.2: "destination" giờ là field RIÊNG (chip điểm mốc thật) — destination
+    # đã đặt nên nhóm này rỗng; alias cũ budget → budget_scope giữ nguyên.
+    assert clarify.canonical_field("budget") == "budget_scope"
+    assert clarify.build_clarification(service, sid, field="destination") is None
     assert clarify.question_for("budget") == clarify.question_for("budget_scope")
 
 

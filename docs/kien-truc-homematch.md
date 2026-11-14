@@ -67,7 +67,7 @@ Biến môi trường khi ấy cần: `HOMEMATCH_DATABASE_URL`; `HOMEMATCH_AUTH_
 
 | Quyết định | Lý do | Hệ quả |
 |---|---|---|
-| LangGraph + `interrupt()` cho HITL | Dừng và tiếp tục có checkpoint; mỗi chủ nhà quyết định riêng, graph chỉ chạy tiếp khi mọi chủ nhà đã quyết định | Node trước interrupt không được ghi |
+| LangGraph chỉ điều phối `rank → save_draft → publish` | Có checkpoint nhưng không dừng chờ người: kết quả công bố ngay (D-10); `interrupt()` đã gỡ |
 | Quyết định commit vào ledger trước khi resume | Không mất hay nhân đôi quyết định khi lỗi | Có trạng thái `reviewed` và thao tác retry |
 | Lọc cứng trước semantic | Đúng ràng buộc và giảm chi phí embedding | B1 và P so sánh công bằng trên cùng tập |
 | Engine tài chính tách khỏi LLM | Đúng đến VND và kiểm chứng được bằng oracle | LLM chỉ giải thích kết quả |

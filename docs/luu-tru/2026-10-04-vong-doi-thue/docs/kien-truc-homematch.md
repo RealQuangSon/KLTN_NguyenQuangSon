@@ -1,12 +1,12 @@
 # Kiến trúc sản phẩm HomeMatch
 
-Phiên bản định hướng sản phẩm: 04/10/2026. HomeMatch quản lý toàn vòng đời thuê: tìm chỗ ở → xem phòng → thỏa thuận → hợp đồng → vào ở → chi phí và thanh toán ghi nhận → sửa chữa → trả phòng. Đây là kiến trúc đề xuất của HomeMatch dựa trên nghiên cứu trải nghiệm HubHome, không mô tả công nghệ hoặc backend của HubHome.
+Phiên bản định hướng sản phẩm: 04/10/2026. HomeMatch quản lý toàn vòng đời thuê: tìm chỗ ở → xem phòng → thỏa thuận → hợp đồng → vào ở → chi phí và thanh toán ghi nhận → sửa chữa → trả phòng. Đây là kiến trúc đề xuất của HomeMatch dựa trên nghiên cứu trải nghiệm sản phẩm tham khảo, không mô tả công nghệ hoặc backend của sản phẩm tham khảo.
 
 Đọc cùng [đặc tả sản phẩm](dac-ta-san-pham.md), [yêu cầu](yeu-cau-san-pham.md), [quy trình](quy-trinh-nghiep-vu.md), [nghiệm thu](tieu-chi-nghiem-thu.md) và [API v1 đề xuất](api-san-pham-v1.md). Cả HM-01 đến HM-10 là phạm vi bắt buộc của sản phẩm hoàn thiện. API đang chạy vẫn là [0.3.0](api-contract.md); sơ đồ và mô hình đích dưới đây không phải chức năng đã triển khai.
 
 ## 1. Cơ sở thiết kế và hiện trạng
 
-[Nghiên cứu công khai cập nhật 04/10/2026](nghien-cuu-hubhome.md) và [khảo sát phiên đăng nhập 01/10/2026](khao-sat-hubhome-da-dang-nhap.md) cung cấp bằng chứng về workspace tìm phòng, lịch xem, hợp đồng, sổ đối chiếu thanh toán, chi phí sử dụng và sửa chữa. Hướng dẫn công khai mới mô tả cổng chủ nhà, hợp đồng/ký số và thu tiền/công nợ; đây là lời công bố, chưa là workflow proof. Một số màn hình chỉ có mô tả hoặc dữ liệu trống; chưa kiểm chứng toàn bộ luồng hay dashboard chủ nhà. HomeMatch dùng quan sát để xây yêu cầu riêng, không suy rằng HubHome đã giải quyết mọi nghiệp vụ tương ứng.
+Nghiên cứu công khai cập nhật 04/10/2026 và khảo sát phiên đăng nhập 01/10/2026 cung cấp bằng chứng về workspace tìm phòng, lịch xem, hợp đồng, sổ đối chiếu thanh toán, chi phí sử dụng và sửa chữa. Hướng dẫn công khai mới mô tả cổng chủ nhà, hợp đồng/ký số và thu tiền/công nợ; đây là lời công bố, chưa là workflow proof. Một số màn hình chỉ có mô tả hoặc dữ liệu trống; chưa kiểm chứng toàn bộ luồng hay dashboard chủ nhà. HomeMatch dùng quan sát để xây yêu cầu riêng, không suy rằng sản phẩm tham khảo đã giải quyết mọi nghiệp vụ tương ứng.
 
 | Phạm vi | Nền tảng thực tế trong mã 0.3.0 | Khoảng cách đến sản phẩm hoàn thiện |
 |---|---|---|

@@ -4,7 +4,7 @@
 
 | Task | Việc cần giao | Điều kiện xong |
 |---|---|---|
-| DOC-V1-01 | Research HubHome có nguồn/ngày/giới hạn | HH-01..12 phân biệt quan sát/công bố/lịch sử/đề xuất/chưa rõ |
+| DOC-V1-01 | Research sản phẩm tham khảo có nguồn/ngày/giới hạn | HH-01..12 phân biệt quan sát/công bố/lịch sử/đề xuất/chưa rõ |
 | DOC-V1-02 | Product/scope/roles/glossary và assumptions | HM-01..10 bắt buộc, mở rộng/đầu vào tách rõ; không áp lại MVP |
 | DOC-V1-03 | Requirements/process/state/permission/AC | 30 HM-R có AC-HM, negative cases và hành trình E2E; source trace rõ |
 | DOC-V1-04 | Architecture/API/UI/plans theo cùng contract | Current 0.3.0 khác target v1; pending/public/acceptance/payment semantics thống nhất |

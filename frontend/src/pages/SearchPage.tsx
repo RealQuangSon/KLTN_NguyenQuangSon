@@ -11,7 +11,7 @@ import {
 } from "../types";
 import { cityAreas } from "../locations";
 import {
-  AmenityChips,
+  AmenityGrid,
   CostBreakdown,
   DescriptionText,
   EmptyState,
@@ -21,10 +21,12 @@ import {
   money,
   PosterBadge,
   PromotionBadge,
+  SpecList,
   TermsBlock,
   roomTitle,
+  useScrollIntoView,
 } from "../components/Shared";
-import { CoverPhoto, PhotoGallery } from "../components/PhotoGallery";
+import { CoverPhoto, ListingMedia } from "../components/PhotoGallery";
 import { MapView } from "../components/MapView";
 import { AdviceBox, type Advice } from "../components/Advice";
 import { ViewingForm } from "../components/ViewingPanel";
@@ -72,9 +74,36 @@ const query = (filters: Filters, page: number) => {
   params.set("page_size", "12");
   return params.toString();
 };
+// D-12: /tim-kiem?city=…&area=…&room_type=…&max_monthly=…&people=… mở sẵn cùng bộ lọc
+// với lần tìm của trợ lý. Giá trị lạ bị bỏ; không có query thì giữ mặc định.
+function filtersFromUrl(): Filters {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const next: Filters = { ...initial };
+    // UX-01: phạm vi tiền thuê → link mang max_rent/min_rent thay cho max_monthly.
+    for (const key of [
+      "city",
+      "area",
+      "max_monthly",
+      "max_rent",
+      "min_rent",
+      "people",
+    ] as const) {
+      const value = params.get(key);
+      if (value) next[key] = value;
+    }
+    const type = params.get("room_type");
+    if (type === "room" || type === "studio" || type === "apartment")
+      next.room_type = type;
+    return next;
+  } catch {
+    return initial;
+  }
+}
 export function SearchPage({ api }: { api: Api }) {
-  const [filters, setFilters] = useState<Filters>(initial);
-  const [applied, setApplied] = useState<Filters>(initial);
+  const [urlFilters] = useState<Filters>(filtersFromUrl);
+  const [filters, setFilters] = useState<Filters>(urlFilters);
+  const [applied, setApplied] = useState<Filters>(urlFilters);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<{
     total: number;
@@ -133,6 +162,7 @@ export function SearchPage({ api }: { api: Api }) {
           ? ids
           : [...ids, id],
     );
+  const comparisonPanel = useScrollIntoView<HTMLElement>(comparison);
   const compare = async () => {
     setError(null);
     try {
@@ -403,10 +433,7 @@ export function SearchPage({ api }: { api: Api }) {
                   className={`listing-card ${detail?.id === item.id ? "selected" : ""}`}
                   key={item.id}
                 >
-                  <CoverPhoto
-                    photos={item.photos}
-                    title={roomTitle(item.title)}
-                  />
+                  <CoverPhoto item={item} title={roomTitle(item.title)} />
                   <span className="eyebrow">
                     {item.area} · {item.city} ·{" "}
                     {roomTypeLabels[item.room_type ?? "room"]}
@@ -519,13 +546,12 @@ export function SearchPage({ api }: { api: Api }) {
               {detail.promotion && (
                 <PromotionBadge promotion={detail.promotion} withText />
               )}
-              <PhotoGallery
-                photos={detail.photos}
-                title={roomTitle(detail.title)}
-              />
+              <ListingMedia item={detail} title={roomTitle(detail.title)} />
+              <SpecList room={detail} />
               {detail.features_text && <p>{detail.features_text}</p>}
               <DescriptionText description={detail.description} />
-              <AmenityChips amenities={detail.amenities} />
+              <h3>Tiện ích</h3>
+              <AmenityGrid amenities={detail.amenities} />
               <TermsBlock room={detail} />
               <CostBreakdown cost={detail.cost} />
               <h3>Nội quy & cách tính phí của chủ nhà</h3>
@@ -605,7 +631,7 @@ export function SearchPage({ api }: { api: Api }) {
         </aside>
       </div>
       {comparison && (
-        <section className="panel comparison">
+        <section className="panel comparison" ref={comparisonPanel}>
           <div className="section-heading">
             <div>
               <span className="eyebrow">SO SÁNH & TƯ VẤN</span>
@@ -642,7 +668,11 @@ export function SearchPage({ api }: { api: Api }) {
                 <tr>
                   <th>Diện tích</th>
                   {comparison.items.map((item) => (
-                    <td key={item.id}>{item.area_m2} m²</td>
+                    <td key={item.id}>
+                      {item.area_m2 == null
+                        ? "Chưa rõ diện tích"
+                        : `${item.area_m2} m²`}
+                    </td>
                   ))}
                 </tr>
                 <tr>
@@ -674,7 +704,7 @@ export function SearchPage({ api }: { api: Api }) {
           onDone={() => {
             setBooking(null);
             setNotice(
-              "Đã gửi yêu cầu xem phòng. Lịch chỉ được xác nhận khi chủ nhà phản hồi; theo dõi ở mục Lịch xem.",
+              "Đã gửi lịch xem mong muốn. Bên phụ trách tin (chủ nhà hoặc điều phối với tin từ tin gốc) sẽ xác nhận hoặc đề xuất giờ khác; theo dõi ở mục Lịch xem.",
             );
           }}
         />

@@ -171,8 +171,8 @@ it("renders the real step list under the assistant reply", async () => {
     name: /Đã xử lý qua 2 bước/,
   });
   await user.click(disclosure);
-  await screen.findByText(/find_place: điểm mốc Đại học Bách Khoa Hà Nội/);
-  expect(screen.getByText(/search_rooms: 3 căn khớp/)).toBeInTheDocument();
+  await screen.findByText(/^điểm mốc Đại học Bách Khoa Hà Nội/);
+  expect(screen.getByText(/^3 căn khớp/)).toBeInTheDocument();
 }, 20000);
 
 async function expectAsyncError(promise: Promise<unknown>) {

@@ -53,7 +53,7 @@
 - [ ] Kiểm tra pending không lộ candidates; manager-a review costs/source/missing, approve subset đúng version. Renter chỉ nhận published/current; listing public vẫn là luồng riêng.
 - [ ] Gửi yêu cầu chỉ tính chi phí theo fixture dưới đây, không yêu cầu tìm. Product phải trả phép tính/giả định đúng intent; không thay bằng kết luận kho không có phòng. Luồng này là nghiệm thu target, chưa là claim API hiện có hỗ trợ đầy đủ.
 
-**Fixture chi phí minh họa cho Demo B:** tiền thuê 2.500.000 ₫/tháng; điện 140 kWh × 3.500 = 490.000; nước 3 m³ × 10.000 = 30.000; internet 100.000; xe 100.000; dịch vụ 30.000. Tổng tháng xác định là **3.250.000 ₫**. Cọc 2.500.000, trả trước một tháng 2.500.000, chuyển nhà 300.000 và sắm ban đầu 200.000; tiền ban đầu là **5.500.000 ₫**. Không có khoản missing/included trong fixture này; ca missing/zero/included kiểm tra riêng. Đây là giả định tổng hợp do dự án đặt, không là phòng/giá/câu trả lời HubHome.
+**Fixture chi phí minh họa cho Demo B:** tiền thuê 2.500.000 ₫/tháng; điện 140 kWh × 3.500 = 490.000; nước 3 m³ × 10.000 = 30.000; internet 100.000; xe 100.000; dịch vụ 30.000. Tổng tháng xác định là **3.250.000 ₫**. Cọc 2.500.000, trả trước một tháng 2.500.000, chuyển nhà 300.000 và sắm ban đầu 200.000; tiền ban đầu là **5.500.000 ₫**. Không có khoản missing/included trong fixture này; ca missing/zero/included kiểm tra riêng. Đây là giả định tổng hợp do dự án đặt, không phải phòng hay giá thật.
 
 ### B3. Lưu, lịch sử, compare, viewing và handoff · HM-05/06
 

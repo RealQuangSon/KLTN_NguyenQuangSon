@@ -1,0 +1,1878 @@
+{
+  "kind": "hn13_dialog_measure",
+  "label": "after",
+  "catalog": ".local/chotot/chotot-2026-10-30/catalog.json",
+  "catalog_name": "chotot-2026-10-30",
+  "analyst": "jev",
+  "reasoning": "low",
+  "decision_mode": "rules",
+  "model": "openai/gpt-6-luna",
+  "runs": 1,
+  "measured_at": "2026-11-07T06:31:12.956383+00:00",
+  "elapsed_s": 285.1,
+  "turns": 30,
+  "total_cost_usd": 0.0076,
+  "criteria": {
+    "asked_already_known": [],
+    "chip_field_mismatch": [],
+    "chip_count_mismatch": [],
+    "internal_terms": [
+      "landmark-ben-thanh#3: câu hỏi tự do"
+    ],
+    "truncated_finish_reason_length": [],
+    "question_without_chip": [
+      "landmark-ben-thanh#3",
+      "no-match#1",
+      "self-publish-handover#2"
+    ],
+    "question_limit_hits": [
+      "answer-free-text#3"
+    ],
+    "handover_turns": [],
+    "chip_fallback_text": [],
+    "confirmed_runs": 0,
+    "errors": [],
+    "asked_fields": [
+      "city",
+      "destination_radius",
+      "destination_radius",
+      "city",
+      "city",
+      "city"
+    ]
+  },
+  "conversations": [
+    {
+      "id": "vague-no-city",
+      "name": "Mơ hồ, không có thành phố",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "cho mình xin phòng ở rẻ thôi",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình hiểu bạn đang tìm phòng giá rẻ; bạn muốn tìm ở TP.HCM hay Hà Nội?",
+          "questions": [
+            "Mình hiểu bạn đang tìm phòng giá rẻ; bạn muốn tìm ở TP.HCM hay Hà Nội?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Mình hiểu bạn đang tìm phòng giá rẻ; bạn muốn tìm ở TP.HCM hay Hà Nội?",
+            "reason": "Thành phố quyết định các phòng và mức giá có thể tìm được.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 1,
+          "handover_calls": null,
+          "cost_usd": 8.8e-05,
+          "latency_ms": 6064,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {},
+            "evidence_ref": {}
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "TP.HCM, Quận 7",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận nhu cầu tìm phòng giá rẻ ở TP.HCM, Quận 7. Mình hiểu khu vực là toàn Quận 7; nếu bạn muốn gần một địa điểm cụ thể, cứ nói mình nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000153,
+          "latency_ms": 5968,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "city": "agent:r1",
+              "area": "agent:r1"
+            }
+          },
+          "pending_field_before": "city"
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "dưới 4 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận tìm phòng ở toàn Quận 7, TP.HCM, cho 1 người, với mức trần gợi ý tổng tháng 4.000.000 đồng. Hiện chưa có phòng nào khớp; các phòng bị loại chủ yếu do khu vực.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000254,
+          "latency_ms": 10141,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tìm phòng giá rẻ, mức trần gợi ý tổng tháng là 4.000.000 đồng; khách tìm cho 1 người.",
+            "field_status": {
+              "city": "inferred",
+              "area": "inferred",
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "soft_description": "inferred"
+            },
+            "evidence_ref": {
+              "city": "agent:r1",
+              "area": "agent:r1",
+              "budget_hint": "agent:r2",
+              "people": "agent:r3",
+              "soft_description": "agent:r3"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "landmark-in-catalog",
+      "name": "Địa danh có trong danh mục",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "tìm phòng gần Đại học Quốc gia Hà Nội",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.0002,
+          "latency_ms": 7931,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": null,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": null,
+            "needs_destination": true,
+            "accept_estimated_data": true,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "destination": "inferred",
+              "needs_destination": "inferred",
+              "accept_estimated_data": "inferred",
+              "city": "inferred"
+            },
+            "evidence_ref": {
+              "destination": "agent:r1",
+              "needs_destination": "agent:r1",
+              "accept_estimated_data": "agent:r1",
+              "city": "agent:r1"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "tổng tháng dưới 5 triệu",
+          "route": "finance",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.",
+          "questions": [
+            "Bạn muốn ở gần điểm đến trong bán kính nào?"
+          ],
+          "clarification": {
+            "id": "clarify-destination_radius",
+            "field": "destination_radius",
+            "question": "Bạn muốn ở gần điểm đến trong bán kính nào?",
+            "reason": null,
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Trong 2 km (8 căn, từ 2.520.000 ₫) · thêm 43 tin cần xác minh",
+                "detail": "Trong 2 km",
+                "probability": 0.0769,
+                "count": 8,
+                "min_monthly_total_vnd": 2520000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 2000
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Trong 3 km (20 căn, từ 2.220.000 ₫) · thêm 73 tin cần xác minh",
+                "detail": "Trong 3 km",
+                "probability": 0.1923,
+                "count": 20,
+                "min_monthly_total_vnd": 2220000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 3000
+                  }
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Trong 5 km (76 căn, từ 2.020.000 ₫) · thêm 115 tin cần xác minh",
+                "detail": "Trong 5 km",
+                "probability": 0.7308,
+                "count": 76,
+                "min_monthly_total_vnd": 2020000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 5000
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "destination_radius",
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000334,
+          "latency_ms": 10415,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": null,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": "total",
+            "needs_destination": true,
+            "accept_estimated_data": true,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tổng chi phí tháng dưới 5.000.000 đồng",
+            "field_status": {
+              "destination": "inferred",
+              "needs_destination": "inferred",
+              "accept_estimated_data": "inferred",
+              "city": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred",
+              "soft_description": "inferred"
+            },
+            "evidence_ref": {
+              "destination": "agent:r1",
+              "needs_destination": "agent:r1",
+              "accept_estimated_data": "agent:r1",
+              "city": "agent:r1",
+              "budget_hint": "agent:r2",
+              "budget_scope": "agent:r2",
+              "soft_description": "agent:r3"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "chốt luôn cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã hiểu bạn tìm gần Đại học Quốc gia Hà Nội và chốt ở một mình. Bạn muốn giới hạn khoảng cách tối đa bao xa để kết quả phù hợp?",
+          "questions": [
+            "Mình đã hiểu bạn tìm gần Đại học Quốc gia Hà Nội và chốt ở một mình. Bạn muốn giới hạn khoảng cách tối đa bao xa để kết quả phù hợp?"
+          ],
+          "clarification": {
+            "id": "clarify-destination_radius",
+            "field": "destination_radius",
+            "question": "Mình đã hiểu bạn tìm gần Đại học Quốc gia Hà Nội và chốt ở một mình. Bạn muốn giới hạn khoảng cách tối đa bao xa để kết quả phù hợp?",
+            "reason": "Khoảng cách tối đa quyết định những phòng nào quanh trường được tính là phù hợp.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Trong 2 km (8 căn, từ 2.520.000 ₫) · thêm 43 tin cần xác minh",
+                "detail": "Trong 2 km",
+                "probability": 0.0769,
+                "count": 8,
+                "min_monthly_total_vnd": 2520000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 2000
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Trong 3 km (20 căn, từ 2.220.000 ₫) · thêm 73 tin cần xác minh",
+                "detail": "Trong 3 km",
+                "probability": 0.1923,
+                "count": 20,
+                "min_monthly_total_vnd": 2220000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 3000
+                  }
+                }
+              },
+              {
+                "id": "opt-2",
+                "label": "Trong 5 km (76 căn, từ 2.020.000 ₫) · thêm 115 tin cần xác minh",
+                "detail": "Trong 5 km",
+                "probability": 0.7308,
+                "count": 76,
+                "min_monthly_total_vnd": 2020000,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "destination_radius_m": 5000
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "destination_radius",
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000284,
+          "latency_ms": 12103,
+          "draft": {
+            "city": "Hà Nội",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": {
+              "label": "Đại học Quốc gia Hà Nội",
+              "latitude": 21.0075,
+              "longitude": 105.782,
+              "uncertainty_m": 500.0,
+              "max_distance_m": 3000.0
+            },
+            "budget_scope": "total",
+            "needs_destination": true,
+            "accept_estimated_data": true,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tổng chi phí tháng dưới 5.000.000 đồng",
+            "field_status": {
+              "destination": "inferred",
+              "needs_destination": "inferred",
+              "accept_estimated_data": "inferred",
+              "city": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred",
+              "soft_description": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "destination": "agent:r1",
+              "needs_destination": "agent:r1",
+              "accept_estimated_data": "agent:r1",
+              "city": "agent:r1",
+              "budget_hint": "agent:r2",
+              "budget_scope": "agent:r2",
+              "soft_description": "agent:r3",
+              "people": "agent:r4"
+            }
+          },
+          "pending_field_before": "destination_radius"
+        }
+      ]
+    },
+    {
+      "id": "landmark-ho-guom",
+      "name": "Địa danh ngoài danh mục: Hồ Gươm",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng gần Hồ Gươm Hà Nội tầm 5 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình hiểu bạn muốn tìm phòng ở Hà Nội, khu Hoàn Kiếm gần Hồ Gươm; nếu giả định này chưa đúng, bạn có thể sửa. Mình đã kiểm tra kho theo nhu cầu hiện có nhưng chưa thấy phòng phù hợp.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000254,
+          "latency_ms": 12654,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tìm phòng gần Hồ Gươm; giả định khu Hoàn Kiếm.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "soft_description": "agent:r2",
+              "city": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "ở Hoàn Kiếm cũng được",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình ghi nhận Hoàn Kiếm cũng phù hợp và kiểm tra lại kho phòng, nhưng hiện chưa có kết quả khớp.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000266,
+          "latency_ms": 10394,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tìm phòng ở Hoàn Kiếm; khu vực này cũng phù hợp.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "soft_description": "agent:r3",
+              "city": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "1 người, tìm giúp mình",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000293,
+          "latency_ms": 9934,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Hoàn Kiếm",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Tìm phòng gần Hồ Gươm ở Hà Nội; Hoàn Kiếm cũng phù hợp. Một người.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "soft_description": "agent:r5",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "people": "agent:r4"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "landmark-ben-thanh",
+      "name": "Địa danh ngoài danh mục: Bến Thành",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng gần chợ Bến Thành, 2 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000225,
+          "latency_ms": 9220,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": true,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành; suy ra khu vực Quận 1.",
+            "field_status": {
+              "people": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred",
+              "needs_destination": "inferred"
+            },
+            "evidence_ref": {
+              "people": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r1",
+              "area": "agent:r1",
+              "needs_destination": "agent:r1"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "Quận 1 được",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình xử lý chưa trọn vẹn yêu cầu này trong số bước cho phép. Bạn nói rõ hơn nhu cầu (khu vực, mức tiền, loại phòng) hoặc dùng “Nhu cầu của tôi” nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000323,
+          "latency_ms": 15252,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": null,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành.",
+            "field_status": {
+              "people": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred",
+              "needs_destination": "inferred"
+            },
+            "evidence_ref": {
+              "people": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r2",
+              "area": "agent:r1",
+              "needs_destination": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "tổng tháng 6 triệu",
+          "route": "finance",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã kiểm tra kho: chưa có phòng khớp ở Quận 1 với nhu cầu hiện tại. Chợ Bến Thành chưa xác thực được trong danh mục điểm mốc, nên mình chưa dùng làm điểm tìm kiếm riêng. Bạn muốn giữ Quận 1 hay cân nhắc khu vực khác?",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.00049,
+          "latency_ms": 18694,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 6000000,
+            "people": 2,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": "total",
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Gần chợ Bến Thành.",
+            "field_status": {
+              "people": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred",
+              "needs_destination": "inferred",
+              "budget_hint": "inferred",
+              "budget_scope": "inferred"
+            },
+            "evidence_ref": {
+              "people": "agent:r1",
+              "city": "agent:r1",
+              "soft_description": "agent:r2",
+              "area": "agent:r1",
+              "needs_destination": "agent:r2",
+              "budget_hint": "agent:r3",
+              "budget_scope": "agent:r3"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "budget-people-first",
+      "name": "Ngân sách và số người ngay câu đầu",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Quận 7 TP.HCM dưới 4 triệu cho 2 người có máy lạnh",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã lọc phòng ở Quận 7, TP.HCM cho 2 người, có máy lạnh và theo trần 4 triệu/tháng bạn nêu. Hiện chưa có phòng nào khớp. Khu vực Quận 7 đang được ghi nhận theo giả định từ mô tả của bạn; nếu cần sửa, bạn có thể cập nhật.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000179,
+          "latency_ms": 6396,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 2,
+            "preferences": [
+              "máy lạnh"
+            ],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "preferences": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "preferences": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "phòng nào đáng tiền hơn?",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "fallback",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Hiện chưa có phòng nào khớp ở Quận 7 nên mình chưa thể so sánh phòng nào đáng tiền hơn. Bạn có thể cho mình khu vực khác muốn tìm; mình sẽ lọc lại theo nhu cầu hiện tại.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000361,
+          "latency_ms": 11588,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 2,
+            "preferences": [
+              "máy lạnh"
+            ],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "preferences": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "preferences": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "giảm xuống 3,5 triệu thì sao?",
+          "route": "finance",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã kiểm tra; mức bạn muốn hạ xuống không làm thay đổi đáng kể kết quả trong kho, nên chưa có phòng mới nào để gợi ý.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000375,
+          "latency_ms": 10957,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3500000,
+            "people": 2,
+            "preferences": [
+              "máy lạnh"
+            ],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "preferences": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r3",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "preferences": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "answer-by-chip",
+      "name": "Khách trả lời bằng cách bấm chip",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng trọ dưới 4 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã hiểu bạn tìm phòng trọ với trần gợi ý 4 triệu/tháng. Bạn muốn tìm ở TP.HCM hay Hà Nội?",
+          "questions": [
+            "Mình đã hiểu bạn tìm phòng trọ với trần gợi ý 4 triệu/tháng. Bạn muốn tìm ở TP.HCM hay Hà Nội?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Mình đã hiểu bạn tìm phòng trọ với trần gợi ý 4 triệu/tháng. Bạn muốn tìm ở TP.HCM hay Hà Nội?",
+            "reason": "Thành phố quyết định khu vực và các phòng có thể tìm được.",
+            "question_source": "model",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.00017,
+          "latency_ms": 5508,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "room_type": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "room_type": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "chip",
+          "chip": "Ở TP.HCM (2087 căn)",
+          "confirm": "HTTP 409",
+          "message": "(khách bấm chip — không có câu trả lời mới)",
+          "latency_ms": 15,
+          "cost_usd": 0.0
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "phòng nào rẻ nhất?",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã lọc phòng trọ ở TP.HCM theo trần gợi ý 4 triệu/tháng, nhưng hiện chưa tìm thấy căn phù hợp nên chưa thể xác định căn rẻ nhất.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000323,
+          "latency_ms": 10970,
+          "draft": {
+            "city": "TP.HCM",
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "room_type": "inferred",
+              "city": "confirmed"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "room_type": "agent:r2",
+              "city": "clarify:r3"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "answer-free-text",
+      "name": "Khách trả lời bằng câu gõ tự do",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "cần phòng gần trường đại học, 3 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận mức trần gợi ý 3.000.000đ/tháng và nhu cầu ở gần trường đại học. Hiện chưa rõ trường nào, nhưng dữ liệu tìm phòng cho thấy cách hiểu này không làm thay đổi đáng kể kết quả nên mình chưa hỏi thêm.",
+          "questions": [
+            "Bạn muốn thuê tại thành phố nào?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn thuê tại thành phố nào?",
+            "reason": null,
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000167,
+          "latency_ms": 7531,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "tổng tháng, 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Bạn muốn thuê tại thành phố nào?",
+          "questions": [
+            "Bạn muốn thuê tại thành phố nào?"
+          ],
+          "clarification": {
+            "id": "clarify-city",
+            "field": "city",
+            "question": "Bạn muốn thuê tại thành phố nào?",
+            "reason": "Thành phố quyết định kho phòng và kết quả tìm kiếm.",
+            "question_source": "catalog",
+            "options": [
+              {
+                "id": "opt-0",
+                "label": "Ở TP.HCM (2087 căn)",
+                "detail": "Ở TP.HCM",
+                "probability": 0.751,
+                "count": 2087,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "TP.HCM"
+                  }
+                }
+              },
+              {
+                "id": "opt-1",
+                "label": "Ở Hà Nội (692 căn)",
+                "detail": "Ở Hà Nội",
+                "probability": 0.249,
+                "count": 692,
+                "min_monthly_total_vnd": null,
+                "decided_by": "rules",
+                "action": "patch",
+                "text": null,
+                "patch": {
+                  "set": {
+                    "city": "Hà Nội"
+                  }
+                }
+              }
+            ],
+            "decided_by": "rules"
+          },
+          "field": "city",
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000245,
+          "latency_ms": 11363,
+          "draft": {
+            "city": null,
+            "area": null,
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Cần phòng gần trường đại học; mức trần gợi ý 3.000.000đ/tháng là tổng chi phí tháng.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "soft_description": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "soft_description": "agent:r2"
+            }
+          },
+          "pending_field_before": "city"
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "Quận Cầu Giấy Hà Nội nhé",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận nhu cầu ở 1 người, tổng chi phí tháng tối đa gợi ý 3.000.000đ tại quận Cầu Giấy, Hà Nội. Hiện chưa có phòng khớp với khu vực này. Bạn có thể dùng biểu mẫu nhu cầu để điều chỉnh khu vực tìm kiếm.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000446,
+          "latency_ms": 11929,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Cầu Giấy",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 3000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": "Cần phòng gần trường đại học; mức trần gợi ý 3.000.000đ/tháng là tổng chi phí tháng.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "soft_description": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "soft_description": "agent:r2",
+              "city": "agent:r3",
+              "area": "agent:r3"
+            }
+          },
+          "pending_field_before": "city"
+        }
+      ]
+    },
+    {
+      "id": "change-mind",
+      "name": "Khách đổi ý giữa chừng",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Hà Nội Cầu Giấy 4 triệu",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận nhu cầu tìm phòng ở Hà Nội, khu vực Cầu Giấy, và kiểm tra kho phòng. Hiện chưa có phòng nào khớp; mình hiểu “phòng” là phòng thuê, bạn sửa giúp nếu ý bạn khác.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000347,
+          "latency_ms": 15101,
+          "draft": {
+            "city": "Hà Nội",
+            "area": "Quận Cầu Giấy",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách đang tìm phòng tại Hà Nội, khu vực Cầu Giấy.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "soft_description": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "thôi đổi sang Quận 7 TP.HCM",
+          "route": "needs",
+          "clarity": "clear",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã đổi nhu cầu sang **phòng thuê ở Quận 7, TP.HCM** và kiểm tra kho phòng; hiện chưa có phòng nào khớp. Mức trần gợi ý **4.000.000đ/tháng** vẫn được giữ từ nhu cầu trước.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000229,
+          "latency_ms": 10703,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách đang tìm phòng tại Hà Nội, khu vực Cầu Giấy.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "soft_description": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r3",
+              "area": "agent:r3"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "dưới 4 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận **1 người** và kiểm tra lại nhu cầu: phòng thuê tại **Quận 7, TP.HCM**, với mức trần gợi ý **4.000.000đ/tháng**. Hiện chưa có phòng nào khớp.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000249,
+          "latency_ms": 11476,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 4000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Khách đang tìm phòng tại Hà Nội, khu vực Cầu Giấy.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "soft_description": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "people": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r4",
+              "soft_description": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r3",
+              "area": "agent:r3",
+              "people": "agent:r5"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "no-match",
+      "name": "Không có căn khớp",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "phòng Quận 1 TP.HCM dưới 500 nghìn một tháng",
+          "route": "needs",
+          "clarity": "clear",
+          "decided_by": "jev",
+          "agents": [],
+          "agent_mode": "fast_path",
+          "status": "needs_verification",
+          "message": "Chưa công bố được căn nào: một số tin thiếu bảng phí/sức chứa đang chờ xác minh số liệu. Bạn đồng ý xem các tin đó kèm nhãn ước tính để tăng số căn không? Bấm “Chấp nhận dữ liệu ước tính” hoặc nhắn lại nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 2.9e-05,
+          "latency_ms": 1858,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 500000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "city": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "city": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "chấp nhận dữ liệu ước tính",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã ghi nhận bạn đồng ý xem tin có dữ liệu ước tính và tìm theo Quận 1, TP.HCM, dưới 500 nghìn đồng/tháng. Hiện chưa có phòng khớp; mình cũng kiểm tra việc mở rộng khu vực nhưng chưa có căn cứ để hỏi thêm.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.0003,
+          "latency_ms": 9560,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 500000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": true,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "accept_estimated_data": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "accept_estimated_data": "agent:r4"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "nới lên 2 triệu đi",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình hiểu bạn muốn nâng trần lên mức vừa nêu và giữ tiêu chí phòng ở Quận 1, TP.HCM. Mình đã tìm lại theo nháp hiện có nhưng chưa có phòng khớp.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 3,
+          "handover_calls": null,
+          "cost_usd": 0.000474,
+          "latency_ms": 9810,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 1",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 2500000,
+            "people": null,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": true,
+            "room_type": null,
+            "bedrooms": null,
+            "soft_description": null,
+            "field_status": {
+              "budget_hint": "inferred",
+              "city": "inferred",
+              "area": "inferred",
+              "accept_estimated_data": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r5",
+              "city": "agent:r2",
+              "area": "agent:r2",
+              "accept_estimated_data": "agent:r4"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    },
+    {
+      "id": "self-publish-handover",
+      "name": "Lượt tự publish (bàn giao xếp hạng) rồi hỏi xếp hạng và vay",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "text",
+          "text": "tìm phòng trọ Quận 7 TP.HCM dưới 5 triệu cho 1 người",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "jev",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Mình đã lọc phòng trọ cho 1 người ở Quận 7, TP.HCM, với mức trần gợi ý dưới 5 triệu/tháng. Hiện chưa có phòng phù hợp. Mình hiểu “phòng trọ” là loại phòng riêng; nếu bạn muốn mở rộng khu vực, hãy cho mình biết nhé.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 4,
+          "handover_calls": null,
+          "cost_usd": 0.000324,
+          "latency_ms": 10669,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng trọ dưới mức trần tổng tháng khách đã nêu.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "soft_description": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 2,
+          "kind": "text",
+          "text": "phòng nào đáng tiền hơn?",
+          "route": "needs",
+          "clarity": "reason",
+          "decided_by": "fallback",
+          "agents": [
+            "needs"
+          ],
+          "agent_mode": "loop",
+          "status": "needs_clarification",
+          "message": "Hiện mình chưa có phòng nào khớp bộ lọc hiện tại để so sánh: phòng riêng cho 1 người ở Quận 7, TP.HCM, dưới mức trần bạn đã nêu. Bạn muốn mở rộng khu vực tìm kiếm không?",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 2,
+          "handover_calls": null,
+          "cost_usd": 0.000186,
+          "latency_ms": 9717,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng trọ dưới mức trần tổng tháng khách đã nêu.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "soft_description": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        },
+        {
+          "turn": 3,
+          "kind": "text",
+          "text": "vay 10 triệu lãi 10% trong 12 tháng thì sao?",
+          "route": "finance",
+          "clarity": "clear",
+          "decided_by": "rules",
+          "agents": [],
+          "agent_mode": "fast_path",
+          "status": "needs_results",
+          "message": "Bạn cần có danh sách phòng trong kết quả hiện tại trước khi mô phỏng vay.",
+          "questions": null,
+          "clarification": null,
+          "field": null,
+          "llm_calls": 0,
+          "handover_calls": null,
+          "cost_usd": 0.0,
+          "latency_ms": 601,
+          "draft": {
+            "city": "TP.HCM",
+            "area": "Quận 7",
+            "monthly_budget_vnd": null,
+            "budget_hint_vnd": 5000000,
+            "people": 1,
+            "preferences": [],
+            "destination": null,
+            "budget_scope": null,
+            "needs_destination": false,
+            "accept_estimated_data": false,
+            "room_type": "room",
+            "bedrooms": null,
+            "soft_description": "Tìm phòng trọ dưới mức trần tổng tháng khách đã nêu.",
+            "field_status": {
+              "budget_hint": "inferred",
+              "people": "inferred",
+              "room_type": "inferred",
+              "city": "inferred",
+              "soft_description": "inferred",
+              "area": "inferred"
+            },
+            "evidence_ref": {
+              "budget_hint": "agent:r1",
+              "people": "agent:r2",
+              "room_type": "agent:r2",
+              "city": "agent:r2",
+              "soft_description": "agent:r2",
+              "area": "agent:r2"
+            }
+          },
+          "pending_field_before": null
+        }
+      ]
+    }
+  ]
+}
