@@ -133,7 +133,7 @@ describe("Api.turn retry policy", () => {
 
 it("renders the real step list under the assistant reply", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -154,7 +154,7 @@ it("renders the real step list under the assistant reply", async () => {
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -185,7 +185,7 @@ async function expectAsyncError(promise: Promise<unknown>) {
 
 it("sends the workspace context and applies the agent-selected view", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -230,7 +230,7 @@ it("sends the workspace context and applies the agent-selected view", async () =
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -250,10 +250,10 @@ it("sends the workspace context and applies the agent-selected view", async () =
       focus_room_ids: [],
     },
   });
-  // View do agent chọn: detail → panel chi tiết căn xuất hiện, nút về bố cục thường.
+  // View do agent chọn: detail → panel chi tiết căn xuất hiện, nút quay lại.
   const panel = await screen.findByLabelText("Chi tiết căn đang chọn");
   await user.click(
-    within(panel).getByRole("button", { name: /Bố cục thường/ }),
+    within(panel).getByRole("button", { name: /Quay lại/ }),
   );
   await waitFor(() =>
     expect(
@@ -264,7 +264,7 @@ it("sends the workspace context and applies the agent-selected view", async () =
 
 it("AG-11: chip làm rõ render trên đầu câu trả lời và gửi PATCH clarify", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -306,7 +306,7 @@ it("AG-11: chip làm rõ render trên đầu câu trả lời và gửi PATCH cl
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -334,7 +334,7 @@ it("AG-11: chip làm rõ render trên đầu câu trả lời và gửi PATCH cl
 
 it("HN-02: lựa chọn câu hỏi mở gửi lại chữ khách chọn", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -366,7 +366,7 @@ it("HN-02: lựa chọn câu hỏi mở gửi lại chữ khách chọn", async 
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -394,7 +394,7 @@ it("HN-02: lựa chọn câu hỏi mở gửi lại chữ khách chọn", async 
 // khi hậu kiểm phát hiện vi phạm; done vẫn là nguồn sự thật cuối.
 it("HN-10: stream delta hiện dần và replace thay câu vi phạm", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -424,7 +424,7 @@ it("HN-10: stream delta hiện dần và replace thay câu vi phạm", async () 
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,

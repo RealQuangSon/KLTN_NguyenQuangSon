@@ -19,8 +19,8 @@ from backend.app.models import AMENITY_KEYS, Profile, Quote, Room, Scenario
 from backend.app.projection import PUBLIC_ROOM_FIELDS, public_room_projection
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
-OWNER_A = {"Authorization": "Bearer demo-owner-a"}
-OWNER_B = {"Authorization": "Bearer demo-owner-b"}
+OWNER_2 = {"Authorization": "Bearer demo-owner2"}
+OWNER_B = {"Authorization": "Bearer demo-owner1"}
 
 
 def make_quote(**overrides):
@@ -143,7 +143,7 @@ def test_ranking_ignores_posted_at_poster_kind_and_description():
 
 
 def test_area_filter_sort_and_copilot_safe_with_null_area():
-    # crawl.md A-4/F: tin không rõ diện tích không làm lỗi lọc, sắp xếp, copilot.
+    # Tin không rõ diện tích không làm lỗi lọc, sắp xếp, copilot.
     from backend.app.copilot import marketing_post, price_advice, strengths
     from backend.app.listings import ListingQuery, search
     known = make_room(id="lf-area-1", area_m2=30.0)
@@ -214,15 +214,15 @@ def test_landlord_sees_own_description_but_other_landlord_never_does(service):
     client = None
     with TestClient(create_app(lambda: service)) as test_client:
         client = test_client
-        payload = {"title": "Phòng có bếp của owner-a", "city": "TP.HCM", "area": "Quận 1",
+        payload = {"title": "Phòng có bếp của owner2", "city": "TP.HCM", "area": "Quận 1",
                    "area_m2": 18.0, "available": True,
                    "quote": {"rent_vnd": 3_000_000, "fees": []},
                    "description": "Liên hệ 0901234567.", "ward": "Phường Bến Nghé",
                    "available_from": "2026-12-01"}
-        created = client.post("/landlord/rooms", headers=OWNER_A, json=payload)
+        created = client.post("/landlord/rooms", headers=OWNER_2, json=payload)
         assert created.status_code == 201, created.text
         room_id = created.json()["room"]["id"]
-        own = client.get(f"/landlord/rooms/{room_id}", headers=OWNER_A).json()["room"]
+        own = client.get(f"/landlord/rooms/{room_id}", headers=OWNER_2).json()["room"]
         # FC-01/F4: masking happens at write time, so the stored copy itself is masked.
         assert own["description"] == "Liên hệ [SĐT đã che]."
         assert own["ward"] == "Phường Bến Nghé"
@@ -244,7 +244,7 @@ def test_public_listing_never_shows_phone_digits_from_landlord_text(service):
                    "description": "Liên hệ 0901234567 hoặc zalo 0912 345 678",
                    "house_rules": "Gọi 0987 654 321 trước khi đến.",
                    "features_text": "Xem nhà gọi 0912345678."}
-        created = client.post("/landlord/rooms", headers=OWNER_A, json=payload)
+        created = client.post("/landlord/rooms", headers=OWNER_2, json=payload)
         assert created.status_code == 201, created.text
         room_id = created.json()["room"]["id"]
         anonymous = client.get(f"/listings/{room_id}")
@@ -253,7 +253,7 @@ def test_public_listing_never_shows_phone_digits_from_landlord_text(service):
         for phone in ("0901234567", "0912 345 678", "0987 654 321", "0912345678"):
             assert phone not in body
         assert "[SĐT đã che]" in body
-        own = client.get(f"/landlord/rooms/{room_id}", headers=OWNER_A).json()["room"]
+        own = client.get(f"/landlord/rooms/{room_id}", headers=OWNER_2).json()["room"]
         assert own["description"] == "Liên hệ [SĐT đã che] hoặc zalo [SĐT đã che]"
         assert own["house_rules"] == "Gọi [SĐT đã che] trước khi đến."
         assert own["features_text"] == "Xem nhà gọi [SĐT đã che]."
@@ -262,7 +262,7 @@ def test_public_listing_never_shows_phone_digits_from_landlord_text(service):
         editable = {key: own[key] for key in RoomInput.model_fields if key in own}
         edit = {**editable, "expected_revision": own["revision"],
                 "description": "Số mới 0987654321", "house_rules": None, "features_text": None}
-        updated = client.put(f"/landlord/rooms/{room_id}", headers=OWNER_A, json=edit)
+        updated = client.put(f"/landlord/rooms/{room_id}", headers=OWNER_2, json=edit)
         assert updated.status_code == 200, updated.text
         assert updated.json()["room"]["description"] == "Số mới [SĐT đã che]"
         refreshed = client.get(f"/listings/{room_id}").text
@@ -280,7 +280,7 @@ def test_eval_invariants_include_listing_meta_counterfactual(tmp_path):
     assert meta["invariant_holds"] and meta["profiles_compared"] == 15
     assert meta["posted_at_past_changed"] == 0 and meta["posted_at_future_changed"] == 0
     assert meta["poster_kind_changed"] == 0
-    # CA-04/crawl.md B-2,C-1: display-only crawl fields are also covered.
+    # Display-only crawl fields are also covered.
     assert meta["source_images_changed"] == 0 and meta["poster_name_changed"] == 0
     assert meta["source_videos_changed"] == 0 and meta["listing_specs_changed"] == 0
 
@@ -312,8 +312,8 @@ def test_listing_search_supports_posted_desc_sort():
 
 # --- CA-05: crawl images and poster_name flow only where they may --------------
 
-RENTER_A = {"Authorization": "Bearer demo-renter-a"}
-ADMIN_A = {"Authorization": "Bearer demo-admin-a"}
+RENTER = {"Authorization": "Bearer demo-renter"}
+ADMIN = {"Authorization": "Bearer demo-admin"}
 
 
 def _crawled_room() -> Room:
@@ -353,21 +353,21 @@ def test_crawl_images_and_poster_name_flow_only_to_allowed_surfaces(service):
         assert anon_body["contact"]["poster_name"] is None
         assert "Người đăng mẫu" not in anon.text
         # Người đã đăng nhập: TÊN CHỈ nằm trong khối contact.
-        signed = client.get("/listings/chotot-777", headers=RENTER_A)
+        signed = client.get("/listings/chotot-777", headers=RENTER)
         signed_body = signed.json()
         assert signed_body["contact"]["poster_name"] == "Người đăng mẫu"
         without_contact = {key: value for key, value in signed_body.items() if key != "contact"}
         assert "Người đăng mẫu" not in json.dumps(without_contact, ensure_ascii=False)
         # /rooms (chủ nhà lẫn admin): model_dump của Room không mang poster_name.
-        for path, headers in (("/landlord/rooms", OWNER_A), ("/admin/rooms", ADMIN_A)):
+        for path, headers in (("/landlord/rooms", OWNER_2), ("/admin/rooms", ADMIN)):
             body = client.get(path, headers=headers).text
             assert "Người đăng mẫu" not in body
             assert "cdn.chotot.com" in body  # source_images goes through model_dump
         # Kết quả gợi ý AI: source_images gắn lúc trả response, tên không bao giờ có.
-        session = client.post("/sessions", headers=RENTER_A).json()
+        session = client.post("/sessions", headers=RENTER).json()
         profile = {"city": "TP.HCM", "room_type": "room", "max_monthly_cost_vnd": 2_000_000,
                    "scenario": {"people": 1}}
-        confirmed = client.post(f"/sessions/{session['session_id']}/confirm", headers=RENTER_A,
+        confirmed = client.post(f"/sessions/{session['session_id']}/confirm", headers=RENTER,
                                 json={"profile": profile, "expected_draft_revision": 0})
         assert confirmed.status_code == 200, confirmed.text
         results = confirmed.json()
@@ -378,30 +378,25 @@ def test_crawl_images_and_poster_name_flow_only_to_allowed_surfaces(service):
         assert "Người đăng mẫu" not in confirmed.text
         # Payload run đã xếp hạng không chứa ảnh: đọc lại results lần nữa vẫn gắn đúng,
         # còn items trong repo thì không có URL CDN.
-        again = client.get(f"/sessions/{session['session_id']}/results", headers=RENTER_A).text
+        again = client.get(f"/sessions/{session['session_id']}/results", headers=RENTER).text
         assert "cdn.chotot.com" in again
         run_row = service.repo.run(results["run_id"])
         assert "cdn.chotot.com" not in json.dumps(run_row["items"], ensure_ascii=False)
 
 
-def test_lead_and_admin_surfaces_never_carry_poster_name(service):
+def test_admin_surfaces_never_carry_poster_name(service):
     service.catalog.import_rooms([_crawled_room()])
     with TestClient(create_app(lambda: service)) as client:
-        session = client.post("/sessions", headers=RENTER_A).json()
+        session = client.post("/sessions", headers=RENTER).json()
         profile = {"city": "TP.HCM", "room_type": "room", "max_monthly_cost_vnd": 2_000_000,
                    "scenario": {"people": 1}}
-        confirmed = client.post(f"/sessions/{session['session_id']}/confirm", headers=RENTER_A,
+        confirmed = client.post(f"/sessions/{session['session_id']}/confirm", headers=RENTER,
                                 json={"profile": profile, "expected_draft_revision": 0})
         assert confirmed.status_code == 200, confirmed.text
-        # Lead CRM của chủ nhà (touch_lead khi phòng vào top 5) và các bề mặt
-        # admin không được mang tên người đăng từ tin cào.
-        leads = client.get("/pms/leads", headers=OWNER_A)
-        assert leads.status_code in (200, 404), leads.text
-        if leads.status_code == 200:
-            assert "Người đăng mẫu" not in leads.text
-        admin_runs = client.get("/admin/failed-runs", headers=ADMIN_A)
+        # Các bề mặt admin không được mang tên người đăng từ tin cào.
+        admin_runs = client.get("/admin/failed-runs", headers=ADMIN)
         assert "Người đăng mẫu" not in admin_runs.text
         # So sánh cần 2 phòng khác nhau; đây chỉ chặn lỗi 500 từ list[dict].
-        compare = client.post(f"/sessions/{session['session_id']}/compare", headers=RENTER_A,
+        compare = client.post(f"/sessions/{session['session_id']}/compare", headers=RENTER,
                               json={"room_ids": ["chotot-777", "chotot-777"]})
         assert compare.status_code in (200, 422), compare.text

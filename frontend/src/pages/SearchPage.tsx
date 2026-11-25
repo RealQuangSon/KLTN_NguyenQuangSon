@@ -26,7 +26,11 @@ import {
   roomTitle,
   useScrollIntoView,
 } from "../components/Shared";
-import { CoverPhoto, ListingMedia } from "../components/PhotoGallery";
+import {
+  CoverPhoto,
+  ListingMedia,
+  coverPhotoSrc,
+} from "../components/PhotoGallery";
 import { MapView } from "../components/MapView";
 import { AdviceBox, type Advice } from "../components/Advice";
 import { ViewingForm } from "../components/ViewingPanel";
@@ -105,6 +109,8 @@ export function SearchPage({ api }: { api: Api }) {
   const [filters, setFilters] = useState<Filters>(urlFilters);
   const [applied, setApplied] = useState<Filters>(urlFilters);
   const [page, setPage] = useState(1);
+  // Di động: bộ lọc gập lại để kết quả lên sớm (máy lớn luôn mở).
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [result, setResult] = useState<{
     total: number;
     items: Listing[];
@@ -193,6 +199,8 @@ export function SearchPage({ api }: { api: Api }) {
       (result?.items ?? []).map((item) => ({
         ...item,
         monthly: item.cost.monthly_total_vnd,
+        // Ảnh bìa cho popup marker trên bản đồ (không có thì giữ minh họa).
+        photoUrl: coverPhotoSrc(item),
       })),
     [result],
   );
@@ -218,14 +226,34 @@ export function SearchPage({ api }: { api: Api }) {
       <form
         className="panel search-filters"
         aria-label="Bộ lọc tìm kiếm"
+        data-open={filtersOpen}
         onSubmit={(e) => {
           e.preventDefault();
+          setFiltersOpen(false);
           setPage(1);
           setSelected([]);
           setComparison(null);
           setApplied(filters);
         }}
       >
+        <button
+          type="button"
+          className="filters-toggle"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <Icon name="search" size={16} />
+          <span>
+            {[
+              applied.city,
+              applied.area,
+              applied.room_type && roomTypeLabels[applied.room_type],
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Bộ lọc tìm kiếm"}
+          </span>
+          <Icon name="chevron" size={14} />
+        </button>
         <div className="form-grid four">
           <label>
             Thành phố

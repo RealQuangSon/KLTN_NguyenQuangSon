@@ -1,6 +1,6 @@
 # Trạng thái và lỗi backend HomeMatch 0.4.0
 
-Bảng này mô tả hành vi đang chạy. "Người thuê/renter" là **khách**; kết quả công bố ngay, không có bước duyệt (D-10). Mã lỗi đích (`invalid_loan`, `override_reason_required`, `tool_not_allowed`) nằm ở [API đích](api-san-pham-v1.md).
+Bảng này mô tả hành vi đang chạy. "Người thuê/renter" là **khách**; kết quả công bố ngay, không có bước duyệt (D-10).
 
 ## Bản gợi ý
 
@@ -18,7 +18,7 @@ Profile/active run được kiểm lại khi đọc. Khi phiên bản kho khác 
 
 Chat có `needs_clarification`, `cost_estimate`, `support_requested`; đây là trạng thái phản hồi chat, tách khỏi trạng thái run.
 
-## Vòng đời lịch xem (crawl.md E-01/E-02, 08/11/2026)
+## Vòng đời lịch xem
 
 Viewing bắt đầu `requested` rồi chuyển theo bảng dưới (chuyển sai → 409 `viewing_conflict`; lặp đúng trạng thái đích → trả kết quả cũ, không ghi event). Bên xử lý: chủ nhà với tin của mình (`handler=landlord`), admin điều phối với tin cào (`handler=concierge`).
 
@@ -72,7 +72,7 @@ Envelope thống nhất: `{error:{code,message,fields?},request_id}`. Header `X-
 | 409 `stale_profile`, `catalog_conflict`, `stale_review`, `stale_viewing` | Đọc lại phiên/kho; tạo và duyệt bản hiện tại nếu đã stale |
 | 409 `review_conflict`, `idempotency_conflict`, `viewing_conflict`, `retry_conflict` | Đã có thao tác khác; giữ key khi retry cùng payload, không tự ghi đè |
 | 409 `recovery_required` | Thiếu checkpoint/điểm resume; xác nhận lại và duyệt bản mới |
-| 503 `review_resume_failed` | Quyết định đã commit; manager đọc lại và retry để hoàn tất |
+| 503 `review_resume_failed` | Quyết định đã commit; đọc lại phiên và thử lại để hoàn tất (mã lỗi cũ của luồng duyệt đã bỏ) |
 | 503 `ai_unavailable` | Dùng form xác nhận nhu cầu; finance và quyền vẫn do code kiểm soát |
 | 422 `context_limit`, `private_semantic_text` | Rút ngắn nội dung hoặc loại tiền/liên hệ khỏi mô tả semantic |
 | 503 `storage_unavailable`, `not_ready` | Kiểm tra DB/migration/checkpoint; không báo backend sẵn sàng |

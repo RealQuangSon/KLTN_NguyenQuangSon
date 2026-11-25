@@ -237,7 +237,7 @@ export const mutationKey = () => crypto.randomUUID();
 // giống mọi lời gọi khác (VITE_API_BASE_URL, mặc định "/api").
 export const apiBase = () => import.meta.env.VITE_API_BASE_URL || "/api";
 export const mediaSrc = (url: string) => `${apiBase()}${url}`;
-// Namespace v1 mục tiêu (docs/api-san-pham-v1.md) chưa được khóa ở P0: backend
+// Namespace v1 mục tiêu (docs/api-contract.md) chưa được mount: backend
 // 0.4.0 phục vụ các endpoint tài khoản ở đường gốc (/auth/register, /me/...),
 // không có tiền tố /v1. Helper giữ lại cho lúc BE mount /v1; UI bắt buộc hiển thị
 // trạng thái lỗi thật khi 404, không được giả lập kết quả thành công.
@@ -248,7 +248,7 @@ export interface RegisterPayload {
   password: string;
   email: string;
   display_name?: string;
-  // Hợp đồng đăng ký (docs/coding-plan/README.md §7.1): mặc định "renter";
+  // Hợp đồng đăng ký (docs/api-contract.md): mặc định "renter";
   // "owner" tạo hồ sơ chủ nhà chờ quản trị viên duyệt.
   account_type?: "renter" | "owner";
 }

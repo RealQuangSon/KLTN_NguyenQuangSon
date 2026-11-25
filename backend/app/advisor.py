@@ -20,7 +20,7 @@ def advise(items: list[dict], *, budget: int | None = None, preferences: list[st
     for item in items:
         cost = item["cost"]
         affordability = cost.get("affordability") or {}
-        # crawl.md E-03 (08/11): tiêu đề đưa vào advice (đi qua compare tool →
+        # Tiêu đề đưa vào advice (đi qua compare tool →
         # model) được che số nhà best-effort; không đổi dữ liệu nguồn.
         from .listings import mask_address
         rows.append({

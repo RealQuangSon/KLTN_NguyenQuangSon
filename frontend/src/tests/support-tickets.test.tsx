@@ -25,7 +25,7 @@ const tickets = [
     id: "t2",
     session_id: "sess-bbbb",
     status: "resolved",
-    assignee: "admin-a",
+    assignee: "admin",
     note: "Đã gọi điện hỗ trợ khách",
     created_at: "2026-10-05T08:00:00Z",
     updated_at: "2026-10-05T10:00:00Z",
@@ -48,7 +48,7 @@ it("renders the ticket list with status, assignee and note columns", async () =>
   expect(
     within(table).getByText("Đã gọi điện hỗ trợ khách"),
   ).toBeInTheDocument();
-  expect(within(table).getByText("admin-a")).toBeInTheDocument();
+  expect(within(table).getByText("admin")).toBeInTheDocument();
   expect(within(table).getByText("Chưa có")).toBeInTheDocument();
   // Nhãn trạng thái thật xuất hiện ở cả chip lọc và ô trạng thái trong bảng.
   expect(screen.getAllByText("Chờ xử lý").length).toBeGreaterThanOrEqual(2);
@@ -174,7 +174,7 @@ it("auto-opens the stored session once when the transcript section loads", async
       return [
         {
           session_id: "sess-aaaa",
-          user_id: "renter-a",
+          user_id: "renter",
           turns: 1,
           started_at: "2026-10-06T09:00:00Z",
           last_at: "2026-10-06T09:00:00Z",

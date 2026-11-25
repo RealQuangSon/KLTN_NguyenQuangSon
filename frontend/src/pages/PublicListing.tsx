@@ -19,11 +19,11 @@ import {
   roomTitle,
 } from "../components/Shared";
 import { MapView } from "../components/MapView";
-import { ListingMedia } from "../components/PhotoGallery";
+import { ListingMedia, coverPhotoSrc } from "../components/PhotoGallery";
 import { ViewingForm } from "../components/ViewingPanel";
 // Trang tin công khai (đích của link chia sẻ đa kênh). Khách ẩn danh xem được;
 // đã đăng nhập thì máy chủ trả thêm tên người đăng trong khối liên hệ (C1b).
-// crawl.md D: bố cục hai phần — trên là media + thông số + hành động, dưới là
+// Bố cục hai phần — trên là media + thông số + hành động, dưới là
 // mô tả, vị trí, tiện ích, điều khoản, chi phí, bản đồ. Mục tin không ghi hiện
 // "Chưa có thông tin", không bao giờ 0/null; phí chưa biết vẫn null.
 export function PublicListing({ roomId }: { roomId: string }) {
@@ -36,9 +36,9 @@ export function PublicListing({ roomId }: { roomId: string }) {
   // khi người dùng bấm xem, đỡ đốt quota 1.000 map loads/tháng.
   const [mapOpen, setMapOpen] = useState(false);
   const [saved, setSaved] = useState(false);
-  // crawl.md E-07: form đặt lịch DÙNG CHUNG (ViewingForm) thay form riêng.
+  // Form đặt lịch DÙNG CHUNG (ViewingForm) thay form riêng.
   const [bookingOpen, setBookingOpen] = useState(false);
-  // crawl.md E-05/E-06: báo cáo tin + nút báo cáo.
+  // Báo cáo tin + nút báo cáo.
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("scam_suspect");
   const [reportNote, setReportNote] = useState("");
@@ -205,7 +205,7 @@ export function PublicListing({ roomId }: { roomId: string }) {
               </section>
               <section className="listing-detail-section">
                 <h2>Tiện ích</h2>
-                {/* crawl.md E-06 (lỗi 3): tiện ích chỉ đọc từ nội dung tin —
+                {/* Tiện ích chỉ đọc từ nội dung tin —
                     nhãn nguồn nói rõ, không suy mục nào ngoài tin. */}
                 {!room.synthetic && <small>Theo nội dung tin</small>}
                 <AmenityGrid amenities={room.amenities} />
@@ -230,6 +230,7 @@ export function PublicListing({ roomId }: { roomId: string }) {
                         {
                           ...room,
                           monthly: room.cost.monthly_total_vnd,
+                          photoUrl: coverPhotoSrc(room),
                         },
                       ]}
                     />

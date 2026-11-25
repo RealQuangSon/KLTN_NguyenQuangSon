@@ -26,13 +26,9 @@ DEFAULT_ORGANIZATION_NAME = "Đơn vị demo HomeMatch"
 # Staff seed accounts that receive a membership in the default organization.
 # Renters are customers and stay organization-less by design.
 STAFF_SEED_MEMBERSHIPS = (
-    ("owner-a", "owner"),
-    ("owner-b", "owner"),
-    ("owner-c", "owner"),
-    ("owner-d", "owner"),
-    ("manager-a", "manager"),
-    ("manager-b", "manager"),
-    ("admin-a", "admin"),
+    ("owner1", "owner"),
+    ("owner2", "owner"),
+    ("admin", "admin"),
 )
 
 
@@ -60,8 +56,8 @@ def ensure_bootstrap(repo) -> None:
                 (membership_id, DEFAULT_ORGANIZATION_ID, username, role, now, now))
         # Shared demo catalog rooms belong to the default organization; the
         # owner column stays NULL when no owner account exists yet.
-        owner_id = "owner-a" if repo.db.execute(
-            "SELECT id FROM hm_users WHERE id='owner-a'").fetchone() else None
+        owner_id = "owner2" if repo.db.execute(
+            "SELECT id FROM hm_users WHERE id='owner2'").fetchone() else None
         unclaimed = repo.db.execute(
             "SELECT id FROM hm_rooms WHERE id NOT IN (SELECT room_id FROM hm_room_ownership)").fetchall()
         for row in unclaimed:

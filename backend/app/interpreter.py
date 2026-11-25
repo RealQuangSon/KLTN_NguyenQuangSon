@@ -10,7 +10,8 @@ from typing import Protocol
 from .locations import find_area, find_city
 from .models import AMENITY_KEYS, DomainError, Extraction, LoanTerms
 
-MONEY = re.compile(r"\b\d[\d.,]*(?:\s*\d{3})*\s*(?:triệu|trieu|triệu đồng|vnd|đồng|dong|tr\b)", re.I)
+MONEY = re.compile(r"\b\d[\d.,]*(?:\s*\d{3})*\s*(?:triệu|trieu|triệu đồng|vnd|đồng|dong|tr\b|millions?\b|mil\b)",
+                   re.I)
 EMAIL = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
 PHONE = re.compile(r"(?<!\d)(?:\+84|0)(?:[ .-]*\d){8,10}(?!\d)")
 # Chat utterances that ask for a loan/instalment what-if (AG-02); matched on folded text.
@@ -19,8 +20,179 @@ LOAN_INTENT_PATTERNS = (re.compile(r"\bneu vay\b", re.I),
                         re.compile(r"\btra gop\b", re.I),
                         re.compile(r"\blai suat\b", re.I))
 # AG-01: cụm "gần/cạnh/quanh <điểm mốc>" giữ nguyên dấu để tra places.json.
-NEAR_PLACE = re.compile(r"(?:gần|cạnh|quanh)\s+([A-Za-z0-9À-ỹ][A-Za-z0-9À-ỹ .]{0,40}?)"
-                        r"(?=[,.;!?]|\s(?:cho|thuê|tìm|phòng|trọ|căn|dưới|trên|khoảng|giá|người|và|rinh)\b|$)", re.I)
+# 18/11: "tầm/chừng/tối đa/tổng/mức/ngân sách" cũng kết thúc tên điểm mốc — trước đây
+# "gần ĐH Quốc gia Hà Nội tầm 4 triệu" nuốt cả "tầm 4 triệu" vào tên và mất điểm đến.
+# 18/11 (đo live): tên điểm mốc có dấu chấm/gạch/ngoặc ("Đại học Y Dược TP.HCM",
+# "Đại học Tài chính - Marketing", "ĐH Ngoại thương cơ sở 2 (Thủ Đức)") bị cắt ở "TP."
+# hoặc không khớp → bấm chip điểm đến không ra điểm đến, chip cũ hiện lại mãi. Dấu chấm
+# chỉ kết thúc tên khi KHÔNG dính chữ phía sau ("Hà Nội. Tầm 4 triệu").
+NEAR_PLACE = re.compile(r"(?:gần|cạnh|quanh)\s+([A-Za-z0-9À-ỹ][A-Za-z0-9À-ỹ .()\-]{0,48}?)"
+                        r"(?=[,;!?]|\.(?![A-Za-z0-9À-ỹ])|\s*\["  # chỗ tiền đã che "[TIEN_DA_TACH]"
+                        r"|\s\d+(?:[.,]\d+)?\s*(?:triệu|trieu|tr|nghìn|ngàn|nghin|ngan|k)\b"
+                        r"|\s(?:cho|thuê|tìm|phòng|trọ|căn|dưới|trên|khoảng|tầm|chừng|tối đa"
+                        r"|tổng|mức|ngân sách|giá|người|và|rinh)\b|$)", re.I)
+
+
+def near_place_text(text: str) -> str | None:
+    """Tên điểm mốc sau "gần/cạnh/quanh" (đã bỏ dấu câu thừa ở cuối).
+    đoạn bắt được là chỗ của chính khách ("tôi", "đây", "công ty tôi") thì trả
+    None — các từ chỉ trỏ không phải tên địa danh, không đẻ ra điểm mốc giả."""
+    found = NEAR_PLACE.search(text)
+    if not found:
+        return None
+    value = found.group(1).strip().rstrip(" -")
+    if value.count(")") > value.count("("):
+        value = value.rstrip(")").strip()
+    if not value or place_ref_hint("gần " + value) is not None:
+        return None
+    return value
+
+# 18/11 — số người. Chữ số và số viết bằng chữ ("hai người", "3 đứa") là số rõ;
+# "vợ chồng"/"cặp đôi" là 2 khi không nhắc con nhỏ. Các cụm ở chung không kèm số
+# ("mấy đứa bạn", "gia đình", "ở với bạn") là CHƯA RÕ: hệ thống hỏi kèm nút, không
+# tự đoán và không mặc định 1 người.
+_NUMBER_WORDS = {"mot": 1, "hai": 2, "ba": 3, "bon": 4, "nam": 5, "sau": 6,
+                 "bay": 7, "tam": 8, "chin": 9, "muoi": 10}
+# 18/11 (đo live K dev): "for 1 person" — câu tiếng Anh giờ đọc được mức tiền nên đi
+# đường tắt luật; số người tiếng Anh ("1 person", "2 people") cũng là tổng số người.
+_PEOPLE_COUNT = re.compile(r"\b(\d{1,2}|" + "|".join(_NUMBER_WORDS) + r")\s*"
+                           r"(nguoi|thanh vien|persons?|people|dua|ban(?!\s*cong\b))\b")
+_TOTAL_UNITS = frozenset({"nguoi", "thanh vien", "person", "persons", "people"})
+_COMPANION_BEFORE = re.compile(r"\b(?:voi|cung|va)\s*$")
+_ALONE = re.compile(r"\b(?:1|mot)\s+minh\b")
+_COUPLE = re.compile(r"\bvo chong\b|\bcap doi\b|\b(?:voi|cung)\s+(?:nguoi yeu|ny)\b")
+_CHILDREN = re.compile(r"\b(?:em be|con nho|con gai|con trai|(?:va|voi|cung|\d{1,2}|mot|hai|ba)\s+"
+                       r"(?:dua\s+|be\s+)?con)\b")
+# 18/11 (đo live held-out K, 3/3 lần): "2 vợ chồng với 1 em bé" bị coi là chưa rõ
+# số người vì có con nhỏ. Khi khách NÊU SỐ con ("1 em bé", "2 đứa con", "hai bé",
+# "1 cháu") thì tổng là 2 + số đó; chỉ "vợ chồng có con nhỏ" không số mới hỏi lại.
+_CHILD_COUNT = re.compile(r"\b(\d{1,2}|mot|hai|ba|bon)\s+(?:dua\s+|be\s+|chau\s+)?"
+                          r"(?:em be|be|con|dua nho|chau)\b")
+_GROUP = re.compile(r"\b(?:may|vai)\s+(?:dua|nguoi|ban)\b|\bnhom\s+(?:ban|nguoi)\b|\bban be\b"
+                    r"|\bgia dinh\b|\b(?:o|song)\s+(?:chung|cung)\s+voi\s+(?!chu\b)\w"
+                    r"|\b(?:voi|cung)\s+(?:ban|chi gai|em gai|em trai|anh trai|dong nghiep)\b")
+
+
+def people_hint(text: str) -> tuple[int | None, bool]:
+    """(số người rõ, True nếu khách nói ở chung nhưng chưa rõ số người).
+
+    Thứ tự: tổng "N người" > "vợ chồng" (có con nhỏ → chưa rõ) > "N đứa/bạn" >
+    "một mình" > cụm ở chung không số. "với/cùng N bạn" là CHƯA RÕ (N bạn cộng
+    người nói hay không), hệ thống hỏi chứ không cộng đoán."""
+    value = folded(text)
+    counts: list[tuple[str, int, bool]] = []
+    for found in _PEOPLE_COUNT.finditer(value):
+        raw, unit = found.group(1), found.group(2)
+        count = int(raw) if raw.isdigit() else _NUMBER_WORDS[raw]
+        if 1 <= count <= 20:
+            counts.append((unit, count, bool(_COMPANION_BEFORE.search(value[:found.start()]))))
+    total = next((count for unit, count, companion in counts
+                  if unit in _TOTAL_UNITS and not companion), None)
+    if total is not None:
+        return total, False
+    if _COUPLE.search(value):
+        children = [int(found.group(1)) if found.group(1).isdigit() else _NUMBER_WORDS[found.group(1)]
+                    for found in _CHILD_COUNT.finditer(value)]
+        if children and 2 + sum(children) <= 20:
+            return 2 + sum(children), False
+        return (None, True) if _CHILDREN.search(value) else (2, False)
+    plain = next((count for _, count, companion in counts if not companion), None)
+    if plain is not None:
+        return plain, False
+    if counts or _GROUP.search(value):
+        return None, True
+    if _ALONE.search(value):
+        return 1, False
+    return None, False
+
+
+# 18/11 — "gần trường/bệnh viện/bến xe" mà chưa nêu tên: nhớ LOẠI điểm đến để nút
+# gợi ý là đúng loại đó (trước đây là các điểm mốc nhiều căn nhất, ví dụ trung tâm
+# thương mại, cho một câu "gần trường đại học").
+_DESTINATION_KIND = re.compile(
+    r"\b(?:gan|canh|quanh)\s+(?:cac\s+|mot\s+|may\s+)?"
+    r"(truong|dai hoc|dh|hoc vien|cao dang|benh vien|bv|ga|ben xe|san bay)\b")
+_KIND_OF_WORD = {"truong": "school", "dai hoc": "school", "dh": "school", "hoc vien": "school",
+                 "cao dang": "school", "benh vien": "hospital", "bv": "hospital",
+                 "ga": "transit", "ben xe": "transit", "san bay": "transit"}
+
+
+_DESTINATION_DROPPED = re.compile(
+    r"\b(?:khong|ko|khoi|bo|chang)\s+(?:can\s+|muon\s+|phai\s+)?(?:o\s+)?(?:gan|canh|quanh)\b")
+
+
+def destination_dropped(text: str) -> bool:
+    """Khách tự bỏ ý "ở gần…" ("không cần gần trường nữa", "bỏ gần bệnh viện")."""
+    return bool(_DESTINATION_DROPPED.search(folded(text)))
+
+
+def destination_kind_hint(text: str) -> str | None:
+    if destination_dropped(text):
+        return None
+    # chỗ của chính khách THẮNG loại địa danh — "gần trường con tôi" là
+    # personal, không phải school (con khách học trường nào chưa nói).
+    own = place_ref_hint(text)
+    if own is not None:
+        return own
+    found = _DESTINATION_KIND.search(folded(text))
+    return _KIND_OF_WORD[found.group(1)] if found else None
+
+
+# khách nhắc chỗ CỦA CHÍNH HỌ sau "gần/cạnh/quanh": "gần tôi", "gần đây",
+# "gần chỗ tôi đang ở" (current) hay "gần công ty tôi", "gần trường con tôi"
+# (personal). Không cái nào tra ra địa danh; hệ thống hỏi lại điểm neo thay vì
+# lặng lẽ bỏ ý khách. "dạo/thời gian/mới gần đây" là khoảng THỜI GIAN, bỏ trước khi đo.
+# Vòng 2 (QA lỗi 1): đại từ trần ("minh", "chi", "anh"…) chỉ là chỗ của khách khi
+# đứng CUỐI cụm — theo sau là hết câu, một dấu ngắt (, . ! ? ; : )), một chữ số,
+# hoặc MỘT từ nối thông thường; nếu không thì đó là chữ đầu của tên riêng
+# ("gần Minh Khai", "gần chi nhánh Vietcombank", "gần Anh Đào hotel").
+_TIME_RECENT = re.compile(r"\b(?:dao|thoi gian|moi)\s+gan\s+(?:day|nay)\b")
+PLACE_REF_TAIL_WORDS = frozenset(
+    "nhat thoi nha nhe nhi a va voi o dang duoc khong co duoi tren khoang tam "
+    "gia trong de cho thi la nhung ma hoac chut mot".split())
+_BARE_PRONOUN = r"(?:toi|tui|minh|em|anh|chi)"
+_POSSESSIVE_PRONOUN = r"(?:toi|minh|em|con|vo|chong|ban)"
+_TAIL_TOKEN = "|".join(sorted(PLACE_REF_TAIL_WORDS))
+# Tail sau đại từ: hết câu/dấu ngắt, hoặc một từ nối/chữ số; chủ sở hữu thêm một
+# đại từ khác ("bạn tôi", "con tôi") hoặc "học/làm" ("trường em học").
+_BARE_TAIL = rf"(?=$|\s*[,.;:!?)]|\s+(?:{_TAIL_TOKEN}|\d+)\b)"
+_POSSESSIVE_TAIL = rf"(?=$|\s*[,.;:!?)]|\s+(?:{_TAIL_TOKEN}|\d+|{_POSSESSIVE_PRONOUN}|hoc|lam)\b)"
+_PLACE_REF_CURRENT = re.compile(
+    r"\b(?:gan|canh|quanh)\s+(?:"
+    + _BARE_PRONOUN + _BARE_TAIL
+    + r"|day\b|cho\s+nay\b|khu\s+nay\b"
+    + r"|(?:cho|noi)\s+" + _BARE_PRONOUN + _BARE_TAIL
+    + r"|nha\s+(?:toi|minh|em)" + _BARE_TAIL
+    + r"|vi\s+tri(?:\s+cua)?\s+(?:toi|minh|em)" + _BARE_TAIL
+    + r"|(?:cho|noi)\s+(?:toi|minh|em)\s+(?:dang\s+)?o\b)")
+# Vòng 2 (QA lỗi 2): "gần chỗ/nơi (tôi|mình|em|con|vợ|chồng) (làm|làm việc|học)"
+# là personal — chỗ riêng chưa nêu tên ("gần chỗ tôi làm", "gần nơi em làm việc").
+# Vòng 3 (QA lỗi 6): cho phép một đại từ THỨ HAI tùy chọn ("chỗ con tôi học",
+# "nơi chồng em làm việc") và "gần (chỗ|nơi) (làm|làm việc|học)" + đuôi bare tail
+# ("gần chỗ làm", "gần chỗ làm nhé", "gần nơi học"); "gần chỗ làm móng Hoa" sau
+# "làm" không phải đuôi nên vẫn là tên điểm mốc.
+_PLACE_REF_PERSONAL = re.compile(
+    r"\b(?:gan|canh|quanh)\s+(?:"
+    + r"(?:cho|noi)\s+" + _POSSESSIVE_PRONOUN + r"\s+(?:" + _BARE_PRONOUN + r"\s+)?"
+    + r"(?:lam(?:\s+viec)?|hoc)\b"
+    + r"|(?:cho|noi)\s+(?:lam(?:\s+viec)?|hoc)\b" + _BARE_TAIL
+    + r"|(?:cong ty|cty|van phong|cho lam|noi lam|truong|nha)\s+(?:cua\s+)?"
+    + _POSSESSIVE_PRONOUN + _POSSESSIVE_TAIL + r")")
+
+
+def place_ref_hint(text: str) -> str | None:
+    """"current" (vị trí hiện tại của khách: "gần tôi", "gần đây", "quanh khu này"),
+    "personal" (chỗ riêng chưa nêu tên: "gần công ty tôi", "gần trường con tôi",
+    "gần chỗ tôi làm") hay None. Khách tự bỏ ý "ở gần…" thì None
+    (destination_dropped)."""
+    if destination_dropped(text):
+        return None
+    value = _TIME_RECENT.sub(" ", folded(text))
+    if _PLACE_REF_CURRENT.search(value):
+        return "current"
+    if _PLACE_REF_PERSONAL.search(value):
+        return "personal"
+    return None
 
 
 def folded(text: str) -> str:
@@ -50,11 +222,74 @@ def redact(text: str) -> str:
     return MONEY.sub("[TIEN_DA_TACH]", PHONE.sub("[LIEN_HE_DA_TACH]", EMAIL.sub("[EMAIL_DA_TACH]", text)))
 
 
+# 18/11 (probe live câu mới): "lương mình 12 triệu thì nên thuê bao nhiêu?" bị đọc
+# thành trần 12 triệu rồi gợi ý cả căn hộ 11,7 triệu. Số tiền đứng ngay sau từ
+# lương/thu nhập là số KHÁCH KIẾM ĐƯỢC, không phải mức tiền thuê: mọi hàm đọc mức
+# tiền (budget_hint, rent_budget_hint, budget_range, relative_budget,
+# budget_approx_hint) bỏ qua nó. "luong" không dấu loại các cụm "chất/số/dung lượng";
+# khoảng giữa từ khoá và số không được qua dấu ngắt câu hay từ nói về phòng/mức thuê
+# ("lương thấp nên cần phòng dưới 3 triệu" vẫn là trần 3 triệu).
+_INCOME_KEYWORD = re.compile(
+    r"(?<![\w])(?:lương|thu\s*nhập|thu\s*nhap|kiếm\s*được|kiem\s*duoc|income|salary"
+    r"|(?<!chat )(?<!chất )(?<!so )(?<!dung )(?<!khoi )(?<!trong )luong)(?![\w])", re.I)
+_INCOME_AMOUNT = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:triệu|trieu|tr|củ|cu|cây|cay|millions?|mil)(?:\d(?!\d)|\s*(?:rưỡi|ruoi))?(?![\w])",
+    re.I)
+_INCOME_GAP_STOP = re.compile(
+    r"phong|thue|duoi|toi da|khong qua|tran|gia\b|tro\b|can ho|studio|ngan sach|chi phi|tong thang"
+    r"|tien nha|muc\b")
+
+
+def _income_spans(text: str) -> list[tuple[int, int]]:
+    """Vị trí các số tiền gắn với lương/thu nhập trong câu GỐC."""
+    spans: list[tuple[int, int]] = []
+    for keyword in _INCOME_KEYWORD.finditer(text):
+        amount = _INCOME_AMOUNT.search(text, keyword.end())
+        if amount is None or amount.start() - keyword.end() > 25:
+            continue
+        gap = text[keyword.end():amount.start()]
+        if re.search(r"[\d,;.!?\n]", gap) or _INCOME_GAP_STOP.search(folded(gap)):
+            continue
+        spans.append((amount.start(), amount.end()))
+    return spans
+
+
+def strip_income(text: str) -> str:
+    """Câu khách bỏ phần số tiền lương/thu nhập — đầu vào cho các hàm đọc mức thuê."""
+    for start, end in reversed(_income_spans(text)):
+        text = text[:start] + text[end:]
+    return text
+
+
+def income_amount(text: str) -> int | None:
+    """Số tiền khách nói mình kiếm được mỗi tháng (đọc tất định), hoặc None."""
+    spans = _income_spans(text)
+    return budget_hint(text[spans[0][0]:spans[0][1]]) if spans else None
+
+
+_INCOME_QUESTION = re.compile(
+    r"bao nhieu|nen thue|thue duoc|thue tam|thue muc|hop ly|muc nao|co nen|vua suc|vua tui|du (?:tien|thue)")
+
+
+def income_question(text: str) -> bool:
+    """Khách nêu số tiền kiếm được và HỎI nên thuê mức nào, câu không kèm mức thuê
+    riêng — trả lời tất định bằng ngưỡng tham khảo, không đọc lương thành trần."""
+    if income_amount(text) is None:
+        return False
+    if re.search(r"\bvay\b|tra gop|lai suat", folded(text)):
+        return False  # câu hỏi vay đi nhánh tài chính như cũ
+    if budget_hint(text) is not None or relative_budget(text) is not None or budget_range(text) is not None:
+        return False
+    return "?" in text or bool(_INCOME_QUESTION.search(folded(text)))
+
+
 def budget_hint(text: str) -> int | None:
     """Trần tiền đọc được từ câu khách, tất định (AG-02). Hiểu thêm kiểu viết
     phổ biến của người thuê: mốe lẻ đuôi ("3 triệu5", "3tr5"), "rưỡi"
-    ("5 triệu rưỡi") và slang triệu ("4 củ", "5 cây")."""
+    ("5 triệu rưỡi") và slang triệu ("4 củ", "5 cây"). Số tiền lương/thu nhập
+    không phải mức thuê nên bị bỏ qua (strip_income)."""
     from decimal import Decimal
+    text = strip_income(text)
     # "3 triệu5" / "3tr5": số lẻ 0-9 dính liền sau đơn vị là phần thập phân.
     # Có khoảng trắng ("3 triệu 5") thì KHÔNG nhận — "3 triệu 2 người" là
     # 3 triệu cho 2 người, không phải 3,2 triệu.
@@ -74,7 +309,10 @@ def budget_hint(text: str) -> int | None:
         )
         if amount > 0:
             return amount
-    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b|cây|cay\b)", text, re.I)
+    # 18/11 (đo live held-out K): "under 8 million" — khách viết tiếng Anh; trước đây
+    # không đọc được nên nháp không có mức tiền dù model nói "đã ghi nhận 8 triệu".
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b|cây|cay\b|millions?\b|mil\b)",
+                      text, re.I)
     if not match:
         return None
     amount = int(Decimal(match.group(1).replace(",", ".")) * 1_000_000)
@@ -116,6 +354,7 @@ def relative_budget(text: str) -> dict | None:
     """Đọc mức tiền tương đối từ câu gốc. "lên/tăng/còn X" và "giảm xuống X" là
     ĐẶT mức X (set); "nới (thêm) X"/"giảm/bớt X" là delta — caller CHỈ áp delta
     khi có mức gốc. Trả {"direction": "set"|"up"|"down", "amount_vnd": X}."""
+    text = strip_income(text)
     match = RELATIVE_BUDGET_UP_DELTA.search(text)
     if match:
         return {"direction": "up", "amount_vnd": _relative_amount(match.group(1), match.group(2))}
@@ -144,6 +383,7 @@ def rent_budget_hint(text: str) -> int | None:
     strict = budget_hint(text)
     if strict is not None:
         return strict
+    text = strip_income(text)
     match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:nghìn|nghin|ngan\b|k\b)", text, re.I)
     if not match:
         return None
@@ -168,6 +408,7 @@ def budget_range(text: str) -> tuple[int, int] | None:
     """UX-01: khoảng tiền "3 đến 4 triệu", "3-4tr", "từ 3 tới 4 triệu" → (thấp, cao).
     Đơn vị ở số sau áp cho cả hai; chỉ nhận khi thấp < cao, không đoán."""
     from decimal import Decimal
+    text = strip_income(text)
     match = re.search(
         r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b)?\s*(?:đến|den|tới|toi|-|–|—)\s*"
         r"(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr\b|củ|cu\b)", text, re.I)
@@ -204,7 +445,7 @@ def budget_approx_hint(text: str) -> bool | None:
     """13/11: "tầm/khoảng 4 triệu" → True (ưu tiên căn gần mức đó); "dưới/tối đa 4 triệu"
     hoặc một khoảng "3 đến 4 triệu" → False; câu không nêu mức tiền kiểu này → None
     (giữ nguyên). Đọc tất định từ câu khách, không đoán."""
-    value = folded(text)
+    value = folded(strip_income(text))
     if budget_range(text) is not None or _CEILING.search(value):
         return False
     if _APPROX.search(value):
@@ -216,6 +457,22 @@ def wants_cheapest(text: str) -> bool:
     """UX-03: chỉ khi khách nói rõ mới thưởng căn rẻ."""
     value = folded(text)
     return "re nhat" in value or "cang re cang tot" in value
+
+
+# 18/11 (đo live held-out K, 3/3 lần): "cho mình gặp nhân viên hỗ trợ" không khớp
+# cụm cũ nên rơi vào vòng LLM — model không có tool tạo phiếu nên trả lời "chưa
+# kết nối được" hoặc hứa "sẽ chuyển bạn đến nhân viên" mà không tạo gì. Muốn gặp
+# NGƯỜI của nền tảng (nhân viên/tư vấn viên/admin/CSKH/tổng đài) là ticket hỗ trợ;
+# "nhân viên" đứng một mình chỉ tính khi đi sau động từ gặp/liên hệ/nói chuyện…
+# ("mình là nhân viên văn phòng" không khớp).
+_SUPPORT_PERSON = (r"(?:nhan vien|tu van vien|admin|quan tri vien|ban quan tri|bo phan (?:ho tro|cskh)"
+                   r"|cskh|tong dai(?: vien)?|nguoi ho tro|ho tro vien)")
+_HUMAN_SUPPORT = re.compile(
+    r"\bnhan vien (?:ho tro|cskh|cham soc|tong dai|phu trach|cua homematch|ben ban)\b"
+    r"|\bcham soc khach hang\b|\bbo phan ho tro\b|\bho tro vien\b|\btu van vien\b"
+    r"|\b(?:gap|goi|goi cho|noi chuyen voi|chat voi|nhan tin cho|lien he(?: voi)?|ket noi(?: voi)?"
+    r"|chuyen (?:minh |em |toi )?(?:sang|qua|cho|toi|den))\s+(?:voi\s+)?(?:mot\s+|1\s+|ben\s+)?"
+    + _SUPPORT_PERSON + r"\b")
 
 
 def fixed_intent(text: str) -> str | None:
@@ -232,7 +489,8 @@ def fixed_intent(text: str) -> str | None:
     if any(term in value for term in ("chat voi chu nha", "noi chuyen voi chu nha",
                                       "nhan tin cho chu nha", "gap chu nha")):
         return "landlord_handover"
-    if any(term in value for term in ("nguoi that", "nhan vien tu van", "gap quan ly")):
+    if any(term in value for term in ("nguoi that", "nhan vien tu van", "gap quan ly")) \
+            or _HUMAN_SUPPORT.search(value):
         return "human_support"
     if any(term in value for term in ("noi quy", "quy dinh", "tam tru", "hoan coc", "lay lai coc", "quyen loi",
                                       "dieu khoan", "phap ly", "cam nang")):
@@ -285,6 +543,64 @@ class Interpreter(Protocol):
     def extract(self, text: str) -> Extraction: ...
 
 
+# Cụm từ (đã bỏ dấu) gọi tên từng tiện ích trong câu khách; dùng chung cho
+# ưu tiên (mặc định) và yêu cầu bắt buộc (must_amenities_hint).
+AMENITY_TERMS: dict[str, tuple[str, ...]] = {
+    "window": ("thoang", "cua so"), "quiet": ("yen tinh", "it on"),
+    "air_conditioning": ("may lanh", "dieu hoa"), "parking": ("de xe", "gui xe"),
+    "private_bathroom": ("wc rieng", "ve sinh rieng"),
+    "washing_machine": ("may giat",), "balcony": ("ban cong",),
+    "furniture": ("noi that",), "pets_allowed": ("nuoi thu cung",),
+    # LF-04: the ten new amenity keys, same rule as the old ones.
+    "kitchen": ("bep", "nau an"), "wifi": ("wifi", "internet"),
+    "elevator": ("thang may",), "security_24h": ("bao ve 24", "an ninh 24", "bao ve"),
+    "camera": ("camera",), "loft": ("gac lung", "co gac", "gac xep"),
+    "flexible_hours": ("gio giac tu do", "tu do gio giac", "gio tu do"),
+    "no_shared_landlord": ("khong chung chu", "ko chung chu", "khong o chung chu"),
+    "water_heater": ("nong lanh", "may nuoc nong"), "fridge": ("tu lanh",),
+}
+
+# 19/11 (đo đề xuất live r06): "bắt buộc có máy lạnh và máy giặt" là yêu cầu
+# CỨNG, không phải ưu tiên. Chỉ nhận dấu hiệu mạnh, nói rõ; "cần có", "muốn có",
+# "thì tốt", "ưu tiên" vẫn là ưu tiên mềm (yêu cầu cứng không bao giờ tự nới, nên
+# đọc nhầm sang cứng có thể làm mất hết kết quả).
+_MUST_MARKER = re.compile(
+    r"\b(?:bat buoc|nhat dinh(?: phai)?|buoc phai|phai co|can phai co|yeu cau(?: phai)? co"
+    r"|khong the thieu|chi (?:lay|tim|thue|xem|chon|nhan)\b[^,;.!?]*?\bco)\b")
+_MUST_NEGATED = re.compile(r"\bkhong (?:bat buoc|nhat thiet|can thiet|phai co)\b")
+_SOFT_MARKER = re.compile(r"\b(?:thi tot|cang tot|neu duoc|neu co|uu tien|duoc thi tot|co cung duoc)\b")
+_CLAUSE_SPLIT = re.compile(r"[,;.!?\n]+|\s+(?:nhung|con|ngoai ra)\s+")
+
+
+def must_amenities_hint(text: str) -> list[str]:
+    """Tiện ích khách nói là BẮT BUỘC ("bắt buộc có", "phải có", "nhất định", "chỉ lấy
+    phòng có …"): mọi tiện ích trong cùng vế câu với dấu hiệu mạnh. Vế có dấu hiệu
+    mềm ("thì tốt", "ưu tiên") hoặc phủ định ("không bắt buộc") không tính. Tất định."""
+    found: list[str] = []
+    for clause in _CLAUSE_SPLIT.split(folded(text)):
+        if not _MUST_MARKER.search(clause) or _MUST_NEGATED.search(clause) or _SOFT_MARKER.search(clause):
+            continue
+        for name, terms in AMENITY_TERMS.items():
+            if name in found or not any(term in clause for term in terms):
+                continue
+            if any(re.search(r"(?:khong can|khong muon|bo|khong thich)\s+" + re.escape(term), clause)
+                   for term in terms):
+                continue
+            found.append(name)
+    return found
+
+
+_DROP_LEAD = r"(?:khong can|khong muon|khong thich|khong bat buoc|bo(?: yeu cau| dieu kien)?)\s+(?:phai\s+)?(?:co\s+)?"
+
+
+def dropped_amenities_hint(text: str) -> list[str]:
+    """Tiện ích khách nói bỏ ("không cần máy giặt nữa", "bỏ yêu cầu máy lạnh") — để gỡ
+    khỏi danh sách bắt buộc. Tất định, cùng từ điển AMENITY_TERMS."""
+    value = folded(text)
+    return [name for name, terms in AMENITY_TERMS.items()
+            if any(re.search(_DROP_LEAD + re.escape(term), value) for term in terms)]
+
+
 class DemoInterpreter:
     """Limited rule interpreter to exercise the graph without a model API."""
     mode = "demo_rules"
@@ -296,7 +612,7 @@ class DemoInterpreter:
             intent = "find_room" if any(word in value for word in ("phong", "tro", "studio", "thue", "tim", "can ho", "chung cu")) else "unknown"
         city = find_city(text)
         area = find_area(text, city)
-        people = re.search(r"\b(\d{1,2})\s*nguoi\b", value)
+        count, _ = people_hint(text)
         room_type = None
         if "studio" in value:
             room_type = "studio"
@@ -307,33 +623,22 @@ class DemoInterpreter:
         bedrooms = re.search(r"\b(\d)\s*(?:pn|phong ngu)\b", value)
         preferences = []
         removed = []
-        for name, terms in {
-            "window": ("thoang", "cua so"), "quiet": ("yen tinh", "it on"),
-            "air_conditioning": ("may lanh", "dieu hoa"), "parking": ("de xe", "gui xe"),
-            "private_bathroom": ("wc rieng", "ve sinh rieng"),
-            "washing_machine": ("may giat",), "balcony": ("ban cong",),
-            "furniture": ("noi that",), "pets_allowed": ("nuoi thu cung",),
-            # LF-04: the ten new amenity keys, same rule as the old ones.
-            "kitchen": ("bep", "nau an"), "wifi": ("wifi", "internet"),
-            "elevator": ("thang may",), "security_24h": ("bao ve 24", "an ninh 24", "bao ve"),
-            "camera": ("camera",), "loft": ("gac lung", "co gac", "gac xep"),
-            "flexible_hours": ("gio giac tu do", "tu do gio giac", "gio tu do"),
-            "no_shared_landlord": ("khong chung chu", "ko chung chu", "khong o chung chu"),
-            "water_heater": ("nong lanh", "may nuoc nong"), "fridge": ("tu lanh",),
-        }.items():
+        for name, terms in AMENITY_TERMS.items():
             if any(term in value for term in terms):
                 negative = any(re.search(r"(?:khong can|khong muon|bo|khong thich)\s+" + re.escape(term), value) for term in terms)
                 (removed if negative else preferences).append(name)
-        count = int(people.group(1)) if people else None
-        destination = NEAR_PLACE.search(text)
+        destination = near_place_text(text)
+        # "gần tôi/gần công ty tôi" — chỗ của chính khách, không phải tên
+        # địa danh: needs_destination=True (kèm destination_kind từ luật) để hỏi lại.
+        ref = place_ref_hint(text)
         return Extraction(
             intent=intent, city=city, area=area,
             room_type=room_type,
             bedrooms=int(bedrooms.group(1)) if bedrooms and 1 <= int(bedrooms.group(1)) <= 5 else None,
             people=count if count is not None and 1 <= count <= 20 else None,
             preferences=preferences,
-            destination_text=destination.group(1).strip() if destination else None,
-            needs_destination="gan truong" in value or "gan noi lam" in value,
+            destination_text=None if ref else destination,
+            needs_destination=bool(ref) or "gan truong" in value or "gan noi lam" in value,
             accept_estimated_data=accept_estimated_intent(text),
             remove_preferences=removed,
         )

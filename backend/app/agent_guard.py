@@ -75,9 +75,26 @@ def redact_tree(value: Any) -> Any:
 
 # Chat-triggered viewing preparation: deterministic phrase + room reference.
 VIEWING_TRIGGER = re.compile(r"dat lich|hen xem")
+# 18/11 (đo live held-out K, 3/3 lần): "cho mình đi xem căn đầu tiên" không có
+# "đặt lịch/hẹn xem" nên rơi vào vòng LLM. Động từ đi tới xem ("đi/qua/tới/ghé xem",
+# "xem trực tiếp", "hẹn lịch/giờ") chỉ tính là đặt lịch xem khi câu nhắc MỘT CĂN
+# cụ thể — "tìm phòng cuối tuần đi xem" chưa có căn nào thì vẫn là câu tìm phòng.
+VIEWING_GO = re.compile(r"\b(?:di|qua|toi|den|ghe|sang)\s+(?:coi|xem)\b|\bxem truc tiep\b"
+                        r"|\bhen (?:lich|gio|ngay)\b")
+ROOM_DEICTIC = re.compile(r"căn\s*(?:này|đó|kia|ấy|nay\b|do\b)", re.I)
+
+
+def mentions_specific_room(text: str) -> bool:
+    return bool(ROOM_ORDINAL_NUMBER.search(text) or ROOM_ORDINAL_WORD.search(text)
+                or ROOM_FIRST.search(text) or ROOM_LAST.search(text)
+                or ROOM_DEICTIC.search(text) or mention_room_id(text))
+
 
 def viewing_intent(text: str) -> bool:
-    return bool(VIEWING_TRIGGER.search(folded(text)))
+    value = folded(text)
+    if VIEWING_TRIGGER.search(value):
+        return True
+    return bool(VIEWING_GO.search(value)) and mentions_specific_room(text)
 
 
 def room_reference(text: str) -> str | None:
@@ -103,7 +120,13 @@ ROOM_ID_PATTERNS = (re.compile(r"\b(chotot-\d+)\b", re.I),
                     re.compile(r"\b(synthetic-room-\d{1,3})\b", re.I),
                     re.compile(r"\b(room-[0-9a-f]{10})\b", re.I),
                     re.compile(r"\b(demo-\d{1,3})\b", re.I))
-ROOM_ORDINAL_NUMBER = re.compile(r"căn\s*(?:số|thứ)\s*(\d{1,2})", re.I)
+# 18/11 (probe live): câu trả lời gọi các căn là "Căn 1/2/3" nên khách nói lại đúng
+# như vậy ("đặt lịch xem căn 1") — "số/thứ" là tuỳ chọn. Số theo sau là đơn vị
+# ("căn 2 phòng ngủ", "căn 1 người", "căn 30m2", "căn 3 triệu") thì KHÔNG phải số
+# thứ tự trong danh sách.
+ROOM_ORDINAL_NUMBER = re.compile(
+    r"căn\s*(?:số|thứ)?\s*(\d{1,2})(?!\d|[.,]\d|\s*(?:phòng|phong|pn\b|ngủ|người|nguoi|vợ|đứa"
+    r"|m\b|m2|m²|mét|met\b|triệu|trieu|tr\b|củ|cu\b|k\b|nghìn|km\b|tầng|tang\b|xe\b|wc\b|toilet))", re.I)
 ROOM_ORDINAL_WORDS = {"hai": 2, "ba": 3, "bốn": 4, "bon": 4, "năm": 5, "nam": 5, "một": 1, "mot": 1}
 ROOM_ORDINAL_WORD = re.compile(r"căn\s*(?:thứ|thu|số)?\s*(hai|ba|bốn|bon|năm|nam|một|mot)\b", re.I)
 ROOM_FIRST = re.compile(r"căn\s*(?:đầu|dầu|đầu tiên|first)", re.I)
@@ -150,6 +173,21 @@ def resolve_room_reference(text: str, visible_items: list) -> str | None:
     return matches[0] if len(matches) == 1 else None
 
 
+# 18/11 (đo live held-out K): model gửi room_ref dạng trần ("3", "thứ ba", "đầu
+# tiên", "phòng 2", "#1") nên resolver theo câu khách ("căn …") không nhận ra và
+# model quay sang hỏi khách "mã căn". room_ref của model được chuẩn hóa về
+# "căn <phần còn lại>" rồi resolve như câu khách — vẫn chỉ trả id trong danh sách.
+_MODEL_REF_PREFIX = re.compile(r"^\s*(?:căn|can|phòng|phong|room|#)\s*", re.I)
+
+
+def resolve_model_room_ref(ref: str, visible_items: list) -> str | None:
+    found = resolve_room_reference(ref, visible_items)
+    if found is not None:
+        return found
+    bare = _MODEL_REF_PREFIX.sub("", ref).strip().lstrip("#").strip()
+    return resolve_room_reference(f"căn {bare}", visible_items) if bare else None
+
+
 # Provider failures keep their taxonomy codes. At the chat boundary they turn
 # into this deterministic guided-form fallback; nothing is ever fabricated to
 # replace the missing extraction. Budget exhaustion (budget_exceeded) is always
@@ -174,8 +212,15 @@ def quarantine_reply(scan: InjectionScan) -> dict:
             "message": "Tin nhắn đã được cách ly; hồ sơ nháp không đổi."}
 
 
-def viewing_prep_missing_room_reply() -> dict:
+def viewing_prep_missing_room_reply(has_results: bool = True) -> dict:
+    """18/11: mã phòng không còn hiện cho khách (Lỗi 2c 15/11) nên câu hỏi lại dùng
+    số thứ tự trong danh sách gợi ý — đúng cách câu trả lời gọi các căn."""
+    if not has_results:
+        return {"intent": "find_room", "status": "needs_clarification",
+                "questions": ["Bạn cho mình biết khu vực và mức tiền muốn tìm nhé?"],
+                "message": "Bạn chưa có danh sách gợi ý nào nên mình chưa đặt lịch xem được. "
+                           "Mình tìm phòng trước, rồi bạn chọn căn muốn xem trong danh sách."}
     return {"intent": "find_room", "status": "needs_clarification",
-            "questions": ["Bạn muốn đặt lịch xem phòng nào? Cho biết mã phòng trong "
-                          "danh sách gợi ý (ví dụ demo-01)."],
-            "message": "Chưa chuẩn bị được yêu cầu lịch xem vì chưa có mã phòng."}
+            "questions": ["Bạn muốn đặt lịch xem căn nào? Nói số thứ tự trong danh sách gợi ý, "
+                          "ví dụ “xem căn 1”."],
+            "message": "Mình chưa rõ bạn muốn xem căn nào trong danh sách gợi ý."}

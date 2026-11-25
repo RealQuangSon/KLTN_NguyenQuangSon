@@ -3,10 +3,6 @@ import { Api } from "../api";
 import type { Actor } from "../types";
 import { ErrorNotice, Icon } from "../components/Shared";
 import { Brand } from "../components/Brand";
-import {
-  ExperienceChips,
-  useDemoExperience,
-} from "../components/DemoExperience";
 import { Link } from "../router";
 // Màn đăng nhập (S02) bố cục hai cột: cột trái là form tối giản
 // (chọn loại tài khoản, ô gạch chân, nút pill), cột phải là cảnh phố màu ấm vẽ bằng
@@ -34,7 +30,6 @@ export function Login({
     [forgotBusy, setForgotBusy] = useState(false),
     [forgotNote, setForgotNote] = useState<string | null>(null);
   // Chỉ hiện chip trải nghiệm nhanh khi /health xác nhận seed local.
-  const demoReady = useDemoExperience();
   const login = async () => {
     if (busy) return;
     setBusy(true);
@@ -111,14 +106,6 @@ export function Login({
               Chủ nhà
             </button>
           </div>
-          {demoReady && (
-            <ExperienceChips
-              kind={role}
-              disabled={busy}
-              onAuthenticated={onAuthenticated}
-              onError={onError}
-            />
-          )}
           {pendingNeed && (
             <div className="pending-need">
               <div className="pending-need-icon">
@@ -192,10 +179,6 @@ export function Login({
               {busy ? "Đang đăng nhập…" : "Đăng nhập"}
             </button>
           </form>
-          <p className="auth-terms">
-            Khi tiếp tục, bạn đồng ý sử dụng HomeMatch trong khuôn khổ đồ án
-            nghiên cứu; dữ liệu phòng là dữ liệu giả lập.
-          </p>
           <Link to="/dang-ky" className="auth-alt-cta">
             Chưa có tài khoản? Đăng ký
           </Link>
@@ -207,7 +190,7 @@ export function Login({
                   <input
                     value={forgotUsername}
                     onChange={(e) => setForgotUsername(e.target.value)}
-                    placeholder="ví dụ: renter-a"
+                    placeholder="ví dụ: renter"
                     disabled={forgotBusy}
                   />
                 </label>

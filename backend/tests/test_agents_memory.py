@@ -76,12 +76,12 @@ def test_memory_requires_consent_and_only_prefills_inferred_fields(service, rent
 
 
 def test_memory_api_forget_and_consent_withdrawal(service, profile):
-    renter = Actor(id="renter-a", role="renter")
+    renter = Actor(id="renter", role="renter")
     consent(service, renter.id, True)
     sid = service.create_session(renter)["session_id"]
     service.confirm(sid, renter, profile, 0)
     with TestClient(create_app(lambda: service)) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         body = client.get("/me/memory", headers=headers).json()
         assert body["consented"] and body["memory"]["fields"]["area"] == "Quận 7"
         assert client.delete("/me/memory/area", headers=headers).json() == {"status": "forgotten", "field": "area"}
@@ -125,7 +125,7 @@ def _confirm(service, renter, profile, preferences, must=()):
     return sid
 
 
-def _details(service, user_id="renter-a"):
+def _details(service, user_id="renter"):
     return {item["key"]: item for item in recall(service.repo, user_id)["preference_details"]}
 
 
@@ -250,11 +250,11 @@ def test_no_consent_means_saved_rooms_are_not_mined(large_catalog_service, rente
 
 
 def test_forget_one_preference_api(service, profile):
-    renter = Actor(id="renter-a", role="renter")
+    renter = Actor(id="renter", role="renter")
     consent(service, renter.id, True)
     _confirm(service, renter, profile, ["window", "quiet"])
     with TestClient(create_app(lambda: service)) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         response = client.delete("/me/memory/preferences/quiet", headers=headers)
         assert response.json() == {"status": "forgotten", "field": "quiet"}
         body = client.get("/me/memory", headers=headers).json()

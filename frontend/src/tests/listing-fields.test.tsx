@@ -122,7 +122,7 @@ it("shows address, broker badge, posting age, terms and amenity chips on the pub
   expect(screen.getByText(/Trống từ: 01\/12/)).toBeInTheDocument();
   // Nội dung tin dài → thu gọn kèm "Xem thêm".
   expect(screen.getByRole("button", { name: "Xem thêm" })).toBeInTheDocument();
-  // D-2 (crawl.md): tiện ích dạng lưới trên trang chi tiết, chỉ mục true —
+  // Tiện ích dạng lưới trên trang chi tiết, chỉ mục true —
   // tin nói "không wifi" hay không nói tới thì không hiện (không gạch ngang,
   // không suy ra 0/false hiển thị).
   expect(screen.getByText("Bếp")).toBeInTheDocument();
@@ -144,7 +144,7 @@ it("shows the individual badge for individual posters", async () => {
   expect(await screen.findByText("Chính chủ")).toBeInTheDocument();
 });
 
-// crawl.md C-1: bảng chi phí không hiện mã nội bộ — tên khoản và nguồn đều
+// Bảng chi phí không hiện mã nội bộ — tên khoản và nguồn đều
 // tiếng Việt ở lớp hiển thị; tên trường trong API không đổi.
 it("shows Vietnamese cost sources and line names instead of internal codes", () => {
   expect(costSourceText("quote.rent_vnd")).toBe("Theo tin đăng");
@@ -201,7 +201,7 @@ it("shows Vietnamese cost sources and line names instead of internal codes", () 
   expect(body).toContain("Chưa đủ thông tin: Tiền thuê trả trước, Tiền cọc");
 });
 
-it("never shows the crawled poster name to an anonymous visitor (C1b/crawl.md D-4)", async () => {
+it("never shows the crawled poster name to an anonymous visitor", async () => {
   // Bảo đảm chính nằm ở máy chủ: khách ẩn danh nhận contact.poster_name = null
   // (test backend test_crawl_images_and_poster_name_flow_only_to_allowed_surfaces).
   // Giao diện chỉ render đúng dữ liệu máy chủ gửi: tên null → không có khối tên.

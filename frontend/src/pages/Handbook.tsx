@@ -75,7 +75,7 @@ export function HandbookPage({ api }: { api: Api }) {
           <small>{answer.disclaimer}</small>
         </section>
       )}
-      <section className="panel">
+      <section className="panel handbook-list">
         <h2>Tất cả mục</h2>
         {entries.map((entry) => (
           <details key={entry.id}>

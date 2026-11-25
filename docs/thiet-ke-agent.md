@@ -1,11 +1,11 @@
 # Thiết kế AI Agent HomeMatch
 
-**Cập nhật:** 07/11/2026 (sau đợt harness HN-00…HN-12 và multi-agent HN-13; thay bản 06/11/2026 — bản cũ lưu ở git lịch sử). Tài liệu này là **chương kiến trúc agent của luận văn**: viết cho người đọc mới, có sơ đồ luồng một lượt, đối chiếu trực tiếp với code. Chi tiết vận hành (biến môi trường, quy trình test, quan sát) nằm ở [nghiep-vu-va-harness.md](nghiep-vu-va-harness.md).
+Tài liệu này mô tả kiến trúc agent của HomeMatch, có sơ đồ luồng một lượt, đối chiếu trực tiếp với code. Biến môi trường ở [env-inventory.md](../infra/env-inventory.md).
 
 ## 1. Nguyên tắc (bất biến)
 
 1. **LLM hiểu ngôn ngữ, code quyết định.** Tiền chỉ do `costs.py` tính (Decimal, VND); lọc cứng, xếp hạng, quyền và việc công bố là code tất định. LLM trích xuất, suy luận ngữ nghĩa, chọn tool và diễn đạt — mọi con số trong câu trả lời phải đến từ câu của khách hoặc kết quả tool (hậu kiểm `check_numbers`, sai → thay bằng câu template).
-2. **Không còn bước chủ nhà duyệt** (quyết định D-10, 05/11/2026): kết quả công bố ngay sau khi xếp hạng, đúng phiên bản hồ sơ và kho hiện tại; chủ nhà biết nhu cầu qua lead (`touch_lead` khi căn của họ lọt top 5), không chặn khách.
+2. **Không còn bước chủ nhà duyệt** (quyết định D-10, 05/11/2026): kết quả công bố ngay sau khi xếp hạng, đúng phiên bản hồ sơ và kho hiện tại; chủ nhà biết có khách khi khách nhắn tin hoặc đặt lịch xem (lead bỏ 19/11/2026), không chặn khách.
 3. **Điều kiện cứng không tự nới.** Agent chỉ đề nghị lựa chọn (chip làm rõ có `patch` cấu trúc); khách bấm mới áp với trạng thái `confirmed`, evidence `clarify:rN`.
 4. **Thu nhập là bất kỳ.** `monthly_income_vnd` không bao giờ tới prompt, Jev, trace, DTO chủ nhà hay cassette. Văn bản tới LLM/Jev đi qua `agent_guard.redact` (che SĐT, email, tiền).
 5. **Dữ liệu người dùng là dữ liệu, không phải lệnh.** Tin nhắn khách bị `screen_injection` sàng (nghiêm trọng → cách ly lượt); dữ liệu tool (mô tả tin đăng) được `neutralize_untrusted` vô hiệu giá trị chứa mẫu chèn lệnh rồi bọc khối *untrusted* trước khi trả model.
@@ -81,8 +81,10 @@ FE đọc stream: mỗi `step` cập nhật "Đang xử lý — bước N"; `del
 | Pha | Điều kiện | Tool được cấp |
 |---|---|---|
 | `interview` | chưa có kết quả published | find_place, update_needs, search_rooms, confirm_and_search, ask_user, search_handbook |
-| `results` | đã published | + room_details, estimate_cost, simulate_loan, compare_rooms |
-| `transaction` | đã có lịch xem hoặc hội thoại chủ nhà | + prepare_viewing, open_landlord_chat |
+| `results` | đã published | + room_details, estimate_cost, simulate_loan, compare_rooms, prepare_viewing |
+| `transaction` | đã có lịch xem hoặc hội thoại chủ nhà | + open_landlord_chat |
+
+`prepare_viewing` có từ pha `results` (18/11): pha `transaction` chỉ có khi đã có lịch xem hoặc hội thoại, nên trước đó model không bao giờ chuẩn bị được lịch xem đầu tiên. Tool này không tạo bản ghi — chỉ mở căn đó để khách chọn giờ và gửi biểu mẫu. `open_landlord_chat` tạo hội thoại nên vẫn chỉ ở `transaction`. `room_ref` của model được chuẩn hóa ("3", "thứ ba", "đầu tiên" → "căn …") và chỉ trả căn trong danh sách hiện tại; mã căn trong câu trả lời của model được đổi thành "Căn N" theo thứ tự khách thấy.
 
 | Role (HN-13) | Nhiệm vụ | Roster tool | Ghi chú bất biến |
 |---|---|---|---|
@@ -92,11 +94,28 @@ FE đọc stream: mỗi `step` cập nhật "Đang xử lý — bước N"; `del
 
 Roster khai báo một chỗ trong `agent_tools.py` (`ROLE_ROSTER`: system prompt + tools); `ToolBox.invoke` chặn lại một tầng ở biên model. Model gọi nhầm tool ngoài pha/role trả lỗi có cấu trúc `tool_unavailable`/`tool_not_allowed`. Tham số model qua env: `HOMEMATCH_AGENT_REASONING` (low|medium|high), `HOMEMATCH_AGENT_MAX_TOKENS` (800), `parallel_tool_calls=true`; model reasoning không nhận `temperature`.
 
-Đường tắt tất định (**fast path**): câu mà luật hiểu đủ (DemoInterpreter trích được thành phố, có mức tiền, không nhắc điểm đến/mơ hồ) chạy thẳng `patch → lớp hỏi lại → confirm` với 0 lần gọi LLM để hiểu câu (`agent_mode="fast_path"`; lần gọi bàn giao xếp hạng — nếu có — được ghi riêng, không tính vào đây). Ý định rõ (`human_support`, `landlord_handover`, `handbook`, hoặc message có `cost_input`) đi graph luật ngay; `simulate_finance`/`calculate_cost` không `cost_input` được định tuyến sang agent tài chính khi đã có kết quả. Chỉ khi luật không đủ hoặc clarity=reason thì mới vào vòng LLM (`agent_mode="loop"`). Trích tiền tất định (`budget_hint`) hiểu các kiểu viết phổ biến: "3 triệu5"/"3tr5" (đuôi số dính liền đơn vị — có khoảng trắng như "3 triệu 2 người" vẫn là 3 triệu), "5 triệu rưỡi", slang "4 củ/5 cây"; đo trên 10 câu khó ngày 07/11 trước/sau ở `trang-thai-trien-khai.md`.
+Đường tắt tất định (**fast path**): câu mà luật hiểu đủ (DemoInterpreter trích được thành phố, có mức tiền, không nhắc điểm đến/mơ hồ) chạy thẳng `patch → lớp hỏi lại → confirm` với 0 lần gọi LLM để hiểu câu (`agent_mode="fast_path"`; lần gọi bàn giao xếp hạng — nếu có — được ghi riêng, không tính vào đây). Ý định rõ (`human_support`, `landlord_handover`, `handbook`, hoặc message có `cost_input`) đi graph luật ngay; `simulate_finance`/`calculate_cost` không `cost_input` được định tuyến sang agent tài chính khi đã có kết quả. Chỉ khi luật không đủ hoặc clarity=reason thì mới vào vòng LLM (`agent_mode="loop"`). Trích tiền tất định (`budget_hint`) hiểu các kiểu viết phổ biến: "3 triệu5"/"3tr5" (đuôi số dính liền đơn vị — có khoảng trắng như "3 triệu 2 người" vẫn là 3 triệu), "5 triệu rưỡi", slang "4 củ/5 cây".
+
+Bổ sung 19/11 (đo chất lượng đề xuất trên LLM thật, hai lỗi lặp 3/3 lần):
+- **Tiện ích bắt buộc.** Câu có dấu hiệu mạnh ("bắt buộc có", "phải có", "nhất định", "chỉ lấy phòng có …") đưa các tiện ích cùng vế câu vào `must_amenities` của nháp, rồi thành `Profile.must_amenities` (lọc cứng, căn không ghi rõ có tiện ích bị loại). Dấu hiệu mềm ("thì tốt", "ưu tiên", "cần có") vẫn là ưu tiên. "Không cần máy giặt nữa" gỡ khỏi danh sách bắt buộc. Đọc tất định ở `must_amenities_hint`/`dropped_amenities_hint` (`interpreter.py`), áp trên cả fast path, vòng LLM và graph luật; model không ghi trường này.
+- **Chỉnh mức tiền sau khi đã có kết quả.** "Rẻ hơn nữa, dưới 3,5 triệu thôi" không có từ tìm phòng nên luật đọc ý định `unknown`; trước đây câu rơi vào vòng LLM và model trả lời mà không tìm lại. Nay `is_budget_refinement` (`agent_loop.py`) cho fast path nhận câu này như tìm lại khi: phiên đã có hồ sơ xác nhận, câu có dấu hiệu mức tiền ("dưới", "tối đa", "rẻ hơn", "giảm", "X triệu thôi"…), không nói về tiền cọc/điện nước/phí/lương/vay, và không nhắc một căn cụ thể.
 
 ## 4. Registry tool và hợp đồng tool (HN-03)
 
 Mỗi tool khai báo **một lần** trong `agent_tools.py`: `name, agent, description, Args (Pydantic → JSON schema tự sinh), writes (chỉ đọc hay ghi), timeout_s (8 s), view (workspace mở khi thành công), capability, summarize() (dòng bước không PII), redact(), phases, handler (nghiệp vụ đặt cạnh khai báo)`. Từ registry sinh tự động: JSON schema gửi model, allowlist theo agent (`AGENT_TOOLS`), capability (`agent_capability.py`), specs theo pha. Kết quả tool chuẩn hóa `{ok:true, data}` hoặc `{ok:false, error, message, hint}` — hint giúp model tự sửa ("gọi find_place trước"). Tool ghi có idempotency key `turn_id + tool + hash(args)` trong ledger — retry stream không tạo bản ghi đôi. **Thêm tool mới cho các task chức năng (AG-06, MP-01…): 1 khai báo + 1 test hợp đồng tự sinh.**
+
+### `find_place`: danh mục, bản đồ, mơ hồ (LOC-001)
+
+`find_place(query, city_hint?)` tra theo thứ tự:
+
+1. **Nhánh `own_place`**: "tôi/đây/công ty tôi" không phải địa danh, không tra.
+2. **Danh mục đã kiểm chứng** `data/places.json` (`locations.resolve_place_candidates`): một kết quả → `{found: true, source: "catalog", place_id}`; nhiều kết quả (ví dụ "Bách Khoa" khi chưa biết thành phố) → `{found: false, reason: "ambiguous", candidates: [{label, city}]}` kèm ghi chú gọi `ask_user(field="city")`.
+3. **Bản đồ** (`geocode.py`, `HOMEMATCH_GEOCODER=auto|nominatim|goong|off`): Goong nếu key REST gọi được, không thì Nominatim; 401/403 tắt Goong tới khi khởi động lại. Kết quả phải nằm trong khung bao thành phố (thành phố nháp, hoặc cả hai khi chưa biết), loại kết quả hành chính thô, quận/huyện chỉ trả `reason: "area_only"` để ghi `area`, `uncertainty_m` lấy từ bbox kẹp trong [150, 2000] m. Chưa biết thành phố mà cả hai đều có kết quả → mơ hồ. Thành công trả `{found: true, source: "geocoder", place_id: "geo:<hash>", approximate: true}`.
+4. Không tìm thấy (hoặc bản đồ tắt/lỗi): ghi chú "không tìm thấy trên bản đồ", model chỉ ghi `area` khi khách đã nói rõ quận, nếu không thì hỏi lại; không tự đoán quận hay tọa độ.
+
+**Quy tắc gửi ra ngoài:** chỉ tên địa danh đã bỏ chữ "gần" và qua `redact`, tối đa 80 ký tự, kèm thành phố (qua viewbox); không gửi session id, user id hay tọa độ. Câu có số nhà hoặc dấu hiệu liên lạc (`số 12`, `ngõ 34`, `hẻm 5/7`, số điện thoại, email...) không được gửi: trả `reason: "address_not_sent"` để hỏi tên đường hoặc địa danh gần đó. Cache LRU 512 mục trong process; Nominatim tối đa 1 yêu cầu/giây, timeout 3 s, lỗi coi như không tìm thấy.
+
+**Ghi điểm đến:** kết quả `find_place` được giữ theo phiên (`service._resolved_places`, mất khi khởi động lại thì model gọi lại). `update_needs` nhận `destination_place_id` (đường ưu tiên: đúng tọa độ vừa tra); chỉ có `destination_text` thì tra danh mục rồi cache phiên. Kiểm tra "khách đã nêu tên" (HN-13.3.5) so với tên, alias, câu hỏi gốc model đã gửi `find_place` và nhãn kết quả; kiểm tra "điểm đến ngoài khu vực đang ghim" giữ nguyên; không tra được thì `unknown_place`. Nhánh graph/demo (`service.py`) vẫn chỉ dùng danh mục, tất định và offline.
 
 ## 5. Lớp hỏi lại kho + Jev (HN-02, AG-11)
 
@@ -151,3 +170,13 @@ Mỗi lượt ghi một dòng `hm_agent_turns` (phase, agent_mode loop|fast_path
 ## 10. Memory và giới hạn
 
 `memory.py` chỉ nhớ sở thích phi tài chính khi khách đồng ý (`/me/memory`), prefill nháp ở trạng thái `inferred` (tối đa 6 sở thích, mạnh nhất trước), rút đồng ý là xoá. Sở thích tích lũy bằng luật tất định: xác nhận trong phiên thì thêm một phiên bằng chứng; nháp có mà khách bỏ thì quên và không gợi ý lại; vắng 2 phiên xác nhận liên tiếp thì phai; tiện ích có ở ≥ 2 và ≥ 60% phòng đã lưu, đồng thời phổ biến hơn kho ít nhất 1,5 lần, được gợi ý nhưng khách vẫn phải xác nhận. Khu vực và loại phòng giữ giá trị mới nhất; không lưu tiền, điểm đến. Workspace context (căn đang xem/chọn) chỉ sống trong tiến trình của lượt. Không cổng thanh toán, email/SMS thật, chữ ký số (D-07/D-08); chạy localhost (D-09).
+
+## 11. Agent cho chủ nhà (23/11/2026)
+
+`landlord_agent.py` + `POST /landlord/agent` (khung chat nổi `LandlordAgentDock` ở mọi trang `/chu-nha/*`). Cùng nguyên tắc: LLM suy luận, tool tính và kiểm. Khác agent người thuê ở ba điểm:
+
+- **Chỉ đọc và gợi ý.** Chỉ có tool đọc (`get_overview`, `list_rooms`, `room_performance`, `price_advice`, `vacancy_report`, `draft_post`, `list_viewings`, `list_conversations`, `billing_overview`, `list_maintenance`); không có tool ghi. Đổi trạng thái phòng, xác nhận lịch, nhắn khách, đăng bài đều do chủ nhà tự bấm; agent chỉ chỉ đường tới màn tương ứng.
+- **Quyền theo vai và bản ghi** nằm trong các hàm service đã có (`_owner`, `_own_room`); kết quả tool bỏ liên hệ khách, che PII, vô hiệu mẫu chèn lệnh trong mô tả tin.
+- **Không lưu hội thoại ở máy chủ.** Trình duyệt giữ lịch sử trong phiên và gửi kèm tối đa 8 tin gần nhất (đã redact). Giới hạn tần suất `HOMEMATCH_LANDLORD_AGENT_HOURLY` (mặc định 40 lượt/giờ/chủ nhà).
+
+Giới hạn lượt 5 bước tool, 4 lần gọi model, 40 s. Hậu kiểm đầu ra chặn nhắc thu nhập, rò placeholder, từ nội bộ, tuyên bố "mình đã gửi/cập nhật…" (agent không có tool ghi) và số không có trong kết quả tool. Demo mode hoặc lỗi nhà cung cấp rơi về trợ lý theo luật `copilot.assistant` (`agent_mode="rules"` / `"rules_fallback"`), không ném 500. Chưa ghi `hm_agent_turns` cho agent này (bảng đó gắn với phiên người thuê). Chưa chạy live với GPT-4o.

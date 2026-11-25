@@ -32,7 +32,9 @@ _HCM_NAMED = {
     "Quận Tân Bình": ("tan binh",),
     "Quận Tân Phú": ("tan phu",),
     "Quận Bình Tân": ("binh tan",),
-    "TP. Thủ Đức": ("thu duc",),
+    # Sau sáp nhập 01/07/2025, Quận 9 (cùng Quận 2) thuộc TP. Thủ Đức — khách vẫn
+    # gõ tên quận cũ ("khu công nghệ cao Quận 9"); nhận dạng về tên khu mới.
+    "TP. Thủ Đức": ("thu duc", "quan 9", "q9", "q 9"),
     "Huyện Bình Chánh": ("binh chanh",),
     "Huyện Nhà Bè": ("nha be",),
 }
@@ -135,15 +137,43 @@ _PLACE_PATTERNS = sorted(
 )
 
 
-def resolve_place(text: str, city: str | None = None) -> dict | None:
-    """Tên điểm mốc trong câu → điểm đến có tọa độ (AG-01).
+_PLACE_KINDS = (("school", ("dai hoc", "dh ", "hoc vien", "cao dang", "truong ")),
+                ("hospital", ("benh vien",)),
+                ("transit", ("ga ", "ben xe", "san bay")))
 
-    So khớp fold dấu theo ranh giới từ, ưu tiên alias dài nhất; `city` (khi đã
-    biết) giới hạn kết quả. Hai điểm mốc khác thành phố khớp cùng độ dài alias
-    mà chưa biết thành phố thì trả None (không đoán). Không có điểm mốc ngoài
-    danh mục: trả None để luồng giữ nguyên hành vi cũ (hỏi/sắp theo khu vực)."""
+
+def place_kind(place: dict) -> str | None:
+    """Loại điểm mốc: đọc trường `kind` của places.json trước (LOC-001); chỉ khi mục
+    không có `kind` mới suy từ TÊN (dự phòng). Dùng để lọc nút "gần đâu?" theo
+    đúng loại khách nhắc ("gần trường" → các trường)."""
+    if place.get("kind"):
+        return place["kind"]
+    first = fold((place.get("names") or [""])[0]) + " "
+    names = " ".join(fold(name) + " " for name in place.get("names") or [])
+    # Tên bắt đầu bằng loại nào thì là loại đó ("Bệnh viện Đại học Y Dược" là bệnh viện).
+    for kind, prefixes in _PLACE_KINDS:
+        if any(first.startswith(prefix) for prefix in prefixes):
+            return kind
+    for kind, prefixes in _PLACE_KINDS:
+        if any(names.startswith(prefix) or f" {prefix}" in names for prefix in prefixes):
+            return kind
+    return None
+
+
+def _place_dto(place: dict) -> dict:
+    return {"id": place["id"], "label": place["names"][0], "city": place["city"],
+            "latitude": place["latitude"], "longitude": place["longitude"],
+            "uncertainty_m": place.get("uncertainty_m", 500)}
+
+
+def resolve_place_candidates(text: str, city: str | None = None) -> list[dict]:
+    """Mọi điểm mốc khớp tốt nhất (alias dài nhất) trong câu — LOC-001.
+
+    Một phần tử = khớp duy nhất; nhiều phần tử = mơ hồ (ví dụ "Bách Khoa" khi
+    chưa biết thành phố khớp cả HUST lẫn HCMUT). `city` (khi đã biết) giới hạn
+    kết quả. Danh sách rỗng khi không có điểm mốc nào."""
     if not _PLACE_PATTERNS:
-        return None
+        return []
     value = fold(text)
     matches: dict[str, dict] = {}
     best = -1
@@ -156,9 +186,20 @@ def resolve_place(text: str, city: str | None = None) -> dict | None:
                 best, matches = length, {place["id"]: place}
             elif length == best:
                 matches.setdefault(place["id"], place)
-    if len(matches) != 1:
-        return None
-    place = next(iter(matches.values()))
-    return {"id": place["id"], "label": place["names"][0], "city": place["city"],
-            "latitude": place["latitude"], "longitude": place["longitude"],
-            "uncertainty_m": place.get("uncertainty_m", 500)}
+    return [_place_dto(place) for place in matches.values()]
+
+
+def place_by_id(place_id: str) -> dict | None:
+    place = next((item for item in _PLACES if item.get("id") == place_id), None)
+    return _place_dto(place) if place else None
+
+
+def resolve_place(text: str, city: str | None = None) -> dict | None:
+    """Tên điểm mốc trong câu → điểm đến có tọa độ (AG-01).
+
+    So khớp fold dấu theo ranh giới từ, ưu tiên alias dài nhất; `city` (khi đã
+    biết) giới hạn kết quả. Hai điểm mốc khác thành phố khớp cùng độ dài alias
+    mà chưa biết thành phố thì trả None (không đoán). Không có điểm mốc ngoài
+    danh mục: trả None để luồng giữ nguyên hành vi cũ (hỏi/sắp theo khu vực)."""
+    found = resolve_place_candidates(text, city)
+    return found[0] if len(found) == 1 else None

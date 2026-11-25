@@ -7,7 +7,7 @@
         "principal_vnd": null,
         "term_months": 12
       },
-      "note": "README §7.4; chỉ có kỳ hạn",
+      "note": "chỉ có kỳ hạn",
       "text": "nếu vay 12 tháng thì sao"
     },
     {
@@ -17,7 +17,7 @@
         "principal_vnd": 20000000,
         "term_months": 6
       },
-      "note": "README §7.4; đủ ba giá trị",
+      "note": "đủ ba giá trị",
       "text": "vay 20 triệu lãi 10% trong 6 tháng"
     },
     {
@@ -27,7 +27,7 @@
         "principal_vnd": null,
         "term_months": 24
       },
-      "note": "README §7.4; dấu phẩy thập phân",
+      "note": "dấu phẩy thập phân",
       "text": "trả góp 24 tháng lãi suất 12,5%"
     },
     {
@@ -199,5 +199,5 @@
     "principal_vnd": "tiền đọc theo (\\d+(?:[.,]\\d+)?)\\s*(trieu|tr\\b); dấu phẩy là thập phân (1,5 triệu = 1500000); đơn vị khác (nghìn, đồng) → null.",
     "term_months": "(\\d{1,3})\\s*thang; hợp lệ 1–60, ngoài khoảng → null; nhiều số khớp thì lấy số đầu tiên."
   },
-  "sources": "README §7.4 và bước 3 của AG-02 trong docs/coding-plan/agent.md"
+  "sources": "Quy tắc đọc kịch bản vay trong docs/tai-chinh-thue.md"
 }

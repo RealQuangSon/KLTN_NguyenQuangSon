@@ -1,4 +1,5 @@
 {
+  "note": "Tọa độ đối chiếu Nominatim (OpenStreetMap) ngày 23/11/2026 bằng python -m data.verify_places --live; mục source=osm đã duyệt tay từng kết quả, source=manual là tọa độ suy ra gián tiếp (xem data/README.md). Dùng để xếp khoảng cách tương đối, không phải dữ liệu đo đạc.",
   "places": [
     {
       "id": "hn-hust",
@@ -12,12 +13,16 @@
         "bach khoa ha noi",
         "dh bach khoa ha noi",
         "polytechnic",
-        "bach khoa"
+        "bach khoa",
+        "dai hoc bach khoa ha noi"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.004,
-      "longitude": 105.8431,
-      "uncertainty_m": 300
+      "latitude": 21.00553,
+      "longitude": 105.84359,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-vnu",
@@ -29,14 +34,18 @@
         "dhqg hn",
         "vnu",
         "dai hoc quoc gia ha noi",
-        "xuan thuy",
         "dh quoc gia",
-        "dai hoc quoc gia"
+        "dai hoc quoc gia",
+        "dhqghn",
+        "dai hoc quoc gia hn"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.0075,
-      "longitude": 105.782,
-      "uncertainty_m": 500
+      "latitude": 21.03881,
+      "longitude": 105.78189,
+      "uncertainty_m": 600,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-neu",
@@ -46,12 +55,16 @@
       "aliases": [
         "ktqd",
         "neu",
-        "kinh te quoc dan"
+        "kinh te quoc dan",
+        "dh kinh te quoc dan"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 20.9939,
-      "longitude": 105.8444,
-      "uncertainty_m": 300
+      "latitude": 20.99975,
+      "longitude": 105.8435,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-ftu",
@@ -60,12 +73,17 @@
       ],
       "aliases": [
         "ftu",
-        "ngoai thuong"
+        "ngoai thuong",
+        "dh ngoai thuong",
+        "dai hoc ngoai thuong"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.013,
-      "longitude": 105.806,
-      "uncertainty_m": 400
+      "latitude": 21.0225,
+      "longitude": 105.80515,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-nuce",
@@ -74,12 +92,20 @@
       ],
       "aliases": [
         "xay dung ha noi",
-        "nuce"
+        "nuce",
+        "dh xay dung",
+        "dai hoc xay dung",
+        "dh xay dung ha noi",
+        "dai hoc xay dung ha noi"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.028,
-      "longitude": 105.788,
-      "uncertainty_m": 500
+      "latitude": 21.00055,
+      "longitude": 105.84524,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Xây dựng"
     },
     {
       "id": "hn-tuc",
@@ -90,10 +116,13 @@
         "giao thong van tai ha noi",
         "tuc"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.029,
-      "longitude": 105.786,
-      "uncertainty_m": 500
+      "latitude": 21.0276,
+      "longitude": 105.80265,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-henu",
@@ -105,24 +134,33 @@
         "luat ha noi",
         "henu"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.033,
-      "longitude": 105.786,
-      "uncertainty_m": 500
+      "latitude": 21.0379,
+      "longitude": 105.78245,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hn-hanu",
+      "id": "hn-hnue",
       "names": [
-        "Đại học Sư phạm Hà Nội"
+        "Đại học Sư phạm Hà Nội",
+        "ĐHSP Hà Nội"
       ],
       "aliases": [
         "su pham ha noi",
-        "hanu"
+        "hnue",
+        "dhsp ha noi",
+        "dh su pham ha noi"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.025,
-      "longitude": 105.82,
-      "uncertainty_m": 500
+      "latitude": 21.039,
+      "longitude": 105.78426,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-hmu",
@@ -132,12 +170,17 @@
       "aliases": [
         "y ha noi",
         "hmu",
-        "dh y ha noi"
+        "dh y ha noi",
+        "dai hoc y ha noi"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.006,
-      "longitude": 105.847,
-      "uncertainty_m": 500
+      "latitude": 21.00223,
+      "longitude": 105.83132,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Y Hà Nội, 1 Tôn Thất Tùng, Đống Đa"
     },
     {
       "id": "hn-tlu",
@@ -148,37 +191,51 @@
         "thuy loi",
         "tlu"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.06,
-      "longitude": 105.79,
-      "uncertainty_m": 800
+      "latitude": 21.00699,
+      "longitude": 105.8251,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Thủy lợi, 175 Tây Sơn, Đống Đa"
     },
     {
-      "id": "hn-iuh",
+      "id": "hn-haui",
       "names": [
         "Đại học Công nghiệp Hà Nội"
       ],
       "aliases": [
-        "cong nghiep ha noi"
+        "cong nghiep ha noi",
+        "haui",
+        "dh cong nghiep hn"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.058,
-      "longitude": 105.77,
-      "uncertainty_m": 800
+      "latitude": 21.05425,
+      "longitude": 105.73504,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Công nghiệp Hà Nội, Minh Khai, Bắc Từ Liêm"
     },
     {
-      "id": "hn-uel",
+      "id": "hn-ueb",
       "names": [
         "Đại học Kinh tế - ĐHQGHN"
       ],
       "aliases": [
         "kinh te dhqg",
-        "uel"
+        "ueb",
+        "dh kinh te vnu"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.008,
-      "longitude": 105.783,
-      "uncertainty_m": 600
+      "latitude": 21.03827,
+      "longitude": 105.78246,
+      "uncertainty_m": 500,
+      "source": "manual",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-fpt-hn",
@@ -189,52 +246,70 @@
         "fpt ha noi",
         "fpt hoa lac"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.02,
-      "longitude": 105.702,
-      "uncertainty_m": 1500
+      "latitude": 21.01353,
+      "longitude": 105.52526,
+      "uncertainty_m": 1000,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học FPT"
     },
     {
       "id": "hn-pta",
       "names": [
-        "Học viện Hành chính Quốc gia"
+        "Học viện Hành chính Quốc gia",
+        "Học viện Hành chính và Quản trị công"
       ],
       "aliases": [
         "hoc vien hanh chinh",
         "hanh chinh quoc gia"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.023,
-      "longitude": 105.817,
-      "uncertainty_m": 700
+      "latitude": 21.02293,
+      "longitude": 105.8109,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Học viện Hành chính"
     },
     {
       "id": "hn-ptit",
       "names": [
-        "Học viện Công nghệ Bưu chính Viễn thông"
+        "Học viện Công nghệ Bưu chính Viễn thông (Hà Đông)",
+        "PTIT"
       ],
       "aliases": [
         "ptit",
         "buu chinh vien thong"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.006,
-      "longitude": 105.816,
-      "uncertainty_m": 600
+      "latitude": 20.98094,
+      "longitude": 105.78709,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hn-hust2",
+      "id": "hn-hou",
       "names": [
         "Viện Đại học Mở Hà Nội"
       ],
       "aliases": [
         "dai hoc mo ha noi",
-        "truong mo ha noi"
+        "truong mo ha noi",
+        "hou",
+        "vien dai hoc mo"
       ],
+      "kind": "school",
       "city": "Hà Nội",
-      "latitude": 21.021,
-      "longitude": 105.83,
-      "uncertainty_m": 700
+      "latitude": 21.00088,
+      "longitude": 105.84733,
+      "uncertainty_m": 500,
+      "source": "manual",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-bachmai-hosp",
@@ -245,10 +320,13 @@
         "bv bach mai",
         "benh vien bach mai"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 20.993,
-      "longitude": 105.843,
-      "uncertainty_m": 400
+      "latitude": 21.00182,
+      "longitude": 105.83967,
+      "uncertainty_m": 450,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-vietduc",
@@ -259,10 +337,13 @@
         "bv viet duc",
         "benh vien viet duc"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 21.005,
-      "longitude": 105.845,
-      "uncertainty_m": 400
+      "latitude": 21.02837,
+      "longitude": 105.847,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-nhi-tw",
@@ -273,23 +354,31 @@
         "bv nhi trung uong",
         "benh vien nhi"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 21.024,
-      "longitude": 105.838,
-      "uncertainty_m": 600
+      "latitude": 21.02454,
+      "longitude": 105.80813,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-yhoc-co-truyen",
       "names": [
-        "Bệnh viện Y học cổ truyền"
+        "Bệnh viện Y học cổ truyền Trung ương"
       ],
       "aliases": [
-        "bv y hoc co truyen"
+        "bv y hoc co truyen",
+        "bv yhct trung uong"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 21.011,
-      "longitude": 105.835,
-      "uncertainty_m": 700
+      "latitude": 21.01623,
+      "longitude": 105.84816,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Bệnh viện Y học cổ truyền Trung ương, 29 Nguyễn Bỉnh Khiêm, Hai Bà Trưng"
     },
     {
       "id": "hn-benhvien-e",
@@ -300,10 +389,13 @@
         "bv e",
         "benh vien e"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 21.008,
-      "longitude": 105.806,
-      "uncertainty_m": 800
+      "latitude": 21.05039,
+      "longitude": 105.7885,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-k-benhvien",
@@ -314,10 +406,13 @@
         "bv k",
         "benh vien k"
       ],
+      "kind": "hospital",
       "city": "Hà Nội",
-      "latitude": 21.009,
-      "longitude": 105.83,
-      "uncertainty_m": 800
+      "latitude": 21.0269,
+      "longitude": 105.84614,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-ga-hanoi",
@@ -328,10 +423,13 @@
         "ga ha noi",
         "gtx ha noi"
       ],
+      "kind": "transit",
       "city": "Hà Nội",
-      "latitude": 21.023,
-      "longitude": 105.839,
-      "uncertainty_m": 400
+      "latitude": 21.02421,
+      "longitude": 105.84109,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-ben-xe-giap-bat",
@@ -339,13 +437,15 @@
         "Bến xe Giáp Bát"
       ],
       "aliases": [
-        "giap bat",
         "ben xe giap bat"
       ],
+      "kind": "transit",
       "city": "Hà Nội",
-      "latitude": 20.984,
-      "longitude": 105.834,
-      "uncertainty_m": 400
+      "latitude": 20.9806,
+      "longitude": 105.84215,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-ben-xe-my-dinh",
@@ -353,13 +453,15 @@
         "Bến xe Mỹ Đình"
       ],
       "aliases": [
-        "my dinh",
         "ben xe my dinh"
       ],
+      "kind": "transit",
       "city": "Hà Nội",
-      "latitude": 21.024,
-      "longitude": 105.775,
-      "uncertainty_m": 400
+      "latitude": 21.02827,
+      "longitude": 105.77752,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-ben-xe-gia-lam",
@@ -367,13 +469,16 @@
         "Bến xe Gia Lâm"
       ],
       "aliases": [
-        "gia lam",
         "ben xe gia lam"
       ],
+      "kind": "transit",
       "city": "Hà Nội",
-      "latitude": 21.033,
-      "longitude": 105.86,
-      "uncertainty_m": 500
+      "latitude": 21.04854,
+      "longitude": 105.87898,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Bến xe Gia Lâm, Ngô Gia Khảm, Long Biên"
     },
     {
       "id": "hn-ga-gia-lam",
@@ -383,10 +488,14 @@
       "aliases": [
         "ga gia lam"
       ],
+      "kind": "transit",
       "city": "Hà Nội",
-      "latitude": 21.03,
-      "longitude": 105.863,
-      "uncertainty_m": 600
+      "latitude": 21.05164,
+      "longitude": 105.87875,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Gia Lam railway station"
     },
     {
       "id": "hn-times-city",
@@ -394,16 +503,18 @@
         "Times City"
       ],
       "aliases": [
-        "times city",
-        "times"
+        "times city"
       ],
+      "kind": "mall",
       "city": "Hà Nội",
-      "latitude": 20.994,
-      "longitude": 105.866,
-      "uncertainty_m": 400
+      "latitude": 20.99301,
+      "longitude": 105.87223,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hn-vincom-pham-ngoc-thach",
+      "id": "hn-vincom-nguyen-chi-thanh",
       "names": [
         "Vincom Nguyễn Chí Thanh"
       ],
@@ -411,10 +522,13 @@
         "vincom nguyen chi thanh",
         "vincom nct"
       ],
+      "kind": "mall",
       "city": "Hà Nội",
-      "latitude": 21.02,
-      "longitude": 105.813,
-      "uncertainty_m": 400
+      "latitude": 21.02354,
+      "longitude": 105.80889,
+      "uncertainty_m": 500,
+      "source": "manual",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hn-aeon-long-bien",
@@ -425,38 +539,51 @@
         "aeon long bien",
         "aeon lb"
       ],
+      "kind": "mall",
       "city": "Hà Nội",
-      "latitude": 21.05,
-      "longitude": 105.87,
-      "uncertainty_m": 500
+      "latitude": 21.02712,
+      "longitude": 105.89996,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hn-bigc-thanglong",
+      "id": "hn-go-thanglong",
       "names": [
-        "Big C Thăng Long"
+        "Big C Thăng Long",
+        "GO Thăng Long"
       ],
       "aliases": [
         "big c thang long",
-        "bigc thang long"
+        "bigc thang long",
+        "go thang long"
       ],
+      "kind": "mall",
       "city": "Hà Nội",
-      "latitude": 21.033,
-      "longitude": 105.775,
-      "uncertainty_m": 600
+      "latitude": 21.007,
+      "longitude": 105.79299,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Big C Thăng Long, 222 Trần Duy Hưng, Cầu Giấy"
     },
     {
-      "id": "hn-kcn-thanglong",
+      "id": "hn-kcn-bac-thanglong",
       "names": [
-        "KCN Thăng Long"
+        "KCN Bắc Thăng Long",
+        "Khu công nghiệp Bắc Thăng Long"
       ],
       "aliases": [
-        "kcn thang long",
-        "thang long ic"
+        "kcn bac thang long"
       ],
+      "kind": "work",
       "city": "Hà Nội",
-      "latitude": 21.045,
-      "longitude": 105.76,
-      "uncertainty_m": 1000
+      "latitude": 21.11661,
+      "longitude": 105.77299,
+      "uncertainty_m": 1200,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Khu công nghiệp Thăng Long"
     },
     {
       "id": "hn-keangnam",
@@ -465,16 +592,19 @@
       ],
       "aliases": [
         "keangnam",
-        "landmark 72",
-        "lotte ha noi"
+        "landmark 72"
       ],
+      "kind": "work",
       "city": "Hà Nội",
-      "latitude": 21.017,
-      "longitude": 105.785,
-      "uncertainty_m": 400
+      "latitude": 21.01735,
+      "longitude": 105.78359,
+      "uncertainty_m": 1200,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Landmark 72"
     },
     {
-      "id": "hn-rooftop-ho-tay",
+      "id": "hn-ho-tay",
       "names": [
         "Khu Hồ Tây"
       ],
@@ -482,10 +612,14 @@
         "ho tay",
         "west lake"
       ],
+      "kind": "area",
       "city": "Hà Nội",
-      "latitude": 21.065,
-      "longitude": 105.825,
-      "uncertainty_m": 1500
+      "latitude": 21.05804,
+      "longitude": 105.81397,
+      "uncertainty_m": 2000,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Hồ Tây"
     },
     {
       "id": "hcm-hcmut",
@@ -501,10 +635,14 @@
         "bach khoa",
         "bach khoa tp hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.774,
-      "longitude": 106.679,
-      "uncertainty_m": 400
+      "latitude": 10.7713,
+      "longitude": 106.65783,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Bách Khoa Lý Thường Kiệt"
     },
     {
       "id": "hcm-ueh",
@@ -516,10 +654,14 @@
         "kinh te sai gon",
         "kinh te tp hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.765,
-      "longitude": 106.692,
-      "uncertainty_m": 600
+      "latitude": 10.78289,
+      "longitude": 106.6942,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Kinh tế TP.HCM (Nguyễn Đình Chiểu)"
     },
     {
       "id": "hcm-iu",
@@ -529,27 +671,39 @@
       "aliases": [
         "dh quoc te hcm",
         "iu",
-        "quin te"
+        "quoc te hcm",
+        "dh quoc te"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.86,
-      "longitude": 106.77,
-      "uncertainty_m": 800
+      "latitude": 10.8764,
+      "longitude": 106.80248,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Quốc tế"
     },
     {
-      "id": "hcm-hutech",
+      "id": "hcm-hcmute",
       "names": [
-        "Đại học Sư phạm Kỹ thuật TP.HCM"
+        "Đại học Sư phạm Kỹ thuật TP.HCM",
+        "Đại học Công nghệ Kỹ thuật TP.HCM"
       ],
       "aliases": [
         "su pham ky thuat",
-        "hutech",
-        "spkt"
+        "spkt",
+        "hcmute",
+        "dh su pham ky thuat",
+        "su pham ky thuat hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.849,
-      "longitude": 106.772,
-      "uncertainty_m": 600
+      "latitude": 10.85279,
+      "longitude": 106.77256,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Công nghệ Kỹ thuật TP.HCM, 1 Võ Văn Ngân"
     },
     {
       "id": "hcm-ump",
@@ -561,25 +715,32 @@
         "ump",
         "dh y duoc"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.755,
-      "longitude": 106.664,
-      "uncertainty_m": 500
+      "latitude": 10.75526,
+      "longitude": 106.66294,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hcm-hus",
+      "id": "hcm-hcmus",
       "names": [
         "ĐH Khoa học Tự nhiên TP.HCM"
       ],
       "aliases": [
         "khoa hoc tu nhien hcm",
-        "hus",
-        "chu nhan"
+        "hcmus",
+        "dh khtn hcm",
+        "khtn hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.762,
-      "longitude": 106.682,
-      "uncertainty_m": 500
+      "latitude": 10.76335,
+      "longitude": 106.68236,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-uah",
@@ -590,95 +751,123 @@
         "kien truc hcm",
         "uah"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.78,
-      "longitude": 106.696,
-      "uncertainty_m": 600
+      "latitude": 10.78164,
+      "longitude": 106.69471,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-utc",
       "names": [
-        "Đại học Giao thông vận tải TP.HCM"
+        "Đại học Giao thông vận tải TP.HCM (cơ sở Thủ Đức)"
       ],
       "aliases": [
         "giao thong van tai hcm",
         "utc2"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.775,
-      "longitude": 106.693,
-      "uncertainty_m": 700
+      "latitude": 10.84557,
+      "longitude": 106.79444,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hcm-ufm",
+      "id": "hcm-hcmue",
       "names": [
         "Đại học Sư phạm TP.HCM"
       ],
       "aliases": [
         "su pham tp hcm",
-        "dh su pham hcm"
+        "dh su pham hcm",
+        "hcmue",
+        "dh su pham tp hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.765,
-      "longitude": 106.697,
-      "uncertainty_m": 600
+      "latitude": 10.76093,
+      "longitude": 106.6826,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hcm-ufm2",
+      "id": "hcm-ufm",
       "names": [
         "Đại học Tài chính - Marketing"
       ],
       "aliases": [
         "tai chinh marketing",
         "ufm",
-        "aef"
+        "dh tai chinh marketing"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.785,
-      "longitude": 106.685,
-      "uncertainty_m": 700
+      "latitude": 10.81108,
+      "longitude": 106.68037,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Tài chính Marketing, Nguyễn Kiệm"
     },
     {
       "id": "hcm-ftu2",
       "names": [
-        "ĐH Ngoại thương cơ sở 2 (Thủ Đức)"
+        "ĐH Ngoại thương cơ sở 2 (Bình Thạnh)"
       ],
       "aliases": [
         "ngoai thuong co so 2",
-        "ftu2"
+        "ftu2",
+        "ngoai thuong tp hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.853,
-      "longitude": 106.754,
-      "uncertainty_m": 800
+      "latitude": 10.8064,
+      "longitude": 106.71387,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Ngoại thương cơ sở 2"
     },
     {
-      "id": "hcm-ued",
+      "id": "hcm-uel",
       "names": [
         "Đại học Kinh tế - Luật TP.HCM"
       ],
       "aliases": [
         "kinh te luat",
-        "uel hcm"
+        "uel",
+        "dh kinh te luat"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.77,
-      "longitude": 106.72,
-      "uncertainty_m": 800
+      "latitude": 10.86945,
+      "longitude": 106.77722,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-van-lang",
       "names": [
-        "Đại học Văn Lang (cs3 Bình Thạnh)"
+        "Đại học Văn Lang (cơ sở Bình Thạnh)"
       ],
       "aliases": [
         "van lang",
         "dh van lang"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.8,
-      "longitude": 106.698,
-      "uncertainty_m": 800
+      "latitude": 10.82848,
+      "longitude": 106.70303,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Văn Lang, Đặng Thùy Trâm, Bình Thạnh"
     },
     {
       "id": "hcm-hoa-sen",
@@ -689,23 +878,31 @@
         "hoa sen",
         "hsu"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.783,
-      "longitude": 106.7,
-      "uncertainty_m": 700
+      "latitude": 10.77032,
+      "longitude": 106.69244,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hcm-van-hanh",
+      "id": "hcm-vhu",
       "names": [
         "Đại học Văn Hiến"
       ],
       "aliases": [
-        "van hien"
+        "van hien",
+        "vhu",
+        "dh van hien"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.745,
-      "longitude": 106.698,
-      "uncertainty_m": 1000
+      "latitude": 10.70924,
+      "longitude": 106.64392,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-choray",
@@ -717,10 +914,13 @@
         "benh vien cho ray",
         "cho ray"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.755,
-      "longitude": 106.666,
-      "uncertainty_m": 400
+      "latitude": 10.7567,
+      "longitude": 106.65973,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-tudu",
@@ -731,10 +931,13 @@
         "bv tu du",
         "benh vien tu du"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.766,
-      "longitude": 106.692,
-      "uncertainty_m": 500
+      "latitude": 10.76873,
+      "longitude": 106.6859,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-nhidong1",
@@ -745,10 +948,13 @@
         "bv nhi dong 1",
         "nhi dong 1"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.77,
-      "longitude": 106.672,
-      "uncertainty_m": 600
+      "latitude": 10.76889,
+      "longitude": 106.67042,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-daihoc-yduoc",
@@ -758,10 +964,13 @@
       "aliases": [
         "bv dai hoc y duoc"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.768,
-      "longitude": 106.675,
-      "uncertainty_m": 600
+      "latitude": 10.75564,
+      "longitude": 106.66468,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-ungbuou",
@@ -769,12 +978,16 @@
         "Bệnh viện Ung Bướu"
       ],
       "aliases": [
-        "bv ung buou"
+        "bv ung buou",
+        "bv ung buou hcm"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.757,
-      "longitude": 106.665,
-      "uncertainty_m": 600
+      "latitude": 10.80507,
+      "longitude": 106.69431,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-nhoda",
@@ -785,10 +998,13 @@
         "bv 115",
         "nhan dan 115"
       ],
+      "kind": "hospital",
       "city": "TP.HCM",
-      "latitude": 10.753,
-      "longitude": 106.666,
-      "uncertainty_m": 600
+      "latitude": 10.77449,
+      "longitude": 106.66658,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-ga-saigon",
@@ -799,10 +1015,13 @@
         "ga sai gon",
         "saigon station"
       ],
+      "kind": "transit",
       "city": "TP.HCM",
-      "latitude": 10.79,
-      "longitude": 106.693,
-      "uncertainty_m": 400
+      "latitude": 10.7832,
+      "longitude": 106.67525,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-tansonnhat",
@@ -814,10 +1033,13 @@
         "san bay tan son nhat",
         "tsn"
       ],
+      "kind": "transit",
       "city": "TP.HCM",
-      "latitude": 10.818,
-      "longitude": 106.652,
-      "uncertainty_m": 800
+      "latitude": 10.81798,
+      "longitude": 106.65626,
+      "uncertainty_m": 1000,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-ben-xe-mien-dong",
@@ -828,10 +1050,13 @@
         "ben xe mien dong",
         "mien dong moi"
       ],
+      "kind": "transit",
       "city": "TP.HCM",
-      "latitude": 10.845,
-      "longitude": 106.76,
-      "uncertainty_m": 600
+      "latitude": 10.8796,
+      "longitude": 106.81596,
+      "uncertainty_m": 500,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-ben-xe-mien-tay",
@@ -839,13 +1064,15 @@
         "Bến xe Miền Tây"
       ],
       "aliases": [
-        "ben xe mien tay",
-        "mien tay"
+        "ben xe mien tay"
       ],
+      "kind": "transit",
       "city": "TP.HCM",
-      "latitude": 10.735,
-      "longitude": 106.628,
-      "uncertainty_m": 600
+      "latitude": 10.74013,
+      "longitude": 106.6194,
+      "uncertainty_m": 300,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-landmark81",
@@ -853,13 +1080,16 @@
         "Landmark 81"
       ],
       "aliases": [
-        "landmark 81",
-        "landmark"
+        "landmark 81"
       ],
+      "kind": "mall",
       "city": "TP.HCM",
-      "latitude": 10.795,
-      "longitude": 106.722,
-      "uncertainty_m": 400
+      "latitude": 10.79583,
+      "longitude": 106.72259,
+      "uncertainty_m": 250,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Landmark 81 Vinhomes Central Park"
     },
     {
       "id": "hcm-vincom-dongkhoi",
@@ -870,10 +1100,13 @@
         "vincom dong khoi",
         "vincom q1"
       ],
+      "kind": "mall",
       "city": "TP.HCM",
-      "latitude": 10.776,
-      "longitude": 106.704,
-      "uncertainty_m": 400
+      "latitude": 10.77678,
+      "longitude": 106.70224,
+      "uncertainty_m": 250,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-saigon-centre",
@@ -884,10 +1117,13 @@
         "saigon centre",
         "sgc"
       ],
+      "kind": "mall",
       "city": "TP.HCM",
-      "latitude": 10.775,
-      "longitude": 106.703,
-      "uncertainty_m": 400
+      "latitude": 10.77295,
+      "longitude": 106.70066,
+      "uncertainty_m": 250,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-aeon-tanphu",
@@ -897,10 +1133,13 @@
       "aliases": [
         "aeon tan phu"
       ],
+      "kind": "mall",
       "city": "TP.HCM",
-      "latitude": 10.798,
-      "longitude": 106.633,
-      "uncertainty_m": 500
+      "latitude": 10.80141,
+      "longitude": 106.61716,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-aeon-binh-tan",
@@ -910,39 +1149,52 @@
       "aliases": [
         "aeon binh tan"
       ],
+      "kind": "mall",
       "city": "TP.HCM",
-      "latitude": 10.748,
-      "longitude": 106.61,
-      "uncertainty_m": 600
+      "latitude": 10.7434,
+      "longitude": 106.61364,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
-      "id": "hcm-svthuduc",
+      "id": "hcm-vnu-hcm",
       "names": [
         "Khu đại học Quốc gia TP.HCM (Thủ Đức)"
       ],
       "aliases": [
         "khu du hoc thu duc",
         "dhqg tp hcm",
-        "khu dhqg"
+        "khu dhqg",
+        "dh quoc gia",
+        "dai hoc quoc gia",
+        "dhqg hcm"
       ],
+      "kind": "school",
       "city": "TP.HCM",
-      "latitude": 10.85,
-      "longitude": 106.77,
-      "uncertainty_m": 1200
+      "latitude": 10.8663,
+      "longitude": 106.8012,
+      "uncertainty_m": 2000,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Quốc gia Thành phố Hồ Chí Minh"
     },
     {
       "id": "hcm-kcn-linhtrung",
       "names": [
-        "KCN Linh Trung"
+        "Khu chế xuất Linh Trung"
       ],
       "aliases": [
         "kcn linh trung",
-        "linh trung"
+        "kcx linh trung"
       ],
+      "kind": "work",
       "city": "TP.HCM",
-      "latitude": 10.855,
-      "longitude": 106.76,
-      "uncertainty_m": 1000
+      "latitude": 10.86782,
+      "longitude": 106.77656,
+      "uncertainty_m": 1500,
+      "source": "manual",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-kcn-tantao",
@@ -950,13 +1202,15 @@
         "KCN Tân Tạo"
       ],
       "aliases": [
-        "kcn tan tao",
-        "tan tao"
+        "kcn tan tao"
       ],
+      "kind": "work",
       "city": "TP.HCM",
-      "latitude": 10.73,
-      "longitude": 106.61,
-      "uncertainty_m": 1000
+      "latitude": 10.742,
+      "longitude": 106.59091,
+      "uncertainty_m": 1200,
+      "source": "osm",
+      "verified_at": "2026-11-23"
     },
     {
       "id": "hcm-phu-my-hung",
@@ -967,11 +1221,392 @@
         "phu my hung",
         "pmh"
       ],
+      "kind": "area",
       "city": "TP.HCM",
-      "latitude": 10.733,
-      "longitude": 106.706,
-      "uncertainty_m": 800
+      "latitude": 10.72919,
+      "longitude": 106.71955,
+      "uncertainty_m": 1500,
+      "source": "manual",
+      "verified_at": "2026-11-23"
+    },
+    {
+      "id": "hn-hanu",
+      "names": [
+        "Đại học Hà Nội",
+        "HANU"
+      ],
+      "aliases": [
+        "hanu",
+        "dh ha noi",
+        "dai hoc ha noi"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 20.98929,
+      "longitude": 105.79525,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Hà Nội, Km9 Nguyễn Trãi, Thanh Xuân"
+    },
+    {
+      "id": "hn-thanglong-uni",
+      "names": [
+        "Đại học Thăng Long"
+      ],
+      "aliases": [
+        "dh thang long",
+        "thang long uni"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 20.97589,
+      "longitude": 105.81571,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Thăng Long, Nghiêm Xuân Yêm, Hoàng Mai"
+    },
+    {
+      "id": "hn-hvnh",
+      "names": [
+        "Học viện Ngân hàng"
+      ],
+      "aliases": [
+        "hvnh",
+        "hoc vien ngan hang",
+        "banking academy"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.00951,
+      "longitude": 105.82906,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Học viện Ngân hàng, 12 Chùa Bộc, Đống Đa"
+    },
+    {
+      "id": "hn-uet",
+      "names": [
+        "Đại học Công nghệ - ĐHQGHN",
+        "UET"
+      ],
+      "aliases": [
+        "uet",
+        "dh cong nghe vnu",
+        "dai hoc cong nghe dhqg"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.03827,
+      "longitude": 105.78246,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Trường Đại học Công nghệ, 144 Xuân Thủy, Cầu Giấy"
+    },
+    {
+      "id": "hn-tmu",
+      "names": [
+        "Đại học Thương mại"
+      ],
+      "aliases": [
+        "tmu",
+        "dh thuong mai",
+        "dai hoc thuong mai"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.03647,
+      "longitude": 105.77516,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Thương mại, 79 Hồ Tùng Mậu, Cầu Giấy"
+    },
+    {
+      "id": "hn-hvtc",
+      "names": [
+        "Học viện Tài chính"
+      ],
+      "aliases": [
+        "hvtc",
+        "hoc vien tai chinh",
+        "aof"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.07969,
+      "longitude": 105.77964,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Học viện Tài chính, Đức Thắng, Bắc Từ Liêm"
+    },
+    {
+      "id": "hn-ajc",
+      "names": [
+        "Học viện Báo chí và Tuyên truyền"
+      ],
+      "aliases": [
+        "ajc",
+        "hoc vien bao chi",
+        "bao chi tuyen truyen"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.03757,
+      "longitude": 105.78885,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Học viện Báo chí và Tuyên truyền, 36 Xuân Thủy, Cầu Giấy"
+    },
+    {
+      "id": "hn-hau",
+      "names": [
+        "Đại học Kiến trúc Hà Nội"
+      ],
+      "aliases": [
+        "hau",
+        "dh kien truc ha noi",
+        "kien truc ha noi"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 20.98039,
+      "longitude": 105.78964,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Kiến trúc Hà Nội, Km10 Nguyễn Trãi, Hà Đông"
+    },
+    {
+      "id": "hn-humg",
+      "names": [
+        "Đại học Mỏ - Địa chất"
+      ],
+      "aliases": [
+        "humg",
+        "dh mo dia chat",
+        "mo dia chat"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 21.07251,
+      "longitude": 105.77387,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Mỏ - Địa chất, 18 Phố Viên, Bắc Từ Liêm"
+    },
+    {
+      "id": "hn-hus",
+      "names": [
+        "Đại học Khoa học Tự nhiên Hà Nội"
+      ],
+      "aliases": [
+        "hus",
+        "dh khtn ha noi",
+        "khoa hoc tu nhien ha noi"
+      ],
+      "kind": "school",
+      "city": "Hà Nội",
+      "latitude": 20.99592,
+      "longitude": 105.80795,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Trường Đại học Khoa học Tự nhiên, 334 Nguyễn Trãi, Thanh Xuân"
+    },
+    {
+      "id": "hn-royal-city",
+      "names": [
+        "Royal City"
+      ],
+      "aliases": [
+        "royal city",
+        "vincom royal city"
+      ],
+      "kind": "mall",
+      "city": "Hà Nội",
+      "latitude": 21.00436,
+      "longitude": 105.81591,
+      "uncertainty_m": 250,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Royal City, 72A Nguyễn Trãi, Thanh Xuân"
+    },
+    {
+      "id": "hn-lotte-center",
+      "names": [
+        "Lotte Center Hà Nội"
+      ],
+      "aliases": [
+        "lotte center",
+        "lotte center ha noi",
+        "lotte ha noi"
+      ],
+      "kind": "work",
+      "city": "Hà Nội",
+      "latitude": 21.03227,
+      "longitude": 105.81263,
+      "uncertainty_m": 1200,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Lotte Center Hanoi, 54 Liễu Giai, Ba Đình"
+    },
+    {
+      "id": "hn-ho-guom",
+      "names": [
+        "Hồ Gươm",
+        "Hồ Hoàn Kiếm"
+      ],
+      "aliases": [
+        "ho guom",
+        "ho hoan kiem"
+      ],
+      "kind": "area",
+      "city": "Hà Nội",
+      "latitude": 21.02883,
+      "longitude": 105.85254,
+      "uncertainty_m": 600,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Hồ Hoàn Kiếm, Hà Nội"
+    },
+    {
+      "id": "hcm-hutech",
+      "names": [
+        "Đại học Công nghệ TP.HCM",
+        "HUTECH"
+      ],
+      "aliases": [
+        "hutech",
+        "dh cong nghe tp hcm"
+      ],
+      "kind": "school",
+      "city": "TP.HCM",
+      "latitude": 10.80226,
+      "longitude": 106.71487,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Công nghệ Thành phố Hồ Chí Minh Điện Biên Phủ"
+    },
+    {
+      "id": "hcm-tdtu",
+      "names": [
+        "Đại học Tôn Đức Thắng"
+      ],
+      "aliases": [
+        "tdtu",
+        "ton duc thang",
+        "dh ton duc thang"
+      ],
+      "kind": "school",
+      "city": "TP.HCM",
+      "latitude": 10.73201,
+      "longitude": 106.69847,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Tôn Đức Thắng, 19 Nguyễn Hữu Thọ, Quận 7"
+    },
+    {
+      "id": "hcm-rmit",
+      "names": [
+        "RMIT Nam Sài Gòn",
+        "RMIT Việt Nam (Nam Sài Gòn)"
+      ],
+      "aliases": [
+        "rmit",
+        "rmit nam sai gon",
+        "rmit q7"
+      ],
+      "kind": "school",
+      "city": "TP.HCM",
+      "latitude": 10.72903,
+      "longitude": 106.69304,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "RMIT"
+    },
+    {
+      "id": "hcm-buh",
+      "names": [
+        "Đại học Ngân hàng TP.HCM"
+      ],
+      "aliases": [
+        "buh",
+        "dh ngan hang",
+        "ngan hang hcm"
+      ],
+      "kind": "school",
+      "city": "TP.HCM",
+      "latitude": 10.85798,
+      "longitude": 106.76331,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Ngân hàng"
+    },
+    {
+      "id": "hcm-iuh",
+      "names": [
+        "Đại học Công nghiệp TP.HCM"
+      ],
+      "aliases": [
+        "iuh",
+        "dh cong nghiep hcm",
+        "cong nghiep tp hcm"
+      ],
+      "kind": "school",
+      "city": "TP.HCM",
+      "latitude": 10.82202,
+      "longitude": 106.68757,
+      "uncertainty_m": 400,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Đại học Công nghiệp thành phố Hồ Chí Minh"
+    },
+    {
+      "id": "hcm-cho-ben-thanh",
+      "names": [
+        "Chợ Bến Thành"
+      ],
+      "aliases": [
+        "cho ben thanh",
+        "ben thanh"
+      ],
+      "kind": "mall",
+      "city": "TP.HCM",
+      "latitude": 10.77253,
+      "longitude": 106.69804,
+      "uncertainty_m": 250,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Chợ Bến Thành, Lê Lợi, Quận 1"
+    },
+    {
+      "id": "hcm-bitexco",
+      "names": [
+        "Bitexco Financial Tower"
+      ],
+      "aliases": [
+        "bitexco",
+        "bitexco tower"
+      ],
+      "kind": "work",
+      "city": "TP.HCM",
+      "latitude": 10.77186,
+      "longitude": 106.70446,
+      "uncertainty_m": 1200,
+      "source": "osm",
+      "verified_at": "2026-11-23",
+      "geocode_query": "Bitexco"
     }
-  ],
-  "note": "Tọa độ xấp xỉ phục vụ xếp khoảng cách tương đối trong luồng AG-01; không phải dữ liệu đo đạc. Nguồn: kiến thức địa lý công khai (kiểm chứng thủ công 05/11/2026), ghi trong data/README.md."
+  ]
 }

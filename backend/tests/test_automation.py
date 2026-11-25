@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import create_app
 from backend.app.models import Actor, CatalogStatus
 
-OWNER = Actor(id="owner-a", role="owner")
+OWNER = Actor(id="owner2", role="owner")
 
 
 def free_room(service):
@@ -61,11 +61,11 @@ def test_notification_routes_mark_read_and_admin_runs_jobs(service, renter):
     service.listing(room.id, renter)
     service.change_room_status(room.id, OWNER, CatalogStatus(expected_revision=room.revision, published=False))
     with TestClient(create_app(lambda: service)) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         listed = client.get("/notifications", headers=headers).json()
         assert listed["unread"] == 1
         assert client.post("/notifications/read", headers=headers).json()["unread"] == 0
-        admin = {"Authorization": "Bearer demo-admin-a"}
+        admin = {"Authorization": "Bearer demo-admin"}
         assert client.post("/admin/jobs/run", headers=headers).status_code == 403
         run = client.post("/admin/jobs/run", headers=admin).json()
         assert "lead_reengagement" in run

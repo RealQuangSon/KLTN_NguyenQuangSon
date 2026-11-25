@@ -1,37 +1,42 @@
-# HomeMatch AI Agent — trợ lý gợi ý căn thuê theo nhu cầu và năng lực tài chính
+# HomeMatch AI Agent
 
-Khóa luận tốt nghiệp: nền tảng cho thuê phòng trọ, studio, căn hộ tại **TP.HCM và Hà Nội**, với trợ lý AI ở trung tâm.
+Khóa luận tốt nghiệp: nền tảng cho thuê phòng trọ, studio và căn hộ tại **TP.HCM và Hà Nội**, có trợ lý AI gợi ý căn theo nhu cầu và năng lực tài chính của người thuê.
 
-- **Trợ lý AI:** hỏi nhu cầu, kiểm khả năng chi trả (kể cả ước tính vay ngắn hạn), xếp hạng top căn kèm lý giải. **Mỗi chủ nhà duyệt phòng của mình** trước khi khách thấy.
-- **Nền tảng 5 phân hệ:**
-  - cổng người thuê;
-  - tự động hóa;
-  - Admin Console;
-  - cổng chủ nhà (PMS & CRM);
-  - trợ lý AI cho chủ nhà.
-- **Công nghệ:** GPT-4o, embedding + pgvector, LangGraph, FastAPI, React/TypeScript, Leaflet/OSM. Chạy trên localhost (SQLite hoặc PostgreSQL local).
-- **Phạm vi:** cho thuê, không mua bán. Đây là điều chỉnh có chủ đích so với đề bài gốc; xem D-01→D-09 trong [đề cương](docs/ke-hoach-kltn-homematch.md).
+## 1. Mô tả sản phẩm
 
-## Trạng thái
+- **Trợ lý AI:** hỏi nhu cầu bằng hội thoại, tính chi phí hằng tháng và tiền vào ở, đánh giá khả năng chi trả (kể cả ước tính vay ngắn hạn), xếp hạng và giải thích 5 căn phù hợp nhất. Kết quả đến người thuê ngay sau khi xếp hạng.
+- **Cổng người thuê:** tìm theo bộ lọc, bản đồ, so sánh căn, nhắn tin với chủ nhà, đặt lịch xem trực tiếp hoặc trực tuyến, cẩm nang thuê nhà, hợp đồng, hóa đơn, báo sửa chữa.
+- **Cổng chủ nhà:** quản lý tin đăng, lịch xem, hộp thư, hợp đồng, công tơ, hóa đơn, thu tiền, sửa chữa, báo cáo; trợ lý viết bài đăng và gợi ý giá.
+- **Quản trị:** xem hội thoại AI đã che thông tin cá nhân, tài khoản, duyệt chủ nhà, kiểm duyệt tin, ticket hỗ trợ, số liệu vận hành.
+- **Tự động hóa:** thông báo trong ứng dụng, nhắc lịch xem, nhắc thanh toán, nhắc gia hạn hợp đồng.
 
-Code có đủ trợ lý AI và 5 phân hệ (05/10), cộng đợt 08/10: chủ nhà tự đăng ký và admin duyệt, ticket hỗ trợ, ảnh tin và ảnh sự cố, ưu đãi chủ nhà, mô phỏng vay trong chat, chi phí AI quy VND (schema v13). Kết quả kiểm tra:
-- `bash infra/check-local.sh` pass ngày 09/10/2026: 280 test Python (4 bỏ qua vì không có PostgreSQL), 74 test UI, oracle 22/22, hóa đơn 12/12, 0 vi phạm điều kiện cứng, 142/142 khẳng định có bằng chứng;
-- PostgreSQL 17.11: 417 passed (08/10/2026); smoke qua HTTP thật trên server uvicorn pass (05/10/2026).
+Mô hình ngôn ngữ chỉ hiểu câu hỏi, gọi công cụ và diễn giải. Tính tiền, điều kiện bắt buộc, xếp hạng và phân quyền do mã xác định thực hiện.
 
-| Còn thiếu | Ghi chú |
-|---|---|
-| Chạy GPT-4o/pgvector thật trên máy local | Cần `OPENAI_API_KEY` và ngân sách; hướng dẫn ở [infra/live-run.md](infra/live-run.md) |
-| Demo trên trình duyệt (localhost), kiểm viewport | Kịch bản ở [docs/kich-ban-demo.md](docs/kich-ban-demo.md), chưa quay |
-| Tự đăng mạng xã hội | Một phần: chỉ chia sẻ link và sao chép nội dung |
-| Nhãn người chấm, khảo sát người dùng | GĐ5 |
+**Công nghệ:** Python, FastAPI, LangGraph, SQLite hoặc PostgreSQL (pgvector), OpenAI API, React 19, TypeScript, Vite, MapLibre GL.
 
-Deploy Railway và build Docker **ngoài phạm vi** (D-09): đồ án chỉ cần chạy trên localhost.
+**Giới hạn:** chạy trên localhost. Không có cổng thanh toán, email/SMS thật, tự đăng mạng xã hội hay chữ ký số có giá trị pháp lý. Dữ liệu đi kèm là dữ liệu tổng hợp: 220 căn (TP.HCM 120, Hà Nội 100).
 
-Chi tiết ở [trạng thái](docs/trang-thai-trien-khai.md). Dữ liệu là **hoàn toàn tổng hợp**: 220 căn, 4 chủ nhà.
+## 2. Cấu trúc project
 
-## Cài và chạy local
+```text
+backend/   API FastAPI và nghiệp vụ
+  app/       service.py (hai graph LangGraph), agent_loop.py và agent_tools.py (agent),
+             costs.py (tài chính), catalog.py (lọc và xếp hạng), pms.py, automation.py...
+  tests/     test pytest
+  manage.py  lệnh cài đặt, nạp dữ liệu, migration
+frontend/  giao diện React + TypeScript
+  src/pages, src/components, src/tests
+data/      kho căn tổng hợp, bộ sinh dữ liệu, hồ sơ mẫu, oracle, manifest
+eval/      công cụ đánh giá, quy trình và kết quả
+infra/     script chạy, kiểm tra, sao lưu; danh mục biến môi trường
+docs/      đặc tả, yêu cầu, thiết kế, API
+```
 
-Đã kiểm chứng với Python 3.14, Node 26/npm 11.
+Chỉ mục tài liệu: [docs/README.md](docs/README.md). Thuật ngữ: [CONTEXT.md](CONTEXT.md).
+
+## 3. Cài đặt
+
+Yêu cầu: Python 3.14, Node 26 và npm 11 (các phiên bản đã kiểm chứng).
 
 ```bash
 python3 -m venv .venv
@@ -39,7 +44,11 @@ python3 -m venv .venv
 npm --prefix frontend ci
 ```
 
-Backend **không** tự đọc `.env`, nên export biến môi trường. Kho chỉ được nạp từ JSON khi DB trống, nên hãy dùng DB mới:
+## 4. Chạy trên máy local
+
+Chế độ mặc định dùng SQLite và bộ luật, không cần khóa API và không phát sinh phí. Backend không tự đọc `.env`, nên cần export biến môi trường. Kho căn chỉ nạp khi cơ sở dữ liệu còn trống.
+
+Cửa sổ 1, backend:
 
 ```bash
 export HOMEMATCH_DB_PATH=.local/homematch-v2.sqlite
@@ -47,79 +56,56 @@ export HOMEMATCH_CATALOG_PATH=data/catalog/rooms.json
 export HOMEMATCH_AUTH_MODE=seed HOMEMATCH_LLM_MODE=demo HOMEMATCH_MATCHING_METHOD=B1 HOMEMATCH_EMBEDDING_MODE=disabled
 .venv/bin/python -m backend.manage setup
 .venv/bin/python -m backend.manage seed-users
+.venv/bin/python -m backend.manage seed-demo    # tùy chọn: hợp đồng, hóa đơn, sự cố mẫu gắn nhãn [DEMO]
 .venv/bin/python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --workers 1 --no-access-log --log-config backend/logging.json
-npm --prefix frontend run dev      # terminal khác → http://127.0.0.1:5173
 ```
 
-Job tự động hóa chạy 5 phút một lần trong API (`HOMEMATCH_JOBS_INTERVAL_SECONDS`, đặt 0 để tắt). Có thể chạy tay: `.venv/bin/python -m backend.manage jobs`.
+Cửa sổ 2, giao diện:
 
-Tài khoản local (mật khẩu `local-<username>-password`, không dùng khi public):
+```bash
+npm --prefix frontend run dev
+```
 
-| Username | Vai trò |
+Mở <http://127.0.0.1:5173>. Tài liệu API tự sinh: <http://127.0.0.1:8000/docs>.
+
+Tài khoản dùng thử, mật khẩu chung `123456`:
+
+| Tên đăng nhập | Vai trò |
 |---|---|
-| `renter-a`, `renter-b` | Người thuê |
-| `owner-a`, `owner-b` | Chủ nhà TP.HCM |
-| `owner-c`, `owner-d` | Chủ nhà Hà Nội (owner-c: Cầu Giấy, Đống Đa, Hai Bà Trưng) |
-| `admin-a` | Quản trị viên |
-| `manager-a`, `manager-b` | Vai trò cũ, không còn quyền nghiệp vụ |
+| `renter` | Người thuê |
+| `owner1` | Chủ nhà Hà Nội |
+| `owner2` | Chủ nhà TP.HCM |
+| `admin` | Quản trị viên |
 
-## Demo
+Luôn chạy một API worker (`--workers 1`), vì job nền chạy trong cùng tiến trình.
 
-Trước khi mở trình duyệt, nạp kịch bản PMS mẫu cho `owner-a`/`renter-a` (chạy sau `seed-users`, chỉ dùng cho DB demo local; lệnh từ chối chạy khi `HOMEMATCH_PUBLIC=true` và bỏ qua nếu đã nạp rồi):
+## 5. Triển khai tùy chọn
 
-```bash
-.venv/bin/python -m backend.manage seed-demo
-```
+- **Mô hình ngôn ngữ thật:** đặt `HOMEMATCH_LLM_MODE=openai` và `OPENAI_API_KEY`. Nếu nhà cung cấp chỉ có `/chat/completions`, đặt thêm `HOMEMATCH_LLM_API=chat_completions`. Có phát sinh phí.
+- **PostgreSQL:** chạy `bash infra/local-pg.sh start`, rồi đặt `HOMEMATCH_DATABASE_URL=postgresql://homematch@127.0.0.1:55432/homematch_dev`.
+- **Xếp hạng ngữ nghĩa (pgvector):** cần PostgreSQL, `HOMEMATCH_EMBEDDING_MODE=openai`, `HOMEMATCH_MATCHING_METHOD=P` và lệnh `python -m backend.manage index --allow-live`. Có phát sinh phí.
+- **Bản đồ Goong:** đặt `VITE_GOONG_API_KEY` trong `frontend/.env.local`. Không có thì dùng OpenStreetMap.
 
-Kịch bản `[DEMO]` gồm: một hợp đồng đã kích hoạt (bắt đầu 2 tháng trước), hai kỳ hóa đơn (kỳ 1 đã thu đủ, kỳ 2 quá hạn với một báo chuyển tiền một phần chờ chủ nhà xác nhận), một sự cố đang xử lý và một hội thoại 2 tin nhắn — mọi nội dung đều mang tiền tố `[DEMO]`.
+Danh sách đầy đủ biến môi trường: [infra/env-inventory.md](infra/env-inventory.md). Vận hành và xử lý lỗi: [infra/RUNBOOK.md](infra/RUNBOOK.md).
 
-1. **Khách** `renter-a` chat: "Tìm căn hộ 1 phòng ngủ ở Cầu Giấy, Hà Nội cho 2 người, view thoáng".
-   - Trên form, nhập trần tổng tháng 16.000.000 VND, tiền mặt 15.000.000 VND, thu nhập 30.000.000 VND, bật vay 12%/năm trong 12 tháng.
-   - Bấm **Xác nhận & tìm phòng**.
-2. **Chủ nhà** `owner-c` mở **Duyệt gợi ý**. Màn này chỉ có phòng của owner-c và chỉ hiện băng tài chính. Duyệt (đổi thứ tự thì phải ghi lý do).
-3. **Khách** thấy phòng đã duyệt ngay cả khi chủ khác chưa duyệt. Khách có thể:
-   - so sánh có tư vấn và mô phỏng vay;
-   - **Chat với chủ nhà** (ngữ cảnh được chuyển kèm);
-   - đặt lịch xem trực tuyến (có link phòng họp).
-4. **Tìm theo bộ lọc**: lọc, chuyển sang **Bản đồ**, xem nhanh, hỏi cẩm nang ("gửi xe thế nào?"), đặt lịch ngay từ tin.
-5. **Chủ nhà** xác nhận lịch, rồi đi tiếp:
-   - **Hợp đồng**: soạn → gửi → khách chấp thuận → kích hoạt (phòng chuyển sang đã thuê);
-   - **Hóa đơn**: chốt số → lập hóa đơn; khách báo đã chuyển → chủ xác nhận → biên lai;
-   - **Sửa chữa**, **Khách tiềm năng**, **Tổng quan**;
-   - **Trợ lý AI**: viết bài đăng, chia sẻ, hỏi "Vì sao phòng trống lâu?".
-6. **Admin** `admin-a`:
-   - **Hội thoại AI**: đã che SĐT và email, mỗi lần mở được audit;
-   - **Chuyển giao**: tỷ lệ phản hồi của chủ nhà;
-   - **Vận hành**: chạy job.
+## 6. Dùng thử
 
-## Kiểm tra và đánh giá
+1. Đăng nhập `renter`, vào **Trợ lý AI** và nhắn: "Tìm căn hộ 1 phòng ngủ ở Cầu Giấy, Hà Nội cho 2 người, view thoáng".
+2. Xác nhận nhu cầu và ngân sách. Kết quả hiện ngay; có thể so sánh, mô phỏng vay, nhắn chủ nhà, đặt lịch xem.
+3. Mở **Tìm kiếm** để lọc và xem bản đồ.
+4. Đăng nhập `owner1` hoặc `owner2` để xác nhận lịch, lập hợp đồng và hóa đơn.
+5. Đăng nhập `admin` để xem hội thoại đã che, tài khoản, tin đăng và số liệu.
+
+Các bước chi tiết: [docs/kich-ban-demo.md](docs/kich-ban-demo.md).
+
+## 7. Kiểm thử và đánh giá
 
 ```bash
-bash infra/check-local.sh                 # toàn bộ kiểm tra offline
-.venv/bin/python -m pytest backend/tests/test_pms.py   # một file
+.venv/bin/python -m pytest
 npm --prefix frontend test
-.venv/bin/python -m eval validate         # oracle | extraction --split dev | ranking --split dev | invariants --split dev | grounding | measure | report
+npm --prefix frontend run build
+.venv/bin/python -m infra.smoke_api --in-process
+bash infra/check-local.sh        # toàn bộ kiểm tra offline
 ```
 
-## PostgreSQL, GPT-4o và pgvector
-
-- `bash infra/local-pg.sh start`; đặt `HOMEMATCH_DATABASE_URL=postgresql://homematch@127.0.0.1:55432/homematch_dev`.
-- Test PostgreSQL: đặt `HOMEMATCH_TEST_DATABASE_URL`.
-- GPT: `HOMEMATCH_LLM_MODE=openai` cùng `OPENAI_API_KEY`.
-- P: PostgreSQL + `HOMEMATCH_EMBEDDING_MODE=openai` + `python -m backend.manage index --allow-live` + `HOMEMATCH_MATCHING_METHOD=P`.
-
-Chế độ live phát sinh phí và chưa được chạy. Biến môi trường ở [env-inventory](infra/env-inventory.md). Luôn giữ một API worker.
-
-## Cấu trúc
-
-```text
-backend/   FastAPI; LangGraph (service.py); costs/catalog/locations; agents, memory; listings, advisor, handbook;
-           conversations, notifications, automation; pms, copilot; tests
-frontend/  React/TypeScript: trợ lý, tìm kiếm + bản đồ, tin nhắn, cẩm nang, cổng chủ nhà (PMS/CRM, trợ lý), Admin Console
-data/      generator v2, kho tổng hợp, hồ sơ gold, oracle, manifest
-eval/      CLI đánh giá, protocol, kết quả development
-infra/     script local, runbook (cấu hình Docker/Railway đã xóa khỏi repo, D-09)
-docs/      đề cương, đặc tả, yêu cầu, thiết kế, kế hoạch, bằng chứng
-```
-
-Bắt đầu đọc từ [docs/README.md](docs/README.md). Thuật ngữ ở [CONTEXT.md](CONTEXT.md).
+Test mặc định chạy offline. Test PostgreSQL chỉ chạy khi đặt `HOMEMATCH_TEST_DATABASE_URL`. Cách đánh giá: [eval/README.md](eval/README.md) và [eval/REPRODUCE.md](eval/REPRODUCE.md).

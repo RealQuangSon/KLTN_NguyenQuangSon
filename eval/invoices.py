@@ -21,7 +21,7 @@ from backend.app.service import HomeMatchService
 from .common import content_hash, dataset_manifest, read_json, write_json
 from .pipeline import code_hashes
 
-OWNER = Actor(id="owner-a", role="owner")
+OWNER = Actor(id="owner2", role="owner")
 RENTER = Actor(id="renter-inv", role="renter")
 # Labels are informational copy; the oracle asserts the money-bearing fields.
 LINE_KEYS = ("name", "quantity", "unit_price", "amount_vnd")

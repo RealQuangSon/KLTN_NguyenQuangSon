@@ -14,8 +14,7 @@ const need = "Cần phòng gần trường, yên tĩnh, tầm 3 triệu";
 it("carries the landing need through the login bounce into a fresh consultation", async () => {
   const posts: Array<{ url: string; body?: unknown }> = [];
   const get = vi.fn(async (url: string) => {
-    if (url.endsWith("/auth/me"))
-      return json({ id: "renter-a", role: "renter" });
+    if (url.endsWith("/auth/me")) return json({ id: "renter", role: "renter" });
     if (url.endsWith("/sessions/session-9/results"))
       return json({
         session_id: "session-9",
@@ -32,7 +31,7 @@ it("carries the landing need through the login bounce into a fresh consultation"
         access_token: "token-r",
         token_type: "bearer",
         expires_at: "2099-01-01",
-        actor: { id: "renter-a", role: "renter" },
+        actor: { id: "renter", role: "renter" },
       });
     if (url.endsWith("/sessions/session-9/messages"))
       return json({
@@ -68,7 +67,7 @@ it("carries the landing need through the login bounce into a fresh consultation"
     {},
     { timeout: 2500 },
   );
-  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter-a");
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter");
   await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
   await screen.findByText(/tổng ngân sách tháng là bao nhiêu/);
@@ -77,14 +76,12 @@ it("carries the landing need through the login bounce into a fresh consultation"
     posts.find((call) => call.url.endsWith("/sessions/session-9/messages"))
       ?.body,
   ).toMatchObject({ text: followUp });
-  expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
-    "session-9",
-  );
+  expect(sessionStorage.getItem("homematch.session.renter")).toBe("session-9");
 }, 20000);
 it("prefills the composer instead of auto-sending when a stored session exists", async () => {
   const api = new Api("test");
   const current = session("session-1");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path.endsWith("/results")
       ? ({
@@ -98,7 +95,7 @@ it("prefills the composer instead of auto-sending when a stored session exists",
   render(
     <RenterWorkspace
       api={api}
-      actor={{ id: "renter-a", role: "renter" }}
+      actor={{ id: "renter", role: "renter" }}
       tab="search"
       initialNeed={need}
       onNeedHandled={vi.fn()}
@@ -115,7 +112,7 @@ it("drops the pending landing need when a landlord signs in", async () => {
         access_token: "token-m",
         token_type: "bearer",
         expires_at: "2099-01-01",
-        actor: { id: "owner-a", role: "owner" },
+        actor: { id: "owner2", role: "owner" },
       });
     return json({});
   });
@@ -124,7 +121,7 @@ it("drops the pending landing need when a landlord signs in", async () => {
     vi.fn(async (url: string, options?: RequestInit) => {
       if ((options?.method || "GET") === "GET") {
         if (url.endsWith("/auth/me"))
-          return json({ id: "owner-a", role: "owner" });
+          return json({ id: "owner2", role: "owner" });
         if (url.endsWith("/landlord/rooms")) return json({ rooms: [] });
         return json([]);
       }
@@ -146,10 +143,10 @@ it("drops the pending landing need when a landlord signs in", async () => {
     {},
     { timeout: 2500 },
   );
-  await user.type(screen.getByLabelText(/Tên đăng nhập/), "owner-a");
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "owner2");
   await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
-  await screen.findAllByText("Khách tiềm năng");
+  await screen.findAllByText("Phòng & tin");
   expect(
     post.mock.calls.filter(([url]) => url.endsWith("/sessions")),
   ).toHaveLength(0);
@@ -164,7 +161,7 @@ it("sends the landing need exactly once even when /sessions and /auth/me are slo
       if (method === "GET") {
         if (url.endsWith("/auth/me")) {
           await delay(150);
-          return json({ id: "renter-a", role: "renter" });
+          return json({ id: "renter", role: "renter" });
         }
         return json([]);
       }
@@ -174,7 +171,7 @@ it("sends the landing need exactly once even when /sessions and /auth/me are slo
           access_token: "token-r",
           token_type: "bearer",
           expires_at: "2099-01-01",
-          actor: { id: "renter-a", role: "renter" },
+          actor: { id: "renter", role: "renter" },
         });
       if (url.endsWith("/sessions/session-9/messages"))
         return json({ ...session("session-9"), message: "Đã nhận câu hỏi." });
@@ -198,7 +195,7 @@ it("sends the landing need exactly once even when /sessions and /auth/me are slo
     {},
     { timeout: 2500 },
   );
-  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter-a");
+  await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter");
   await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
   await screen.findByText(/Đã nhận câu hỏi/, {}, { timeout: 5000 });

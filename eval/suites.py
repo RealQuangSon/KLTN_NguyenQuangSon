@@ -226,14 +226,14 @@ def _listing_meta_counterfactual(reference: Catalog, profiles: list[tuple[str, P
                                              f"https://cdn.chotot.com/{room.id}/2.jpg"]}
                           for room in rooms],
         "poster_name": [{"poster_name": f"Người đăng {room.id}"} for room in rooms],
-        # crawl.md B-2/C-1: media và thông số hiển thị từ tin cào không đổi thứ hạng.
+        # Media và thông số hiển thị từ tin cào không đổi thứ hạng.
         "source_videos": [{"source_videos": [{"url": f"https://{index}.videodelivery.net/x/manifest/video.m3u8",
                                               "thumbnail": None}]}
                           for index, room in enumerate(rooms)],
         "listing_specs": [{"floor": str(index % 6), "direction": "Đông",
                            "balcony_direction": "Nam", "property_subtype": "Phòng trọ"}
                           for index, room in enumerate(rooms)],
-        # crawl.md E-04: kiểm chứng tin (prepay, ảnh dùng chung) không vào xếp hạng.
+        # Kiểm chứng tin (prepay, ảnh dùng chung) không vào xếp hạng.
         "trust_signals": [{"description": "Đặt cọc trước khi xem để giữ chỗ. " + (room.description or ""),
                            "source_images": [f"https://cdn.chotot.com/shared/{room.id}.jpg"]}
                           for room in rooms],

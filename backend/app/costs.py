@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_UP
 
 from .models import Affordability, CostLine, CostRequest, CostResult, Fee, LoanEstimate, LoanTerms, Quote, Scenario
 
@@ -112,6 +112,15 @@ def affordability_band(ratio: Decimal | None) -> str:
     if ratio <= AFFORDABILITY_THRESHOLDS["can_nhac"]:
         return "can_nhac"
     return "vuot"
+
+
+def income_housing_levels(monthly_income_vnd: int) -> dict[str, int]:
+    """Mức tổng chi phí nhà mỗi tháng ứng với các ngưỡng tỉ lệ tham khảo
+    (≤30% phù hợp, ≤40% cân nhắc), làm tròn XUỐNG 100.000 ₫ để không vượt ngưỡng.
+    Dùng cho câu "lương X thì nên thuê bao nhiêu?" — không lưu thu nhập."""
+    step = Decimal(100_000)
+    return {band: int((Decimal(monthly_income_vnd) * share / step).to_integral_value(rounding=ROUND_FLOOR) * step)
+            for band, share in AFFORDABILITY_THRESHOLDS.items()}
 
 
 def assess_affordability(cost: CostResult, *, people: int, available_cash_vnd: int | None,

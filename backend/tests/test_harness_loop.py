@@ -290,7 +290,7 @@ def test_fast_path_reply_passes_the_http_response_schema(agent, monkeypatch):
     _no_ambiguity(monkeypatch)
     agent.interpreter.client = FakeClient([])
     with TestClient(create_app(lambda: agent)) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         sid = client.post("/sessions", headers=headers).json()["session_id"]
         response = client.post(f"/sessions/{sid}/messages", headers=headers, json={"text": _find_room_sentence()})
     assert response.status_code == 200

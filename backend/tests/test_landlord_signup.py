@@ -22,7 +22,7 @@ PASSWORD = "very-safe-password-1"
 
 def _headers(client, username, password=None):
     response = client.post("/auth/login", json={
-        "username": username, "password": password or f"local-{username}-password"})
+        "username": username, "password": password or "123456"})
     assert response.status_code == 200, response.text
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
@@ -81,7 +81,7 @@ def test_admin_approval_publishes_grants_membership_audits_and_notifies(service,
         landlord = _register_landlord(client, caplog)
         room_id = client.post("/landlord/rooms", headers=landlord,
                               json=_room_payload(published=False)).json()["room"]["id"]
-        admin = _headers(client, "admin-a")
+        admin = _headers(client, "admin")
         applications = client.get("/admin/landlord-applications", headers=admin, params={"status": "pending"})
         assert applications.status_code == 200
         entry = next(item for item in applications.json() if item["user_id"] == "new-owner")
@@ -104,7 +104,7 @@ def test_admin_approval_publishes_grants_membership_audits_and_notifies(service,
         # The decision is audited and the landlord is notified once.
         audit = audit_entries(service.repo, resource_type="account", resource_id="new-owner",
                               action="account.landlord_approved")
-        assert len(audit) == 1 and audit[0]["actor_id"] == "admin-a"
+        assert len(audit) == 1 and audit[0]["actor_id"] == "admin"
         notifications = client.get("/notifications", headers=landlord).json()["items"]
         assert [item["kind"] for item in notifications] == ["landlord_review"]
         # A repeated approve stays idempotent for the inbox (dedup key) and the ledger.
@@ -120,9 +120,9 @@ def test_review_is_admin_only_and_unknown_user_is_404(service, monkeypatch, capl
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
     with TestClient(create_app(lambda: service)) as client:
         _register_landlord(client, caplog)
-        owner = _headers(client, "owner-a")
-        renter = _headers(client, "renter-a")
-        admin = _headers(client, "admin-a")
+        owner = _headers(client, "owner2")
+        renter = _headers(client, "renter")
+        admin = _headers(client, "admin")
         for headers in (owner, renter):
             assert client.get("/admin/landlord-applications", headers=headers).status_code == 403
             assert client.post("/admin/landlord-applications/new-owner/approve",
@@ -133,7 +133,7 @@ def test_review_is_admin_only_and_unknown_user_is_404(service, monkeypatch, capl
         # Per-record check: the target must be an owner with an application state.
         missing = client.post("/admin/landlord-applications/who-is-this/approve", headers=admin)
         assert missing.status_code == 404
-        renter_target = client.post("/admin/landlord-applications/renter-a/approve", headers=admin)
+        renter_target = client.post("/admin/landlord-applications/renter/approve", headers=admin)
         assert renter_target.status_code == 404
 
 
@@ -156,7 +156,7 @@ def test_account_type_is_validated_and_defaults_to_renter(service, monkeypatch, 
         me = client.get("/auth/me", headers=renter)
         assert me.status_code == 200 and me.json()["landlord_status"] is None
         # A renter never shows up in landlord applications.
-        admin = _headers(client, "admin-a")
+        admin = _headers(client, "admin")
         applications = client.get("/admin/landlord-applications", headers=admin).json()
         assert all(item["user_id"] != "plain-renter" for item in applications)
 
@@ -166,7 +166,7 @@ def test_rejection_requires_reason_and_blocks_publishing(service, monkeypatch, c
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
     with TestClient(create_app(lambda: service)) as client:
         landlord = _register_landlord(client, caplog)
-        admin = _headers(client, "admin-a")
+        admin = _headers(client, "admin")
         missing = client.post("/admin/landlord-applications/new-owner/reject", headers=admin, json={})
         assert missing.status_code == 422
         too_long = client.post("/admin/landlord-applications/new-owner/reject", headers=admin,
@@ -191,14 +191,14 @@ def test_rejection_requires_reason_and_blocks_publishing(service, monkeypatch, c
 def test_seed_owners_stay_approved_and_renters_have_no_status(service, monkeypatch):
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
     with TestClient(create_app(lambda: service)) as client:
-        owner = _headers(client, "owner-a")
+        owner = _headers(client, "owner2")
         me = client.get("/auth/me", headers=owner)
         assert me.status_code == 200 and me.json()["landlord_status"] == "approved"
         created = client.post("/landlord/rooms", headers=owner, json=_room_payload(published=True))
         assert created.status_code == 201, created.text
         assert client.get(f"/listings/{created.json()['room']['id']}").status_code == 200
-        renter = _headers(client, "renter-a")
+        renter = _headers(client, "renter")
         assert client.get("/auth/me", headers=renter).json()["landlord_status"] is None
-        admin = _headers(client, "admin-a")
+        admin = _headers(client, "admin")
         applications = client.get("/admin/landlord-applications", headers=admin).json()
         assert all(not item["user_id"].startswith("owner-") for item in applications)

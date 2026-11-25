@@ -42,9 +42,8 @@ Kết quả nằm trong `eval/runs/live-<ngày>/` (không bao giờ đè `eval/r
 | `measurements.json` | Trễ p50/p95 (extraction, B1, P) và số lượt gọi model |
 
 So sánh với baseline offline trong `eval/runs/development/`; số token thật theo model nằm ở
-`provider_usage` trong `/admin/metrics` nếu bạn chạy kèm API. Sau khi chạy xong, cập nhật
-`docs/trang-thai-trien-khai.md` (ngày, model, số lượt gọi, chi phí, kết quả); đạt yêu cầu thì
-đóng FR-11 và NFR-06 — không đóng trước khi có số liệu thật.
+`provider_usage` trong `/admin/metrics` nếu bạn chạy kèm API. Sau khi chạy xong, ghi lại
+ngày, model, số lượt gọi, chi phí và kết quả.
 
 ## 4. Cách dừng và rủi ro
 

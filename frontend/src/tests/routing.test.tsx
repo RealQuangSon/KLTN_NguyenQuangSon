@@ -25,7 +25,7 @@ it("opens a renter deep link directly, navigates by links and returns via browse
   sessionStorage.setItem("homematch.token", "token-r");
   window.history.replaceState(null, "", "/nguoi-thue/lich-xem");
   const calls = stubSession(async (url) => {
-    if (url.endsWith("/auth/me")) return json(actor("renter-a", "renter"));
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
     if (url.endsWith("/viewings")) return json([]);
     return json([]);
   });
@@ -47,7 +47,8 @@ it("opens a renter deep link directly, navigates by links and returns via browse
     screen.queryByRole("link", { name: "Khách tiềm năng" }),
   ).not.toBeInTheDocument();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("link", { name: "Trợ lý AI" }));
+  // Trợ lý AI là màn riêng: không còn trong sidebar, mở bằng nút topbar.
+  await user.click(screen.getByRole("button", { name: "Hỏi trợ lý AI" }));
   await waitFor(() => expect(window.location.pathname).toBe("/tro-ly-ai"));
   // Màn trợ lý mới: khung chào riêng (không còn hero/stepper của shell chuẩn).
   // Tiêu đề có <span> màu cam giữa câu nên dùng accessible name của heading.
@@ -75,7 +76,7 @@ it("blocks a renter from the landlord route with a truthful 403 screen instead o
   sessionStorage.setItem("homematch.token", "token-r");
   window.history.replaceState(null, "", "/chu-nha/duyet-goi-y");
   const calls = stubSession(async (url) => {
-    if (url.endsWith("/auth/me")) return json(actor("renter-a", "renter"));
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
     return json([]);
   });
   render(<App />);
@@ -91,13 +92,15 @@ it("blocks a renter from the landlord route with a truthful 403 screen instead o
   await user.click(
     screen.getByRole("link", { name: /về không gian của bạn/i }),
   );
-  await waitFor(() => expect(window.location.pathname).toBe("/tro-ly-ai"));
+  await waitFor(() =>
+    expect(window.location.pathname).toBe("/nguoi-thue/tong-quan"),
+  );
 });
 it("opens the landlord portal on the landlord's own rooms with landlord-only navigation", async () => {
   sessionStorage.setItem("homematch.token", "token-o");
   window.history.replaceState(null, "", "/chu-nha/phong");
   const calls = stubSession(async (url) => {
-    if (url.endsWith("/auth/me")) return json(actor("owner-a", "owner"));
+    if (url.endsWith("/auth/me")) return json(actor("owner2", "owner"));
     if (url.endsWith("/landlord/rooms")) return json({ rooms: [] });
     return json([]);
   });
@@ -107,14 +110,181 @@ it("opens the landlord portal on the landlord's own rooms with landlord-only nav
     { name: "Phòng & tin đăng" },
     { timeout: 4000 },
   );
-  expect(calls.some((call) => call.url.endsWith("/landlord/rooms"))).toBe(true);
-  expect(screen.getByRole("link", { name: "Khách tiềm năng" })).toBeVisible();
+  // The heading renders before the rooms request is issued; wait for the call
+  // instead of asserting in the same tick (flaky under a loaded full run).
+  await waitFor(() =>
+    expect(calls.some((call) => call.url.endsWith("/landlord/rooms"))).toBe(
+      true,
+    ),
+  );
+  expect(screen.getByRole("link", { name: "Hộp thư" })).toBeVisible();
+  // 19/11/2026: trang Khách tiềm năng đã bỏ khỏi cổng chủ nhà.
+  expect(
+    screen.queryByRole("link", { name: "Khách tiềm năng" }),
+  ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("link", { name: "Tìm phòng" }),
   ).not.toBeInTheDocument();
   const active = screen.getByRole("link", { name: "Phòng & tin" });
   expect(active).toHaveAttribute("href", "/chu-nha/phong");
   expect(active).toHaveAttribute("aria-current", "page");
+}, 15000);
+it("sends an old Khách tiềm năng deep link to the landlord overview", async () => {
+  sessionStorage.setItem("homematch.token", "token-o");
+  window.history.replaceState(null, "", "/chu-nha/khach-tiem-nang");
+  const calls = stubSession(async (url) => {
+    if (url.endsWith("/auth/me")) return json(actor("owner2", "owner"));
+    if (url.endsWith("/landlord/analytics")) return json({ rooms: [] });
+    if (url.endsWith("/landlord/dashboard")) return json({});
+    return json([]);
+  });
+  render(<App />);
+  await waitFor(
+    () => expect(window.location.pathname).toBe("/chu-nha/tong-quan"),
+    { timeout: 4000 },
+  );
+  expect(calls.filter((call) => call.url.includes("/leads"))).toHaveLength(0);
+}, 15000);
+it("opens the renter overview home with grouped navigation and the separate assistant entries", async () => {
+  sessionStorage.setItem("homematch.token", "token-r");
+  window.history.replaceState(null, "", "/nguoi-thue/tong-quan");
+  stubSession(async (url) => {
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
+    if (url.endsWith("/rooms/saved"))
+      return json([
+        {
+          id: "room-1",
+          room_id: "room-1",
+          title: "Phòng Hai Bà Trưng",
+          area: "Hai Bà Trưng",
+          city: "Hà Nội",
+          cost: { monthly_total_vnd: 4200000 },
+        },
+      ]);
+    if (url.endsWith("/rooms/viewed"))
+      return json([
+        {
+          id: "room-2",
+          room_id: "room-2",
+          title: "Studio Quận 7",
+          area: "Quận 7",
+          city: "TP.HCM",
+          cost: { monthly_total_vnd: 6500000 },
+        },
+      ]);
+    if (url.endsWith("/viewings"))
+      return json([
+        {
+          id: "v-1",
+          room_id: "room-2",
+          requested_at: new Date(Date.now() + 86400000).toISOString(),
+          status: "confirmed",
+          mode: "online",
+          time_slot: "morning",
+        },
+      ]);
+    if (url.endsWith("/conversations"))
+      return json([{ id: "c-1" }, { id: "c-2" }]);
+    if (url.endsWith("/leases")) return json([]);
+    return json([]);
+  });
+  render(<App />);
+  await screen.findByRole(
+    "heading",
+    { name: "Xin chào, renter" },
+    { timeout: 4000 },
+  );
+  // Sidebar nhóm theo cụm mục; trợ lý AI không còn là mục sidebar.
+  const user = userEvent.setup();
+  await user.click(
+    screen.getByRole("button", { name: "Mở rộng thanh điều hướng" }),
+  );
+  expect(screen.getByText("TÌM CHỖ Ở")).toBeVisible();
+  expect(screen.getByText("PHÒNG ĐANG THUÊ")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Nhu cầu của tôi" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Lịch xem phòng" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Chi phí sử dụng" })).toBeVisible();
+  expect(
+    screen.queryByRole("link", { name: "Trợ lý AI" }),
+  ).not.toBeInTheDocument();
+  // Trợ lý AI là màn riêng: mở bằng nút trên topbar.
+  expect(screen.getByRole("button", { name: "Hỏi trợ lý AI" })).toBeVisible();
+  // Chưa có phiên trợ lý: card nhu cầu nói thật trạng thái, không bịa nhu cầu.
+  // Hai dòng dưới chỉ hiện sau khi dữ liệu tổng quan về xong (heading chào
+  // hiện ngay từ trước đó), nên đợi phần tử thay vì lấy ngay.
+  expect(
+    await screen.findByText(/Chưa có nhu cầu nào/, {}, { timeout: 4000 }),
+  ).toBeVisible();
+  // Chưa có hợp đồng active: panel "Chưa kích hoạt" giải thích thay vì hiện số.
+  // Panel này render cùng commit với dòng trên nên lấy ngay là đủ.
+  expect(screen.getByText("Chưa kích hoạt")).toBeVisible();
+}, 15000);
+it("opens the viewed tab directly from the Phòng đã xem entry", async () => {
+  sessionStorage.setItem("homematch.token", "token-r");
+  window.history.replaceState(null, "", "/nguoi-thue/phong-da-xem");
+  stubSession(async (url) => {
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
+    return json([]);
+  });
+  render(<App />);
+  await screen.findByRole(
+    "heading",
+    { name: "Căn đã lưu & đã xem" },
+    { timeout: 4000 },
+  );
+  // Tiêu đề hiện ngay, nhưng hai nút tab và nội dung tab chỉ hiện sau khi
+  // /rooms/saved + /rooms/viewed về xong (Saved ẩn tab trong lúc tải), nên
+  // đợi đúng nút cần kiểm thay vì lấy ngay sau tiêu đề.
+  expect(
+    await screen.findByRole(
+      "button",
+      { name: "Phòng đã xem" },
+      { timeout: 4000 },
+    ),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByText(
+      "Chưa mở chi tiết căn nào. Lịch sử xem chỉ ghi khi bạn đăng nhập.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.queryByText(
+      "Chưa có căn nào. Bấm “Lưu” trên thẻ phòng trong khung đề xuất để giữ lại đây.",
+    ),
+  ).not.toBeInTheDocument();
+}, 15000);
+it("shows the honest not-activated usage page instead of invented numbers", async () => {
+  sessionStorage.setItem("homematch.token", "token-r");
+  window.history.replaceState(null, "", "/nguoi-thue/chi-phi");
+  stubSession(async (url) => {
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
+    return json({});
+  });
+  render(<App />);
+  await screen.findByRole(
+    "heading",
+    { name: "Chi phí sử dụng" },
+    { timeout: 4000 },
+  );
+  expect(screen.getByText("Chưa kích hoạt")).toBeVisible();
+}, 15000);
+it("hides the assistant entries on the assistant screen itself", async () => {
+  sessionStorage.setItem("homematch.token", "token-r");
+  window.history.replaceState(null, "", "/nguoi-thue/nhu-cau");
+  stubSession(async (url) => {
+    if (url.endsWith("/auth/me")) return json(actor("renter", "renter"));
+    return json({});
+  });
+  render(<App />);
+  await screen.findByRole(
+    "heading",
+    { name: "Bạn đang tìm một nơi ở như thế nào?" },
+    { timeout: 4000 },
+  );
+  expect(window.location.pathname).toBe("/nguoi-thue/nhu-cau");
+  expect(
+    screen.queryByRole("button", { name: "Hỏi trợ lý AI" }),
+  ).not.toBeInTheDocument();
 }, 15000);
 const fillRegisterForm = async () => {
   const user = userEvent.setup();

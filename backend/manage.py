@@ -9,12 +9,14 @@ from pathlib import Path
 from backend.app import pms
 from backend.app.catalog import Catalog, StoredCatalog
 from backend.app.service import HomeMatchService
-from backend.app.auth import SeedAuth
+from backend.app.auth import SeedAuth, account_profile, update_account_profile
 from backend.app.models import Actor
 from backend.app.repository import Repository
 
 # Every demo text carries this prefix; it also marks the seed as done (idempotency).
 DEMO_MARKER = "[DEMO]"
+# Display name of the demo renter; the viewing form prefills it (the phone is never stored on the account).
+DEMO_RENTER_NAME = "Khách thuê demo"
 DEMO_TERMS = ("1. [DEMO] Đây là hợp đồng mẫu do lệnh seed-demo tạo cho buổi demo, không phải hợp đồng thật.\n"
               "2. Bên thuê thanh toán tiền thuê và các khoản phí theo hóa đơn hằng tháng trước ngày thanh toán.\n"
               "3. Tiền cọc được hoàn sau khi bàn giao phòng, trừ các khoản hư hỏng hoặc nợ phí có biên bản.\n"
@@ -29,7 +31,7 @@ def _month_start(today: date, months_back: int) -> date:
 
 
 def _demo_room(service: HomeMatchService, owner: Actor):
-    """One vacant, published TP.HCM room of owner-a whose fees are all billable."""
+    """One vacant, published TP.HCM room of owner2 whose fees are all billable."""
     def billable(room) -> bool:
         return all(fee.included_in_rent or fee.amount_vnd is not None for fee in room.quote.fees)
     rooms = [room for room in service.catalog.rooms()
@@ -39,26 +41,31 @@ def _demo_room(service: HomeMatchService, owner: Actor):
 
 
 def seed_demo(service: HomeMatchService) -> dict:
-    """Fill one vacant TP.HCM room of owner-a with a [DEMO]-tagged PMS scenario.
+    """Fill one vacant TP.HCM room of owner2 with a [DEMO]-tagged PMS scenario.
 
     Only HomeMatchService/pms methods are called (no raw SQL), so contract
     versioning, invoice immutability and balance checks stay enforced. Past
     dates come from explicit inputs (LeaseInput.start_date, reading/invoice
-    periods), so no service validation is loosened. Idempotent: any owner-a
+    periods), so no service validation is loosened. Idempotent: any owner2
     lease whose terms contain the [DEMO] marker skips the seeding cleanly.
+    The demo renter also gets a display name (through the account-profile
+    helper) when it has none.
     """
     if os.getenv("HOMEMATCH_PUBLIC", "false").strip().lower() == "true":
         # Deployment guard, not a business rule: demo data must never exist in a public deployment.
         raise SystemExit("seed-demo từ chối chạy khi HOMEMATCH_PUBLIC=true: "
                          "dữ liệu demo không được đưa vào môi trường công khai.")
-    owner = Actor(id="owner-a", role="owner")
-    renter = Actor(id="renter-a", role="renter")
+    owner = Actor(id="owner2", role="owner")
+    renter = Actor(id="renter", role="renter")
+    # Name only, and only when the account has none, so a name the renter typed is never overwritten.
+    if not account_profile(service.repo, renter.id)["display_name"]:
+        update_account_profile(service.repo, renter.id, {"display_name": DEMO_RENTER_NAME})
     existing = next((item for item in service.leases(owner) if DEMO_MARKER in (item["terms"] or "")), None)
     if existing is not None:
         return {"status": "already_seeded", "lease_id": existing["id"], "room_id": existing["room_id"]}
     room = _demo_room(service, owner)
     if room is None:
-        raise SystemExit("seed-demo không tìm thấy phòng trống, đã công khai ở TP.HCM của owner-a "
+        raise SystemExit("seed-demo không tìm thấy phòng trống, đã công khai ở TP.HCM của owner2 "
                          "với đủ định giá phí; hãy kiểm tra kho phòng.")
     today = datetime.now(timezone.utc).date()
     start = _month_start(today, 2)

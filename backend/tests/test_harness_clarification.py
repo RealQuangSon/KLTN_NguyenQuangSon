@@ -39,9 +39,9 @@ def agent(tmp_path):
     service.close()
 
 
-def prepare(agent, renter):
+def prepare(agent, renter, place_name="Phú Mỹ Hưng"):
     sid = agent.create_session(renter)["session_id"]
-    place = resolve_place("Phú Mỹ Hưng", "TP.HCM")
+    place = resolve_place(place_name, "TP.HCM")
     agent._apply_agent_patch(sid, {"city": "TP.HCM", "destination": Destination(
         label=place["label"], latitude=place["latitude"], longitude=place["longitude"],
         uncertainty_m=place["uncertainty_m"], max_distance_m=3000)})
@@ -182,7 +182,9 @@ def test_preflight_retains_auto_assumption_before_later_question(agent, renter, 
         return ("accept" if clarification["field"] == "destination_radius" else "ask",
                 clarification["options"][0], "jev", None)
     monkeypatch.setattr(decisions, "decide", decide)
-    sid = prepare(agent, renter)
+    # LOC-001: tọa độ Phú Mỹ Hưng đã đối chiếu OSM nên bán kính 2 km quanh đó hết căn
+    # của kho giả lập; dùng điểm mốc dày căn để kiểm đúng chuyện tự áp giả định.
+    sid = prepare(agent, renter, "Vincom Đồng Khởi")
     agent.interpreter.client = ModelClient([
         SimpleNamespace(content=None, tool_calls=[tool("confirm_and_search")]),
         SimpleNamespace(content=None, tool_calls=[tool("ask_user", field="people")])])

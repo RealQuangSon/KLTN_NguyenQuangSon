@@ -5,6 +5,7 @@ import { Api } from "../api";
 import { Comparison } from "../components/Shared";
 import { SimulationPanel } from "../components/Simulation";
 import { AccountPage } from "../pages/Account";
+import { RouterProvider } from "../router";
 import type { Candidate } from "../types";
 import { cost, profile, room } from "./fixtures";
 const priced = (id: string, monthly: number, area: number): Candidate => ({
@@ -75,7 +76,7 @@ it("shows remembered preferences without money and lets the renter delete them",
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path === "/me/profile"
       ? ({
-          id: "renter-a",
+          id: "renter",
           display_name: null,
           email: null,
           consents: { remember_sessions: true, save_history: false },
@@ -95,11 +96,13 @@ it("shows remembered preferences without money and lets the renter delete them",
   );
   const del = vi.spyOn(api, "delete").mockResolvedValue({});
   render(
-    <AccountPage
-      actor={{ id: "renter-a", role: "renter" }}
-      section="ho-so"
-      api={api}
-    />,
+    <RouterProvider>
+      <AccountPage
+        actor={{ id: "renter", role: "renter" }}
+        section="ho-so"
+        api={api}
+      />
+    </RouterProvider>,
   );
   const item = (await screen.findByText(/Quận Cầu Giấy/)).closest("li")!;
   expect(screen.getByText(/Cửa sổ, thoáng sáng/)).toBeInTheDocument();
@@ -135,11 +138,13 @@ it("shows why each preference is remembered and deletes one at a time", async ()
   );
   const del = vi.spyOn(api, "delete").mockResolvedValue({});
   render(
-    <AccountPage
-      actor={{ id: "renter-a", role: "renter" }}
-      section="ho-so"
-      api={api}
-    />,
+    <RouterProvider>
+      <AccountPage
+        actor={{ id: "renter", role: "renter" }}
+        section="ho-so"
+        api={api}
+      />
+    </RouterProvider>,
   );
   expect(await screen.findByText(/đã chọn trong 3 phiên/)).toBeInTheDocument();
   expect(screen.getByText(/gợi ý từ phòng đã lưu/)).toBeInTheDocument();

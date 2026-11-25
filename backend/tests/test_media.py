@@ -16,10 +16,12 @@ from backend.app import pms
 from backend.app.main import create_app
 from backend.app.models import Actor
 
-OWNER_A = {"Authorization": "Bearer demo-owner-a"}
-OWNER_B = {"Authorization": "Bearer demo-owner-b"}
-RENTER_A = {"Authorization": "Bearer demo-renter-a"}
-RENTER_B = {"Authorization": "Bearer demo-renter-b"}
+OWNER_2 = {"Authorization": "Bearer demo-owner2"}
+# Người ngoài cuộc (không phải chủ tin/khách thuê trong ticket): mọi đường
+# media đều trả 404 như file không tồn tại.
+OWNER_B = {"Authorization": "Bearer demo-owner1"}
+RENTER = {"Authorization": "Bearer demo-renter"}
+RENTER_B = {"Authorization": "Bearer demo-owner1"}
 
 # Tiny hard-coded 1x1 PNG: only the magic signature is ever parsed.
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00"
@@ -41,12 +43,12 @@ def client(service):
         yield test_client
 
 
-def upload(client, room_id="demo-01", data=PNG, headers=OWNER_A, name="photo.png"):
+def upload(client, room_id="demo-01", data=PNG, headers=OWNER_2, name="photo.png"):
     return client.post(f"/landlord/rooms/{room_id}/media", headers=headers,
                        files={"file": (name, data, "image/png")})
 
 
-def upload_png(client, room_id="demo-01", index=0, headers=OWNER_A):
+def upload_png(client, room_id="demo-01", index=0, headers=OWNER_2):
     return upload(client, room_id=room_id, data=PNG + bytes([index]), headers=headers)
 
 
@@ -55,8 +57,8 @@ def disk_path(media_dir, media_id, service):
     return file_path(service.repo.db.execute("SELECT * FROM hm_media WHERE id=?", (media_id,)).fetchone())
 
 
-def active_lease(service, renter_id="renter-a", room_id="demo-01"):
-    owner = Actor(id="owner-a", role="owner")
+def active_lease(service, renter_id="renter", room_id="demo-01"):
+    owner = Actor(id="owner2", role="owner")
     start = date.today() - timedelta(days=30)
     lease = service.create_lease(owner, pms.LeaseInput(
         renter_id=renter_id, room_id=room_id, start_date=start,
@@ -115,7 +117,7 @@ def test_other_landlord_cannot_upload_delete_or_reorder(client):
                          json={"media_ids": [media_id]})
     assert order.status_code == 404
     # A foreign media id is rejected even for the rightful room.
-    wrong = client.patch("/landlord/rooms/demo-01/media/order", headers=OWNER_A,
+    wrong = client.patch("/landlord/rooms/demo-01/media/order", headers=OWNER_2,
                          json={"media_ids": ["no-such-media"]})
     assert wrong.status_code == 422
 
@@ -125,8 +127,8 @@ def test_hidden_listing_photo_needs_landlord(client):
     assert uploaded.status_code == 201
     url = uploaded.json()["url"]
     assert client.get(url).status_code == 404
-    assert client.get(url, headers=RENTER_A).status_code == 404
-    ok = client.get(url, headers=OWNER_A)
+    assert client.get(url, headers=RENTER).status_code == 404
+    ok = client.get(url, headers=OWNER_2)
     assert ok.status_code == 200 and ok.headers["cache-control"] == "private, max-age=300"
 
 
@@ -141,23 +143,23 @@ def test_public_listing_photo_is_anonymous_with_public_cache(client):
 
 def test_maintenance_photos_stay_between_the_two_parties(client, service):
     active_lease(service)
-    ticket = client.post("/maintenance", headers=RENTER_A, json={
+    ticket = client.post("/maintenance", headers=RENTER, json={
         "room_id": "demo-01", "title": "Hỏng vòi nước", "description": "Vòi rò nước liên tục",
         "priority": "normal"}).json()
     assert client.post(f"/maintenance/{ticket['id']}/media", headers=RENTER_B,
                        files={"file": ("x.png", PNG, "image/png")}).status_code == 404
-    uploaded = client.post(f"/maintenance/{ticket['id']}/media", headers=RENTER_A,
+    uploaded = client.post(f"/maintenance/{ticket['id']}/media", headers=RENTER,
                            files={"file": ("x.png", PNG, "image/png")})
     assert uploaded.status_code == 201, uploaded.text
     url = uploaded.json()["url"]
     assert client.get(url, headers=RENTER_B).status_code == 404
     assert client.get(url, headers=OWNER_B).status_code == 404
     assert client.get(url).status_code == 404  # no token at all
-    assert client.get(url, headers=RENTER_A).status_code == 200
-    ok = client.get(url, headers=OWNER_A)
+    assert client.get(url, headers=RENTER).status_code == 200
+    ok = client.get(url, headers=OWNER_2)
     assert ok.status_code == 200 and ok.headers["cache-control"] == "private, max-age=300"
     # The ticket DTO carries its photos.
-    listed = client.get("/maintenance", headers=RENTER_A).json()
+    listed = client.get("/maintenance", headers=RENTER).json()
     assert next(item for item in listed if item["id"] == ticket["id"])["photos"] == [
         {"id": uploaded.json()["id"], "url": url}]
 
@@ -179,21 +181,21 @@ def test_delete_removes_file_only_when_unused(client, service, media_dir):
     second = upload(client, room_id="demo-02").json()
     path = file_path(service.repo.db.execute("SELECT * FROM hm_media WHERE id=?", (first["id"],)).fetchone())
     assert path.exists()
-    assert client.delete(f"/landlord/rooms/demo-01/media/{first['id']}", headers=OWNER_A).status_code == 204
-    assert path.exists() and client.get(first["url"], headers=OWNER_A).status_code == 404
-    assert client.delete(f"/landlord/rooms/demo-02/media/{second['id']}", headers=OWNER_A).status_code == 204
+    assert client.delete(f"/landlord/rooms/demo-01/media/{first['id']}", headers=OWNER_2).status_code == 204
+    assert path.exists() and client.get(first["url"], headers=OWNER_2).status_code == 404
+    assert client.delete(f"/landlord/rooms/demo-02/media/{second['id']}", headers=OWNER_2).status_code == 204
     assert not path.exists()
 
 
 def test_reorder_changes_photo_order_everywhere(client):
     ids = [upload_png(client, index=i).json()["id"] for i in range(3)]
     reversed_ids = list(reversed(ids))
-    ordered = client.patch("/landlord/rooms/demo-01/media/order", headers=OWNER_A,
+    ordered = client.patch("/landlord/rooms/demo-01/media/order", headers=OWNER_2,
                            json={"media_ids": reversed_ids})
     assert ordered.status_code == 200, ordered.text
     assert [item["id"] for item in ordered.json()] == reversed_ids
     assert [item["position"] for item in ordered.json()] == [0, 1, 2]
-    room = client.get("/landlord/rooms/demo-01", headers=OWNER_A).json()["room"]
+    room = client.get("/landlord/rooms/demo-01", headers=OWNER_2).json()["room"]
     assert [photo["id"] for photo in room["photos"]] == reversed_ids
     detail = client.get("/listings/demo-01").json()
     assert [photo["id"] for photo in detail["photos"]] == reversed_ids

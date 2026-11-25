@@ -18,7 +18,7 @@ const json = (data: unknown, status = 200) =>
   });
 it("clears private data on logout and ignores an expired response from the prior actor after new login", async () => {
   sessionStorage.setItem("homematch.token", "token-a");
-  sessionStorage.setItem("homematch.session.renter-a", "session-a");
+  sessionStorage.setItem("homematch.session.renter", "session-a");
   // Mở workspace (trang chủ giờ vẫn mở được khi đã đăng nhập, không có rail).
   window.history.replaceState(null, "", "/tro-ly-ai");
   const old = deferred<Response>();
@@ -29,9 +29,7 @@ it("clears private data on logout and ignores an expired response from the prior
       if (url.endsWith("/auth/me"))
         return json({
           id:
-            headers.Authorization === "Bearer token-a"
-              ? "renter-a"
-              : "renter-b",
+            headers.Authorization === "Bearer token-a" ? "renter" : "renter-b",
           role: "renter",
         });
       if (url.endsWith("/sessions/session-a")) return old.promise;
@@ -47,17 +45,17 @@ it("clears private data on logout and ignores an expired response from the prior
     }),
   );
   render(<App />);
-  await screen.findByText("renter-a");
+  await screen.findByRole("button", { name: "Tài khoản renter" });
   const user = userEvent.setup();
-  // Menu tài khoản: mở từ avatar cuối thanh rail.
-  await user.click(screen.getByRole("button", { name: "Tài khoản renter-a" }));
-  await user.click(screen.getByRole("button", { name: "Đăng xuất" }));
-  expect(sessionStorage.getItem("homematch.session.renter-a")).toBeNull();
+  // Trang trợ lý riêng: avatar tài khoản ở thanh đầu mở trang Hồ sơ.
+  await user.click(screen.getByRole("button", { name: "Tài khoản renter" }));
+  await user.click(screen.getByRole("menuitem", { name: "Đăng xuất" }));
+  expect(sessionStorage.getItem("homematch.session.renter")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
   await user.type(screen.getByLabelText(/Tên đăng nhập/), "renter-b");
   await user.type(screen.getByLabelText(/Mật khẩu/), "test-password");
   await user.click(screen.getByRole("button", { name: "Đăng nhập" }));
-  await screen.findByText("renter-b");
+  await screen.findByRole("link", { name: "Hồ sơ" });
   await act(async () => {
     old.resolve(
       json(
@@ -67,7 +65,7 @@ it("clears private data on logout and ignores an expired response from the prior
     );
     await old.promise;
   });
-  expect(screen.getByText("renter-b")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Hồ sơ" })).toBeVisible();
   expect(sessionStorage.getItem("homematch.token")).toBe("token-b");
 }, 20000);
 it("manually retries a viewing with the exact payload/key instead of issuing a new action", async () => {
@@ -110,7 +108,7 @@ it("manually retries a viewing with the exact payload/key instead of issuing a n
     time_slot: string;
   };
   expect(payload.requested_at).toMatch(/Z$/);
-  // crawl.md E-07: form ghép ngày + khung giờ, bắt buộc liên hệ + đồng ý.
+  // Form ghép ngày + khung giờ, bắt buộc liên hệ + đồng ý.
   expect(payload.contact_name).toBe("Nguyễn Văn A");
   expect(payload.contact_phone).toBe("0901234567");
   expect(payload.contact_consent).toBe(true);

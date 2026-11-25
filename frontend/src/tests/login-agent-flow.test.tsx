@@ -13,21 +13,19 @@ const json = (data: unknown, status = 200) =>
   });
 it("keeps per-account consultation session keys when signing in, wipes everything on logout", () => {
   sessionStorage.setItem("homematch.token", "token-old");
-  sessionStorage.setItem("homematch.session.renter-a", "session-a");
-  sessionStorage.setItem("homematch.session.owner-a", "session-o");
+  sessionStorage.setItem("homematch.session.renter", "session-a");
+  sessionStorage.setItem("homematch.session.owner2", "session-o");
   sessionStorage.setItem("homematch.tmp", "x");
   clearLoginStorage();
   // Đăng nhập/chuyển trải nghiệm: khóa phiên giữ nguyên — quay lại vai là
   // dùng được trợ lý ngay với phiên cũ.
-  expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
-    "session-a",
-  );
-  expect(sessionStorage.getItem("homematch.session.owner-a")).toBe("session-o");
+  expect(sessionStorage.getItem("homematch.session.renter")).toBe("session-a");
+  expect(sessionStorage.getItem("homematch.session.owner2")).toBe("session-o");
   expect(sessionStorage.getItem("homematch.token")).toBeNull();
   expect(sessionStorage.getItem("homematch.tmp")).toBeNull();
   // Đăng xuất: xoá sạch kể cả khóa phiên (dữ liệu riêng tư trên máy này).
   clearLocal();
-  expect(sessionStorage.getItem("homematch.session.renter-a")).toBeNull();
+  expect(sessionStorage.getItem("homematch.session.renter")).toBeNull();
 });
 it("lets a fresh renter type the first message right away: creates the session and sends in one step", async () => {
   const posts: { url: string; body: { text?: string } }[] = [];
@@ -72,7 +70,7 @@ it("lets a fresh renter type the first message right away: creates the session a
     <RouterProvider>
       <RenterWorkspace
         api={new Api(null)}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -96,7 +94,7 @@ it("lets a fresh renter type the first message right away: creates the session a
   expect(
     screen.getByText("Mình đã ghi nhận nhu cầu. Kiểm tra hồ sơ bên phải nhé."),
   ).toBeInTheDocument();
-  expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
+  expect(sessionStorage.getItem("homematch.session.renter")).toBe(
     "session-fresh",
   );
 });

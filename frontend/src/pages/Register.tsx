@@ -5,7 +5,7 @@ import { Brand } from "../components/Brand";
 import { Link, useNavigate } from "../router";
 import { RoomIllustration } from "../components/RoomIllustration";
 // Màn đăng ký (S02, FE-18; FE-01/FE-02): gọi POST /auth/register theo hợp đồng
-// (docs/coding-plan/README.md §7.1). Người dùng tự chọn account_type
+// (docs/api-contract.md). Người dùng tự chọn account_type
 // "renter"|"owner"; hồ sơ chủ nhà bắt đầu ở trạng thái chờ quản trị viên duyệt.
 // Xác minh email và cấp vai trò nhạy cảm vẫn do máy chủ quyết định. Lỗi hiển thị
 // đúng message máy chủ trả về, không bịa nhánh lỗi cũ (FE-01).

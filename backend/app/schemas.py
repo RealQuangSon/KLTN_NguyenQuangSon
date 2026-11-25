@@ -22,6 +22,31 @@ class LogoutResult(Model):
     status: Literal["logged_out"]
 
 
+class ChatHistoryEntry(Model):
+    session_id: str
+    title: str
+    turns: int
+    started_at: str
+    last_at: str
+
+
+class ChatHistoryResult(Model):
+    retention_days: int
+    items: list[ChatHistoryEntry]
+
+
+class ChatTranscriptMessage(Model):
+    role: Literal["user", "assistant"]
+    text: str
+    created_at: str
+
+
+class ChatTranscriptResult(Model):
+    session_id: str
+    retention_days: int
+    messages: list[ChatTranscriptMessage]
+
+
 class SessionResult(Model):
     session_id: str
     draft_revision: int
@@ -32,8 +57,15 @@ class SessionResult(Model):
 
 
 class DraftResult(SessionResult):
-    status: Literal["needs_clarification"]
+    # Chip làm rõ (source="clarify") tự xác nhận + xếp hạng trong cùng yêu cầu: khi đó
+    # status là trạng thái của run vừa tạo, không còn là "needs_clarification".
+    status: Literal["needs_clarification", "generating", "generation_failed", "published",
+                    "invalidated", "no_match", "needs_verification"]
     questions: list[str]
+    # 18/11: sau khi bấm chip — câu trả lời thật (đã tìm / câu hỏi tiếp) và nút của
+    # câu hỏi tiếp theo (hoặc nút nới khi không có căn); null khi chỉ lưu nháp.
+    message: str | None = None
+    clarification: dict | None = None
 
 
 class Usage(Model):
@@ -148,6 +180,78 @@ class CompareResult(Model):
     advice: dict | None = None
 
 
+class RouteGeometry(Model):
+    type: Literal["LineString"]
+    # [[lng, lat], ...] theo GeoJSON.
+    coordinates: list[list[float]] = Field(min_length=2)
+
+
+class RouteOrigin(Model):
+    latitude: float
+    longitude: float
+    location_accuracy: Literal["exact", "approximate"]
+    uncertainty_m: float | None = None
+
+
+class RouteAnchor(Model):
+    """Điểm neo: nơi khách muốn ở gần, lấy từ hồ sơ đã xác nhận."""
+    label: str
+    latitude: float
+    longitude: float
+    max_distance_m: float
+    uncertainty_m: float
+
+
+class RouteResult(Model):
+    """MP-01: đường đi từ căn tới điểm neo. `straight_line` = đường chim bay,
+    `duration_s` null; `fallback_reason` nói vì sao không có đường thực tế."""
+    run_id: str
+    room_id: str
+    travel: Literal["ride", "walk"]
+    provider: Literal["goong", "osrm", "straight_line"]
+    vehicle: Literal["motorbike", "car", "foot"] | None
+    distance_m: int
+    duration_s: int | None
+    straight_line_m: int
+    geometry: RouteGeometry
+    origin: RouteOrigin
+    anchor: RouteAnchor
+    attribution: str | None
+    fallback_reason: Literal["no_provider", "provider_error", "rate_limited", "no_consent"] | None
+
+
+class RouteSummary(Model):
+    """quãng đường/thời gian từ một căn tới điểm neo, không có đường vẽ.
+    Cùng nghĩa các trường với `RouteResult`; attribution nằm ở mức session vì
+    cả danh sách lấy bằng một lần gọi nguồn ngoài."""
+    room_id: str
+    travel: Literal["ride", "walk"]
+    provider: Literal["goong", "osrm", "straight_line"]
+    vehicle: Literal["motorbike", "car", "foot"] | None
+    distance_m: int
+    duration_s: int | None
+    straight_line_m: int
+    fallback_reason: Literal["no_provider", "provider_error", "rate_limited", "no_consent"] | None
+
+
+class SessionRoutesResult(Model):
+    """quãng đường/thời gian từ mọi căn trong kết quả đang hiển thị tới
+    điểm neo; `skipped` là các căn chỉ biết khu vực/chưa có tọa độ. `run_id`
+    null khi hồ sơ đã có điểm neo nhưng chưa có lượt tìm."""
+    run_id: str | None
+    travel: Literal["ride", "walk"]
+    anchor: RouteAnchor
+    items: list[RouteSummary]
+    skipped: list[str]
+    attribution: str | None
+
+
+class RouteConsentResult(Model):
+    """PUT /sessions/{id}/route-consent — trả lại trạng thái đồng ý vừa lưu
+    (bộ nhớ tiến trình; khởi động lại thì về không đồng ý)."""
+    allow: bool
+
+
 class SimulationItem(Model):
     label: str
     cost: CostResult
@@ -227,7 +331,7 @@ class ViewingResult(Model):
     run_id: str | None = None
     room_id: str
     requested_at: datetime
-    # crawl.md E-01: vòng đời mở rộng requested → confirmed/declined/cancelled/
+    # Vòng đời mở rộng requested → confirmed/declined/cancelled/
     # reschedule_proposed → completed/no_show.
     status: Literal["requested", "confirmed", "declined", "cancelled",
                     "reschedule_proposed", "completed", "no_show"]
@@ -250,12 +354,13 @@ class ViewingResult(Model):
     contact_name: str | None = None
     contact_phone: str | None = None
     contact_shared: bool = False
+    # B1 (15/11): tên phòng hiển thị (đã che địa chỉ), dự phòng mã phòng ở frontend.
+    room_title: str | None = None
 
 
 class SupportResult(Model):
     id: str
     session_id: str
-    manager_id: str
     status: Literal["requested", "in_progress", "resolved"]
     assignee: str | None = None
     note: str | None = None
@@ -293,9 +398,12 @@ class HealthResult(Model):
     auth_mode: Literal["seed", "demo"]
     matching_method: Literal["B1", "P"]
     workers: Literal[1]
-    # public=true khi HOMEMATCH_PUBLIC=true; frontend dùng để tắt trải nghiệm
-    # đăng nhập nhanh bằng tài khoản seed (chỉ dành cho môi trường demo local).
+    # public=true khi HOMEMATCH_PUBLIC=true.
     public: bool
+    # demo_login=true khi POST /auth/demo-login dùng được cho chính yêu cầu này
+    # (auth seed, không public, gọi từ máy chạy API); frontend chỉ hiện nút
+    # "Trải nghiệm nhanh" khi cờ này bật.
+    demo_login: bool
 
 
 class ReadyResult(Model):
@@ -363,7 +471,7 @@ class ErrorResult(Model):
 
 # --- W-01/W-02/W-03 additions: organizations, memberships, account lifecycle ---
 
-MembershipRole = Literal["owner", "manager", "admin"]
+MembershipRole = Literal["owner", "admin"]
 AccountStatus = Literal["unverified", "active", "disabled"]
 OrgStatus = Literal["active", "suspended", "archived"]
 MembershipStatus = Literal["active", "revoked"]
@@ -425,6 +533,7 @@ class ProfileResult(Model):
     email_verified: bool | None
     status: AccountStatus
     contact_phone: str | None = None
+    created_at: str | None = None
     consents: dict[str, bool]
     organizations: list[OrgMembershipSummary]
 

@@ -10,7 +10,7 @@ Backend đọc biến process, không tự nạp `.env`. Frontend Vite đọc `.
 | `HOMEMATCH_AUTH_MODE` | `seed`; `demo` dùng token cố định ở localhost | API |
 | `HOMEMATCH_PUBLIC` | `false`; chỉ nhận `true/false` | API |
 | `HOMEMATCH_TOKEN_TTL_SECONDS` | 3600, khoảng hợp lệ 60–86400 | API |
-| `HOMEMATCH_PASSWORD_<USERNAME>` (vd. `RENTER_A`, `OWNER_A`…`OWNER_D`, `ADMIN_A`) | Mật khẩu seed; giá trị local mặc định ghi ở README, public yêu cầu ≥16 ký tự khác mặc định và khớp DB | SeedAuth |
+| `HOMEMATCH_PASSWORD_<USERNAME>` (vd. `RENTER`, `OWNER1`, `OWNER2`, `ADMIN`) | Mật khẩu cho 4 tài khoản seed (`renter`, `owner1`, `owner2`, `admin`); mặc định chung `123456`, public yêu cầu ≥16 ký tự khác mặc định và khớp DB | SeedAuth |
 | `HOMEMATCH_CORS_ORIGINS` | Hai origin localhost:5173, phân cách dấu phẩy; public cấm wildcard | API |
 | `HOMEMATCH_LLM_MODE` | `demo/openai`; default `demo`, không gọi provider | Interpreter |
 | `HOMEMATCH_SESSION_LLM_BUDGET` | 50 lượt gọi interpreter tối đa mỗi phiên (đếm cả lần lỗi); vượt → lỗi `budget_exceeded` 429 | Service (agent budget) |
@@ -35,6 +35,11 @@ Backend đọc biến process, không tự nạp `.env`. Frontend Vite đọc `.
 | `HOMEMATCH_PG_BIN`, `HOMEMATCH_PG_PORT` | `pg_config --bindir`, 55432 | Infra local scripts |
 | `HOMEMATCH_PYTHON` | `.venv/bin/python` | `check-local.sh` |
 | `HOMEMATCH_LIVE_BUDGET_VND` | Bắt buộc > 0 khi chạy `infra/live_run.sh`; chỉ kê khai, không phải trần chi (AG-04) | `infra/live_run.sh` |
+| `HOMEMATCH_GEOCODER` | `auto` (Goong nếu `GOONG_API_KEY` gọi được geocode, 401/403 thì tắt Goong tới khi khởi động lại, rồi Nominatim); `nominatim`, `goong`, `off` (không gọi ra ngoài; test đặt `off`); giá trị khác làm service không khởi động được. Chỉ gửi tên địa danh đã bỏ PII kèm thành phố, câu có số nhà không gửi | Service (`geocode.py`, LOC-001) |
+| `HOMEMATCH_LANDLORD_AGENT_HOURLY` | `40`; số lượt hỏi agent chủ nhà tối đa mỗi giờ cho một tài khoản, `0` = không giới hạn; vượt thì trả 429 | Service (`landlord_agent.py`) |
+| `HOMEMATCH_ROUTE_PROVIDER` | `auto` (Goong nếu có key REST, rồi OSRM, rồi đường chim bay); `goong`, `osrm`, `off` (chỉ đường chim bay, không gọi ra ngoài; test đặt `off`); giá trị khác làm service không khởi động được | Service (`routes_map.py`, MP-01) |
+| `HOMEMATCH_OSRM_URL` | `https://routing.openstreetmap.de` (máy OSRM công khai của FOSSGIS, đường dẫn `routed-car`/`routed-foot`); đổi khi tự chạy OSRM | Service (`routes_map.py`) |
+| `GOONG_API_KEY` | Không đặt → bỏ qua Goong. Chỉ key loại REST mới gọi được Direction; key loại Map tiles bị trả 403 và Goong bị tắt tới khi khởi động lại process. Không bao giờ gửi xuống frontend | Service (`routes_map.py`) |
 | `VITE_API_BASE_URL` | `/api`; proxy dev tới API localhost:8000 | Frontend, công khai |
 
 Không đưa model key, DB URL, mật khẩu hoặc raw checkpoint vào frontend/artifact công khai. Opaque token không cần signing key. Thay env password không tự ghi đè hash cũ: dùng `python -m backend.manage seed-users --rotate-passwords`; thao tác này thu hồi token của bốn tài khoản seed.

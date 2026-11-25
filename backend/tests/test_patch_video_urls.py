@@ -1,4 +1,4 @@
-"""crawl.md B: the one-off video URL patch tool.
+"""The one-off video URL patch tool.
 
 The rebuild snapshot r2 had video URLs PII-masked by mistake (digit runs in the
 32-hex Stream id); the tool restores `source_videos` from the directly-crawled
@@ -86,7 +86,7 @@ def test_local_patch_changes_only_source_videos(tmp_path, monkeypatch):
     assert manifest["videos_restored_from"] == "src"
     assert manifest["catalog_sha256"] == hashlib.sha256(
         (tmp_path / "r2" / "catalog.json").read_bytes()).hexdigest()
-    # crawl.md sửa-lỗi-2: chạy lại khi không còn gì để vá không được ghi đè
+    # Chạy lại khi không còn gì để vá không được ghi đè
     # videos_restored thành 0 (giá trị đúng của r2 là số đã vá lần đầu).
     again = tool._patch_catalog_file(tmp_path / "r2", {})
     assert again["rooms_patched"] == 0

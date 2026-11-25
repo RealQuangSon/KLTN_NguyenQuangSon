@@ -3,11 +3,11 @@ import sys
 import pytest
 
 from backend import manage
-from backend.app.auth import SeedAuth
+from backend.app.auth import SeedAuth, account_profile, update_account_profile
 from backend.app.models import Actor
 
-OWNER = Actor(id="owner-a", role="owner")
-RENTER = Actor(id="renter-a", role="renter")
+OWNER = Actor(id="owner2", role="owner")
+RENTER = Actor(id="renter", role="renter")
 
 
 def service_has_no_demo(service) -> bool:
@@ -68,6 +68,17 @@ def test_seed_demo_ticket_in_progress_and_conversation_with_two_messages(seeded_
     thread = [message for message in all_messages if message["sender_role"] in ("renter", "owner")]
     assert len(thread) == 2
     assert all("[DEMO]" in message["body"] for message in thread)
+
+
+def test_seed_demo_names_the_renter_without_overwriting(seeded_users):
+    service = seeded_users
+    manage.seed_demo(service)
+    profile = account_profile(service.repo, RENTER.id)
+    assert profile["display_name"] == manage.DEMO_RENTER_NAME
+    assert profile["contact_phone"] is None and profile["email"] is None
+    update_account_profile(service.repo, RENTER.id, {"display_name": "Tên tự đặt"})
+    manage.seed_demo(service)
+    assert account_profile(service.repo, RENTER.id)["display_name"] == "Tên tự đặt"
 
 
 def test_seed_demo_refuses_public_mode(seeded_users, monkeypatch):

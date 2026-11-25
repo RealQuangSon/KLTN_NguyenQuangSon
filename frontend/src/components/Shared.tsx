@@ -7,6 +7,8 @@ import type {
   Promotion,
   Results,
   Room,
+  RouteSummary,
+  RouteTravel,
 } from "../types";
 import {
   amenities,
@@ -22,6 +24,7 @@ import {
 import { RoomIllustration } from "./RoomIllustration";
 import { CoverPhoto, displayPhotos } from "./PhotoGallery";
 import { AdviceBox, type Advice } from "./Advice";
+import { RouteLine } from "./RoutePanel";
 export const money = (amount: number | null | undefined) =>
   amount == null
     ? "Chưa xác định"
@@ -113,7 +116,7 @@ export function TermsBlock({ room }: { room: Room }) {
     </div>
   );
 }
-// crawl.md D: khối thông số của tin chi tiết. Mục tin không ghi hiện "Chưa có
+// Khối thông số của tin chi tiết. Mục tin không ghi hiện "Chưa có
 // thông tin" — không bao giờ 0, không bao giờ "null".
 export function SpecList({ room }: { room: Room }) {
   const specs: [string, string | null][] = [
@@ -151,7 +154,7 @@ export function SpecList({ room }: { room: Room }) {
     </ul>
   );
 }
-// crawl.md D: tiện ích dạng lưới biểu tượng, chỉ hiện mục có căn cứ trong tin
+// Tiện ích dạng lưới biểu tượng, chỉ hiện mục có căn cứ trong tin
 // (true); tin không nói tới tiện ích nào thì "Chưa có thông tin", không suy.
 export function AmenityGrid({
   amenities: values,
@@ -309,6 +312,7 @@ export function Icon({
     calendar: "M4 6h16v14H4V6zm3-3v6m10-6v6M4 11h16",
     check: "M5 12l4 4L19 6",
     arrow: "M5 12h14m-5-5l5 5-5 5",
+    back: "M19 12H5m5-5l-5 5 5 5",
     logout: "M9 4H4v16h5m3-8h9m-4-4l4 4-4 4",
     shield: "M12 3l8 3v6c0 5-8 9-8 9S4 17 4 12V6l8-3z",
     sun: "M12 8a4 4 0 100 8 4 4 0 000-8m0-6v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10l2 2M5 19l2-2M17 7l2-2",
@@ -320,6 +324,7 @@ export function Icon({
     eye: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zm10-3a3 3 0 100 6 3 3 0 000-6",
     eyeOff: "M3 3l18 18M9 5c7-2 13 7 13 7l-3 4M6 6l-4 6s4 7 10 7l4-2",
     close: "M6 6l12 12M6 18 18 6",
+    plus: "M12 5v14M5 12h14",
     clock: "M12 3a9 9 0 100 18 9 9 0 000-18m0 5v5l3 2",
     leaf: "M5 20l14-14M4 17C1 5 10 3 21 3c0 11-2 18-13 16",
     sparkles:
@@ -336,10 +341,20 @@ export function Icon({
     layers: "M12 3l9 5-9 5-9-5 9-5zm9 10l-9 5-9-5m18 5l-9 5-9-5",
     expand: "M4 9V4h5m11 11v5h-5m0-16h5v5M9 20H4v-5",
     user: "M12 11a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 0116 0",
+    bell: "M6 16v-5a6 6 0 0112 0v5l1.5 2h-15L6 16zm4 4.5a2.2 2.2 0 004 0",
+    contract: "M6 3h8.5L19 7.5V21H6V3zm8 0v5h5M9 12.5h7M9 16h5",
+    wrench:
+      "M14.5 4.2a4.6 4.6 0 00-5.8 5.9L3.5 15.3a1.7 1.7 0 002.4 2.4l5.2-5.2a4.6 4.6 0 005.9-5.8l-2.6 2.6-2.3-.6-.6-2.3 3-2.2z",
+    book: "M5 4.5A1.5 1.5 0 016.5 3H19v15H6.5A1.5 1.5 0 005 19.5v-15zm0 15A1.5 1.5 0 006.5 21H19M9 7h6",
+    panel: "M4 5h16v14H4V5zm5.5 0v14",
     thumbUp:
       "M7 11v9H4a1 1 0 01-1-1v-7a1 1 0 011-1h3zm3 9h7a2 2 0 002-1.7l1-5A2 2 0 0018 11h-4l1-4.1A2 2 0 0013 5l-3 6v9z",
     thumbDown:
       "M17 13V4h3a1 1 0 011 1v7a1 1 0 01-1 1h-3zm-3-9H7a2 2 0 00-2 1.7l-1 5A2 2 0 006 13h4l-1 4.1A2 2 0 0011 19l3-6V4z",
+    target:
+      "M12 3a9 9 0 100 18 9 9 0 000-18zm0 5a4 4 0 100 8 4 4 0 000-8zm0 3.4a.6.6 0 100 1.2.6.6 0 000-1.2",
+    video: "M4 7h11v10H4V7zm11 3.5l5-3v9l-5-3",
+    coin: "M12 3a9 9 0 100 18 9 9 0 000-18zm2.4 6.4a2.6 2.6 0 00-2.4-1.4c-1.5 0-2.7.9-2.7 2s1.2 1.7 2.7 2 2.7.9 2.7 2-1.2 2-2.7 2a2.6 2.6 0 01-2.4-1.4M12 6.4v1.6m0 8v1.6",
   };
   return (
     <svg
@@ -445,7 +460,7 @@ export function AffordabilitySummary({
     </div>
   );
 }
-// crawl.md C-1: nguồn từng khoản chi phí hiện tiếng Việt, không để lộ mã nội
+// Nguồn từng khoản chi phí hiện tiếng Việt, không để lộ mã nội
 // bộ (quote.rent_vnd, quote, missing, scenario) cho người dùng. Tên trường
 // trong API không đổi; nguồn giả định từ costs.py đã là văn bản tiếng Việt.
 export const costSourceText = (source: string) => {
@@ -605,7 +620,6 @@ export function RoomCard({
   selected,
   onSelect,
   onViewing,
-  onSimulate,
   onChat,
   saved,
   onToggleSave,
@@ -614,13 +628,11 @@ export function RoomCard({
   selected?: boolean;
   onSelect?: () => void;
   onViewing?: () => void;
-  onSimulate?: () => void;
   onChat?: () => void;
-  // "Căn đã lưu" cá nhân của người thuê (trang cá nhân, tham chiếu Tin đã lưu).
+  // "Căn đã lưu" cá nhân của người thuê (trang cá nhân).
   saved?: boolean;
   onToggleSave?: () => void;
 }) {
-  const [details, setDetails] = useState(false);
   // CA-06: ảnh thật (chủ nhà trước, ảnh tin gốc Chợ Tốt sau); nhãn "Hình minh
   // họa" chỉ khi không còn ảnh thật nào.
   const cardPhotos = displayPhotos(item);
@@ -707,13 +719,6 @@ export function RoomCard({
           <span>Nguồn: {item.source}</span>
         </div>
         <div className="room-actions">
-          <button
-            className="text-button"
-            onClick={() => setDetails(!details)}
-            aria-expanded={details}
-          >
-            {details ? "Thu gọn phí" : "Xem bảng phí"}
-          </button>
           {onToggleSave && (
             <button
               className={`button small outline save-room${saved ? " saved" : ""}`}
@@ -741,12 +746,6 @@ export function RoomCard({
               Chat với chủ nhà
             </button>
           )}
-          {onSimulate && (
-            <button className="button small outline" onClick={onSimulate}>
-              <Icon name="refresh" size={16} />
-              Mô phỏng tài chính
-            </button>
-          )}
           {onViewing && (
             <button className="button small" onClick={onViewing}>
               <Icon name="calendar" size={16} />
@@ -754,7 +753,6 @@ export function RoomCard({
             </button>
           )}
         </div>
-        {details && <CostBreakdown cost={item.cost} hideTotals />}
       </div>
     </article>
   );
@@ -768,6 +766,9 @@ export function RoomMiniCard({
   highlighted,
   selected,
   saved,
+  route,
+  routeSkipped,
+  anchorLabel,
   onOpen,
   onSelect,
   onToggleSave,
@@ -777,6 +778,11 @@ export function RoomMiniCard({
   highlighted?: boolean;
   selected?: boolean;
   saved?: boolean;
+  // đường đi tới điểm neo của cả danh sách (một request /routes cho
+  // mọi thẻ); null + không nằm trong skipped thì không vẽ dòng nào.
+  route?: RouteSummary | null;
+  routeSkipped?: boolean;
+  anchorLabel?: string;
   onOpen?: () => void;
   onSelect?: () => void;
   onToggleSave?: () => void;
@@ -830,6 +836,13 @@ export function RoomMiniCard({
           {item.area_m2 == null ? "chưa rõ diện tích" : `${item.area_m2} m²`}
           {item.bedrooms ? ` · ${item.bedrooms} PN` : ""}
         </p>
+        {route ? (
+          <p className="room-mini-route">
+            <RouteLine summary={route} anchorLabel={anchorLabel} />
+          </p>
+        ) : routeSkipped ? (
+          <p className="room-mini-route">Chưa rõ vị trí căn, chưa tính đường</p>
+        ) : null}
         {chips.reasons.length > 0 && (
           <ul className="room-mini-chips" aria-label="Vì sao hợp">
             {chips.reasons.map((reason) => (
@@ -897,7 +910,6 @@ export function PublishedResults({
   selected,
   onSelect,
   onViewing,
-  onSimulate,
   onChat,
   onAskFollowUp,
   savedIds,
@@ -905,12 +917,15 @@ export function PublishedResults({
   highlightId,
   onHoverCard,
   onOpenCard,
+  routes,
+  routeSkipped,
+  anchorLabel,
+  routeAttribution,
 }: {
   result: Results | null;
   selected: string[];
   onSelect: (id: string) => void;
   onViewing: (item: Candidate) => void;
-  onSimulate?: (item: Candidate) => void;
   onChat?: (item: Candidate) => void;
   // Điền câu hỏi tiếp theo vào ô chat; chỉ điền — người dùng tự quyết định gửi,
   // hệ thống không tự nới điều kiện cứng.
@@ -924,6 +939,12 @@ export function PublishedResults({
   // Bấm thân thẻ: mở khung chi tiết (đánh đổi, cần xác minh, bảng phí, chat,
   // đặt lịch) — không mất tính năng nào của thẻ đầy đủ.
   onOpenCard?: (item: Candidate) => void;
+  // đường đi tới điểm neo cho mọi thẻ (một request /routes của trang
+  // cha); null khi chưa có dữ liệu — thẻ giữ nguyên, không hiện chữ chờ.
+  routes?: Map<string, RouteSummary> | null;
+  routeSkipped?: string[];
+  anchorLabel?: string;
+  routeAttribution?: string | null;
 }) {
   if (!result)
     return (
@@ -1027,6 +1048,10 @@ export function PublishedResults({
       highlightId={highlightId}
       onHoverCard={onHoverCard}
       onOpenCard={onOpenCard}
+      routes={routes}
+      routeSkipped={routeSkipped}
+      anchorLabel={anchorLabel}
+      attribution={routeAttribution}
     />
   );
 }
@@ -1040,6 +1065,10 @@ function MiniGrid({
   highlightId,
   onHoverCard,
   onOpenCard,
+  routes,
+  routeSkipped,
+  anchorLabel,
+  attribution,
 }: {
   published: Results;
   selected: string[];
@@ -1049,6 +1078,10 @@ function MiniGrid({
   highlightId?: string | null;
   onHoverCard?: (id: string | null) => void;
   onOpenCard?: (item: Candidate) => void;
+  routes?: Map<string, RouteSummary> | null;
+  routeSkipped?: string[];
+  anchorLabel?: string;
+  attribution?: string | null;
 }) {
   // useState phải nằm trong component riêng: PublishedResults có nhánh trả
   // sớm theo trạng thái, gắn hook ở đó sẽ vỡ thứ tự hook.
@@ -1057,7 +1090,7 @@ function MiniGrid({
   const shown = showAll ? total : Math.min(MINI_PREVIEW_COUNT, total);
   return (
     <div className="room-list">
-      {/* Đếm hiển thị kiểu workspace tham chiếu: người dùng biết số căn khớp
+      {/* Đếm hiển thị: người dùng biết số căn khớp
           nhu cầu và số căn đang hiện trước khi mở rộng. */}
       <p className="results-count">
         {published.total_matches != null && published.total_matches > total ? (
@@ -1091,6 +1124,9 @@ function MiniGrid({
             highlighted={highlightId === item.room_id}
             selected={selected.includes(item.room_id)}
             saved={savedIds?.includes(item.room_id)}
+            route={routes?.get(item.room_id) ?? null}
+            routeSkipped={routeSkipped?.includes(item.room_id)}
+            anchorLabel={anchorLabel}
             onOpen={onOpenCard ? () => onOpenCard(item) : undefined}
             onSelect={() => onSelect(item.room_id)}
             onToggleSave={
@@ -1100,6 +1136,9 @@ function MiniGrid({
           />
         ))}
       </div>
+      {attribution && (
+        <small className="room-route-credit">{attribution}</small>
+      )}
       {total > MINI_PREVIEW_COUNT && (
         <button
           type="button"
@@ -1181,10 +1220,20 @@ export function useScrollIntoView<T extends HTMLElement>(trigger: unknown) {
 export function Comparison({
   items,
   advice,
+  routes,
+  routeSkipped,
+  anchorLabel,
+  travel,
   onClose,
 }: {
   items: Candidate[];
   advice?: Advice | null;
+  // cùng bộ đường đi /routes với thẻ căn; không có thì bảng giữ
+  // nguyên hàng cũ, không thêm hàng đường đi.
+  routes?: Map<string, RouteSummary> | null;
+  routeSkipped?: string[];
+  anchorLabel?: string;
+  travel?: RouteTravel;
   onClose: () => void;
 }) {
   const panel = useScrollIntoView<HTMLElement>(items);
@@ -1228,6 +1277,30 @@ export function Comparison({
                 </td>
               ))}
             </tr>
+            {routes && (
+              <tr>
+                <th>
+                  Tới {anchorLabel} ({travel === "walk" ? "đi bộ" : "đi xe"})
+                </th>
+                {items.map((i) => {
+                  // Không lặp "tới {điểm neo}" trong từng ô (tiêu đề hàng đã
+                  // nói); thời gian đi không phải tiêu chí xếp hạng nên không
+                  // đánh dấu "Tốt nhất".
+                  const summary = routes.get(i.room_id) ?? null;
+                  return (
+                    <td key={i.room_id}>
+                      {summary ? (
+                        <RouteLine summary={summary} />
+                      ) : routeSkipped?.includes(i.room_id) ? (
+                        "Chưa rõ vị trí"
+                      ) : (
+                        "Chưa rõ"
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            )}
             <tr>
               <th>Diện tích</th>
               {items.map((i) => (

@@ -11,6 +11,7 @@ import {
 import { ViewingList } from "../components/ViewingPanel";
 import { RoomEditor } from "../components/RoomEditor";
 import { LoadingState } from "../components/LoadingState";
+import { Pager } from "../components/Pager";
 import { fees, occupancyLabels } from "../types";
 export function LandlordWorkspace({
   api,
@@ -31,6 +32,8 @@ export function LandlordWorkspace({
     [editing, setEditing] = useState<Room | "new" | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -49,9 +52,18 @@ export function LandlordWorkspace({
         (filter === "unavailable" && room.available === false) ||
         (filter === "unknown" && room.available === null)),
   );
+  // Chỉ hiện một trang (10 hoặc 20 phòng); đổi từ khóa/bộ lọc/cỡ trang thì về
+  // trang đầu, và kẹp lại nếu danh sách ngắn đi (ví dụ sau khi lọc).
+  const lastPage = Math.max(0, Math.ceil(visibleRooms.length / pageSize) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const pageRooms = visibleRooms.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize,
+  );
   useEffect(() => {
     setQuery("");
     setFilter("all");
+    setPage(0);
   }, [tab]);
   const live = useRef(true),
     lock = useRef(false),
@@ -246,25 +258,6 @@ export function LandlordWorkspace({
               busy={busy}
               onRespond={(id, status) => void respond(id, status)}
               onAction={(id, action) => {
-                if (action === "propose") {
-                  // Đề xuất giờ khác: sáng ngày mai (giờ VN), E-01.4.
-                  const tomorrow = new Date(Date.now() + 86400000);
-                  const proposed = new Date(
-                    `${tomorrow.toISOString().slice(0, 10)}T09:00:00+07:00`,
-                  );
-                  void mutate(async () => {
-                    await api.post(`/viewings/${id}/actions`, {
-                      action: "propose",
-                      proposed_at: proposed.toISOString(),
-                      reason: "Chủ nhà đề xuất giờ khác",
-                    });
-                    if (live.current) {
-                      setNotice("Đã gửi đề xuất giờ mới cho khách.");
-                      await latestRefresh.current();
-                    }
-                  });
-                  return;
-                }
                 void mutate(async () => {
                   await api.post(`/viewings/${id}/actions`, { action });
                   if (live.current) {
@@ -273,6 +266,20 @@ export function LandlordWorkspace({
                         ? "Đã đánh dấu buổi xem hoàn tất."
                         : "Đã ghi nhận buổi xem không diễn ra.",
                     );
+                    await latestRefresh.current();
+                  }
+                });
+              }}
+              onPropose={(id, proposedAt, reason) => {
+                // A3: form chọn ngày + khung giờ gửi proposed_at (+ lý do tùy chọn).
+                void mutate(async () => {
+                  await api.post(`/viewings/${id}/actions`, {
+                    action: "propose",
+                    proposed_at: proposedAt,
+                    ...(reason ? { reason } : {}),
+                  });
+                  if (live.current) {
+                    setNotice("Đã gửi đề xuất giờ mới cho khách.");
                     await latestRefresh.current();
                   }
                 });
@@ -314,13 +321,19 @@ export function LandlordWorkspace({
                 aria-label="Tìm trong kho phòng"
                 placeholder="Tìm tên phòng, khu vực hoặc mã phòng…"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(0);
+                }}
               />
             </label>
             <select
               aria-label="Lọc kho phòng"
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={(e) => {
+                setFilter(e.target.value);
+                setPage(0);
+              }}
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="published">Tin đã duyệt</option>
@@ -349,7 +362,7 @@ export function LandlordWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {visibleRooms.map((room) => (
+                    {pageRooms.map((room) => (
                       <tr key={room.id}>
                         <td>
                           <strong>{roomTitle(room.title)}</strong>
@@ -454,6 +467,19 @@ export function LandlordWorkspace({
                   </tbody>
                 </table>
               </div>
+              {visibleRooms.length > 0 && (
+                <Pager
+                  unit="phòng"
+                  total={visibleRooms.length}
+                  page={currentPage}
+                  pageSize={pageSize}
+                  onPage={setPage}
+                  onPageSize={(size) => {
+                    setPageSize(size);
+                    setPage(0);
+                  }}
+                />
+              )}
               {!visibleRooms.length && !loading && (
                 <EmptyState
                   title={

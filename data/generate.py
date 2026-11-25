@@ -44,16 +44,13 @@ FEATURES = [
     "Gần công viên, tiện đi bộ.", "Hẻm yên tĩnh, ít xe qua lại.", "Gần chợ và siêu thị.",
     "Gần trạm xe buýt.", "Tòa nhà có thang máy và bảo vệ.",
 ]
-# Synthetic landlords: each owns a portfolio and reviews AI shortlists for its own rooms.
+# Synthetic landlords: one trial account per city (owner2 = TP.HCM,
+# owner1 = Hà Nội) publishes the whole city portfolio.
 LANDLORD_RULES = {
-    "owner-a": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. "
+    "owner2": "Giờ giấc tự do, cổng khóa lúc 23:30 (có vân tay). Điện tính theo công tơ riêng, nước theo người. "
                "Gửi xe máy trong nhà để xe tầng trệt, mỗi phòng 1 xe miễn phí. Không nấu ăn bằng than.",
-    "owner-b": "Cổng đóng 23:00, về muộn báo trước. Điện, nước theo công tơ, chốt số ngày 1 hằng tháng. "
-               "Gửi xe theo tháng, thú cưng nhỏ cần báo trước. Không hút thuốc trong phòng.",
-    "owner-c": "Tòa nhà có bảo vệ 24/7, ra vào bằng thẻ từ. Điện tính theo giá nhà nước bậc thang quy đổi, "
+    "owner1": "Tòa nhà có bảo vệ 24/7, ra vào bằng thẻ từ. Điện tính theo giá nhà nước bậc thang quy đổi, "
                "nước theo m³. Phí dịch vụ gồm vệ sinh hành lang và thang máy. Khách ở lại qua đêm cần đăng ký.",
-    "owner-d": "Không giới hạn giờ giấc. Điện, nước theo công tơ, thanh toán trước ngày 5. "
-               "Hầm gửi xe tính phí theo xe. Giữ yên lặng sau 22:00.",
 }
 AMENITIES = ["window", "quiet", "parking", "private_bathroom", "air_conditioning",
              "washing_machine", "balcony", "furniture", "pets_allowed"]
@@ -169,10 +166,9 @@ def make_catalog(count: int = V2_ROOMS) -> tuple[list[dict], dict]:
 
 
 def landlord_for(city: str, area: str, room_id: str) -> str:
-    if city == "Hà Nội":
-        return "owner-c" if area in ("Quận Cầu Giấy", "Quận Đống Đa", "Quận Hai Bà Trưng") else "owner-d"
-    # TP.HCM: two landlords share every district so shortlists mix owners (per-landlord review).
-    return "owner-a" if int(room_id.rsplit("-", 1)[1]) % 2 else "owner-b"
+    # Một tài khoản dùng thử mỗi thành phố; việc chia owner để "chủ nhà duyệt
+    # gợi ý" đã bỏ theo quyết định 05/11/2026 nên không còn lý do giữ 4 owner.
+    return "owner1" if city == "Hà Nội" else "owner2"
 
 
 def make_v2_rooms(count: int) -> list[tuple[dict, dict]]:
@@ -407,17 +403,17 @@ INTENT_CASES = [
 ]
 
 # DA-02: hand-authored expected outputs for interpreter.parse_loan_terms (AG-02).
-# Ranges and decimal-comma handling follow README §7.4 and the AG-02 step 3 spec.
+# Ranges and decimal-comma handling follow the loan-parsing rules below.
 LOAN_PARSE_CASES = [
     {"case_id": "LP01", "text": "nếu vay 12 tháng thì sao",
      "expected": {"term_months": 12, "annual_rate": None, "principal_vnd": None},
-     "note": "README §7.4; chỉ có kỳ hạn"},
+     "note": "chỉ có kỳ hạn"},
     {"case_id": "LP02", "text": "vay 20 triệu lãi 10% trong 6 tháng",
      "expected": {"term_months": 6, "annual_rate": 10.0, "principal_vnd": 20_000_000},
-     "note": "README §7.4; đủ ba giá trị"},
+     "note": "đủ ba giá trị"},
     {"case_id": "LP03", "text": "trả góp 24 tháng lãi suất 12,5%",
      "expected": {"term_months": 24, "annual_rate": 12.5, "principal_vnd": None},
-     "note": "README §7.4; dấu phẩy thập phân"},
+     "note": "dấu phẩy thập phân"},
     {"case_id": "LP04", "text": "cho vay 1,5 triệu được không",
      "expected": {"term_months": None, "annual_rate": None, "principal_vnd": 1_500_000},
      "note": "dấu phẩy thập phân của tiền"},
@@ -678,7 +674,7 @@ def make_loan_parse_oracle() -> dict:
                 "term_months": r"(\d{1,3})\s*thang; hợp lệ 1–60, ngoài khoảng → null; nhiều số khớp thì lấy số đầu tiên.",
                 "annual_rate": r"(\d{1,2}(?:[.,]\d{1,2})?)\s*%; dấu phẩy thập phân đổi thành dấu chấm; hợp lệ 0–50, ngoài khoảng → null.",
                 "principal_vnd": r"tiền đọc theo (\d+(?:[.,]\d+)?)\s*(trieu|tr\b); dấu phẩy là thập phân (1,5 triệu = 1500000); đơn vị khác (nghìn, đồng) → null."},
-            "sources": "README §7.4 và bước 3 của AG-02 trong docs/coding-plan/agent.md",
+            "sources": "Quy tắc đọc kịch bản vay trong docs/tai-chinh-thue.md",
             "cases": [dict(case) for case in LOAN_PARSE_CASES]}
 
 

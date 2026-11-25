@@ -19,6 +19,8 @@ import {
   roomTitle,
 } from "../components/Shared";
 import { LoadingState } from "../components/LoadingState";
+import { Pager, usePager } from "../components/Pager";
+import { ProposeTimeForm } from "../components/ViewingPanel";
 import { Link } from "../router";
 // Admin Console: giám sát hội thoại AI (đã che PII, mỗi lần mở được ghi audit),
 // đánh giá chuyển giao AI → chủ nhà, người dùng, duyệt hồ sơ chủ nhà (FE-02),
@@ -309,9 +311,13 @@ export function AdminWorkspace({
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState<string | null>(null);
   const [rejectBusy, setRejectBusy] = useState(false);
-  // crawl.md E-02/E-05: hàng đợi điều phối và báo cáo tin.
+  // Hàng đợi điều phối và báo cáo tin.
   const [concierge, setConcierge] = useState<Viewing[]>([]);
   const [conciergeLoading, setConciergeLoading] = useState(false);
+  // Liên hệ khách đã mở trong phiên này (theo mã lịch); hiện ngay trong dòng,
+  // không dùng hộp thoại của trình duyệt.
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+  const [proposeFor, setProposeFor] = useState<string | null>(null);
   const [listingReports, setListingReports] = useState<
     {
       id: string;
@@ -416,6 +422,15 @@ export function AdminWorkspace({
   const visibleTickets = tickets.filter(
     (ticket) => ticketFilter === "all" || ticket.status === ticketFilter,
   );
+  // Danh sách dài chỉ hiện một trang (10/20 dòng).
+  const pagedTranscripts = usePager(transcripts);
+  const pagedTickets = usePager(visibleTickets, ticketFilter);
+  const pagedUsers = usePager(users);
+  const pagedRooms = usePager(rooms);
+  const pagedReports = usePager(listingReports);
+  const pagedConcierge = usePager(concierge);
+  const pagedAgentTurns = usePager(agentTurns?.turns ?? []);
+  const pagedFailed = usePager(failed);
   // FE-04: chi phí AI do máy chủ trả về; FE chỉ định dạng số và ngày, không tính.
   const cost = (metrics?.cost ?? null) as CostMetrics | null;
   const [title, description] = titles[section];
@@ -442,7 +457,7 @@ export function AdminWorkspace({
                 icon="chat"
               />
             )}
-            {transcripts.map((row) => (
+            {pagedTranscripts.items.map((row) => (
               <button
                 key={row.session_id}
                 className={`queue-item ${turns?.session_id === row.session_id ? "active" : ""}`}
@@ -465,6 +480,7 @@ export function AdminWorkspace({
                 </span>
               </button>
             ))}
+            <Pager unit="phiên" {...pagedTranscripts.pagerProps} />
           </section>
           <section
             className="panel inbox-thread"
@@ -581,7 +597,7 @@ export function AdminWorkspace({
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleTickets.map((ticket) => (
+                  {pagedTickets.items.map((ticket) => (
                     <tr key={ticket.id}>
                       <td>{time(ticket.created_at)}</td>
                       <td>
@@ -645,6 +661,7 @@ export function AdminWorkspace({
               </table>
             </div>
           )}
+          <Pager unit="yêu cầu" {...pagedTickets.pagerProps} />
         </section>
       )}
       {section === "tai-khoan" && (
@@ -720,7 +737,7 @@ export function AdminWorkspace({
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {pagedUsers.items.map((user) => (
                   <tr key={user.id}>
                     <td>{user.display_name || user.id}</td>
                     <td>{roleNames[user.role] || user.role}</td>
@@ -729,53 +746,57 @@ export function AdminWorkspace({
                 ))}
               </tbody>
             </table>
+            <Pager unit="tài khoản" {...pagedUsers.pagerProps} />
           </section>
         </>
       )}
       {section === "tin-dang" && (
         <section className="panel table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Tin</th>
-                <th>Chủ nhà</th>
-                <th>Giá thuê</th>
-                <th>Công khai</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.map((room) => (
-                <tr key={room.id}>
-                  <td>
-                    {roomTitle(room.title)}
-                    <small>
-                      {room.area} · {room.city}
-                    </small>
-                  </td>
-                  <td>{room.landlord_id || "owner-a"}</td>
-                  <td>{money(room.quote.rent_vnd)}</td>
-                  <td>
-                    <button
-                      className="text-button"
-                      aria-label={`${room.published ? "Ẩn" : "Hiện"} tin ${room.id}`}
-                      onClick={() =>
-                        void act(() =>
-                          api.patch(`/admin/rooms/${room.id}/status`, {
-                            expected_revision: room.revision,
-                            published: !room.published,
-                          }),
-                        )
-                      }
-                    >
-                      {room.published
-                        ? "Đang hiện · Ẩn tin"
-                        : "Đang ẩn · Hiện lại"}
-                    </button>
-                  </td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tin</th>
+                  <th>Chủ nhà</th>
+                  <th>Giá thuê</th>
+                  <th>Công khai</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagedRooms.items.map((room) => (
+                  <tr key={room.id}>
+                    <td>
+                      {roomTitle(room.title)}
+                      <small>
+                        {room.area} · {room.city}
+                      </small>
+                    </td>
+                    <td>{room.landlord_id || "owner2"}</td>
+                    <td>{money(room.quote.rent_vnd)}</td>
+                    <td>
+                      <button
+                        className="text-button"
+                        aria-label={`${room.published ? "Ẩn" : "Hiện"} tin ${room.id}`}
+                        onClick={() =>
+                          void act(() =>
+                            api.patch(`/admin/rooms/${room.id}/status`, {
+                              expected_revision: room.revision,
+                              published: !room.published,
+                            }),
+                          )
+                        }
+                      >
+                        {room.published
+                          ? "Đang hiện · Ẩn tin"
+                          : "Đang ẩn · Hiện lại"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pager unit="tin" {...pagedRooms.pagerProps} />
         </section>
       )}
       {section === "tin-dang" && listingReports.length > 0 && (
@@ -795,7 +816,7 @@ export function AdminWorkspace({
               </tr>
             </thead>
             <tbody>
-              {listingReports.map((report) => (
+              {pagedReports.items.map((report) => (
                 <tr key={report.id}>
                   <td>{report.room_id}</td>
                   <td>{report.reason}</td>
@@ -837,6 +858,7 @@ export function AdminWorkspace({
               ))}
             </tbody>
           </table>
+          <Pager unit="báo cáo" {...pagedReports.pagerProps} />
         </section>
       )}
       {section === "dieu-phoi" && (
@@ -856,14 +878,18 @@ export function AdminWorkspace({
             />
           ) : (
             <div className="viewing-list">
-              {concierge.map((viewing) => (
+              {pagedConcierge.items.map((viewing) => (
                 <article className="viewing-row" key={viewing.id}>
                   <div className="date-icon">
                     <Icon name="calendar" size={22} />
                   </div>
                   <div>
+                    {/* B1: hiện tên phòng; chỉ dùng mã khi máy chủ không trả tên. */}
                     <h3>
-                      Phòng {viewing.room_id} <Badge status={viewing.status} />
+                      {viewing.room_title
+                        ? roomTitle(viewing.room_title)
+                        : `Phòng ${viewing.room_id}`}{" "}
+                      <Badge status={viewing.status} />
                     </h3>
                     <p>
                       {new Intl.DateTimeFormat("vi-VN", {
@@ -874,14 +900,41 @@ export function AdminWorkspace({
                         ? ` · ${{ morning: "Sáng", afternoon: "Chiều", evening: "Tối" }[viewing.time_slot]}`
                         : ""}
                     </p>
-                    <a
-                      href={`https://www.chotot.com/${viewing.room_id.replace("chotot-", "")}.htm`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Mở tin gốc trên Chợ Tốt ↗
-                    </a>
+                    {viewing.source_url ? (
+                      <a
+                        className="source-link"
+                        href={viewing.source_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Mở tin gốc trên Chợ Tốt ↗
+                      </a>
+                    ) : (
+                      <small>Không có link tin gốc</small>
+                    )}
                     {viewing.note && <small>Khách ghi: {viewing.note}</small>}
+                    {viewing.status === "reschedule_proposed" &&
+                      viewing.proposed_at && (
+                        <small>
+                          Đã đề xuất giờ mới:{" "}
+                          {new Intl.DateTimeFormat("vi-VN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(viewing.proposed_at))}{" "}
+                          — chờ khách trả lời
+                        </small>
+                      )}
+                    {revealed[viewing.id] && (
+                      <small role="status">
+                        Liên hệ khách: {revealed[viewing.id]} (đã ghi audit)
+                      </small>
+                    )}
+                    {viewing.status === "completed" && (
+                      <small>
+                        Tin cào: hợp đồng ký trực tiếp với người đăng, ngoài hệ
+                        thống.
+                      </small>
+                    )}
                   </div>
                   <div className="viewing-actions">
                     <button
@@ -893,9 +946,10 @@ export function AdminWorkspace({
                             contact_phone: string | null;
                           }>(`/admin/viewings/${viewing.id}/contact`)
                           .then((data) => {
-                            window.alert(
-                              `Liên hệ khách: ${data.contact_name ?? "—"} · ${data.contact_phone ?? "—"} (đã ghi audit)`,
-                            );
+                            setRevealed((current) => ({
+                              ...current,
+                              [viewing.id]: `${data.contact_name ?? "—"} · ${data.contact_phone ?? "—"}`,
+                            }));
                           })
                           .catch((err) => setError((err as Error).message));
                       }}
@@ -932,6 +986,21 @@ export function AdminWorkspace({
                         </button>
                       </>
                     )}
+                    {(viewing.status === "requested" ||
+                      viewing.status === "confirmed") && (
+                      <button
+                        className="button small outline"
+                        aria-expanded={proposeFor === viewing.id}
+                        disabled={conciergeLoading}
+                        onClick={() =>
+                          setProposeFor(
+                            proposeFor === viewing.id ? null : viewing.id,
+                          )
+                        }
+                      >
+                        Đề xuất giờ khác
+                      </button>
+                    )}
                     {viewing.status === "confirmed" && (
                       <>
                         <button
@@ -963,8 +1032,30 @@ export function AdminWorkspace({
                       </>
                     )}
                   </div>
+                  {/* Điều phối đổi giờ sau khi liên hệ người đăng: cùng form và
+                      cùng hành động propose như chủ nhà; lý do đi kèm là ghi
+                      chú gửi cho khách. */}
+                  {proposeFor === viewing.id &&
+                    (viewing.status === "requested" ||
+                      viewing.status === "confirmed") && (
+                      <ProposeTimeForm
+                        busy={conciergeLoading}
+                        onCancel={() => setProposeFor(null)}
+                        onSubmit={(proposedAt, reason) => {
+                          setProposeFor(null);
+                          void act(() =>
+                            api.post(`/viewings/${viewing.id}/actions`, {
+                              action: "propose",
+                              proposed_at: proposedAt,
+                              ...(reason ? { reason } : {}),
+                            }),
+                          );
+                        }}
+                      />
+                    )}
                 </article>
               ))}
+              <Pager unit="lịch" {...pagedConcierge.pagerProps} />
             </div>
           )}
         </section>
@@ -1012,43 +1103,46 @@ export function AdminWorkspace({
                       : "chưa báo"
                   }`}
                 </p>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Thời điểm</th>
-                      <th>Phiên</th>
-                      <th>Chế độ</th>
-                      <th>ms</th>
-                      <th>LLM</th>
-                      <th>Token (vào/ra)</th>
-                      <th>Kết quả</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {agentTurns.turns.map((turn) => (
-                      <tr key={turn.turn_id}>
-                        <td>{time(turn.started_at)}</td>
-                        <td>{turn.session_id.slice(0, 8)}</td>
-                        <td>{turn.agent_mode ?? "graph"}</td>
-                        <td>
-                          {new Intl.NumberFormat("vi-VN").format(
-                            turn.duration_ms,
-                          )}
-                        </td>
-                        <td>{turn.llm_calls}</td>
-                        <td>
-                          {turn.input_tokens === null
-                            ? "chưa báo"
-                            : `${turn.input_tokens}/${turn.output_tokens ?? 0}`}
-                        </td>
-                        <td>
-                          {turn.outcome}
-                          {turn.error_code ? ` · ${turn.error_code}` : ""}
-                        </td>
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Thời điểm</th>
+                        <th>Phiên</th>
+                        <th>Chế độ</th>
+                        <th>ms</th>
+                        <th>LLM</th>
+                        <th>Token (vào/ra)</th>
+                        <th>Kết quả</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {pagedAgentTurns.items.map((turn) => (
+                        <tr key={turn.turn_id}>
+                          <td>{time(turn.started_at)}</td>
+                          <td>{turn.session_id.slice(0, 8)}</td>
+                          <td>{turn.agent_mode ?? "graph"}</td>
+                          <td>
+                            {new Intl.NumberFormat("vi-VN").format(
+                              turn.duration_ms,
+                            )}
+                          </td>
+                          <td>{turn.llm_calls}</td>
+                          <td>
+                            {turn.input_tokens === null
+                              ? "chưa báo"
+                              : `${turn.input_tokens}/${turn.output_tokens ?? 0}`}
+                          </td>
+                          <td>
+                            {turn.outcome}
+                            {turn.error_code ? ` · ${turn.error_code}` : ""}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pager unit="lượt" {...pagedAgentTurns.pagerProps} />
               </>
             )}
           </section>
@@ -1058,7 +1152,7 @@ export function AdminWorkspace({
               <p className="subtle">Không có bản gợi ý lỗi.</p>
             ) : (
               <ul className="memory-list">
-                {failed.map((run) => (
+                {pagedFailed.items.map((run) => (
                   <li key={run.run_id}>
                     <span>
                       Phiên {run.session_id.slice(0, 8)} · {run.status}
@@ -1080,6 +1174,7 @@ export function AdminWorkspace({
                 ))}
               </ul>
             )}
+            <Pager unit="bản" {...pagedFailed.pagerProps} />
             <h2>Số liệu tiến trình</h2>
             <pre className="metrics-dump">
               {metrics ? JSON.stringify(metrics, null, 2) : "—"}

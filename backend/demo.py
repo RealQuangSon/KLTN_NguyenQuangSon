@@ -13,8 +13,8 @@ from .app.service import HomeMatchService
 def main():
     with TemporaryDirectory(prefix="homematch-demo-") as directory:
         service = HomeMatchService(Path(directory) / "demo.sqlite", interpreter=DemoInterpreter())
-        renter = Actor(id="renter-a", role="renter")
-        landlord = Actor(id="owner-a", role="owner")  # demo rooms belong to owner-a
+        renter = Actor(id="renter", role="renter")
+        landlord = Actor(id="owner2", role="owner")  # demo rooms belong to owner2
         session_id = service.create_session(renter)["session_id"]
         reply = service.message(session_id, renter, "Tìm phòng TP.HCM Quận 7 cho 1 người, khoảng 3,5 triệu, thoáng và yên tĩnh")
         print(json.dumps({"interview": reply}, ensure_ascii=False, indent=2))
@@ -29,8 +29,6 @@ def main():
         print(json.dumps({"published": {"status": result["status"], "rooms": [
             {"id": item["room_id"], "monthly_vnd": item["cost"]["monthly_total_vnd"],
              "reasons": item["reasons"], "tradeoffs": item["tradeoffs"]} for item in result["results"]]}}, ensure_ascii=False, indent=2))
-        leads = service.repo.db.execute("SELECT landlord_id,sources_json FROM hm_leads").fetchall()
-        print("Landlord leads (recommended):", [(row["landlord_id"], row["sources_json"]) for row in leads][:3])
         print("Compared rooms:", len(service.compare(session_id, renter, selected[:2])["items"]))
         reference = next(room for room in service.catalog.rooms() if room.id == "demo-01")
         cost = calculate_cost(reference.quote, Scenario())

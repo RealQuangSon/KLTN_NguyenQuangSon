@@ -18,15 +18,15 @@ def client(service):
 
 
 def renter_headers():
-    return {"Authorization": "Bearer demo-renter-a"}
+    return {"Authorization": "Bearer demo-renter"}
 
 
 def admin_headers():
-    return {"Authorization": "Bearer demo-admin-a"}
+    return {"Authorization": "Bearer demo-admin"}
 
 
 def owner_headers():
-    return {"Authorization": "Bearer demo-owner-a"}
+    return {"Authorization": "Bearer demo-owner2"}
 
 
 def open_ticket(client):
@@ -70,7 +70,7 @@ def test_lifecycle_transitions_notify_renter_once_per_status(client, service):
                            json={"status": "in_progress"})
     assert started.status_code == 200, started.text
     assert started.json()["status"] == "in_progress"
-    assert started.json()["assignee"] == "admin-a"  # the actor takes the ticket
+    assert started.json()["assignee"] == "admin"  # the actor takes the ticket
     assert started.json()["updated_at"] is not None
     resolved = client.patch(f"/admin/support-tickets/{ticket_id}", headers=admin_headers(),
                             json={"status": "resolved", "note": "Đã gọi điện hướng dẫn khách."})

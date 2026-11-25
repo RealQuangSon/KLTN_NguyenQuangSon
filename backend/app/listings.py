@@ -24,6 +24,18 @@ CRAWLED_SOURCE_PREFIXES = ("chotot://", "https://www.chotot.com/")
 SORTS = ("monthly_asc", "monthly_desc", "rent_asc", "area_desc", "posted_desc")
 
 
+def crawled_source_url(source: str | None) -> str | None:
+    """URL tin gốc chỉ khi `source` thuộc CRAWLED_SOURCE_PREFIXES và là http(s).
+
+    Scheme nội bộ "chotot://" là tin cào nhưng không mở được trên web → None.
+    """
+    if not source or not source.startswith(CRAWLED_SOURCE_PREFIXES):
+        return None
+    if not source.lower().startswith(("http://", "https://")):
+        return None
+    return source
+
+
 class ListingQuery(Model):
     city: str | None = Field(default=None, max_length=64)
     area: str | None = Field(default=None, max_length=64)
@@ -49,7 +61,7 @@ STREET_NUMBER_BEFORE = re.compile(
     r"(?:đường|Đường|phố|Phole|Phố)?\s*[A-Za-zÀ-ỹ])")
 WITH_CONTEXT_FRACTION = re.compile(
     r"((?:\b[sS][oôốO]\s*|\b[nN]h[aàáA]\s*|\b[pP]h[oòôO][nñ]g\s*)"
-    r"(?:\d{1,4}/\d{1,4}(?:/\d{1,4}){0,2})\b)")
+    r"(?:\d{1,4}/\d{1,4}(?:/\d{1,4}){0,2})(?![\d/]))")
 # Ngoại lệ đã biết KHÔNG phải địa chỉ: "24/7" (mở cửa), ngày tháng D/M.
 NON_ADDRESS_FRACTION = re.compile(r"(?:^|[^\d/])(24/7)(?![\d/])")
 NOT_ADDRESS_BEFORE = re.compile(r"c[aá]ch\s+[^,.]{0,20}$")
@@ -69,8 +81,11 @@ def mask_address(text: str | None, street: str | None = None) -> str | None:
                 continue
             escaped = re.escape(word)
             # Số đứng NGAY TRƯỚC tên đường: "25/12 đường Bà Cut", "25 Đường Bà Cut".
+            # Lookbehind (?<![\w/]): số phải KHÔNG đứng liền sau chữ cái/chữ số
+            # (\w tính cả chữ có dấu tiếng Việt) hoặc "/" — không thì sẽ bắt nhầm
+            # "2" trong "40m2 Trần Xuân Soạn" hay "7" trong "Q7 Bà Cut".
             pattern = re.compile(
-                rf"(\d{{1,4}}(?:/\d{{1,4}}){{0,3}})"
+                rf"(?<![\w/])(\d{{1,4}}(?:/\d{{1,4}}){{0,3}})"
                 rf"(\s+(?:[đd][uu][oờ]ng\s+)?{escaped})", re.IGNORECASE)
             result = pattern.sub(lambda match: f"{MASK}{match.group(2)}", result)
     # Dạng phân số 12/34A chỉ che khi có "số"/"nhà" ngay trước (ngữ cảnh địa chỉ):

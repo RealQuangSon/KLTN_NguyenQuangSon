@@ -12,10 +12,10 @@ from itertools import combinations
 
 from .models import DraftProfile, Profile
 
-# Ngưỡng hiệu chỉnh theo PLAN.md AG-11 (chỉnh lại trên gold khi có nhãn người).
+# Ngưỡng hiệu chỉnh trên gold; chỉnh lại khi có nhãn người.
 IMPACT_THRESHOLD = 0.2
 CHIP_KEYS = ("id", "label", "detail", "probability", "patch", "count", "min_monthly_total_vnd",
-             "decided_by", "action", "text")
+             "decided_by", "action", "text", "kind")
 # HN-13.2: city (thiếu thành phố) và budget_cap (chưa có mức tiền) đứng trước —
 # dựng được KHÔNG cần hồ sơ có trần; destination là điểm mốc thật thay quận.
 # HN-13.2: alias "budget" giữ nguyên nghĩa budget_scope (cách hiểu mức tiền ĐÃ
@@ -26,7 +26,10 @@ CHIP_KEYS = ("id", "label", "detail", "probability", "patch", "count", "min_mont
 # "city"/"budget_cap" là phương án CUỐI khi thiếu thành phố/mức tiền (dựng được
 # không cần trần). ask_user(field=...) vẫn tới được mọi nhóm trực tiếp.
 FIELD_ALIASES = {"budget": "budget_scope"}
-FIELD_PRIORITY = ("destination_radius", "budget_scope", "destination", "area",
+# Lỗi 1/4 (15/11): budget_scope xếp SAU destination — trước đây nó đứng trước và
+# (sau khi hai cách hiểu có số đếm trung thực) nhảy vào hỏi/tự chấp nhận trước
+# câu hỏi điểm đến, làm mất chip "gần đâu?" của các câu "gần trường".
+FIELD_PRIORITY = ("destination_radius", "destination", "budget_scope", "area",
                   "room_type", "people", "city", "budget_cap")
 # Các field chỉ khách được chọn (không tự chấp nhận hộ khách — khách chưa nói gì).
 ASK_ONLY_FIELDS = frozenset({"city", "budget_cap", "destination"})
@@ -129,8 +132,17 @@ def _interpretations(draft: DraftProfile, service=None,
                     "label": "Chỉ trần tiền THUÊ", "scope": "rent"})
     # HN-13.2 — destination: chip là ĐIỂM MỐC THẬT trong danh mục theo thành phố
     # nháp, chỉ lấy nơi có căn; chip CHỮ gửi "gần <điểm mốc>" (find_place tra được).
+    # 18/11: khách nêu LOẠI điểm đến ("gần trường") thì hỏi trường nào kể cả khi đã
+    # có quận — chip là các trường có căn quanh đó; không nêu loại thì giữ luật cũ.
+    # current/personal (chỗ của chính khách) chỉ hỏi điểm neo khi CHƯA có
+    # khu vực nào — khách đã nêu quận thì tìm trong quận đó, câu hỏi điểm neo
+    # không được chiếm lượt (đồng bộ blocking_destination).
+    kind = draft.destination_kind
+    kind_blocks = (not kind and not draft.area and not (confirmed and confirmed.area)) \
+        or (kind in {"school", "hospital", "transit"}) \
+        or (kind in {"current", "personal"} and not draft.area and not (confirmed and confirmed.area))
     if (wants("destination") and draft.needs_destination and not draft.destination
-            and not draft.area and not (confirmed and confirmed.area) and service is not None):
+            and kind_blocks and service is not None):
         out.extend(_destination_interpretations(service, draft, base_profile_json, confirmed))
     # Có điểm đến thì không hỏi khu vực: điểm đến đã là tín hiệu khu vực, hỏi
     # thêm quận là nhiễu (gold CL11/CL33 — HN-08).
@@ -152,10 +164,78 @@ def _interpretations(draft: DraftProfile, service=None,
         labels = {"room": "Phòng trọ", "studio": "Studio", "apartment": "Căn hộ"}
         out.extend({"field": "room_type", "kind": "room_type", "value": value, "label": label}
                    for value, label in labels.items())
-    if wants("people") and draft.people is None and confirmed is None:
+    if wants("people") and draft.people is None and blocking_people(draft):
+        # 18/11: khách đã nói ở chung → lựa chọn từ 2 người, khách phải tự chọn.
+        out.extend({"field": "people", "kind": "people", "value": people, "label": f"Ở {people} người",
+                    "ask_only": True}
+                   for people in (2, 3, 4))
+    elif wants("people") and draft.people is None and confirmed is None:
         out.extend({"field": "people", "kind": "people", "value": people, "label": f"Ở {people} người"}
                    for people in (1, 2, 3))
     return out
+
+
+def blocking_people(draft: DraftProfile) -> bool:
+    """Khách nói ở chung mà chưa nêu số người: chưa được tìm theo mặc định 1 người."""
+    return bool(draft.needs_people and draft.people is None)
+
+
+def blocking_destination(draft: DraftProfile, confirmed: Profile | None = None) -> bool:
+    """Khách nói "gần trường/bệnh viện…" mà chưa nêu tên: hỏi nơi nào trước khi tìm.
+    current/personal (chỗ của chính khách — "gần tôi", "công ty tôi") chỉ
+    chặn khi chưa có cả điểm neo lẫn khu vực; khách đã nêu quận (trong nháp hoặc
+    hồ sơ đã xác nhận `confirmed`) thì tìm trong quận đó, không chặn."""
+    if not (draft.needs_destination and draft.destination_kind and not draft.destination):
+        return False
+    if draft.destination_kind in {"current", "personal"}:
+        return not (draft.area or (confirmed and confirmed.area))
+    return True
+
+
+def blocking_field(service, session_id: str) -> str | None:
+    """Trường khách đã nhắc nhưng chưa rõ và HỎI ĐƯỢC (kho dựng được nút): chưa tự
+    tìm khi còn trường này. Không dựng được nút thì không chặn — tìm như cũ."""
+    draft = service._draft(session_id)
+    profile_json = service.repo.session(session_id)["profile_json"]
+    confirmed = Profile.model_validate_json(profile_json) if profile_json else None
+    for field, check in (("destination", lambda d: blocking_destination(d, confirmed)),
+                         ("people", blocking_people)):
+        if check(draft) and build_clarification(service, session_id, field=field) is not None:
+            return field
+    return None
+
+
+def _budget_level_label(level: int) -> str:
+    """Lỗi 3 (đo live 15/11 lần C): nhãn mức tiền kiểu Việt — dấu phẩy thập phân
+    ("4,5 triệu" thay cho "4.5 triệu"). Chip là chip CHỮ: bấm là gửi câu `text`,
+    tiền đọc tất định từ câu đó (budget_hint đọc được "4,5 triệu" = 4.500.000)."""
+    if level % 1_000_000 == 0:
+        return f"{level // 1_000_000:g} triệu"
+    return f"{level / 1_000_000:g}".replace(".", ",") + " triệu"
+
+
+def _budget_levels(pool: list[int]) -> list[int]:
+    """Lỗi 3 (đo live 15/11 lần C): ba phân vị làm tròn XUỐNG 500 nghìn có thể ra
+    cùng một mức (vague-no-city#2: hai chip "3 triệu" giống hệt) → bỏ mức trùng,
+    giữ thứ tự tăng dần, mỗi mức một chip. Sau khi bỏ trùng còn < 2 mức thì bổ
+    sung mức kế tiếp (+500 nghìn so với mức cao nhất, đếm lại số căn thật) tới
+    tối đa 3 mức; mức bổ sung không tăng thêm căn so với mức trước thì bỏ qua."""
+    levels: list[int] = []
+    for share in (0.4, 0.7, 0.9):
+        level = max(500_000, int(pool[min(len(pool) - 1, int(len(pool) * share))] // 500_000) * 500_000)
+        if level not in levels:
+            levels.append(level)
+    if len(levels) >= 2 or sum(1 for value in pool if value <= levels[-1]) >= len(pool):
+        return levels  # đủ 2 mức, hoặc mức cao nhất đã phủ hết pool → không còn căn mới
+    cursor = levels[-1]
+    while len(levels) < 3:
+        cursor += 500_000
+        if sum(1 for value in pool if value <= cursor) <= sum(1 for value in pool if value <= levels[-1]):
+            continue
+        levels.append(cursor)
+        if sum(1 for value in pool if value <= cursor) >= len(pool):
+            break  # mức vừa thêm đã phủ hết pool
+    return levels
 
 
 def _budget_cap_interpretations(service, draft: DraftProfile,
@@ -177,19 +257,26 @@ def _budget_cap_interpretations(service, draft: DraftProfile,
     # HN-13.3.1: cùng định nghĩa held với search_rooms/confirm — helper chung.
     held = 0  # D-12: không còn tin bị giữ; mọi tin khớp đều hiện kèm nhãn.
     items, _ = service.catalog.rank(profile, service.matching_method)
-    monthly_known = sorted(item.cost.monthly_total_vnd for item in items
+    # Việc nhỏ 15/11: nhãn phải khớp CƠ SỞ ĐẾM — tổng tháng biết chắc (tin ghi đủ
+    # phí) ≥ 5 căn mới được gọi "Tổng tháng dưới X"; kho thiếu phí (tổng là ước
+    # tính) phải dùng tiền thuê với nhãn "Tiền thuê dưới X" (quy ước: không bao
+    # giờ gọi giá thuê là tổng chi phí). Trước đây nhánh "Tổng tháng" luôn thắng
+    # vì tổng ước tính lấp đầy pool → chip "Tổng tháng dưới 3.5 triệu (332 căn)"
+    # đếm theo tổng ước tính nhưng nghe như tổng chắc.
+    exact_items = [item for item in items
+                   if not any(str(code).startswith("fee_assumed")
+                              for code in (item.verification or []))]
+    monthly_known = sorted(item.cost.monthly_total_vnd for item in exact_items
                            if item.cost.monthly_total_vnd is not None)
     options: list[dict] = []
     if len(monthly_known) >= 5:
-        # Mức trần tại các phân vị, làm tròn XUỐNG 500 nghìn cho dễ đọc.
-        for share in (0.4, 0.7, 0.9):
-            level = max(500_000, int(monthly_known[min(len(monthly_known) - 1, int(len(monthly_known) * share))] // 500_000) * 500_000)
-            count = sum(1 for value in monthly_known if value <= level)
-            money = f"{level // 1_000_000:g} triệu" if level % 1_000_000 == 0 else f"{level / 1_000_000:g} triệu"
-            options.append({"field": "budget_cap", "kind": "budget_cap", "value": level,
-                            "scope": "total", "label": f"Tổng tháng dưới {money}",
-                            "action": "text", "text": f"Tổng tháng dưới {money}",
-                            "count": count, "held": held})
+        options.extend({"field": "budget_cap", "kind": "budget_cap", "value": level,
+                        "scope": "total",
+                        "label": f"Tổng tháng dưới {_budget_level_label(level)}",
+                        "action": "text", "text": f"Tổng tháng dưới {_budget_level_label(level)}",
+                        "count": sum(1 for value in monthly_known if value <= level),
+                        "held": held}
+                       for level in _budget_levels(monthly_known))
     else:
         rooms_by_id = {room.id: room for room in service.catalog.rooms()}
         rents = sorted(rooms_by_id[item.room_id].quote.rent_vnd for item in items
@@ -197,14 +284,47 @@ def _budget_cap_interpretations(service, draft: DraftProfile,
                        and rooms_by_id[item.room_id].quote.rent_vnd is not None)  # pool ước tính
         if len(rents) < 5:
             return []  # không đủ dữ liệu giá → không bịa mức tiền
-        for share in (0.4, 0.7, 0.9):
-            level = max(500_000, int(rents[min(len(rents) - 1, int(len(rents) * share))] // 500_000) * 500_000)
-            count = sum(1 for value in rents if value <= level)
-            money = f"{level // 1_000_000:g} triệu" if level % 1_000_000 == 0 else f"{level / 1_000_000:g} triệu"
-            options.append({"field": "budget_cap", "kind": "budget_cap", "value": level,
-                            "scope": "rent", "label": f"Tiền thuê dưới {money}",
-                            "action": "text", "text": f"Tiền thuê dưới {money}",
-                            "count": count, "held": held})
+        options.extend({"field": "budget_cap", "kind": "budget_cap", "value": level,
+                        "scope": "rent",
+                        "label": f"Tiền thuê dưới {_budget_level_label(level)}",
+                        "action": "text", "text": f"Tiền thuê dưới {_budget_level_label(level)}",
+                        "count": sum(1 for value in rents if value <= level),
+                        "held": held}
+                       for level in _budget_levels(rents))
+    return options
+
+
+def income_budget_options(service, session_id: str, levels: list[int]) -> list[dict]:
+    """18/11: chip CHỮ "Tổng tháng dưới X" cho các mức tham khảo tính từ số tiền
+    khách kiếm được (costs.income_housing_levels). Bấm là gửi câu đó — tiền đọc tất
+    định như mọi chip budget_cap. Đã biết thành phố thì đếm căn có tổng tháng biết
+    chắc ≤ X (cùng cơ sở đếm với _budget_cap_interpretations, bỏ mọi trần tiền cũ);
+    chưa biết thì nhãn không kèm số căn — không đoán."""
+    draft = service._draft(session_id)
+    base_profile_json = service.repo.session(session_id)["profile_json"]
+    confirmed = Profile.model_validate_json(base_profile_json) if base_profile_json else None
+    monthly_known: list[int] | None = None
+    if draft.city or (confirmed and confirmed.city):
+        profile = _moneyless_profile(service, draft.model_copy(update={"budget_hint_vnd": None}),
+                                     base_profile_json)
+        if profile is not None:
+            profile = profile.model_copy(update={
+                "max_monthly_cost_vnd": NO_BUDGET_FILTER_VND, "max_rent_vnd": None, "min_rent_vnd": None,
+                "max_initial_cash_vnd": None, "loan": None, "budget_approx": False,
+                "prefer_cheapest": False})
+            items, _ = service.catalog.rank(profile, service.matching_method)
+            monthly_known = [item.cost.monthly_total_vnd for item in items
+                             if item.cost.monthly_total_vnd is not None
+                             and not any(str(code).startswith("fee_assumed")
+                                         for code in (item.verification or []))]
+    options = []
+    for index, level in enumerate(dict.fromkeys(level for level in levels if level > 0)):
+        text = f"Tổng tháng dưới {_budget_level_label(level)}"
+        count = None if monthly_known is None else sum(1 for value in monthly_known if value <= level)
+        options.append({"id": f"opt-{index}", "label": text if count is None else f"{text} ({count} căn)",
+                        "detail": text, "probability": None, "count": count,
+                        "min_monthly_total_vnd": None, "decided_by": "rules",
+                        "action": "text", "text": text, "patch": {"set": {}}})
     return options
 
 
@@ -214,7 +334,7 @@ def _destination_interpretations(service, draft: DraftProfile,
     lấy nơi có căn trong bán kính mặc định; một lần rank duy nhất, đếm khoảng
     cách thuần toán (không truy vấn thêm)."""
     from .catalog import distance_m as _distance_m
-    from .locations import _PLACES
+    from .locations import _PLACES, place_kind
     from .models import Destination
     city = draft.city or (confirmed.city if confirmed else None)
     if not city:
@@ -230,6 +350,12 @@ def _destination_interpretations(service, draft: DraftProfile,
     counts: dict[str, int] = {}
     for place in _PLACES:
         if place.get("city") != city:
+            continue
+        if draft.destination_kind and draft.destination_kind not in {"current", "personal"} \
+                and place_kind(place) != draft.destination_kind:
+            # 18/11: "gần trường" → chỉ các trường, không đưa trung tâm thương mại.
+            # current/personal không lọc theo loại — lấy mọi địa danh trong
+            # thành phố như khi không có loại (chỗ khách chưa nêu tên không biết loại).
             continue
         anchor = Destination(label=place["names"][0], latitude=place["latitude"],
                              longitude=place["longitude"], uncertainty_m=place.get("uncertainty_m", 0),
@@ -257,14 +383,20 @@ def _temp_profile(service, draft: DraftProfile, interpretation: dict,
     hint = draft.budget_hint_vnd
     field = canonical_field(interpretation["field"])
     if field == "budget_scope" and hint:
+        # Lỗi 1 (15/11): hai cách hiểu phải trung thực với cách đọc của chính nó —
+        # "chỉ trần tiền thuê" KHÔNG thêm trần tổng (trước đây gán thêm max_monthly
+        # = hint làm hai cách hiểu trùng số đếm → nhóm bị coi là ít ảnh hưởng →
+        # confirm chạy với trần CHỈ-thuê và công bố căn vượt tổng tháng khách nêu);
+        # "trần tổng tháng" bỏ trần thuê (một mức tiền chỉ thuộc một phạm vi —
+        # cùng ngữ nghĩa với _profile_from_draft đã xác nhận).
         if interpretation["scope"] == "rent":
             updates["max_rent_vnd"] = hint
-            if base_profile_json is None:
-                # Chưa có hồ sơ xác nhận: trần tổng giữ mức hint (thận trọng, không bịa hệ số).
-                updates["max_monthly_cost_vnd"] = hint
+            updates["max_monthly_cost_vnd"] = None
+            updates["min_rent_vnd"] = draft.budget_min_vnd
         else:
             updates["max_monthly_cost_vnd"] = hint
-            # Đổi cách hiểu không tự xóa trần thuê đã xác nhận trên hồ sơ gốc.
+            updates["max_rent_vnd"] = None
+            updates["min_rent_vnd"] = None
     if field == "destination_radius" and profile.destination:
         updates["destination"] = profile.destination.model_copy(
             update={"max_distance_m": interpretation["radius_m"]})
@@ -313,11 +445,19 @@ def build_clarification(service, session_id: str, field: str | None = None) -> d
     draft = service._draft(session_id)
     session = service.repo.session(session_id)
     base_profile_json = session["profile_json"]
+    confirmed_profile = Profile.model_validate_json(base_profile_json) if base_profile_json else None
     requested = canonical_field(field) if field else None
-    for group_field in FIELD_PRIORITY:
+    priority = FIELD_PRIORITY
+    if blocking_people(draft):
+        # 18/11: khách nói ở chung mà chưa rõ số người → hỏi ngay sau điểm đến,
+        # trước cách hiểu mức tiền (số người đổi cả sức chứa lẫn phí theo đầu người).
+        head = ("destination_radius", "destination", "people")
+        priority = head + tuple(name for name in FIELD_PRIORITY if name not in head)
+    for group_field in priority:
         if requested is not None and requested != group_field:
             continue
         interpretations = _interpretations(draft, service, base_profile_json, field=group_field)
+        ask_only = any(interpretation.get("ask_only") for interpretation in interpretations)
         options = []
         for index, interpretation in enumerate(interpretations):
             if "count" in interpretation:
@@ -347,11 +487,31 @@ def build_clarification(service, session_id: str, field: str | None = None) -> d
             # Giữ cả lựa chọn 0 căn khi có lựa chọn dương: "2 km · 0 căn" vs
             # "5 km · 5 căn" là thông tin người dùng cần để chọn (HN-08 gold).
             kept = options
+        # "gần tôi" — chip "Dùng vị trí hiện tại" đứng ĐẦU danh sách câu
+        # hỏi destination; không có count, không bị lọc vì 0 căn, không bao giờ tự
+        # chọn thay khách (decisions.decide bỏ riêng), đi qua to_dto nguyên vẹn.
+        # Kind personal ("gần công ty tôi") KHÔNG có chip — vị trí của máy không
+        # phải chỗ công ty; hành vi cũ giữ nguyên.
+        device_option = ({"id": "opt-device", "field": "destination", "kind": "device_location",
+                          "label": "Dùng vị trí hiện tại",
+                          "interpretation": {"field": "destination", "kind": "device_location"},
+                          "top": [], "count": None, "min_monthly_total_vnd": None,
+                          "probability": None, "action": "geolocate", "text": None, "held": 0}
+                         if (group_field == "destination" and draft.destination_kind == "current"
+                             and not draft.destination) else None)
+        candidates = ([device_option] if device_option else []) + kept
         impact = _impact(kept)
         # HN-13.2: field ASK_ONLY (city/budget_cap/destination) là LỰA CHỌN rời
         # rạc khách phải tự chọn (chọn gì thì kết quả khác hẳn), không phải cách
         # hiểu của một câu khách đã nói — không dùng ngưỡng impact chặn.
-        if len(kept) < 2 or (group_field not in ASK_ONLY_FIELDS and impact < IMPACT_THRESHOLD):
+        # 18/11: "gần trường" mà quanh đó chỉ có MỘT trường có căn vẫn hỏi (một nút +
+        # khách gõ tên khác) — không lặng lẽ tìm theo quận bỏ mất ý "gần trường".
+        # chip thiết bị luôn dựng được nên câu "gần tôi" luôn hỏi lại điểm
+        # neo, kể cả khi danh sách địa danh rỗng (candidates đã gồm chip thiết bị).
+        enough = len(candidates) >= 2 or (len(candidates) == 1 and group_field == "destination"
+                                          and blocking_destination(draft, confirmed_profile))
+        if not enough or (group_field not in ASK_ONLY_FIELDS and not ask_only
+                          and impact < IMPACT_THRESHOLD):
             continue
         total = sum(option["count"] for option in kept) or 1
         for option in kept:
@@ -360,8 +520,21 @@ def build_clarification(service, session_id: str, field: str | None = None) -> d
             # "Gần" mặc định là gần nhất: chip bán kính xếp gần-trước (HN-08 gold
             # preferred=radius_2000); xác suất vẫn hiển thị trên từng chip.
             kept = sorted(kept, key=lambda option: option["interpretation"]["radius_m"])
-        return {"field": group_field, "impact": round(impact, 4), "options": kept}
+        built = {"field": group_field, "impact": round(impact, 4), "options": candidates}
+        if group_field == "destination" and draft.destination_kind:
+            built["question"] = KIND_QUESTIONS[draft.destination_kind]
+        elif group_field == "people" and ask_only:
+            built["question"] = "Bạn ở chung tổng cộng mấy người?"
+        return built
     return None
+
+
+KIND_QUESTIONS = {"school": "Bạn muốn ở gần trường nào?",
+                  "hospital": "Bạn muốn ở gần bệnh viện nào?",
+                  "transit": "Bạn muốn ở gần ga, bến xe hay sân bay nào?",
+                  # chỗ của chính khách — hỏi điểm neo, không coi "tôi" là địa danh.
+                  "current": "Bạn muốn ở gần chỗ nào? Gõ tên trường, công ty, địa chỉ hoặc chọn một địa điểm bên dưới.",
+                  "personal": "Chỗ đó tên gì hoặc ở đường nào? Gõ tên để mình tìm quanh đó."}
 
 
 QUESTION_TEMPLATES = {
@@ -383,7 +556,10 @@ def question_for(field: str) -> str:
 def option_label(option: dict) -> str:
     """Nhãn chip tự nhiên: "Trong 2 km (1 căn, từ 3.230.000 ₫)"; khi có căn bị
     giữ chờ xác minh thì nói thật "kèm nhãn ước tính" (không để khách bấm vào
-    thấy 0 căn) — đếm từ pool ước tính nên N là số căn khách sẽ thấy."""
+    thấy 0 căn) — đếm từ pool ước tính nên N là số căn khách sẽ thấy.
+    chip "Dùng vị trí hiện tại" không có số căn — giữ nguyên nhãn."""
+    if option.get("kind") == "device_location":
+        return option["label"]
     label = option["label"]
     if option.get("min_monthly_total_vnd") is not None:
         money = f"{option['min_monthly_total_vnd']:,}".replace(",", ".")
@@ -438,13 +614,16 @@ def to_dto(clarification: dict, decided_by: str, *,
     field = canonical_field(clarification["field"])
     return {"id": f"clarify-{field}",
             "field": field,
-            "question": question or question_for(clarification["field"]),
+            "question": question or clarification.get("question") or question_for(clarification["field"]),
             "reason": reason,
             "question_source": question_source or "catalog",
             "options": [{"id": option["id"], "label": option_label(option),
                          "detail": option["label"], "probability": option["probability"],
                          "count": option["count"], "min_monthly_total_vnd": option.get("min_monthly_total_vnd"),
                          "decided_by": decided_by,
+                         # kind đi nguyên vẹn ra DTO — FE nhận biết chip
+                         # "device_location" (action="geolocate") để lấy vị trí thiết bị.
+                         "kind": option.get("kind"),
                          "action": option.get("action") or "patch",
                          "text": option.get("text"),
                          "patch": option_patch(option)}

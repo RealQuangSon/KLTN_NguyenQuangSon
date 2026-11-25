@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Api } from "../api";
 import { ErrorNotice, Icon, money, roomTitle } from "../components/Shared";
+import { Pager, usePager } from "../components/Pager";
 import { LoadingState } from "../components/LoadingState";
 import { Link } from "../router";
-// Trang cá nhân của người thuê: căn đã lưu + căn đã xem (tham chiếu "Tin đã
-// lưu / Phòng đã xem"). Căn đã xem do máy chủ ghi khi mở chi tiết tin.
+// Trang cá nhân của người thuê: căn đã lưu + căn đã xem. Căn đã xem do máy chủ ghi khi mở chi tiết tin.
 type Card = {
   id: string;
   room_id?: string;
@@ -38,11 +38,20 @@ function PersonalRow({
     </div>
   );
 }
-export function SavedPage({ api }: { api: Api }) {
+export function SavedPage({
+  api,
+  initialTab = "saved",
+}: {
+  api: Api;
+  initialTab?: "saved" | "viewed";
+}) {
+  const [tab, setTab] = useState<"saved" | "viewed">(initialTab);
   const [saved, setSaved] = useState<Card[]>([]);
   const [viewed, setViewed] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const pagedSaved = usePager(saved);
+  const pagedViewed = usePager(viewed);
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -95,48 +104,68 @@ export function SavedPage({ api }: { api: Api }) {
               <h2>
                 <Icon name="heart" size={17} /> Đã lưu ({saved.length})
               </h2>
-            </div>
-            {saved.length === 0 ? (
-              <p className="subtle">
-                Chưa có căn nào. Bấm “Lưu” trên thẻ phòng trong khung đề xuất để
-                giữ lại đây.
-              </p>
-            ) : (
-              <div className="personal-list">
-                {saved.map((item) => (
-                  <PersonalRow
-                    key={item.room_id ?? item.id}
-                    item={item}
-                    action={
-                      <button
-                        className="button small outline"
-                        onClick={() => void unsave(item.room_id ?? item.id)}
-                      >
-                        Bỏ lưu
-                      </button>
-                    }
-                  />
-                ))}
+              {/* Sidebar chỉ có một mục "Đã lưu & đã xem"; tab khởi tạo theo route
+                  (/da-luu hoặc /phong-da-xem), chuyển tab là lựa chọn tại chỗ. */}
+              <div
+                className="segmented"
+                role="group"
+                aria-label="Loại danh sách"
+              >
+                <button
+                  className={tab === "saved" ? "choice active" : "choice"}
+                  aria-pressed={tab === "saved"}
+                  onClick={() => setTab("saved")}
+                >
+                  Tin đã lưu
+                </button>
+                <button
+                  className={tab === "viewed" ? "choice active" : "choice"}
+                  aria-pressed={tab === "viewed"}
+                  onClick={() => setTab("viewed")}
+                >
+                  Phòng đã xem
+                </button>
               </div>
-            )}
-          </section>
-          <section className="panel">
-            <div className="section-heading">
-              <h2>
-                <Icon name="eye" size={17} /> Đã xem ({viewed.length})
-              </h2>
             </div>
-            {viewed.length === 0 ? (
-              <p className="subtle">
-                Chưa mở chi tiết căn nào. Lịch sử xem chỉ ghi khi bạn đăng nhập.
-              </p>
-            ) : (
-              <div className="personal-list">
-                {viewed.map((item) => (
-                  <PersonalRow key={item.room_id ?? item.id} item={item} />
-                ))}
-              </div>
-            )}
+            {tab === "saved" &&
+              (saved.length === 0 ? (
+                <p className="subtle">
+                  Chưa có căn nào. Bấm “Lưu” trên thẻ phòng trong khung đề xuất
+                  để giữ lại đây.
+                </p>
+              ) : (
+                <div className="personal-list">
+                  {pagedSaved.items.map((item) => (
+                    <PersonalRow
+                      key={item.room_id ?? item.id}
+                      item={item}
+                      action={
+                        <button
+                          className="button small outline"
+                          onClick={() => void unsave(item.room_id ?? item.id)}
+                        >
+                          Bỏ lưu
+                        </button>
+                      }
+                    />
+                  ))}
+                  <Pager unit="căn" {...pagedSaved.pagerProps} />
+                </div>
+              ))}
+            {tab === "viewed" &&
+              (viewed.length === 0 ? (
+                <p className="subtle">
+                  Chưa mở chi tiết căn nào. Lịch sử xem chỉ ghi khi bạn đăng
+                  nhập.
+                </p>
+              ) : (
+                <div className="personal-list">
+                  {pagedViewed.items.map((item) => (
+                    <PersonalRow key={item.room_id ?? item.id} item={item} />
+                  ))}
+                  <Pager unit="căn" {...pagedViewed.pagerProps} />
+                </div>
+              ))}
           </section>
         </>
       )}

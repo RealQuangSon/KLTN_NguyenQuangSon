@@ -40,7 +40,7 @@ def test_full_api_flow_against_response_schemas(service, monkeypatch):
 def test_all_http_errors_have_safe_envelope_and_request_id(service, monkeypatch):
     with TestClient(create_app(lambda: service), raise_server_exceptions=False) as client:
         for response in (client.get("/auth/me"), client.get("/private-value-does-not-exist"), client.put("/health"),
-                         client.post("/auth/login", json={"username": "renter-a", "password": "private-bad-password"})):
+                         client.post("/auth/login", json={"username": "renter", "password": "private-bad-password"})):
             assert response.status_code in {401, 404, 405}
             assert response.json()["request_id"] == response.headers["X-Request-ID"]
             assert "private" not in response.text and "detail" not in response.json()
@@ -50,7 +50,7 @@ def test_all_http_errors_have_safe_envelope_and_request_id(service, monkeypatch)
             raise RuntimeError("private-internal-token")
 
         monkeypatch.setattr(service, "create_session", broken)
-        failed = client.post("/sessions", headers={"Authorization": "Bearer demo-renter-a"})
+        failed = client.post("/sessions", headers={"Authorization": "Bearer demo-renter"})
         assert failed.status_code == 500 and failed.json()["error"]["code"] == "internal_error"
         assert failed.json()["request_id"] == failed.headers["X-Request-ID"] and "private" not in failed.text
 
@@ -71,20 +71,20 @@ def test_readiness_detects_checkpoint_and_schema_failure(service):
 def test_metrics_and_logs_use_templates_and_hide_sensitive_inputs(service, caplog):
     caplog.set_level(logging.INFO, logger="homematch.api")
     with TestClient(create_app(lambda: service)) as client:
-        renter = {"Authorization": "Bearer demo-renter-a"}
-        admin = {"Authorization": "Bearer demo-admin-a"}
+        renter = {"Authorization": "Bearer demo-renter"}
+        admin = {"Authorization": "Bearer demo-admin"}
         sid = client.post("/sessions", headers=renter).json()["session_id"]
         client.post(f"/sessions/{sid}/messages", headers=renter, json={"text": "Tìm phòng TP.HCM; email private-person@example.com; 5 triệu"})
         client.get("/private-token-in-path?password=secret")
         assert client.get("/admin/metrics", headers=renter).status_code == 403
-        assert client.get("/admin/metrics", headers={"Authorization": "Bearer demo-owner-a"}).status_code == 403
+        assert client.get("/admin/metrics", headers={"Authorization": "Bearer demo-owner2"}).status_code == 403
         metrics = client.get("/admin/metrics", headers=admin)
         assert metrics.status_code == 200
         assert metrics.json()["scope"] == "current_process"
         assert metrics.json()["provider_usage"]["logical_calls"] == 0
         routes = {item["route"] for item in metrics.json()["requests"]}
         assert "/sessions/{session_id}/messages" in routes and "<unmatched>" in routes
-        for private in (sid, "private-person", "5 triệu", "demo-renter-a", "private-token-in-path", "secret"):
+        for private in (sid, "private-person", "5 triệu", "demo-renter", "private-token-in-path", "secret"):
             assert private not in caplog.text and private not in metrics.text
 
 

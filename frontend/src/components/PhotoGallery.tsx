@@ -32,6 +32,14 @@ export function displayPhotos(
 }
 const imageSrc = (photo: DisplayPhoto) =>
   photo.external ? photo.url : mediaSrc(photo.url);
+// Ảnh bìa dạng src tuyệt đối cho nơi dựng DOM ngoài JSX (popup marker trên
+// bản đồ): cùng thứ tự ưu tiên với CoverPhoto — ảnh chủ nhà trước, ảnh ngoài.
+export function coverPhotoSrc(
+  item: PhotoItem | undefined | null,
+): string | null {
+  const first = displayPhotos(item)[0];
+  return first ? imageSrc(first) : null;
+}
 export function CoverPhoto({
   item,
   title,
@@ -185,7 +193,7 @@ export function PhotoGallery({
     </figure>
   );
 }
-// crawl.md B-3: video Cloudflare Stream của tin gốc, URL .m3u8 không phát
+// Video Cloudflare Stream của tin gốc, URL .m3u8 không phát
 // trực tiếp được trên đa số trình duyệt. ĐÃ THỬ nhúng iframe Cloudflare Stream
 // (UID từ URL thật) trên trình duyệt 07/11/2026: player trả "This video has
 // not been configured to be allowed on this domain" — Chợ Tốt không cho phép

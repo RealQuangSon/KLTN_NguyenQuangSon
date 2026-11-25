@@ -8,7 +8,7 @@ from backend.app.copilot import marketing_post, price_advice
 from backend.app.main import create_app
 from backend.app.models import Actor, DomainError
 
-OWNER = Actor(id="owner-a", role="owner")
+OWNER = Actor(id="owner2", role="owner")
 
 
 def test_marketing_posts_use_only_listing_facts_per_channel(service):
@@ -49,12 +49,12 @@ def test_assistant_routes_questions_and_stays_within_own_rooms(service):
     with pytest.raises(DomainError):
         service.marketing_post(Actor(id="owner-b", role="owner"), "demo-01", "facebook")
     with pytest.raises(DomainError):
-        service.landlord_assistant(Actor(id="renter-a", role="renter"), "giá?")
+        service.landlord_assistant(Actor(id="renter", role="renter"), "giá?")
 
 
 def test_copilot_routes(service):
     with TestClient(create_app(lambda: service)) as client:
-        owner = {"Authorization": "Bearer demo-owner-a"}
+        owner = {"Authorization": "Bearer demo-owner2"}
         post = client.post("/landlord/rooms/demo-01/marketing", headers=owner, json={"channel": "zalo"})
         assert post.status_code == 200 and post.json()["channel"] == "zalo"
         assert client.post("/landlord/rooms/demo-01/marketing", headers=owner,

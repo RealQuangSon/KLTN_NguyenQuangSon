@@ -29,6 +29,22 @@ BAND_TRADEOFFS = {
 }
 
 
+# Tài khoản chủ nhà demo cũ mà migration 24 đã xóa. Snapshot crawl trước 15/11
+# vẫn ghi các mã này, nên tin của họ về chủ nhà dùng thử theo thành phố, cùng
+# quy tắc với landlord_for của data.generate và data.crawl_chotot.
+LEGACY_LANDLORDS = frozenset({"owner-a", "owner-b", "owner-c", "owner-d"})
+
+
+def trial_landlord_for(city: str) -> str:
+    return "owner1" if city == "Hà Nội" else "owner2"
+
+
+def with_current_landlord(room: Room) -> Room:
+    if room.landlord_id not in LEGACY_LANDLORDS:
+        return room
+    return room.model_copy(update={"landlord_id": trial_landlord_for(room.city)})
+
+
 # Landlord free text that the public listing page shows; contact details are
 # masked once at write time (FC-01/F4) so no read path can leak them.
 LISTING_TEXT_FIELDS = ("features_text", "house_rules", "description")
@@ -110,7 +126,7 @@ class Catalog:
         payload = json.loads(self.path.read_text(encoding="utf-8"))
         by_id: dict[str, Room] = {}
         for value in payload["rooms"]:
-            room = Room.model_validate(value)
+            room = with_current_landlord(Room.model_validate(value))
             previous = by_id.get(room.id)
             if previous and previous.revision == room.revision and previous != room:
                 raise ValueError("Conflicting room records with the same ID and revision")
@@ -354,9 +370,50 @@ class StoredCatalog(Catalog):
         # bumps the version, so a matching version means the rows are unchanged. Only
         # JSON is cached; each call builds fresh Room objects, so callers never share state.
         self._payloads: tuple[str, list[str]] | None = None
+        # Lỗi 5 (15/11): một lượt chat đọc rooms() ~6 lần (ngữ cảnh, lớp hỏi lại,
+        # xếp hạng, criteria…) — parse lại toàn kho mỗi lần tốn CPU thuần (kho cào
+        # ~4k tin). Cache bản Room đã parse THEO VERSION; import_rooms vô hiệu hóa.
+        # Trả bản sao LIST mới mỗi lần nên caller vẫn không chia sẻ list mutable
+        # (các Room bên trong được codebase coi là bất biến — không ai ghi tại chỗ).
+        self._parsed: tuple[str, list[Room]] | None = None
         with self.repo.guard():
-            if not self._load_rooms():
+            stored = self._load_rooms()
+            if not stored:
                 self.import_rooms((initial or Catalog()).rooms())
+            else:
+                self._release_legacy_landlords(stored)
+
+    def _release_legacy_landlords(self, rooms: list[Room]) -> None:
+        """Move rooms of the retired demo landlords to the trial landlord of their city.
+
+        A normalization, not an edit: the revision stays, so re-importing the same old
+        snapshot (remapped by Catalog.rooms) stays a no-op. One bulk UPDATE per target
+        keeps it to a few round trips on hosted PostgreSQL."""
+        targets: dict[str, list[str]] = {}
+        for room in rooms:
+            if room.landlord_id in LEGACY_LANDLORDS:
+                targets.setdefault(trial_landlord_for(room.city), []).append(room.id)
+        if not targets:
+            return
+        payload = ("jsonb_set(payload_json::jsonb,'{landlord_id}',to_jsonb(?::text))::text"
+                   if self.repo.db.postgres else "json_set(payload_json,'$.landlord_id',?)")
+        # Runs inside the caller's guard() transaction.
+        for landlord_id, room_ids in targets.items():
+            for start in range(0, len(room_ids), 500):
+                chunk = room_ids[start:start + 500]
+                self.repo.db.execute(
+                    f"UPDATE hm_rooms SET payload_json={payload} "
+                    f"WHERE id IN ({','.join('?' * len(chunk))})", (landlord_id, *chunk))
+        self._store_version()
+
+    def _store_version(self) -> None:
+        # Uncached: the rows just changed but the stored version has not been bumped yet.
+        self._payloads = None
+        self._parsed = None
+        values = [room.model_dump(mode="json") for room in self._load_rooms()]
+        encoded = json.dumps(values, sort_keys=True, ensure_ascii=False).encode()
+        version = hashlib.sha256(encoded).hexdigest()
+        self.repo.db.execute("UPDATE hm_catalog_meta SET version=? WHERE id='catalog'", (version,))
 
     def _load_payloads(self) -> list[str]:
         return [row["payload_json"] for row in
@@ -369,9 +426,13 @@ class StoredCatalog(Catalog):
         # Hosted PostgreSQL makes the full read costly (2.5 MB per call for ~2,800 rooms);
         # the version probe is one small row.
         version = self.version
+        if self._parsed is not None and self._parsed[0] == version:
+            return list(self._parsed[1])
         if self._payloads is None or self._payloads[0] != version:
             self._payloads = (version, self._load_payloads())
-        return [Room.model_validate_json(payload) for payload in self._payloads[1]]
+        parsed = [Room.model_validate_json(payload) for payload in self._payloads[1]]
+        self._parsed = (version, parsed)
+        return list(parsed)
 
     @property
     def version(self) -> str:
@@ -392,12 +453,7 @@ class StoredCatalog(Catalog):
                 self.repo.db.execute("INSERT INTO hm_rooms(id,revision,payload_json) VALUES(?,?,?) "
                                      "ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,payload_json=excluded.payload_json",
                                      (room.id, room.revision, room.model_dump_json()))
-            # Uncached: the rows just changed but the stored version has not been bumped yet.
-            self._payloads = None
-            values = [room.model_dump(mode="json") for room in self._load_rooms()]
-            encoded = json.dumps(values, sort_keys=True, ensure_ascii=False).encode()
-            version = hashlib.sha256(encoded).hexdigest()
-            self.repo.db.execute("UPDATE hm_catalog_meta SET version=? WHERE id='catalog'", (version,))
+            self._store_version()
         return self.version
 
     def room(self, room_id: str) -> Room:

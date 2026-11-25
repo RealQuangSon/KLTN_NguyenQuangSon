@@ -24,22 +24,25 @@ from .agent_budget import SessionTurnBudget
 from .agent_capability import Resource, require, require_session_role
 from .agent_guard import (PROVIDER_FALLBACK_CODES, mention_room_id,
                           provider_fallback_reply, quarantine_reply, redact, redact_tree,
-                          resolve_room_reference, screen_injection, viewing_intent,
+                          resolve_model_room_ref, resolve_room_reference, screen_injection,
+                          viewing_intent,
                           viewing_prep_missing_room_reply)
 from .agent_provenance import stamp
 from .agent_loop import (apply_explicit_budget, SUMMARY_SYSTEM_PROMPT, SAFE_REPLY, confirm_data, confirm_template, fast_path_reply,
-                         run_turn as run_agent_turn)
+                         no_match_scope, relax_option_count, run_turn as run_agent_turn, SPECIFIC_ROOM_REFERENCE,
+                         _relaxation_clarification)
 from .agents import ToolBox
-from . import advisor, auth, automation, conversations, copilot, handbook, input_analyst, listings, media, memory, notifications, pms, promotions, trust
+from . import advisor, auth, automation, conversations, copilot, geocode, handbook, input_analyst, listings, media, memory, notifications, pms, promotions, routes_map, trust
 from .catalog import Catalog, StoredCatalog
 from .catalog import distance_m as catalog_distance_m
-from .costs import estimate_cost, estimate_with_affordability
+from .costs import estimate_cost, estimate_with_affordability, income_housing_levels
 from .interpreter import (DemoInterpreter, OpenAIInterpreter, Interpreter, budget_hint, fixed_intent,
-                          make_interpreter, redact, relative_budget, rent_budget_hint)
+                          income_amount, income_question, make_interpreter, redact, relative_budget,
+                          rent_budget_hint)
 from .locations import city_for_area, resolve_place
-from .models import (AMENITY_KEYS, DEFAULT_LANDLORD, Actor, CatalogStatus, CostRequest, Destination,
+from .models import (AMENITY_KEYS, Actor, CatalogStatus, CostRequest, Destination,
                      DomainError, DraftPatch, DraftProfile, Profile, RoomInput, RoomUpdate, Scenario,
-                     SimulationRequest)
+                     SimulationRequest, redact_destination)
 from .repository import Repository, run_status_for
 from .organizations import record_audit
 from .operations import Metrics
@@ -55,9 +58,9 @@ CHAT_RETENTION_DAYS = int(os.getenv("HOMEMATCH_CHAT_RETENTION_DAYS", "90"))
 # so the column stays). It backs no permission decision: sessions are authorized
 # per record via owner_id (renter) and room ownership (landlord). Fixed value is
 # a demo rule; production would use a trusted assignment table.
-LEGACY_ASSIGNEE = "manager-a"
+LEGACY_ASSIGNEE = "unassigned"
 
-# crawl.md E-01: vòng đời lịch xem — nguồn duy nhất của các chuyển trạng thái
+# Vòng đời lịch xem — nguồn duy nhất của các chuyển trạng thái
 # hợp lệ. {from: {to: vai trò được phép}}. Vai trò: "renter" (người thuê),
 # "handler" (chủ nhà với tin của chủ nhà, admin với tin điều phối).
 VIEWING_TRANSITIONS: dict[str, dict[str, str]] = {
@@ -76,6 +79,15 @@ VIEWING_TRANSITIONS: dict[str, dict[str, str]] = {
 VIEWING_STATUSES = ("requested", "confirmed", "declined", "cancelled",
                     "reschedule_proposed", "completed", "no_show")
 TIME_SLOTS = ("morning", "afternoon", "evening")
+
+
+def _time_slot_for(moment: str | datetime) -> str:
+    """Khung giờ (giờ Việt Nam, UTC+7) của một thời điểm có múi giờ."""
+    value = datetime.fromisoformat(moment) if isinstance(moment, str) else moment
+    hour = value.astimezone(timezone(timedelta(hours=7))).hour
+    return "morning" if hour < 12 else "afternoon" if hour < 17 else "evening"
+
+
 # E-05: lý do báo cáo tin — danh sách cố định, câu chữ tự viết.
 REPORT_REASONS = ("scam_suspect", "already_rented", "wrong_info", "duplicate",
                   "contact_missing", "other")
@@ -126,8 +138,12 @@ class HomeMatchService:
     def __init__(self, db_path: str | Path = ".local/homematch.sqlite",
                  catalog: Catalog | None = None, interpreter: Interpreter | None = None):
         self.lock = RLock()
-        # crawl.md E-04: kiểm chứng tin cache theo catalog.version.
+        # Kiểm chứng tin cache theo catalog.version.
         self._trust = trust.TrustChecker()
+        # MP-01: chỉ đường căn → điểm neo (cache/hạn mức trong process).
+        self.router = routes_map.Router.from_env()
+        # LOC-001: tra địa danh ngoài danh mục (HOMEMATCH_GEOCODER; test đặt off).
+        self.geocoder = geocode.Geocoder.from_env()
         self.metrics = Metrics()
         self.repo = None
         self.checkpoint_connection = None
@@ -196,6 +212,15 @@ class HomeMatchService:
         # — bộ nhớ tiến trình; mất khi khởi động lại chỉ làm analyst thiếu ngữ
         # cảnh câu hỏi chờ, không gây lỗi (test riêng).
         self._pending_clarification: dict[str, dict] = {}
+        # LOC-001: điểm find_place đã tra trong phiên (place_id → điểm + câu hỏi gốc đã
+        # bỏ PII) để update_needs(destination_place_id) ghi đúng tọa độ đó; mất khi
+        # khởi động lại thì model gọi find_place lại.
+        self._resolved_places: dict[str, dict[str, dict]] = {}
+        # đồng ý gửi tọa độ điểm neo thiết bị (đã làm tròn 3 chữ số) ra
+        # dịch vụ chỉ đường ngoài của từng phiên — bộ nhớ tiến trình giống
+        # _pending_clarification. Mất khi khởi động lại thì coi như KHÔNG đồng ý
+        # (mặc định an toàn: chỉ chim bay, không gọi nguồn ngoài).
+        self._route_consent: dict[str, bool] = {}
         self.chat_graph = self._build_chat_graph()
         self.recommendation_graph = self._build_recommendation_graph()
 
@@ -291,12 +316,51 @@ class HomeMatchService:
             require("session:read", actor)
             return self._session_projection(self._session_for(session_id, actor, "renter"))
 
+    def chat_history(self, actor: Actor, limit: int = 30) -> dict:
+        """Danh sách cuộc trò chuyện AI của người thuê, dựng từ bản ghi đã che PII (không cần bảng mới)."""
+        with self.lock:
+            require("session:read", actor)
+            self._role(actor, "renter")
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=CHAT_RETENTION_DAYS)).isoformat()
+            rows = self.repo.db.execute(
+                "SELECT t.session_id AS session_id,"
+                "SUM(CASE WHEN t.speaker='user' THEN 1 ELSE 0 END) AS turns,"
+                "MIN(t.created_at) AS started_at,MAX(t.created_at) AS last_at,"
+                "(SELECT f.text FROM hm_chat_transcripts f WHERE f.session_id=t.session_id AND f.user_id=? "
+                "AND f.speaker='user' AND f.created_at>=? ORDER BY f.created_at LIMIT 1) AS first_text "
+                "FROM hm_chat_transcripts t JOIN hm_sessions s ON s.id=t.session_id "
+                "WHERE s.owner_id=? AND t.user_id=? AND t.created_at>=? "
+                "GROUP BY t.session_id ORDER BY last_at DESC LIMIT ?",
+                (actor.id, cutoff, actor.id, actor.id, cutoff, limit))
+            items = []
+            for row in rows:
+                title = " ".join((row["first_text"] or "").split())
+                if len(title) > 80:
+                    title = title[:80].rstrip() + "…"
+                items.append({"session_id": row["session_id"], "title": title or "Cuộc trò chuyện",
+                              "turns": int(row["turns"] or 0), "started_at": row["started_at"],
+                              "last_at": row["last_at"]})
+            return {"retention_days": CHAT_RETENTION_DAYS, "items": items}
+
+    def chat_transcript(self, actor: Actor, session_id: str) -> dict:
+        """Nội dung một cuộc trò chuyện cũ của chính người thuê (đã che PII, không kèm intent/agent)."""
+        with self.lock:
+            require("session:read", actor)
+            self._session_for(session_id, actor, "renter")
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=CHAT_RETENTION_DAYS)).isoformat()
+            rows = self.repo.db.execute(
+                "SELECT speaker,text,created_at FROM hm_chat_transcripts WHERE session_id=? AND user_id=? "
+                "AND created_at>=? ORDER BY created_at,speaker DESC", (session_id, actor.id, cutoff))
+            return {"session_id": session_id, "retention_days": CHAT_RETENTION_DAYS,
+                    "messages": [{"role": row["speaker"], "text": row["text"], "created_at": row["created_at"]}
+                                 for row in rows]}
+
     def message(self, session_id: str, actor: Actor, text: str, cost_input: CostRequest | None = None,
                 emit=None, workspace: dict | None = None, turn_id: str | None = None) -> dict:
         """Retry cùng khóa trả lại lượt đã hoàn tất; quyền luôn kiểm trước cache.
 
         Một transaction bao toàn bộ thay đổi nghiệp vụ và cache; checkpoint không
-        phải nguồn quyết định quyền hay công bố. Chỉ một worker như CLAUDE.md.
+        phải nguồn quyết định quyền hay công bố. Chỉ chạy một API worker.
         """
         turn_id = turn_id or str(uuid4())
         uuid_key = re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", turn_id)
@@ -359,6 +423,12 @@ class HomeMatchService:
             explicit_route = fixed_intent(text)
             usage = {"logical_calls": 0, "tokens": None, "mode": self.interpreter.mode}
             provider_error = None
+            # mốc ĐẦU lượt — câu báo "chưa dùng được chỗ
+            # của khách" chỉ xuất hiện ở lượt có lý do (vừa đổi destination_kind
+            # sang current/personal, hoặc vừa công bố run ĐẦU TIÊN của phiên).
+            kind_at_start = DraftProfile.model_validate_json(session["draft_json"]).destination_kind
+            run_at_start = session["active_run_id"]
+            confirmed_at_start = bool(session["profile_json"])
             # HN-13.3.6 (lỗi lộ qua đo: fast_path "calls=4" trong 1,8 s): last_usage
             # của lượt TRƯỚC còn nằm trên interpreter — reset đầu mỗi lượt để
             # usage/trace/metrics không bị nhân số của lượt cũ.
@@ -380,6 +450,10 @@ class HomeMatchService:
                     response, provenance = quarantine_reply(scan), stamp("deterministic-engine", "injection_quarantine")
                 elif explicit_route is None and viewing_intent(text):
                     response, provenance = self._prepare_viewing(session, actor, text)
+                elif explicit_route is None and income_question(text):
+                    # 18/11: "lương X thì nên thuê bao nhiêu?" — trả lời tất định (0 LLM,
+                    # số lương không vào prompt hay nháp), không đọc lương thành trần thuê.
+                    response, provenance = self._income_advice_reply(session_id, text)
                 elif isinstance(self.interpreter, OpenAIInterpreter):
                     # HN-01 đường tắt tất định + HN-13 multi-agent. HOMEMATCH_INPUT_ANALYST=off
                     # giữ nguyên hành vi một vòng lặp cũ (test cũ, cassette không đổi);
@@ -393,7 +467,16 @@ class HomeMatchService:
                     #   fast path — câu luật "hiểu đủ" không được chặn model); clear → thử
                     #   fast path trước, không được thì agent nhu cầu.
                     # Mọi đường đều không chết giữa chừng.
-                    if input_analyst.analyst_mode() == "off":
+                    # Lỗi 3a (15/11): câu hỏi về MỘT CĂN cụ thể ("căn đầu tiên tính ra
+                    # bao nhiêu…") khi phiên CHƯA có kết quả → trả lời tất định: nói rõ
+                    # chưa có danh sách, giữ chip câu hỏi đang treo; KHÔNG vào vòng LLM
+                    # (trước đây model tự tìm + công bố, bỏ quên câu hỏi của khách).
+                    has_results = bool(self.results(session_id, actor)["results"])
+                    if explicit_route is None and not has_results \
+                            and SPECIFIC_ROOM_REFERENCE.search(text):
+                        response, provenance = self._room_reference_without_results_reply(session_id)
+                        input_analysis = None
+                    elif input_analyst.analyst_mode() == "off":
                         fast = (self._explicit_fast_path(session, actor, text, explicit_route,
                                                          cost_input)
                                 if explicit_route else
@@ -412,13 +495,16 @@ class HomeMatchService:
                             response, provenance = self._explicit_fast_path(session, actor, text,
                                                                             explicit_route, cost_input)
                             input_analysis = {"route": "finance" if cost_input is not None else "other",
-                                              "clarity": "clear", "decided_by": "rules"}
+                                              "clarity": "clear", "decided_by": "rules",
+                                              # mọi đường input_analysis
+                                              # cùng hình một khóa place_ref (giá trị luật).
+                                              "place_ref": input_analyst.rules_place_ref(text)}
                         else:
-                            has_results = bool(self.results(session_id, actor)["results"])
                             if explicit_route in {"simulate_finance", "calculate_cost"}:
                                 # Ý định rõ đã xác định route — luật quyết, không tốn lượt Jev.
                                 input_analysis = {"route": "finance", "clarity": "clear",
-                                                  "decided_by": "rules"}
+                                                  "decided_by": "rules",
+                                                  "place_ref": input_analyst.rules_place_ref(text)}
                                 if not has_results:
                                     response, provenance = self._explicit_fast_path(
                                         session, actor, text, explicit_route, cost_input)
@@ -427,38 +513,39 @@ class HomeMatchService:
                                         session, actor, text, explicit_route, cost_input,
                                         emit=emit, turn_id=turn_id, role="finance")
                             else:
-                                input_analysis = input_analyst.analyze(
-                                    self, session, text, has_results=has_results,
-                                    phase=self._agent_phase(session_id), emit=emit)
-                                route = input_analysis["route"]
-                                if route == "finance" and not has_results:
-                                    # HN-13.2: chưa có kết quả mà câu KHÔNG phải ý định
-                                    # vay/tính chi phí rõ (đã xử lý ở nhánh explicit) →
-                                    # agent nhu cầu đọc mức tiền từ câu khách, không
-                                    # về graph (trước đây trả needs_results/hỏi lại).
-                                    response, provenance, provider_error = self._agent_loop_turn(
-                                        session, actor, text, explicit_route, cost_input,
-                                        emit=emit, turn_id=turn_id, role="needs")
+                                # Lỗi 5 (15/11): fast path chạy TRƯỚC analyst — câu
+                                # luật hiểu trọn vẹn đi đường tắt 0 Jev/0 LLM (đo live
+                                # 15/11: 27,7 s vì vòng lặp nuốt câu này). Câu luật
+                                # không hiểu đủ → analyst định tuyến như cũ.
+                                fast = fast_path_reply(self, session, actor, text,
+                                                       emit=emit, turn_id=turn_id)
+                                if fast is not None:
+                                    response, provenance = fast
                                 else:
-                                    if route == "ranking" and not has_results:
-                                        role = "needs"  # chưa có kết quả → sang agent nhu cầu
-                                    elif (route in {"needs", "other"}
-                                          and input_analysis["clarity"] == "clear"):
-                                        fast = fast_path_reply(self, session, actor, text,
-                                                               emit=emit, turn_id=turn_id)
-                                        if fast is not None:
-                                            response, provenance = fast
-                                            role = None  # luật đã chốt, không vào vòng lặp
-                                        else:
-                                            role = "needs"
+                                    input_analysis = input_analyst.analyze(
+                                        self, session, text, has_results=has_results,
+                                        phase=self._agent_phase(session_id), emit=emit)
+                                    route = input_analysis["route"]
+                                    if route in {"needs", "other", "finance", "ranking"} \
+                                            and not has_results:
+                                        # HN-13.2: chưa có kết quả mà câu KHÔNG phải ý định
+                                        # vay/tính chi phí rõ (đã xử lý ở nhánh explicit) →
+                                        # agent nhu cầu đọc mức tiền từ câu khách, không
+                                        # về graph (trước đây trả needs_results/hỏi lại).
+                                        role = "needs"
                                     else:
                                         # finance đã có kết quả · ranking đã có kết quả ·
                                         # needs/other mơ hồ (clarity=reason)
                                         role = {"finance": "finance", "ranking": "ranking"}.get(route, "needs")
                                     if role is not None:
+                                        # chỉ quyết định place_ref của Jev (đủ xác
+                                        # suất) mới thắng luật; fallback về luật thì None.
+                                        place_ref = (input_analysis.get("place_ref")
+                                                     if input_analysis.get("decided_by") == "jev" else None)
                                         response, provenance, provider_error = self._agent_loop_turn(
                                             session, actor, text, explicit_route, cost_input,
-                                            emit=emit, turn_id=turn_id, role=role)
+                                            emit=emit, turn_id=turn_id, role=role,
+                                            place_ref=place_ref)
                         if input_analysis is not None:
                             # HN-13: input_analysis kèm mọi đường khi analyst bật;
                             # agents do _agent_loop_turn gắn [role], các đường luật
@@ -512,10 +599,57 @@ class HomeMatchService:
             }
             self._write_agent_turn_record(session_id, actor, response, usage, provider_error,
                                           provenance)
-            self._limit_clarification_response(session_id, response)
+            # Câu trả lời "chưa có danh sách" chỉ NHẮC LẠI câu hỏi đang treo, không phải
+            # câu hỏi mới: không đếm và không để giới hạn câu hỏi tự xác nhận hồ sơ
+            # (đo live 15/11: lượt này bị biến thành một lượt tìm, câu của khách bị bỏ).
+            # Câu tư vấn mức thuê theo lương TRẢ LỜI câu hỏi của khách, kèm chip mức tiền
+            # để đi tiếp — không phải câu phỏng vấn nên cũng không đếm.
+            if (provenance or {}).get("outcome") not in {"no_results_yet", "income_advice"}:
+                self._limit_clarification_response(session_id, response)
+            self._append_own_place_notice(session_id, response, kind_at_start=kind_at_start,
+                                          run_at_start=run_at_start,
+                                          confirmed_at_start=confirmed_at_start)
             self._store_transcript(session_id, actor.id, text, response, provenance, scan.flagged)
             return {**self.session(session_id, actor), **response, "turn_id": turn_id, "usage": usage,
                     "provenance": provenance, "guard": guard}
+
+    def _append_own_place_notice(self, session_id: str, response: dict, *,
+                                 kind_at_start: str | None, run_at_start,
+                                 confirmed_at_start: bool) -> None:
+        """câu báo "chưa dùng được chỗ của khách" chỉ
+        xuất hiện ở lượt CÓ LÝ DO — (a) lượt vừa công bố run ĐẦU TIÊN của phiên
+        (chưa có hồ sơ đã xác nhận ở đầu lượt) với kết quả published/no_match,
+        hoặc (b) lượt vừa đổi destination_kind sang current/personal. Các lượt
+        sau đó — kể cả re-rank vì khách thêm ý khác ("rẻ nhất") — không lặp lại.
+        Nối vào cuối message (kể cả khi message đã có chữ của agent); mỗi message
+        chứa câu này nhiều nhất một lần. Đặt cuối `_message_once` để phủ mọi
+        đường ra câu chốt (demo graph, vòng agent, graph fallback)."""
+        draft = self._draft(session_id)
+        if draft.destination is not None or draft.destination_kind not in {"current", "personal"}:
+            return
+        if (response.get("clarification") or {}).get("field") == "destination":
+            return  # lượt đang hỏi đúng điểm neo — không lặp lại
+        run_created = (self.repo.session(session_id)["active_run_id"] or None) != (run_at_start or None)
+        if not (draft.destination_kind != kind_at_start
+                or (run_created and not confirmed_at_start
+                    and response.get("status") in {"published", "no_match"})):
+            return
+        session = self.repo.session(session_id)
+        confirmed = Profile.model_validate_json(session["profile_json"]) if session["profile_json"] else None
+        area = draft.area or (confirmed.area if confirmed else None)
+        city = draft.city or (confirmed.city if confirmed else None)
+        if area:
+            sentence = (f"Mình chưa biết chính xác chỗ đó nên đang tìm trong {area}; "
+                        "gõ tên trường, công ty hoặc địa chỉ để mình tìm quanh đó.")
+        elif city:
+            sentence = (f"Mình chưa biết vị trí của bạn nên đang tìm trong cả {city}; "
+                        "gõ tên trường, công ty hoặc địa chỉ để mình tìm quanh đó.")
+        else:
+            return
+        message = response.get("message") or ""
+        if sentence in message:
+            return  # mỗi message chứa câu báo nhiều nhất một lần
+        response["message"] = f"{message} {sentence}".strip() if message else sentence
 
     def _explicit_fast_path(self, session: dict, actor: Actor, text: str,
                             explicit_route: str, cost_input: CostRequest | None):
@@ -538,14 +672,18 @@ class HomeMatchService:
     def _agent_loop_turn(self, session: dict, actor: Actor, text: str,
                          explicit_route: str | None, cost_input: CostRequest | None,
                          *, emit, turn_id: str | None, role: str,
-                         attach_agents: bool = True) -> tuple[dict, dict, str | None]:
+                         attach_agents: bool = True,
+                         place_ref: str | None = None) -> tuple[dict, dict, str | None]:
         """HN-13: vòng lặp agent với role chuyên trách; model lỗi/hết phiên → rơi
         về graph cũ (graph_fallback), không bao giờ chết giữa chừng. Trả thêm mã
         lỗi provider (nếu có) cho guard của lượt. `attach_agents=False` dùng cho
-        nhánh off — DTO giữ đúng hình một vòng lặp cũ, không thêm trường nào."""
+        nhánh off — DTO giữ đúng hình một vòng lặp cũ, không thêm trường nào.
+        `place_ref` (Jev quyết, chỉ truyền khi decided_by=="jev") thắng
+        luật khi đọc destination_kind từ câu khách."""
         try:
             response, provenance = run_agent_turn(self, session, actor, text,
-                                                  emit=emit, turn_id=turn_id, role=role)
+                                                  emit=emit, turn_id=turn_id, role=role,
+                                                  place_ref=place_ref)
             return ({**response, "agents": [role]} if attach_agents else response), provenance, None
         except DomainError as error:
             if error.code not in PROVIDER_FALLBACK_CODES:
@@ -618,15 +756,69 @@ class HomeMatchService:
         if room_id is None:
             if mention_room_id(text):
                 raise DomainError("not_visible", "Phòng chưa thuộc kết quả hiện tại.", 403)
-            return viewing_prep_missing_room_reply(), stamp("deterministic-engine", "viewing_prepare",
-                                                            outcome="missing_room_reference")
+            return (viewing_prep_missing_room_reply(has_results=bool(result["results"])),
+                    stamp("deterministic-engine", "viewing_prepare", outcome="missing_room_reference"))
+        # Lỗi 2c (15/11): trả TÊN phòng (qua mask_address như đầu ra công khai)
+        # thay vì mã phòng — mã "chotot-<số>" bị mask_pii coi là SĐT và khách thấy
+        # "chotot-[số đã che]". Mã phòng không bao giờ vào câu trả lời nữa.
+        room = next((item for item in self.catalog.rooms() if item.id == room_id), None)
+        from .listings import mask_address
+        display = "căn bạn chọn"
+        if room is not None:
+            display = mask_address(room.title.split(". ")[0], room.street) or display
         reply = {"intent": "find_room", "status": "needs_clarification",
-                 "questions": [f"Phòng {room_id} đang trong bản gợi ý hiện tại (phiên bản hồ sơ "
-                               f"{result['profile_version']}). Chọn thời gian xem có múi giờ trong tương lai "
-                               "rồi gửi biểu mẫu yêu cầu lịch xem; chat không tự giữ phòng."],
-                 "message": f"Đã kiểm tra phòng {room_id} đủ điều kiện đặt lịch; chưa tạo lịch xem."}
+                 "questions": [f"{display} đang trong gợi ý hiện tại của bạn. Chọn giờ muốn xem rồi "
+                               "gửi biểu mẫu yêu cầu lịch xem; chat không tự giữ phòng."],
+                 "message": f"Đã kiểm tra {display} đủ điều kiện đặt lịch; mình chưa tạo lịch xem. "
+                            "Bạn chọn giờ rồi gửi biểu mẫu yêu cầu xem nhé — mình đã mở sẵn căn đó bên cạnh.",
+                 "view": "detail", "view_payload": {"room_id": room_id}}
         return reply, stamp("deterministic-engine", "viewing_prepare", room_id=room_id,
                             run_id=result["run_id"], outcome="prepared")
+
+    def _income_advice_reply(self, session_id: str, text: str) -> tuple[dict, dict]:
+        """18/11: khách nêu số tiền kiếm được và hỏi nên thuê mức nào. Trả ngưỡng tham
+        khảo do costs.income_housing_levels tính (≤30% phù hợp, ≤40% cân nhắc) cùng
+        chip "Tổng tháng dưới X" — khách bấm mới thành trần. Không ghi nháp/hồ sơ,
+        không gọi LLM, câu trả lời không nhắc lại số tiền khách kiếm được."""
+        from . import clarify as clarify_layer
+        from .clarify import _budget_level_label
+        levels = income_housing_levels(income_amount(text))
+        safe, upper = levels["phu_hop"], levels["can_nhac"]
+        message = ("Mình không lấy khoản bạn kiếm được làm trần tiền thuê. Theo quy tắc tham khảo "
+                   "(không phải chuẩn bắt buộc), tổng chi phí nhà mỗi tháng — tiền thuê cộng điện, "
+                   f"nước và các phí — nên ở mức 30% khoản đó trở xuống, tức dưới {_budget_level_label(safe)}; "
+                   f"từ 30% đến 40% (tới {_budget_level_label(upper)}) là cần cân nhắc; trên 40% dễ thiếu "
+                   "cho các chi tiêu khác. Bạn chọn một mức bên dưới hoặc tự nêu mức tổng tháng muốn tìm.")
+        question = "Bạn muốn tìm phòng với mức tổng tháng nào?"
+        options = clarify_layer.income_budget_options(self, session_id, [safe, upper])
+        clarification = {"id": "clarify-budget_cap", "field": "budget_cap", "question": question,
+                         "reason": None, "question_source": "rules", "options": options,
+                         "decided_by": "rules"} if options else None
+        response = {"intent": "find_room", "status": "needs_clarification", "message": message,
+                    "questions": [question], "clarification": clarification, "agents": []}
+        return response, stamp("deterministic-engine", "income_advice", outcome="income_advice")
+
+    def _room_reference_without_results_reply(self, session_id: str) -> tuple[dict, dict]:
+        """Lỗi 3a (15/11): khách hỏi về "căn đầu tiên/căn này" khi phiên CHƯA có kết
+        quả — trả lời tất định (0 lần gọi LLM, không xác nhận hồ sơ, không tìm):
+        nói rõ chưa có danh sách và GIỮ chip của câu hỏi đang treo."""
+        pending = self._pending_clarification.get(session_id)
+        message = ("Mình chưa có danh sách phòng nào trong phiên này nên chưa tính chi tiết cho căn nào "
+                   "được. Bạn trả lời câu mình đang hỏi bên dưới (hoặc bổ sung nhu cầu) rồi mình tìm đã nhé.")
+        questions = [pending["question"]] if pending and pending.get("question") else None
+        clarification = None
+        if pending and pending.get("field"):
+            from . import clarify as clarify_layer
+            try:
+                built = clarify_layer.build_clarification(self, session_id, field=pending["field"])
+                clarification = clarify_layer.to_dto(built, "rules") if built else None
+            except Exception:
+                clarification = None
+        response = {"intent": "find_room", "status": "needs_clarification",
+                    "message": message, "questions": questions,
+                    "clarification": clarification, "agents": []}
+        return response, stamp("deterministic-engine", "room_reference",
+                               outcome="no_results_yet")
 
     # --- AG-13: helpers cho vòng lặp agent ---
 
@@ -674,14 +866,19 @@ class HomeMatchService:
             self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
                                    expected_revision)
 
-    def _apply_chat_extras(self, session_id: str, text: str) -> bool:
+    def _apply_chat_extras(self, session_id: str, text: str, place_ref: str | None = None) -> bool:
         """UX-01/03: cận dưới tiền thuê ("3 đến 4 triệu"), diện tích mong muốn và
         "rẻ nhất" đọc TẤT ĐỊNH từ câu khách (model không ghi), trạng thái inferred.
-        Trả True nếu nháp có đổi."""
+        `place_ref` là quyết định của Jev ("current"/"personal"/"named"/
+        "none"), thắng luật khi ghi destination_kind cho chỗ khách nhắc. Trả True
+        nếu nháp có đổi."""
         with self.repo.guard():
             session = self.repo.session(session_id)
             draft = DraftProfile.model_validate_json(session["draft_json"])
-            touched = self._text_needs_into_draft(draft, self._parse_text_needs(text))
+            extras = self._parse_text_needs(text, place_ref)
+            if extras.get("must") or extras.get("drop"):
+                self._seed_must(session, draft)
+            touched = self._text_needs_into_draft(draft, extras, place_ref)
             if not touched:
                 return False
             evidence = f"chat:r{session['draft_revision'] + 1}"
@@ -693,17 +890,58 @@ class HomeMatchService:
         return True
 
     @staticmethod
-    def _parse_text_needs(text: str) -> dict:
-        from .interpreter import (area_m2_hint, budget_approx_hint, budget_range, budget_scope_hint,
-                                  wants_cheapest)
-        return {"range": budget_range(text), "area": area_m2_hint(text), "cheapest": wants_cheapest(text),
-                "approx": budget_approx_hint(text),
-                "scope": budget_scope_hint(text)}
+    def _seed_must(session: dict, draft: DraftProfile, removed: set[str] | None = None) -> set[str]:
+        """Nháp chưa giữ tiện ích bắt buộc nào nhưng hồ sơ đã xác nhận có (vd. chọn ở
+        form) → chép sang nháp trước khi chat thêm/bỏ, để nháp là nguồn chính. Bỏ
+        `removed` khỏi danh sách; trả các trường nháp vừa đổi."""
+        if not draft.must_amenities and session["profile_json"]:
+            draft.must_amenities = list(Profile.model_validate_json(session["profile_json"]).must_amenities)
+        if removed and set(draft.must_amenities) & removed:
+            draft.must_amenities = [item for item in draft.must_amenities if item not in removed]
+            return {"must_amenities"}
+        return set()
 
     @staticmethod
-    def _text_needs_into_draft(draft: DraftProfile, extras: dict | None) -> set[str]:
+    def _parse_text_needs(text: str, place_ref: str | None = None) -> dict:
+        from .interpreter import (area_m2_hint, budget_approx_hint, budget_range, budget_scope_hint,
+                                  destination_kind_hint, dropped_amenities_hint, must_amenities_hint,
+                                  people_hint, wants_cheapest)
+        from .locations import city_for_area, find_area, find_city
+        people, people_unclear = people_hint(text)
+        kind = destination_kind_hint(text)
+        # place_ref do Jev quyết (đủ xác suất) thắng luật — current/personal
+        # dùng luôn (kể cả câu luật không bắt được, ví dụ "đi bộ ra chỗ tôi");
+        # named/none bỏ kết quả current/personal của luật, school/hospital/transit
+        # của luật giữ nguyên.
+        if place_ref in {"current", "personal"}:
+            kind = place_ref
+        elif place_ref in {"named", "none"} and kind in {"current", "personal"}:
+            kind = None
+        return {"city": find_city(text) or city_for_area(find_area(text)),
+                "range": budget_range(text), "area": area_m2_hint(text), "cheapest": wants_cheapest(text),
+                "approx": budget_approx_hint(text),
+                "scope": budget_scope_hint(text),
+                "people": people, "people_unclear": people_unclear,
+                "destination_kind": kind,
+                "must": must_amenities_hint(text), "drop": dropped_amenities_hint(text)}
+
+    @staticmethod
+    def _text_needs_into_draft(draft: DraftProfile, extras: dict | None,
+                               place_ref: str | None = None) -> set[str]:
         touched: set[str] = set()
         extras = extras or {}
+        if place_ref in {"current", "personal"}:
+            extras = {**extras, "destination_kind": place_ref}
+        elif place_ref in {"named", "none"} and extras.get("destination_kind") in {"current", "personal"}:
+            extras = {**extras, "destination_kind": None}
+        # Đo live 18/11: "phòng gần bệnh viện ở TP.HCM, tổng tháng 5 triệu" — model hỏi
+        # điểm đến trước khi ghi thành phố, hệ thống đổi câu hỏi sang "thành phố nào?"
+        # dù khách đã nói. Thành phố khách nêu (đúng MỘT thành phố, hoặc quận chỉ thuộc
+        # một thành phố) được ghi tất định — chỉ điền khi nháp CHƯA có, không ghi đè
+        # (đổi thành phố giữa chừng vẫn do model/khách xử lý cùng quận).
+        if extras.get("city") and draft.city is None:
+            draft.city = extras["city"]
+            touched.add("city")
         span = extras.get("range")
         if span and (draft.budget_min_vnd, draft.budget_hint_vnd) != tuple(span):
             draft.budget_min_vnd, draft.budget_hint_vnd = span
@@ -722,6 +960,39 @@ class HomeMatchService:
         if approx is not None and draft.budget_approx != approx:
             draft.budget_approx = approx
             touched.add("budget_approx")
+        # 18/11: số người đọc tất định ("hai người", "2 vợ chồng"); cụm ở chung không
+        # số ("mấy đứa bạn") bật needs_people để hỏi kèm nút thay vì mặc định 1 người.
+        people = extras.get("people")
+        if people is not None:
+            if draft.people != people:
+                draft.people = people
+                touched.add("people")
+            if draft.needs_people:
+                draft.needs_people = False
+                touched.add("needs_people")
+        elif extras.get("people_unclear") and draft.people is None and not draft.needs_people:
+            draft.needs_people = True
+            touched.add("needs_people")
+        # 18/11: "gần trường/bệnh viện/bến xe" chưa có điểm đến → nhớ loại để hỏi đúng loại.
+        kind = extras.get("destination_kind")
+        if kind and not draft.destination and (draft.destination_kind != kind or not draft.needs_destination):
+            draft.destination_kind = kind
+            draft.needs_destination = True
+            touched |= {"destination_kind", "needs_destination"}
+        # 19/11 (r06): "bắt buộc có máy lạnh" → tiện ích bắt buộc (lọc cứng), bỏ khỏi
+        # ưu tiên mềm. Chỉ cộng thêm; bỏ yêu cầu đi qua remove_preferences.
+        drop = set(extras.get("drop") or [])
+        if drop & set(draft.must_amenities):
+            draft.must_amenities = [item for item in draft.must_amenities if item not in drop]
+            touched.add("must_amenities")
+        must = [name for name in extras.get("must") or []
+                if name not in draft.must_amenities and name not in drop]
+        if must:
+            draft.must_amenities = [*draft.must_amenities, *must]
+            touched.add("must_amenities")
+            if set(must) & set(draft.preferences):
+                draft.preferences = [item for item in draft.preferences if item not in must]
+                touched.add("preferences")
         return touched
 
     def _confirmed_profile(self, session_id: str) -> Profile:
@@ -757,16 +1028,23 @@ class HomeMatchService:
                 monthly_cap = draft.budget_hint_vnd
             elif draft.budget_scope == "total":
                 rent_cap, monthly_cap = None, draft.budget_hint_vnd
-            else:
+            elif draft.budget_scope == "rent":
                 rent_cap, monthly_cap = draft.budget_hint_vnd, None
+            else:
+                # Lỗi 1 (15/11): cách hiểu mức tiền chưa rõ → tìm theo cách CHẶT hơn
+                # (cả tiền thuê lẫn tổng tháng đều không vượt mức khách nêu) để không
+                # bao giờ công bố căn vượt trần theo MỘT trong hai cách hiểu; chip
+                # budget_scope vẫn mời khách nới sang "chỉ trần tiền thuê".
+                rent_cap, monthly_cap = draft.budget_hint_vnd, draft.budget_hint_vnd
             rent_floor = draft.budget_min_vnd if rent_cap is not None else None
             return Profile(city=draft.city, area=draft.area, room_type=draft.room_type or "room",
                            min_bedrooms=draft.bedrooms if (draft.room_type == "apartment" and draft.bedrooms) else None,
                            max_monthly_cost_vnd=monthly_cap, max_rent_vnd=rent_cap, min_rent_vnd=rent_floor,
                            min_area_m2=draft.min_area_m2, min_area_hard=draft.min_area_hard,
                            prefer_cheapest=draft.prefer_cheapest, budget_approx=draft.budget_approx,
-                           scenario=scenario,
-                           preferences=list(draft.preferences), destination=draft.destination,
+                           scenario=scenario, must_amenities=list(draft.must_amenities),
+                           preferences=[item for item in draft.preferences if item not in draft.must_amenities],
+                           destination=draft.destination,
                            soft_description=draft.soft_description,
                            accept_estimated_data=draft.accept_estimated_data)
         base = Profile.model_validate_json(session["profile_json"])
@@ -783,9 +1061,14 @@ class HomeMatchService:
         scenario_update = {}
         if evidence.get("people") and draft.people:
             scenario_update["people"] = draft.people
-        if evidence.get("preferences"):
-            updates["preferences"] = [item for item in draft.preferences
-                                      if item not in base.must_amenities]
+        must = list(base.must_amenities)
+        if evidence.get("must_amenities"):
+            # Nháp là nguồn chính: lần đầu chat chạm tới tiện ích bắt buộc, nháp đã được
+            # gieo từ hồ sơ (_seed_must) nên "bỏ máy giặt" thực sự bỏ được.
+            must = list(draft.must_amenities)
+            updates["must_amenities"] = must
+        if evidence.get("preferences") or evidence.get("must_amenities"):
+            updates["preferences"] = [item for item in draft.preferences if item not in must]
         if evidence.get("destination"):
             updates["destination"] = draft.destination
         if evidence.get("accept_estimated_data") and draft.accept_estimated_data:
@@ -816,8 +1099,9 @@ class HomeMatchService:
         return base.model_copy(update=updates) if updates else base
 
     def room_reference_in(self, ref: str, visible: dict) -> str | None:
-        """AG-05: resolver đầy đủ trong agent_guard, bó trong danh sách đang có."""
-        return resolve_room_reference(ref, [{"room_id": room_id} for room_id in visible])
+        """AG-05: resolver đầy đủ trong agent_guard, bó trong danh sách đang có.
+        room_ref do model viết nên chấp nhận cả dạng trần ("3", "thứ ba", "đầu tiên")."""
+        return resolve_model_room_ref(ref, [{"room_id": room_id} for room_id in visible])
 
     def _strip_money_for_decision(self, context: dict) -> dict:
         """Ngữ cảnh gửi Jev: không tiền tuyệt đối, không thu nhập (PLAN AG-11)."""
@@ -831,7 +1115,15 @@ class HomeMatchService:
         khách chưa nói gì về chúng, chip tồn tại để khách chọn."""
         interpretation = best["interpretation"]
         from .clarify import ASK_ONLY_FIELDS, canonical_field
-        if canonical_field(interpretation.get("field", "")) in ASK_ONLY_FIELDS:
+        if canonical_field(interpretation.get("field", "")) in ASK_ONLY_FIELDS or interpretation.get("ask_only"):
+            # 18/11: số người khi khách đã nói ở chung cũng chỉ khách chọn (ask_only).
+            return None
+        # Lỗi 1 (15/11): cách hiểu mức tiền CHƯA RÕ không được tự chấp nhận theo
+        # cách LỎNG ("chỉ trần tiền thuê") — tự chấp nhận khi p_max cao chỉ hợp lệ
+        # cho cách hiểu CHẶT (trần tổng tháng), còn cách hiểu lỏng phải do khách
+        # bấm chip chọn; nếu không thì phạm vi "cả hai cách hiểu" bị phá.
+        if canonical_field(interpretation.get("field", "")) == "budget_scope" \
+                and interpretation.get("scope") == "rent":
             return None
         session = self.repo.session(session_id)
         draft = self._draft(session_id)
@@ -935,6 +1227,20 @@ class HomeMatchService:
                                             message if "?" in message else None)
         if not question:
             return
+        if dto.get("field") in {"relax", "conflict"}:
+            # Nút nới điều kiện (no_match) và nút gỡ xung đột là lựa chọn hệ thống đưa ra
+            # sau một lần tìm/ghi, không phải câu phỏng vấn: không tính vào giới hạn hỏi
+            # và không bị giới hạn đó thay bằng một lượt tự xác nhận.
+            return
+        if dto.get("field") in {"people", "destination"}:
+            from .clarify import blocking_destination, blocking_people
+            draft = self._draft(session_id)
+            if (dto["field"] == "people" and blocking_people(draft)
+                    or dto["field"] == "destination" and blocking_destination(draft)):
+                # 18/11: khách TỰ nói ở chung / "gần trường" mà chưa rõ — câu hỏi này làm
+                # rõ lời khách, không phải phỏng vấn thêm: không đếm, không bị giới hạn
+                # thay bằng lượt tìm theo mặc định (1 người / bỏ điểm đến).
+                return
         if not self._can_ask_clarification(session_id):
             # HN-13.3.3: hết quyền hỏi NHƯNG hồ sơ đã đủ dữ liệu tối thiểu → CHẠY TÌM
             # luôn (deterministic), không đẩy khách sang form. Chỉ form khi chưa đủ.
@@ -945,8 +1251,10 @@ class HomeMatchService:
                     result = self.confirm(session_id, Actor(id=self.repo.session(session_id)["owner_id"],
                                                              role="renter"),
                                            profile, fresh["draft_revision"])
+                    scope = (no_match_scope(self, session_id, profile, fresh["profile_json"])
+                             if result["status"] != "published" else None)
                     response.update(clarification=None, questions=None,
-                        message=confirm_template(confirm_data(result, profile)),
+                        message=confirm_template(confirm_data(result, profile, scope)),
                         status=result["status"],
                         suggested_prompts=self._suggested_prompts(session_id),
                         criteria=self._criteria_projection(session_id))
@@ -962,7 +1270,7 @@ class HomeMatchService:
             if dto["question"].count("?") > 1:
                 dto["question"] = dto["question"].split("?", 1)[0] + "?"
             response["questions"] = [dto["question"]]
-            if "?" in message and not message.startswith(dto["question"]):
+            if "?" in message and dto["question"] not in message:
                 response["message"] = dto["question"]
         elif actual_questions:
             # Các dòng lựa chọn/giải thích không phải câu hỏi vẫn được giữ.
@@ -1095,8 +1403,12 @@ class HomeMatchService:
         """HN-04: ngữ cảnh đầy đủ một lượt agent — nháp + hồ sơ (không thu nhập),
         workspace (view, căn chọn, ≤30 căn dạng gọn), top 5 kết quả hiện tại,
         bộ nhớ sở thích (chỉ khi khách đồng ý), tóm tắt hội thoại. Không tiền
-        tuyệt đối ngoài trần khách nêu; không bao giờ có monthly_income_vnd."""
+        tuyệt đối ngoài trần khách nêu; không bao giờ có monthly_income_vnd.
+        tọa độ điểm neo từ thiết bị không đi vào model (build_context,
+        build_engine_grounding đều đọc từ đây) — chỉ còn nhãn/nguồn/bán kính."""
         context = self._agent_context(session)
+        context["draft"] = redact_destination(context["draft"])
+        context["confirmed_profile"] = redact_destination(context["confirmed_profile"])
         context["memory"] = memory.recall(self.repo, session["owner_id"])
         row = self.repo.db.execute("SELECT summary_json FROM hm_sessions WHERE id=?",
                                    (session["id"],)).fetchone()
@@ -1225,6 +1537,11 @@ class HomeMatchService:
         này vừa đọc mức tiền tường minh (`budget_hint`). Không có gì đổi hoặc chưa đủ dữ
         liệu thì trả None; lỗi xung đột (409) cũng None để lượt sau thử lại."""
         try:
+            from .clarify import blocking_field
+            if blocking_field(self, session_id):
+                # 18/11: khách nói ở chung / "gần trường" mà chưa rõ → hỏi trước, không
+                # tự tìm theo mặc định 1 người hay bỏ mất điểm đến.
+                return None
             profile = self._profile_from_draft(session_id)
             if profile is None:
                 return None
@@ -1255,9 +1572,142 @@ class HomeMatchService:
         # UX-02: chip làm rõ → tự xác nhận và xếp hạng ngay (form "Nhu cầu của tôi" vẫn
         # chỉ ghi nháp, hồ sơ chốt khi người thuê bấm lưu → /confirm).
         if getattr(patch, "source", "form") == "clarify":
-            if self._auto_confirm(session_id, actor) is not None:
-                return {**self.session(session_id, actor), "status": "published", "questions": None}
+            return self._after_clarify_patch(session_id, actor, result)
         return result
+
+    def _after_clarify_patch(self, session_id: str, actor: Actor, result: dict) -> dict:
+        """18/11: sau khi khách bấm chip — đủ dữ liệu thì tìm và trả câu kết quả thật;
+        còn thiếu (thành phố, mức tiền, số người khi khách nói ở chung, "gần trường"
+        chưa nêu tên) thì hỏi tiếp ĐÚNG thứ đó kèm nút. Trước đây giao diện luôn báo
+        "đã tìm lại" dù chưa tìm, và câu hỏi tiếp theo không có nút."""
+        from . import clarify as clarify_layer
+        with self.lock, self.repo.guard():
+            previous_profile_json = self.repo.session(session_id)["profile_json"]
+            confirmed = self._auto_confirm(session_id, actor)
+            if confirmed is not None:
+                profile = self._confirmed_profile(session_id)
+                relax, scope = None, None
+                if confirmed["status"] != "published":
+                    scope = no_match_scope(self, session_id, profile, previous_profile_json)
+                    try:
+                        relax = _relaxation_clarification(self, session_id, profile)
+                    except Exception:
+                        relax = None
+                message = confirm_template(confirm_data(confirmed, profile, scope, relax_option_count(relax)))
+                return {**self.session(session_id, actor), "status": confirmed["status"], "questions": [],
+                        "message": message, "clarification": relax}
+            draft = self._draft(session_id)
+            missing = ("city" if not draft.city
+                       else "budget_cap" if self._profile_from_draft(session_id) is None
+                       else clarify_layer.blocking_field(self, session_id))
+            if missing is None:
+                # Lựa chọn trùng điều kiện đã tìm: nói thật, không báo "đã tìm lại".
+                message = ("Lựa chọn này không đổi điều kiện tìm nên danh sách hiện tại vẫn đúng."
+                           if previous_profile_json else (result.get("questions") or [None])[0])
+                return {**result, "message": message, "clarification": None}
+            payload = self._clarification_payload(session_id, field=missing)
+            if payload and payload.get("question") and payload.get("options"):
+                question = payload["question"]
+                self._pending_clarification[session_id] = {"field": payload.get("field"), "question": question}
+            else:
+                payload = None
+                question = (result.get("questions") or [clarify_layer.question_for(missing)])[0]
+            return {**self.session(session_id, actor), "status": "needs_clarification",
+                    "questions": [question], "message": question, "clarification": payload}
+
+    def _city_service_areas(self) -> dict[str, tuple[float, float, float, float]]:
+        """khung bao từng thành phố từ các căn đang `published` có tọa độ
+        trong catalog, nới thêm 0,05° mỗi phía — (min_lat, max_lat, min_lng,
+        max_lng). Tính lại mỗi lần gọi, không cache ở module."""
+        areas: dict[str, tuple[float, float, float, float]] = {}
+        for room in self.catalog.rooms():
+            if not room.published or room.latitude is None or room.longitude is None:
+                continue
+            box = areas.get(room.city)
+            areas[room.city] = ((room.latitude, room.latitude, room.longitude, room.longitude) if box is None
+                                else (min(box[0], room.latitude), max(box[1], room.latitude),
+                                      min(box[2], room.longitude), max(box[3], room.longitude)))
+        pad = 0.05
+        return {city: (box[0] - pad, box[1] + pad, box[2] - pad, box[3] + pad)
+                for city, box in areas.items()}
+
+    @staticmethod
+    def _cities_containing(latitude: float, longitude: float,
+                           areas: dict[str, tuple[float, float, float, float]]) -> set[str]:
+        """Các thành phố có khung bao chứa vị trí; khung chồng lấn (hai phố gần
+        nhau trong kho nhỏ) do caller xử lý theo nháp."""
+        return {city for city, box in areas.items()
+                if box[0] <= latitude <= box[1] and box[2] <= longitude <= box[3]}
+
+    def set_device_destination(self, session_id: str, actor: Actor, latitude: float,
+                               longitude: float, accuracy_m: float, allow_routing: bool,
+                               expected_draft_revision: int) -> dict:
+        """đặt điểm neo từ vị trí hiện tại của thiết bị — endpoint riêng,
+        patch_draft từ chối destination.source="device". Tọa độ được làm tròn 3
+        chữ số (~100 m) TRƯỚC khi kiểm tra hay lưu; không log tọa độ. Ghi xong chạy
+        đúng đường chip làm rõ (_after_clarify_patch: tự xác nhận, xếp hạng, trả
+        message/clarification). Đồng ý chỉ đường lưu trong process — khởi động lại
+        thì về KHÔNG đồng ý."""
+        from .clarify import DESTINATION_RADIUS_M
+        latitude, longitude = round(latitude, 3), round(longitude, 3)
+        with self.lock, self.repo.guard():
+            session = self._session_for(session_id, actor, "renter")
+            require("draft:patch", actor, Resource.for_session(session))
+            if accuracy_m > 2000:
+                raise DomainError("location_imprecise",
+                                  "Vị trí trên máy chưa đủ chính xác. Bạn gõ tên trường, công ty "
+                                  "hoặc địa chỉ nhé.", 422)
+            areas = self._city_service_areas()
+            containing = self._cities_containing(latitude, longitude, areas)
+            draft = self._draft(session_id)
+            if draft.city:
+                if draft.city not in containing:
+                    if containing:
+                        raise DomainError("outside_city",
+                                          f"Phiên này đang tìm phòng ở {draft.city} còn vị trí hiện tại "
+                                          "của bạn ở nơi khác. Bạn gõ tên nơi muốn ở gần nhé.", 422)
+                    raise DomainError("outside_service_area",
+                                      "Vị trí hiện tại của bạn nằm ngoài Hà Nội và TP.HCM. "
+                                      "Bạn gõ tên nơi muốn ở gần nhé.", 422)
+                city = draft.city
+            elif not containing:
+                raise DomainError("outside_service_area",
+                                  "Vị trí hiện tại của bạn nằm ngoài Hà Nội và TP.HCM. "
+                                  "Bạn gõ tên nơi muốn ở gần nhé.", 422)
+            else:
+                # Khung bao hai thành phố chồng lấn thì lấy thành phố có tâm khung
+                # gần vị trí nhất (tất định), đồng tên break tie.
+                def _center_distance(name: str) -> tuple[float, str]:
+                    box = areas[name]
+                    return (routes_map.haversine_m(latitude, longitude,
+                                                   (box[0] + box[1]) / 2, (box[2] + box[3]) / 2), name)
+                city = min(containing, key=_center_distance)
+            evidence = f"clarify:r{expected_draft_revision + 1}"
+            draft.destination = Destination(label="Vị trí hiện tại của bạn", latitude=latitude,
+                                            longitude=longitude, uncertainty_m=max(accuracy_m, 100),
+                                            max_distance_m=DESTINATION_RADIUS_M, source="device")
+            draft.field_status["destination"] = "confirmed"
+            draft.evidence_ref["destination"] = evidence
+            draft.needs_destination = False
+            if not draft.city:
+                draft.city = city
+                draft.field_status["city"] = "inferred"
+                draft.evidence_ref["city"] = evidence
+            self.repo.update_draft(session_id, DraftProfile.model_validate(draft.model_dump()),
+                                   expected_draft_revision)
+            self._route_consent[session_id] = bool(allow_routing)
+            result = {**self.session(session_id, actor), "status": "needs_clarification",
+                      "questions": self._questions(session_id)}
+        return self._after_clarify_patch(session_id, actor, result)
+
+    def set_route_consent(self, session_id: str, actor: Actor, allow: bool) -> dict:
+        """đổi đồng ý gửi tọa độ (đã làm tròn) ra dịch vụ chỉ đường ngoài.
+        Chỉ người thuê chủ phiên; không đổi nháp/hồ sơ, không chạy lại tìm kiếm."""
+        with self.lock:
+            session = self._session_for(session_id, actor, "renter")
+            require("session:read", actor, Resource.for_session(session))
+            self._route_consent[session_id] = bool(allow)
+            return {"allow": bool(allow)}
 
     def _patch_draft(self, session_id: str, actor: Actor, patch: DraftPatch) -> dict:
         with self.lock, self.repo.guard():
@@ -1272,6 +1722,14 @@ class HomeMatchService:
                 raise DomainError("invalid_patch", "Chỉ sửa trường nhu cầu nháp được hỗ trợ.", 422)
             if "budget_scope" in patch.set and patch.set["budget_scope"] not in {"rent", "total"}:
                 raise DomainError("invalid_patch", "budget_scope chỉ là rent hoặc total.", 422)
+            # điểm neo từ vị trí thiết bị chỉ đặt qua endpoint riêng
+            # (set_device_destination — có làm tròn, kiểm vùng, hỏi đồng ý);
+            # đường patch form/clarify không được mượn để ghi tọa độ tùy ý.
+            destination_patch = patch.set.get("destination")
+            if ((isinstance(destination_patch, dict) and destination_patch.get("source") == "device")
+                    or (isinstance(destination_patch, Destination) and destination_patch.source == "device")):
+                raise DomainError("invalid_patch",
+                                  "Điểm neo từ vị trí thiết bị chỉ đặt qua nút “Dùng vị trí hiện tại”.", 422)
             # AG-11: chip bán kính điểm đến — key ảo dịch thành max_distance_m của
             # destination hiện có (không tạo destination khi chưa có).
             radius = patch.set.pop("destination_radius_m", None)
@@ -1286,6 +1744,9 @@ class HomeMatchService:
             else:
                 touched_radius = False
             values.update(patch.set)
+            if patch.set.get("people"):
+                # 18/11: khách đã chọn/nhập số người → câu "ở chung mấy người" đã xong.
+                values["needs_people"] = False
             for field in patch.clear_fields:
                 values[field] = ([] if field == "preferences"
                                  else False if field in {"needs_destination", "accept_estimated_data"} else None)
@@ -1299,6 +1760,7 @@ class HomeMatchService:
                 raise DomainError("invalid_amenity", "Chọn tiện ích trong từ điển được hỗ trợ.", 422)
             draft.preferences = [item for item in draft.preferences if item not in patch.remove_preferences]
             touched = set(patch.set) | ({"preferences"} if patch.remove_preferences else set())
+            touched |= self._seed_must(session, draft, set(patch.remove_preferences))
             # AG-11: chip làm rõ gửi evidence `clarify:rN` và trạng thái confirmed;
             # FE thấy tiền tố clarify: là lượt vừa chọn cách hiểu → tự chạy vòng tìm.
             source_prefix = "clarify" if getattr(patch, "source", "form") == "clarify" else "form"
@@ -1316,7 +1778,13 @@ class HomeMatchService:
                     draft.evidence_ref[field] = evidence
                 else:
                     draft.field_status[field] = "unknown"
-                    draft.evidence_ref.pop(field, None)
+                    if source_prefix == "clarify" and field in {"area", "destination"}:
+                        # Nút "nới khu vực"/"bỏ điểm đến" XÓA có chủ đích: giữ bằng chứng để
+                        # hồ sơ đã xác nhận cũng bỏ ràng buộc đó (thiếu bằng chứng thì
+                        # _profile_from_draft giữ nguyên khu cũ và nút không có tác dụng).
+                        draft.evidence_ref[field] = evidence
+                    else:
+                        draft.evidence_ref.pop(field, None)
             draft = DraftProfile.model_validate(draft.model_dump())
             self.repo.update_draft(session_id, draft, patch.expected_draft_revision)
             return {**self.session(session_id, actor), "status": "needs_clarification", "questions": self._questions(session_id)}
@@ -1326,11 +1794,19 @@ class HomeMatchService:
         draft = DraftProfile.model_validate_json(session["draft_json"])
         confirmed = json.loads(session["profile_json"]) if session["profile_json"] else {}
         questions = []
-        # Kiểu tham chiếu: không thẩm vấn. Số người/xe mặc định 1/1, mức tiền
+        # Không thẩm vấn. Số người/xe mặc định 1/1, mức tiền
         # nhắc được hiểu là trần TỔNG THÁNG; điểm đến chưa rõ thì tạm xếp theo
         # khu vực (không chặn vòng tìm). Chỉ hỏi khi chưa biết tìm ở đâu.
+        from . import clarify as clarify_layer
         if not draft.city and not draft.area:
             questions.append("Bạn muốn thuê tại thành phố nào?")
+        elif self._profile_from_draft(session_id) is None:
+            # 18/11: có nơi nhưng chưa có mức tiền thì CHƯA chạy tìm — hỏi mức tiền,
+            # không hứa "kết quả sẽ tự hiện" (bấm chip thành phố trước đây nói vậy).
+            questions.append(clarify_layer.question_for("budget_cap"))
+        elif (blocked := clarify_layer.blocking_field(self, session_id)):
+            questions.append(clarify_layer.KIND_QUESTIONS[draft.destination_kind]
+                             if blocked == "destination" else "Bạn ở chung tổng cộng mấy người?")
         if not questions:
             notes = []
             if draft.needs_destination:
@@ -1363,7 +1839,7 @@ class HomeMatchService:
             # Deliberately construct a small DTO: never return raw state/draft.
             visible = [dict(item) for item in run["items"]] if run["status"] == "published" else []
             if visible:
-                # CA-05 + crawl.md B-2: ảnh và video gắn theo room_id LÚC TRẢ
+                # Ảnh và video gắn theo room_id LÚC TRẢ
                 # RESPONSE (giống cách gắn photos của tìm theo bộ lọc), không lưu
                 # vào payload run đã xếp hạng và không đi vào eval/runs.
                 media_by_room = {room.id: {"source_images": room.source_images,
@@ -1409,7 +1885,7 @@ class HomeMatchService:
 
     def _transparency(self, run: dict, visible: list) -> dict:
         """Số liệu tổng hợp và các bước pipeline đã chạy thật của run — minh bạch
-        quy trình kiểu workspace tham chiếu. Chỉ aggregate: không lộ danh tính
+        quy trình. Chỉ aggregate: không lộ danh tính
         phòng nào chưa được công bố."""
         diagnostics = run.get("diagnostics") or {}
         rejected = {key: value for key, value in (diagnostics.get("rejected") or {}).items() if value}
@@ -1668,6 +2144,82 @@ class HomeMatchService:
                                     budget=profile.max_monthly_cost_vnd, preferences=profile.preferences)
             return {"run_id": visible["run_id"], "items": items, "advice": advice}
 
+    def room_route(self, session_id: str, actor: Actor, room_id: str, travel: str = "ride") -> dict:
+        """MP-01: đường đi từ một căn trong kết quả hiện tại tới điểm neo (điểm đến
+        của hồ sơ đã xác nhận). Điểm neo lấy ở máy chủ, không nhận tọa độ tùy ý từ
+        client, để endpoint không thành proxy chỉ đường miễn phí. Nguồn chỉ đường
+        ngoài được gọi SAU khi nhả service.lock: một request chậm không chặn API."""
+        if travel not in routes_map.TRAVELS:
+            raise DomainError("invalid_request", "Chế độ đi chỉ nhận ride (đi xe) hoặc walk (đi bộ).", 422)
+        with self.lock, self.repo.guard():
+            visible = self.results(session_id, actor)
+            item = next((entry for entry in visible["results"] if entry["room_id"] == room_id), None)
+            if item is None:
+                raise DomainError("not_visible", "Chỉ xem đường đi tới căn trong kết quả hiện tại.", 403)
+            anchor = Profile.model_validate_json(self.repo.session(session_id)["profile_json"]).destination
+            if anchor is None:
+                raise DomainError("no_destination",
+                                  "Hồ sơ chưa có điểm neo (nơi bạn muốn ở gần); thêm điểm đến để xem đường đi.", 422)
+            latitude, longitude = item.get("latitude"), item.get("longitude")
+            if item.get("location_accuracy") == "area_only" or latitude is None or longitude is None:
+                raise DomainError("no_location", "Tin chỉ biết khu vực, chưa vẽ được đường đi.", 422)
+            origin = {"latitude": latitude, "longitude": longitude,
+                      "location_accuracy": item.get("location_accuracy") or "approximate",
+                      "uncertainty_m": item.get("uncertainty_m")}
+            run_id = visible["run_id"]
+            # điểm neo từ thiết bị mà khách chưa đồng ý → không gửi tọa độ
+            # ra ngoài, chỉ đường chim bay (fallback_reason="no_consent").
+            external = not (anchor.source == "device"
+                            and self._route_consent.get(session_id) is not True)
+        route = self.router.route((latitude, longitude), (anchor.latitude, anchor.longitude),
+                                  travel, actor.id, external=external)
+        return {"run_id": run_id, "room_id": room_id, **route, "origin": origin,
+                "anchor": {"label": anchor.label, "latitude": anchor.latitude,
+                           "longitude": anchor.longitude, "max_distance_m": anchor.max_distance_m,
+                           "uncertainty_m": anchor.uncertainty_m}}
+
+    def session_routes(self, session_id: str, actor: Actor, travel: str = "ride") -> dict:
+        """quãng đường và thời gian từ mọi căn trong kết quả đang hiển thị
+        tới điểm neo, bằng một lần gọi ma trận tới nguồn chỉ đường (không trả đường
+        vẽ). Căn chỉ biết khu vực (`area_only`) hoặc thiếu tọa độ nằm trong `skipped`.
+        Nguồn ngoài được gọi SAU khi nhả service.lock, như room_route."""
+        if travel not in routes_map.TRAVELS:
+            raise DomainError("invalid_request", "Chế độ đi chỉ nhận ride (đi xe) hoặc walk (đi bộ).", 422)
+        with self.lock, self.repo.guard():
+            visible = self.results(session_id, actor)
+            profile_json = self.repo.session(session_id)["profile_json"]
+            anchor = (Profile.model_validate_json(profile_json).destination
+                      if profile_json else None)
+            if anchor is None:
+                raise DomainError("no_destination",
+                                  "Hồ sơ chưa có điểm neo (nơi bạn muốn ở gần); thêm điểm đến để xem đường đi.", 422)
+            origins: list[tuple[str, tuple[float, float]]] = []
+            skipped: list[str] = []
+            for item in visible["results"]:
+                latitude, longitude = item.get("latitude"), item.get("longitude")
+                if item.get("location_accuracy") == "area_only" or latitude is None or longitude is None:
+                    skipped.append(item["room_id"])
+                else:
+                    origins.append((item["room_id"], (latitude, longitude)))
+            run_id = visible.get("run_id")
+            anchor_dto = {"label": anchor.label, "latitude": anchor.latitude,
+                          "longitude": anchor.longitude, "max_distance_m": anchor.max_distance_m,
+                          "uncertainty_m": anchor.uncertainty_m}
+            # như room_route — thiết bị + chưa đồng ý thì không gọi ngoài.
+            external = not (anchor.source == "device"
+                            and self._route_consent.get(session_id) is not True)
+        if run_id is None:
+            # QA vòng 1: hồ sơ đã có điểm neo nhưng chưa có lượt tìm (repository ghi
+            # profile_json trước khi có run, hoặc run hỏng giữa chừng) — trả 200 rỗng,
+            # không gọi nguồn ngoài.
+            return {"run_id": None, "travel": travel, "anchor": anchor_dto,
+                    "items": [], "skipped": [], "attribution": None}
+        matrix = self.router.matrix(origins, (anchor.latitude, anchor.longitude), travel, actor.id,
+                                    external=external)
+        items = [{"room_id": room_id, **matrix["items"][room_id]} for room_id, _ in origins]
+        return {"run_id": run_id, "travel": travel, "anchor": anchor_dto, "items": items,
+                "skipped": skipped, "attribution": matrix["attribution"]}
+
     # --- Tenant portal: filter search, listing detail, listing compare, direct viewing, handbook ---
 
     def search_listings(self, query: "listings.ListingQuery") -> dict:
@@ -1688,11 +2240,9 @@ class HomeMatchService:
     def listing(self, room_id: str, actor: Actor | None = None, people: int = 1) -> dict:
         with self.lock:
             room = self._published_room(room_id)
-            # Views feed landlord analytics and lead follow-up; anonymous views carry no user.
+            # Views feed landlord analytics and the renter re-engagement job; anonymous views carry no user.
             self.repo.record_view(room.id, actor.id if actor and actor.role == "renter" else None)
-            if actor and actor.role == "renter":
-                pms.touch_lead(self.repo, room.landlord, actor.id, room.id, "view")
-            # crawl.md E-04/E-06: kiểm chứng tin + giá mỗi m² + chỗ ở tương tự —
+            # Kiểm chứng tin + giá mỗi m² + chỗ ở tương tự —
             # deterministic, KHÔNG vào xếp hạng (R4). Cache nhóm theo catalog.version.
             self._trust.refresh(self.catalog.rooms(), self.catalog.version,
                                 set(self.repo.confirmed_report_room_ids()))
@@ -1779,7 +2329,7 @@ class HomeMatchService:
                                 contact: dict | None = None, time_slot: str | None = None,
                                 note: str | None = None) -> dict:
         """Book straight from a published listing (filter search), without an AI shortlist.
-        crawl.md E-01/E-02: contact là tham số keyword để giữ các lời gọi vị trí
+        contact là tham số keyword để giữ các lời gọi vị trí
         hiện có; tin cào vào hàng đợi điều phối (handler='concierge')."""
         with self.lock, self.repo.guard():
             require("viewing:request", actor)
@@ -1996,8 +2546,8 @@ class HomeMatchService:
 
     def _is_viewing_handler(self, viewing: dict, actor: Actor) -> bool:
         """Lỗi 1 (08/11): xác định bên xử lý theo BẢN GHI, không theo vai trò —
-        owner-b khác phải bị chặn trên lịch của owner-a. Lịch landlord: owner
-        đúng landlord_id; lịch concierge: admin có capability riêng."""
+        chủ nhà khác phải bị chặn trên lịch ngoài tin của mình. Lịch landlord:
+        owner đúng landlord_id; lịch concierge: admin có capability riêng."""
         if viewing.get("handler") == "concierge":
             try:
                 require("viewing:concierge", actor)
@@ -2023,7 +2573,21 @@ class HomeMatchService:
         # route xem SĐT riêng (/admin/viewings/{id}/contact) có record_audit.
         return {"contact_name": None, "contact_phone": None}
 
-    def _viewing_projection(self, viewing: dict, actor: Actor | None = None) -> dict:
+    def _room_titles(self, room_ids) -> dict[str, str]:
+        """room_id → tên phòng hiển thị; tra THEO LÔ từ catalog trong bộ nhớ
+        (B1: danh sách lịch/hợp đồng/hóa đơn không truy vấn từng dòng). Tên tin
+        cào đi qua mask_address như các đầu ra công khai khác."""
+        from .listings import mask_address
+        rooms = {room.id: room for room in self.catalog.rooms()}
+        out: dict[str, str] = {}
+        for room_id in set(room_ids):
+            room = rooms.get(room_id)
+            if room is not None:
+                out[room_id] = mask_address(room.title, room.street)
+        return out
+
+    def _viewing_projection(self, viewing: dict, actor: Actor | None = None,
+                            room_titles: dict[str, str] | None = None) -> dict:
         """Chiếu lịch xem theo vai người đọc (E-01.7): liên hệ khách chỉ mở cho
         chủ nhà từ confirmed trở đi và cho chính người thuê; hàng đợi admin không
         trả tên/SĐT — route xem SĐT riêng mới trả và mỗi lần xem đều audit."""
@@ -2035,6 +2599,8 @@ class HomeMatchService:
         contact = self.viewing_contact_of(viewing, actor) if actor is not None             else {"contact_name": None, "contact_phone": None}
         data.update(contact)
         data["contact_shared"] = bool(data["contact_name"] or data["contact_phone"])
+        # B1 (15/11): tên phòng hiển thị, fallback mã phòng ở frontend.
+        data["room_title"] = (room_titles or self._room_titles([data["room_id"]])).get(data["room_id"])
         return data
 
     def respond_viewing(self, viewing_id: str, actor: Actor, status: str) -> dict:
@@ -2112,7 +2678,7 @@ class HomeMatchService:
                     and actor.role != handler_role:
                 raise DomainError("forbidden", "Chỉ bên xử lý lịch được thao tác này.", 403)
             # Lỗi 1 (08/11): mọi hành động handler-only khác (propose/confirm/
-            # decline) cũng 403 trước trạng thái — owner-b không đụng lịch owner-a.
+            # decline) cũng 403 trước trạng thái — chủ nhà khác không đụng lịch.
             if action in {"propose", "confirm", "decline", "complete", "no_show"} \
                     and not self._is_viewing_handler(viewing, actor):
                 raise DomainError("forbidden", "Chỉ bên xử lý lịch được thao tác này.", 403)
@@ -2143,6 +2709,9 @@ class HomeMatchService:
                 # Lỗi 4: accept — giờ thật trở thành giờ đề xuất.
                 extra["requested_at"] = viewing["proposed_at"]
                 extra["proposed_at"] = None
+                # Khung giờ đi theo giờ mới, nếu không nhãn cũ ("Chiều") sẽ lệch
+                # với giờ đã đồng ý (18:00).
+                extra["time_slot"] = _time_slot_for(viewing["proposed_at"])
             if action == "choose_time":
                 # Lỗi 4: khách chọn giờ mới — cập nhật requested_at, xóa đề xuất.
                 if proposed_at is None or proposed_at.tzinfo is None                         or proposed_at <= datetime.now(timezone.utc):
@@ -2261,11 +2830,20 @@ class HomeMatchService:
             require("viewing:concierge", actor)
             rows = self.repo.viewings_concierge_queue()
             # Hàng đợi admin KHÔNG trả tên hay SĐT (R3).
-            return [{key: row.get(key) for key in ("id", "room_id", "requested_at", "status",
-                                                   "time_slot", "note", "proposed_at",
-                                                   "handler", "created_at", "updated_at",
-                                                   "feedback_rating", "feedback_note")}
-                    for row in rows]
+            out = [{key: row.get(key) for key in ("id", "room_id", "requested_at", "status",
+                                                  "time_slot", "note", "proposed_at",
+                                                  "handler", "created_at", "updated_at",
+                                                  "feedback_rating", "feedback_note")}
+                   for row in rows]
+            # A1 (15/11): link tin gốc lấy từ `source` của phòng (mã phòng KHÔNG
+            # phải mã tin) — tra theo lô từ catalog, không truy vấn từng dòng.
+            sources = {room.id: room.source for room in self.catalog.rooms()}
+            # B1 (15/11): tên phòng hiển thị cho hàng đợi điều phối.
+            room_titles = self._room_titles({item["room_id"] for item in out})
+            for item in out:
+                item["source_url"] = listings.crawled_source_url(sources.get(item["room_id"]))
+                item["room_title"] = room_titles.get(item["room_id"])
+            return out
 
     def admin_viewing_contact(self, viewing_id: str, actor: Actor) -> dict:
         """Route xem SĐT khách của lịch điều phối — admin duy nhất, audit mỗi lần."""
@@ -2293,7 +2871,9 @@ class HomeMatchService:
     def viewings(self, actor: Actor) -> list[dict]:
         with self.lock:
             require("viewing:read", actor)
-            return [self._viewing_projection(item, actor) for item in self.repo.viewings(actor.id, actor.role)]
+            items = self.repo.viewings(actor.id, actor.role)
+            room_titles = self._room_titles({item["room_id"] for item in items})
+            return [self._viewing_projection(item, actor, room_titles) for item in items]
 
     def viewing(self, viewing_id: str, actor: Actor) -> dict:
         with self.lock:
@@ -2313,11 +2893,8 @@ class HomeMatchService:
 
     def _notify_viewing_requested(self, viewing: dict):
         if viewing.get("handler") == "concierge":
-            # E-02.1: lịch điều phối KHÔNG báo tài khoản owner và KHÔNG touch_lead.
+            # E-02.1: lịch điều phối KHÔNG báo tài khoản owner.
             return
-        # HN-13.3-A: projection không trả owner_id (ViewingResult cấm) — đọc từ repo.
-        viewing_owner = (self.repo.viewing(viewing["id"]) or {}).get("owner_id")
-        pms.touch_lead(self.repo, viewing["landlord_id"], viewing_owner, viewing["room_id"], "viewing", "viewing")
         notifications.notify(self.repo, viewing["landlord_id"], "viewing_requested", "Yêu cầu xem phòng mới",
                              f"Khách muốn xem phòng {viewing['room_id']} "
                              + ("trực tuyến." if viewing["mode"] == "online" else "trực tiếp."),
@@ -2325,15 +2902,14 @@ class HomeMatchService:
 
     @staticmethod
     def _support_projection(ticket: dict) -> dict:
-        return {key: ticket.get(key) for key in ("id", "session_id", "manager_id", "status", "assignee",
+        return {key: ticket.get(key) for key in ("id", "session_id", "status", "assignee",
                                                  "note", "created_at", "updated_at", "resolved_at")}
 
     def support_tickets(self, actor: Actor, status: str | None = None) -> list[dict]:
         with self.lock:
             require("support:list", actor)
             # Platform-level handoff tickets; landlord conversations replace them for room questions.
-            return [self._support_projection(ticket) for ticket in
-                    self.repo.support_tickets(None if actor.role == "admin" else actor.id, status)]
+            return [self._support_projection(ticket) for ticket in self.repo.support_tickets(status)]
 
     def update_support_ticket(self, actor: Actor, ticket_id: str, update) -> dict:
         """BE-04: admin lifecycle transition for one handoff support ticket."""
@@ -2395,7 +2971,6 @@ class HomeMatchService:
                                             "ORDER BY created_at DESC LIMIT 6", (session_id,)).fetchall()
                 context["recent_ai_chat"] = [dict(row) for row in reversed(rows)]
             conversation = conversations.start(self.repo, actor.id, room.landlord, room.id, session_id, context)
-            pms.touch_lead(self.repo, room.landlord, actor.id, room.id, "chat", "contacted")
             notifications.notify(self.repo, room.landlord, "conversation_started", "Khách muốn trao đổi",
                                  f"Khách hỏi về {context['room']['title']}; ngữ cảnh từ trợ lý đã được chuyển kèm.",
                                  f"conversation:{conversation['id']}", "/chu-nha/hop-thu")
@@ -2446,7 +3021,10 @@ class HomeMatchService:
 
     def leases(self, actor: Actor) -> list[dict]:
         with self.lock:
-            return pms.leases(self.repo, actor)
+            items = pms.leases(self.repo, actor)
+            # B1 (15/11): bảng hợp đồng hiện tên phòng (theo lô), chỉ dùng mã khi thiếu tên.
+            room_titles = self._room_titles({item["room_id"] for item in items})
+            return [{**item, "room_title": room_titles.get(item["room_id"])} for item in items]
 
     def lease(self, actor: Actor, lease_id: str) -> dict:
         with self.lock:
@@ -2456,9 +3034,7 @@ class HomeMatchService:
         with self.lock:
             self._owner(actor)
             room = self._writable_catalog().room(data.room_id)
-            item = pms.create_lease(self.repo, room, actor.id, data)
-            pms.touch_lead(self.repo, actor.id, item["renter_id"], room.id, "lease", "negotiating")
-            return item
+            return pms.create_lease(self.repo, room, actor.id, data)
 
     def update_lease(self, actor: Actor, lease_id: str, data: "pms.LeaseInput") -> dict:
         with self.lock:
@@ -2499,7 +3075,6 @@ class HomeMatchService:
                 if previous["status"] == "active":
                     pms.set_lease_status(self.repo, previous, "ended", ("active",), ended_at=pms.utc_now())
             self._set_occupancy(item["room_id"], "rented")
-            pms.touch_lead(self.repo, actor.id, item["renter_id"], item["room_id"], "lease", "won")
             notifications.notify(self.repo, item["renter_id"], "lease_active", "Hợp đồng đã có hiệu lực",
                                  f"Hợp đồng phòng {item['room_id']} có hiệu lực từ {item['start_date']}.",
                                  f"lease:{item['id']}:active", "/nguoi-thue/hop-dong", email=True)
@@ -2559,7 +3134,10 @@ class HomeMatchService:
 
     def invoices(self, actor: Actor) -> list[dict]:
         with self.lock:
-            return pms.invoices(self.repo, actor)
+            items = pms.invoices(self.repo, actor)
+            # B1 (15/11): bảng hóa đơn hiện tên phòng (theo lô), chỉ dùng mã khi thiếu tên.
+            room_titles = self._room_titles({item["room_id"] for item in items})
+            return [{**item, "room_title": room_titles.get(item["room_id"])} for item in items]
 
     def invoice_detail(self, actor: Actor, invoice_id: str) -> dict:
         with self.lock:
@@ -2670,16 +3248,6 @@ class HomeMatchService:
                                  "/nguoi-thue/sua-chua" if actor.role == "owner" else "/chu-nha/sua-chua")
             return updated
 
-    def leads(self, actor: Actor) -> list[dict]:
-        with self.lock:
-            self._owner(actor)
-            return pms.leads(self.repo, actor.id)
-
-    def update_lead(self, actor: Actor, lead_id: str, data: "pms.LeadUpdate") -> dict:
-        with self.lock:
-            self._owner(actor)
-            return pms.update_lead(self.repo, actor.id, lead_id, data)
-
     def landlord_dashboard(self, actor: Actor) -> dict:
         with self.lock:
             self._owner(actor)
@@ -2717,6 +3285,40 @@ class HomeMatchService:
             rooms = self.catalog.rooms()
             return copilot.assistant(self.repo, rooms, actor.id, redact(question),
                                      pms.dashboard(self.repo, rooms, actor.id))
+
+    def landlord_vacancy(self, actor: Actor, room_id: str | None = None, limit: int = 6) -> list[dict]:
+        """Báo cáo phòng trống của chính chủ nhà (tất định). Không có room_id thì chỉ xét `limit` phòng
+        trống ít được xem nhất — kho vài nghìn phòng mà xét hết sẽ giữ khóa service hàng chục phút."""
+        with self.lock:
+            self._owner(actor)
+            rooms = self.catalog.rooms()
+            own = [room for room in rooms if room.landlord == actor.id and (room_id is None or room.id == room_id)]
+            if room_id is None:
+                views = {row["room_id"]: row["views"] for row in pms.analytics(self.repo, rooms, actor.id)["rooms"]}
+                vacant = [room for room in own
+                          if room.occupancy not in ("rented", "deposited") and room.available is not False]
+                own = sorted(vacant, key=lambda room: views.get(room.id, 0))[:max(1, limit)]
+            return copilot.vacancy_report(self.repo, rooms, own, limit=max(1, limit))
+
+    def landlord_agent_turn(self, actor: Actor, message: str, history: list[dict] | None = None) -> dict:
+        """Một lượt hỏi agent chủ nhà. Agent chỉ đọc và gợi ý (không có tool ghi). OpenAI mode chạy
+        vòng lặp tool; demo mode hoặc lỗi nhà cung cấp rơi về trợ lý theo luật, không ném 500."""
+        from . import landlord_agent
+        self._owner(actor)
+        text = message.strip()
+        if not text or len(text) > 1000:
+            raise DomainError("invalid_message", "Câu hỏi cần có 1–1000 ký tự.", 422)
+        landlord_agent.check_rate(actor.id)
+        if getattr(self.interpreter, "mode", "") != "openai":
+            return landlord_agent.rules_turn(self, actor, text)
+        try:
+            return landlord_agent.run_turn(self, actor, text, history)
+        except DomainError as error:
+            if error.code != "ai_unavailable":
+                raise
+            result = landlord_agent.rules_turn(self, actor, text)
+            result["agent_mode"] = "rules_fallback"
+            return result
 
     # --- Listing and maintenance media (BE-06) ---
 
@@ -2898,6 +3500,9 @@ class HomeMatchService:
             if added or removed:
                 draft.preferences = sorted((set(draft.preferences) | added) - removed)
                 touched.add("preferences")
+            extras = state.get("needs_extras") or {}
+            if removed or extras.get("must") or extras.get("drop"):
+                touched |= self._seed_must(session, draft, removed)
             if extracted.get("soft_description"):
                 # Free text never carries contacts or money into the draft.
                 draft.soft_description = redact(extracted["soft_description"])
@@ -2977,13 +3582,17 @@ class HomeMatchService:
             # UX-02: đủ dữ liệu thì xác nhận + xếp hạng NGAY trong lượt này (không chờ
             # frontend); còn câu hỏi làm rõ đang chờ thì không tự chạy.
             if not needs_budget_baseline and clarification is None:
+                previous_profile_json = self.repo.session(session["id"])["profile_json"]
                 auto = self._auto_confirm(
                     session["id"], state["actor"],
                     self._draft(session["id"]).budget_hint_vnd if budget_explicit else None)
                 if auto is not None:
+                    confirmed = self._confirmed_profile(session["id"])
+                    scope = (no_match_scope(self, session["id"], confirmed, previous_profile_json,
+                                            state["text"])
+                             if auto["status"] != "published" else None)
                     response.update(status=auto["status"], questions=None,
-                                    message=confirm_template(confirm_data(
-                                        auto, self._confirmed_profile(session["id"]))))
+                                    message=confirm_template(confirm_data(auto, confirmed, scope)))
             return {"response": response,
                     "provenance": stamp("interpreter", "interview", interpreter_mode=self.interpreter.mode,
                                         **state["toolbox"].summary("needs"))}
@@ -3111,8 +3720,8 @@ class HomeMatchService:
 
         def publish(state: RecommendationState):
             # Quyết định 05/11/2026: kết quả tới khách ngay khi xếp hạng xong.
-            # Chủ nhà vẫn được báo nhu cầu qua lead khi căn của họ lọt top 5
-            # (source="recommended"), không thu nhập nào đi kèm lead.
+            # Quyết định 19/11/2026: bỏ khách tiềm năng — publish không báo gì cho chủ nhà;
+            # chủ nhà biết có khách khi người thuê nhắn tin hoặc đặt lịch xem.
             with self.repo.guard():
                 run = self.repo.run(state["run_id"])
                 if not self._fresh(run) or run["status"] != "published":
@@ -3123,9 +3732,6 @@ class HomeMatchService:
                                      "Danh sách phòng phù hợp đã sẵn sàng",
                                      f"{len(run['items'])} căn khớp nhu cầu đã hiện trong trợ lý AI của bạn.",
                                      f"run:{run['id']}:ready", "/tro-ly-ai")
-                for item in run["items"][:5]:
-                    pms.touch_lead(self.repo, item.get("landlord_id") or DEFAULT_LANDLORD,
-                                   session["owner_id"], item["room_id"], "recommended")
             return {}
 
         graph = StateGraph(RecommendationState)

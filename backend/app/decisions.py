@@ -11,6 +11,7 @@ import os
 import re
 
 from .agent_guard import redact
+from .models import redact_destination
 
 # HN-08 hiệu chỉnh theo gold clarify_cases: 0,80 làm CL01 (4 vs 17 căn,
 # p=0,81) tự áp 5 km thay vì hỏi — gold mong hỏi; hạ còn 0,85.
@@ -30,13 +31,20 @@ def _decision_text(text: str) -> str:
 
 
 def decision_context(value):
-    """Ranh giới Jev độc lập caller: không giữ tiền, khoản vay hay thu nhập."""
+    """Ranh giới Jev độc lập caller: không giữ tiền, khoản vay hay thu nhập;
+    tọa độ điểm neo từ thiết bị của khách cũng bỏ ngay tại đây (state
+    gửi Jev gồm input analyst và chip, đều đi qua hàm này), chỉ còn nhãn/nguồn/
+    bán kính."""
+    return _context_tree(redact_destination(value))
+
+
+def _context_tree(value):
     if isinstance(value, dict):
-        return {_decision_text(str(key)): decision_context(item) for key, item in value.items()
+        return {_decision_text(str(key)): _context_tree(item) for key, item in value.items()
                 if not (str(key).lower().endswith("_vnd") or "income" in str(key).lower()
                         or "loan" in str(key).lower() or str(key).lower() == "housing_ratio")}
     if isinstance(value, (list, tuple)):
-        return [decision_context(item) for item in value]
+        return [_context_tree(item) for item in value]
     if isinstance(value, str):
         return _decision_text(value)
     return value
@@ -107,57 +115,68 @@ def decide(clarification: dict, context: dict, *, client=None,
 
     Quyết định: "accept" (áp phương án tốt nhất, nói rõ giả định),
     "ask" (hỏi lại kèm chip), "open" (hỏi câu mở kèm 2 chip).
-    """
+
+    chip "Dùng vị trí hiện tại" (kind=device_location) không có count
+    nên không tham gia quyết định — không đưa vào criteria của Jev, không vào
+    luật xác suất, không bao giờ được tự chọn thay khách; sau quyết định chip
+    vẫn đứng đầu danh sách của DTO."""
     mode = mode or os.getenv("HOMEMATCH_DECISION_MODE", "rules")
-    if mode != "jev":
-        decision, best = _rules(clarification)
-        return decision, best, "rules", None
+    device_options = [option for option in clarification["options"]
+                      if option.get("kind") == "device_location"]
+    clarification["options"] = [option for option in clarification["options"]
+                                if option.get("kind") != "device_location"]
     try:
-        from .agent_cassette import jev_call
-        from . import provider_breaker
-        # HN-09: cassette ghi/phát lại Jev; payload đã qua decision_context/redact.
-        if client is None:
-            # HN-07: breaker — 5 lỗi liên tiếp → bỏ qua provider Jev 120 s (dùng luật).
-            # Chỉ đếm trên đường provider thật (client ngoài là test/đường nhánh riêng).
-            if provider_breaker.open_("jev"):
-                raise RuntimeError("jev_circuit_open")
-            try:
-                answer = (jev_call(_jev_payload(clarification, context),
-                                   lambda payload: jev_post(payload, DECISION_TIMEOUT_S))
-                          .get("answers") or {}).get("clarify") or {}
-                provider_breaker.record("jev", True)
-            except Exception:
-                provider_breaker.record("jev", False)
-                raise
-        else:
-            response = client.post(
-                "https://openrouter.ai/api/alpha/decisions",
-                json=_jev_payload(clarification, context))
-            if response.status_code != 200:
-                raise RuntimeError(f"jev_http_{response.status_code}")
-            answer = (response.json().get("answers") or {}).get("clarify") or {}
-        probabilities = answer.get("probabilities") or {}
-        options = {option["id"]: option for option in clarification["options"]}
-        best = options.get(answer.get("choice"))
-        if best is None or not isinstance(probabilities, dict) or not probabilities:
-            raise RuntimeError("jev_unknown_choice")
-        # Kiểm toàn bộ trước khi ghi: response hỏng không được làm lệch luật dự phòng.
-        if set(probabilities) != set(options):
-            raise ValueError("jev_missing_probability")
-        if any(isinstance(value, bool) for value in probabilities.values()):
-            raise ValueError("jev_invalid_probability")
-        parsed = {key: float(probabilities[key]) for key in options}
-        if not all(math.isfinite(p) and 0 <= p <= 1 for p in parsed.values()):
-            raise ValueError("jev_invalid_probability")
-        if not math.isclose(sum(parsed.values()), 1.0, abs_tol=0.02):
-            raise ValueError("jev_invalid_probability_total")
-        # Chip xếp theo xác suất của Jev (cao nhất đứng đầu).
-        for option in clarification["options"]:
-            option["probability"] = round(parsed[option["id"]], 4)
-        clarification["options"].sort(key=lambda option: -option["probability"])
-        if best["probability"] >= AUTO_THRESHOLD:
-            return "accept", best, "jev", None
-        return "ask", best, "jev", None
-    except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat
-        decision, best = _rules(clarification)
-        return decision, best, "fallback", type(error).__name__
+        if mode != "jev":
+            decision, best = _rules(clarification)
+            return decision, best, "rules", None
+        try:
+            from .agent_cassette import jev_call
+            from . import provider_breaker
+            # HN-09: cassette ghi/phát lại Jev; payload đã qua decision_context/redact.
+            if client is None:
+                # HN-07: breaker — 5 lỗi liên tiếp → bỏ qua provider Jev 120 s (dùng luật).
+                # Chỉ đếm trên đường provider thật (client ngoài là test/đường nhánh riêng).
+                if provider_breaker.open_("jev"):
+                    raise RuntimeError("jev_circuit_open")
+                try:
+                    answer = (jev_call(_jev_payload(clarification, context),
+                                       lambda payload: jev_post(payload, DECISION_TIMEOUT_S))
+                              .get("answers") or {}).get("clarify") or {}
+                    provider_breaker.record("jev", True)
+                except Exception:
+                    provider_breaker.record("jev", False)
+                    raise
+            else:
+                response = client.post(
+                    "https://openrouter.ai/alpha/decisions",
+                    json=_jev_payload(clarification, context))
+                if response.status_code != 200:
+                    raise RuntimeError(f"jev_http_{response.status_code}")
+                answer = (response.json().get("answers") or {}).get("clarify") or {}
+            probabilities = answer.get("probabilities") or {}
+            options = {option["id"]: option for option in clarification["options"]}
+            best = options.get(answer.get("choice"))
+            if best is None or not isinstance(probabilities, dict) or not probabilities:
+                raise RuntimeError("jev_unknown_choice")
+            # Kiểm toàn bộ trước khi ghi: response hỏng không được làm lệch luật dự phòng.
+            if set(probabilities) != set(options):
+                raise ValueError("jev_missing_probability")
+            if any(isinstance(value, bool) for value in probabilities.values()):
+                raise ValueError("jev_invalid_probability")
+            parsed = {key: float(probabilities[key]) for key in options}
+            if not all(math.isfinite(p) and 0 <= p <= 1 for p in parsed.values()):
+                raise ValueError("jev_invalid_probability")
+            if not math.isclose(sum(parsed.values()), 1.0, abs_tol=0.02):
+                raise ValueError("jev_invalid_probability_total")
+            # Chip xếp theo xác suất của Jev (cao nhất đứng đầu).
+            for option in clarification["options"]:
+                option["probability"] = round(parsed[option["id"]], 4)
+            clarification["options"].sort(key=lambda option: -option["probability"])
+            if best["probability"] >= AUTO_THRESHOLD:
+                return "accept", best, "jev", None
+            return "ask", best, "jev", None
+        except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat
+            decision, best = _rules(clarification)
+            return decision, best, "fallback", type(error).__name__
+    finally:
+        clarification["options"] = device_options + clarification["options"]

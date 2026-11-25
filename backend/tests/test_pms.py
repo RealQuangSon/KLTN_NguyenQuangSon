@@ -8,14 +8,14 @@ from backend.app import pms
 from backend.app.main import create_app
 from backend.app.models import Actor, DomainError
 
-OWNER = Actor(id="owner-a", role="owner")
+OWNER = Actor(id="owner2", role="owner")
 OTHER_OWNER = Actor(id="owner-b", role="owner")
 
 
 @pytest.fixture
 def accounts(service):
     with service.repo.db:
-        for user, role in (("renter-a", "renter"), ("renter-b", "renter"), ("owner-a", "owner")):
+        for user, role in (("renter", "renter"), ("renter-b", "renter"), ("owner2", "owner")):
             service.repo.db.execute("INSERT INTO hm_users(id,role,password_hash) VALUES(?,?,?) "
                                     "ON CONFLICT(id) DO NOTHING", (user, role, "unused"))
     return service
@@ -30,16 +30,35 @@ def active_lease(service, renter, room_id="demo-01", start=date(2026, 10, 1), mo
     return service.activate_lease(OWNER, lease["id"])
 
 
+# B1 (15/11): bảng hợp đồng và hóa đơn trả tên phòng, không chỉ mã phòng.
+def test_lease_and_invoice_lists_carry_room_title(accounts, renter):
+    service = accounts
+    lease = active_lease(service, renter)
+    items = service.leases(OWNER)
+    row = next(item for item in items if item["id"] == lease["id"])
+    assert row["room_title"] == "Phòng giả lập 01", row
+    service.record_reading(OWNER, lease["id"], pms.ReadingInput(
+        period="2026-10", electricity_start=Decimal("0"), electricity_end=Decimal("100")))
+    invoice = service.issue_invoice(OWNER, lease["id"], pms.InvoiceInput(
+        period="2026-10", due_date=date(2026, 11, 15)))
+    invoices = service.invoices(OWNER)
+    inv_row = next(item for item in invoices if item["id"] == invoice["id"])
+    assert inv_row["room_title"] == "Phòng giả lập 01", inv_row
+    # Hóa đơn của người thuê cũng có tên phòng.
+    renter_invoices = service.invoices(renter)
+    assert any(item["room_title"] == "Phòng giả lập 01" for item in renter_invoices)
+
+
 def test_lease_versioned_acceptance_activation_and_room_status(accounts, renter):
     service = accounts
-    draft = service.create_lease(OWNER, pms.LeaseInput(renter_id="renter-a", room_id="demo-01",
+    draft = service.create_lease(OWNER, pms.LeaseInput(renter_id="renter", room_id="demo-01",
                                                        start_date=date(2026, 10, 1), end_date=date(2027, 4, 1)))
     assert draft["status"] == "draft" and draft["rent_vnd"] == 2_500_000
     with pytest.raises(DomainError):
         service.lease(renter, draft["id"])  # drafts stay private to the landlord
     service.send_lease(OWNER, draft["id"])
     edited = service.update_lease(OWNER, draft["id"], pms.LeaseInput(
-        renter_id="renter-a", room_id="demo-01", start_date=date(2026, 10, 1), end_date=date(2027, 4, 1),
+        renter_id="renter", room_id="demo-01", start_date=date(2026, 10, 1), end_date=date(2027, 4, 1),
         rent_vnd=2_600_000))
     assert edited["version"] == 2 and edited["status"] == "draft"
     service.send_lease(OWNER, draft["id"])
@@ -147,7 +166,7 @@ def test_maintenance_requires_tenancy_and_follows_transitions(accounts, renter):
     active_lease(service, renter)
     ticket = service.create_ticket(renter, pms.TicketInput(room_id="demo-01", title="Hỏng vòi nước",
                                                            description="Vòi rò nước liên tục", priority="urgent"))
-    assert ticket["landlord_id"] == "owner-a" and ticket["status"] == "submitted"
+    assert ticket["landlord_id"] == "owner2" and ticket["status"] == "submitted"
     assert service.notifications(OWNER)["items"][0]["kind"] == "maintenance_urgent"
     with pytest.raises(DomainError):
         service.update_ticket(renter, ticket["id"], pms.TicketUpdate(status="resolved"))
@@ -162,16 +181,14 @@ def test_maintenance_requires_tenancy_and_follows_transitions(accounts, renter):
         service.update_ticket(OTHER_OWNER, ticket["id"], pms.TicketUpdate(status="assigned"))
 
 
-def test_lead_pipeline_dashboard_and_analytics(accounts, renter):
+def test_dashboard_and_analytics_without_lead_pipeline(accounts, renter):
     service = accounts
     service.listing("demo-01", renter)
     service.start_conversation(renter, "demo-01")
-    lead = service.leads(OWNER)[0]
-    assert lead["stage"] == "contacted" and lead["interest"] == "warm" and set(lead["sources"]) == {"view", "chat"}
     active_lease(service, renter)
-    lead = service.leads(OWNER)[0]
-    assert lead["stage"] == "won" and lead["interest"] == "hot"
-    assert service.update_lead(OWNER, lead["id"], pms.LeadUpdate(notes="Khách quen"))["notes"] == "Khách quen"
+    # 19/11/2026: khách tiềm năng đã bỏ — xem tin, nhắn tin, hợp đồng không còn ghi hm_leads.
+    assert service.repo.db.execute("SELECT COUNT(*) AS n FROM hm_leads").fetchone()["n"] == 0
+    assert not hasattr(service, "leads")
     dashboard = service.landlord_dashboard(OWNER)
     assert dashboard["rented"] == 1 and dashboard["rooms"] >= 1 and 0 < dashboard["occupancy_rate"] <= 1
     stats = next(row for row in service.landlord_analytics(OWNER)["rooms"] if row["room_id"] == "demo-01")
@@ -183,10 +200,10 @@ def test_lead_pipeline_dashboard_and_analytics(accounts, renter):
 def test_pms_routes(accounts):
     service = accounts
     with TestClient(create_app(lambda: service)) as client:
-        owner = {"Authorization": "Bearer demo-owner-a"}
-        renter = {"Authorization": "Bearer demo-renter-a"}
+        owner = {"Authorization": "Bearer demo-owner2"}
+        renter = {"Authorization": "Bearer demo-renter"}
         created = client.post("/landlord/leases", headers=owner, json={
-            "renter_id": "renter-a", "room_id": "demo-01", "start_date": "2026-10-01", "end_date": "2027-04-01"})
+            "renter_id": "renter", "room_id": "demo-01", "start_date": "2026-10-01", "end_date": "2027-04-01"})
         assert created.status_code == 201
         lease_id = created.json()["id"]
         assert client.post(f"/landlord/leases/{lease_id}/send", headers=owner).status_code == 200

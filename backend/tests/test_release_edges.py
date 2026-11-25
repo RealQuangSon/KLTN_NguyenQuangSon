@@ -10,16 +10,16 @@ from backend.app.main import create_app
 
 
 def test_empty_optional_seed_password_retains_local_default(service, monkeypatch):
-    monkeypatch.setenv("HOMEMATCH_PASSWORD_RENTER_A", "")
+    monkeypatch.setenv("HOMEMATCH_PASSWORD_RENTER", "")
     auth = SeedAuth(service.repo, service.lock)
-    assert auth.login("renter-a", "local-renter-a-password")["actor"]["id"] == "renter-a"
+    assert auth.login("renter", "123456")["actor"]["id"] == "renter"
 
 
 def test_public_existing_defaults_require_explicit_rotation_and_revoke_old_tokens(service, monkeypatch):
     from backend.app.auth import SEED_USERS
 
     auth = SeedAuth(service.repo, service.lock)
-    old = auth.login("renter-a", "local-renter-a-password")["access_token"]
+    old = auth.login("renter", "123456")["access_token"]
     passwords = {}
     for user, _role in SEED_USERS:
         value = "synthetic-test-strong-" + user
@@ -32,8 +32,8 @@ def test_public_existing_defaults_require_explicit_rotation_and_revoke_old_token
     with pytest.raises(DomainError):
         auth.actor(old)
     with pytest.raises(DomainError):
-        auth.login("renter-a", "local-renter-a-password")
-    assert auth.login("renter-a", passwords["renter-a"])["actor"]["id"] == "renter-a"
+        auth.login("renter", "123456")
+    assert auth.login("renter", passwords["renter"])["actor"]["id"] == "renter"
 
 
 def test_invalid_patch_list_returns_domain_error(service, renter):
@@ -77,7 +77,7 @@ def test_failed_embedding_call_is_counted_but_missing_usage_is_not_zero():
 def test_remote_peer_cannot_use_demo_auth_by_spoofing_localhost_header(service, monkeypatch):
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "demo")
     with TestClient(create_app(lambda: service), base_url="http://localhost", client=("203.0.113.8", 50000)) as client:
-        response = client.get("/auth/me", headers={"Host": "localhost", "Authorization": "Bearer demo-renter-a"})
+        response = client.get("/auth/me", headers={"Host": "localhost", "Authorization": "Bearer demo-renter"})
         assert response.status_code == 403 and response.json()["error"]["code"] == "demo_local_only"
         assert response.headers["X-Request-ID"] == response.json()["request_id"]
 
@@ -98,7 +98,7 @@ def test_password_rotation_during_login_cannot_issue_a_new_token_for_old_passwor
 
     monkeypatch.setattr(auth_module, "verify_password", rotate_after_verification)
     with pytest.raises(DomainError) as error:
-        auth.login("renter-a", "local-renter-a-password")
+        auth.login("renter", "123456")
     assert error.value.code == "invalid_credentials"
     assert service.repo.db.execute("SELECT COUNT(*) AS count FROM hm_tokens").fetchone()["count"] == 0
 

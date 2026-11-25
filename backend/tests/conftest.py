@@ -20,6 +20,10 @@ def offline_mode(monkeypatch):
     # HN-13: mặc định tắt input analyst — hành vi một vòng lặp cũ cho mọi test;
     # test multi-agent tự đặt jev|rules qua monkeypatch.
     monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "off")
+    # MP-01: không gọi Goong/OSRM thật; test chỉ đường tự gắn fetch giả.
+    monkeypatch.setenv("HOMEMATCH_ROUTE_PROVIDER", "off")
+    # LOC-001: không gọi Goong/Nominatim thật; test tra bản đồ tự gắn fetch giả.
+    monkeypatch.setenv("HOMEMATCH_GEOCODER", "off")
     from backend.app import provider_breaker
     provider_breaker.reset()
 
@@ -56,22 +60,22 @@ def service(storage):
 
 @pytest.fixture
 def renter():
-    return Actor(id="renter-a", role="renter")
+    return Actor(id="renter", role="renter")
 
 
 @pytest.fixture
 def owner():
-    return Actor(id="owner-a", role="owner")
+    return Actor(id="owner2", role="owner")
 
 
 @pytest.fixture
 def landlord():
-    return Actor(id="owner-a", role="owner")
+    return Actor(id="owner2", role="owner")
 
 
 @pytest.fixture
 def admin():
-    return Actor(id="admin-a", role="admin")
+    return Actor(id="admin", role="admin")
 
 
 @pytest.fixture

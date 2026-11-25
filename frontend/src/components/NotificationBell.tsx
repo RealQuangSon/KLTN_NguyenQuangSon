@@ -3,6 +3,9 @@ import type { Api } from "../api";
 import { Icon } from "./Shared";
 // Thông báo trong ứng dụng: nhắc lịch, danh sách phòng sẵn sàng, tin nhắn mới, phòng
 // đổi trạng thái/giá, gợi ý tương đương. Đọc lại mỗi 30 giây.
+// Nút nằm trên topbar (placement "topbar", bảng mở dạng dropdown dưới nút) hoặc
+// chân thanh điều hướng (mặc định, bảng mở cạnh nút theo đáy nút); đóng khi bấm
+// ra ngoài hoặc nhấn Esc.
 interface Item {
   id: string;
   kind: string;
@@ -16,16 +19,21 @@ const POLL_MS = 30000;
 export function NotificationBell({
   api,
   onNavigate,
+  placement = "sidebar",
 }: {
   api: Api;
   onNavigate: (path: string) => void;
+  placement?: "sidebar" | "topbar";
 }) {
   const [state, setState] = useState<{ unread: number; items: Item[] }>({
     unread: 0,
     items: [],
   });
   const [open, setOpen] = useState(false);
+  const [anchorBottom, setAnchorBottom] = useState(16);
   const live = useRef(true);
+  const root = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
   const load = useCallback(async () => {
     try {
       const data = await api.get<{ unread?: number; items?: Item[] }>(
@@ -46,6 +54,31 @@ export function NotificationBell({
       window.clearInterval(timer);
     };
   }, [load]);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      button.current?.focus();
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  const toggle = () => {
+    // Chỉ cần khoảng cách tới đáy màn khi bảng neo theo đáy (chế độ sidebar).
+    if (placement === "sidebar" && !open && button.current) {
+      const rect = button.current.getBoundingClientRect();
+      setAnchorBottom(Math.max(12, window.innerHeight - rect.bottom));
+    }
+    setOpen(!open);
+  };
   const markAll = async () => {
     try {
       const data = await api.post<{ unread: number; items: Item[] }>(
@@ -58,21 +91,35 @@ export function NotificationBell({
     }
   };
   return (
-    <div className="notification-bell">
+    <div className="notification-bell" ref={root}>
       <button
-        className="icon-button"
+        ref={button}
+        type="button"
+        className={open ? "nav-link nav-bell open" : "nav-link nav-bell"}
         aria-label={`Thông báo (${state.unread} chưa đọc)`}
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
       >
-        <Icon name="clock" size={18} />
+        <Icon name="bell" size={20} />
+        <span className="nav-label">Thông báo</span>
         {state.unread > 0 && <span className="bell-count">{state.unread}</span>}
       </button>
       {open && (
         <div
-          className="notification-panel"
+          className={
+            placement === "topbar"
+              ? "notification-panel"
+              : "notification-panel side"
+          }
           role="dialog"
           aria-label="Thông báo"
+          style={
+            placement === "sidebar"
+              ? ({
+                  "--anchor-bottom": `${anchorBottom}px`,
+                } as React.CSSProperties)
+              : undefined
+          }
         >
           <div className="section-heading">
             <strong>Thông báo</strong>

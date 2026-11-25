@@ -181,7 +181,7 @@ const pendingOwnerRoom = {
   synthetic: true,
   amenities: {},
   quote: { rent_vnd: 4500000, deposit_vnd: null, fees: [] },
-  landlord_id: "owner-a",
+  landlord_id: "owner2",
 };
 const stubPendingOwner = (
   calls: { url: string; method: string; body: string | null }[],
@@ -193,7 +193,7 @@ const stubPendingOwner = (
   stubSession(async (url, options) => {
     if (url.endsWith("/auth/me"))
       return json({
-        id: "owner-a",
+        id: "owner2",
         role: "owner",
         landlord_status: "pending",
       });

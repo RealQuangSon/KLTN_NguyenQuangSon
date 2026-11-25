@@ -1,7 +1,7 @@
 // LEGACY (UX-02, 12/11): không còn được gọi từ giao diện — backend tự xác nhận hồ sơ
 // trong lượt chat. Giữ lại chỉ để các test hàm thuần cũ còn chạy.
 import type { Draft, Profile } from "./types";
-// Dựng hồ sơ xác nhận từ nháp của trợ lý (kiểu tham chiếu: không có form chặn
+// Dựng hồ sơ xác nhận từ nháp của trợ lý (không có form chặn
 // luồng — chat xong là tìm ngay theo những gì trợ lý hiểu, giá trị kịch bản
 // dùng bộ mặc định giống ProfileForm). Chưa đủ dữ liệu tối thiểu (thành phố +
 // ngân sách) thì trả null — trợ lý sẽ hỏi thêm trong hội thoại.

@@ -64,8 +64,9 @@ class FakeJev:
         return SimpleNamespace(status_code=200, json=lambda: self.response)
 
 
-def jev_response(route="needs", route_p=0.9, clarity="clear", clarity_p=0.9, cost=None):
-    """Decisions API response hợp lệ cho hai câu route + clarity."""
+def jev_response(route="needs", route_p=0.9, clarity="clear", clarity_p=0.9, cost=None,
+                 place_ref="none", place_ref_p=0.9):
+    """Decisions API response hợp lệ cho ba câu route + clarity + place_ref."""
     def probabilities(options, chosen, p):
         rest = (1.0 - p) / (len(options) - 1)
         return {option: (p if option == chosen else round(rest, 4)) for option in options}
@@ -73,7 +74,9 @@ def jev_response(route="needs", route_p=0.9, clarity="clear", clarity_p=0.9, cos
     response = {"answers": {
         "route": {"choice": route, "probabilities": probabilities(input_analyst.ROUTES, route, route_p)},
         "clarity": {"choice": clarity,
-                    "probabilities": probabilities(input_analyst.CLARITY_STATES, clarity, clarity_p)}}}
+                    "probabilities": probabilities(input_analyst.CLARITY_STATES, clarity, clarity_p)},
+        "place_ref": {"choice": place_ref,
+                      "probabilities": probabilities(input_analyst.PLACE_REFS, place_ref, place_ref_p)}}}
     if cost is not None:
         response["usage"] = {"cost": cost}
     return response
@@ -125,7 +128,8 @@ def test_route_sends_turn_to_matching_agent_with_its_tool_set(agent, renter, mon
     reply = agent.message(sid, renter, "phòng nào đáng tiền hơn")
     assert reply["agent_mode"] == "loop"
     assert reply["agents"] == [role]
-    assert reply["input_analysis"] == {"route": role, "clarity": "clear", "decided_by": "jev"}
+    assert reply["input_analysis"] == {"route": role, "clarity": "clear", "place_ref": "none",
+                                       "decided_by": "jev"}
     # Model chỉ thấy đúng bộ tool của role (pha results ∩ roster).
     tools = {spec["function"]["name"] for spec in agent.interpreter.client.requests[0]["tools"]}
     assert tools == {spec["function"]["name"] for spec in tool_specs("results", role)}
@@ -144,37 +148,37 @@ def test_route_needs_agent_runs_and_low_probability_falls_back_to_rules(agent, r
     agent.interpreter.client = FakeClient([message("Mình so sánh giúp bạn nhé.")])
     reply = agent.message(sid, renter, "phòng nào đáng tiền hơn")
     assert reply["agents"] == ["ranking"]
-    assert reply["input_analysis"] == {"route": "ranking", "clarity": "clear", "decided_by": "fallback"}
+    assert reply["input_analysis"] == {"route": "ranking", "clarity": "clear", "place_ref": "none",
+                                       "decided_by": "fallback"}
 
 
-def test_clarity_reason_skips_fast_path_but_clear_keeps_it(agent, renter, monkeypatch):
+def test_clarity_reason_does_not_block_fast_path(agent, renter, monkeypatch):
     monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "jev")
     sentence = "phòng trọ Quận 7 TP.HCM dưới 4 triệu cho 2 người, có máy lạnh"
-    # reason → thẳng agent nhu cầu, bỏ qua fast path (lỗi cũ: câu luật "hiểu đủ"
-    # không bao giờ tới model).
+    # Lỗi 5 (15/11): clarity=reason KHÔNG chặn fast path nữa — câu luật hiểu trọn
+    # vẹn phải đi đường tắt (đo live 15/11: 27,7 s vì Jev đoán sai clarity). Jev
+    # bị bỏ qua hoàn toàn: 0 request Jev cho câu luật hiểu trọn vẹn.
     fake_jev = FakeJev(jev_response(route="needs", clarity="reason", clarity_p=0.9))
     _fake_jev(monkeypatch, fake_jev)
     agent.interpreter.client = FakeClient([message("Mình hiểu nhu cầu của bạn rồi.")])
     sid = agent.create_session(renter)["session_id"]
     reply = agent.message(sid, renter, sentence)
-    assert reply["agent_mode"] == "loop" and reply["agents"] == ["needs"]
-    assert reply["input_analysis"]["clarity"] == "reason"
-    assert len(agent.interpreter.client.requests) == 1
-    # clear → fast path: 0 lần gọi model để HIỂU câu; run mới published thì có
-    # đúng MỘT lần gọi bàn giao xếp hạng (không tools, dữ liệu top căn).
-    fake_jev2 = FakeJev(jev_response(route="needs", clarity="clear"))
+    assert reply["agent_mode"] == "fast_path"
+    assert fake_jev.requests == [], "câu luật hiểu trọn vẹn không tốn lượt Jev"
+    # Analyst không chạy cho câu luật hiểu trọn vẹn → không có input_analysis.
+    assert not reply.get("input_analysis")
+    # Lỗi 5: fast path bỏ qua analyst → "agents" chỉ có ở provenance (handover).
+    assert (provenance_handover := (reply.get("provenance") or {}).get("handover_calls")) == 1, \
+        reply.get("provenance")
+    # Câu luật KHÔNG hiểu đủ (mơ hồ thật) vẫn vào vòng lặp với agent nhu cầu.
+    fake_jev2 = FakeJev(jev_response(route="needs", clarity="reason", clarity_p=0.9))
     _fake_jev(monkeypatch, fake_jev2)
-    agent.interpreter.client = FakeClient([message("Căn đầu gần bạn nhất trong danh sách.")])
+    agent.interpreter.client = FakeClient([message("Mình hiểu nhu cầu của bạn rồi.")])
     sid2 = agent.create_session(renter)["session_id"]
-    _seed_no_ambiguity(agent, renter, sid2)
-    reply2 = agent.message(sid2, renter, sentence)
-    assert reply2["agent_mode"] == "fast_path"
+    reply2 = agent.message(sid2, renter, "phòng gần trường đi làm cho tiện")
+    assert reply2["agent_mode"] == "loop" and reply2["agents"] == ["needs"]
+    assert reply2["input_analysis"]["clarity"] == "reason"
     assert len(agent.interpreter.client.requests) == 1
-    handover_request = agent.interpreter.client.requests[0]
-    assert "tools" not in handover_request
-    assert "ranked_rooms" in handover_request["messages"][1]["content"]
-    assert reply2["input_analysis"] == {"route": "needs", "clarity": "clear", "decided_by": "jev"}
-    assert reply2["agents"] == ["ranking"]  # agent xếp hạng đã chạy ở bàn giao
 
 
 # --- Jev lỗi/timeout/sai định dạng/breaker mở: lượt vẫn chạy bằng luật ---
@@ -223,7 +227,8 @@ def test_rules_mode_never_calls_jev(agent, renter, monkeypatch):
     agent.interpreter.client = FakeClient([message("Đã chạy bằng luật.")])
     reply = agent.message(sid, renter, "phòng nào đáng tiền hơn")
     assert fake_jev.requests == []
-    assert reply["input_analysis"] == {"route": "ranking", "clarity": "clear", "decided_by": "rules"}
+    assert reply["input_analysis"] == {"route": "ranking", "clarity": "clear", "place_ref": "none",
+                                       "decided_by": "rules"}
     assert reply["agents"] == ["ranking"]
 
 
@@ -249,7 +254,7 @@ def test_jev_payload_carries_no_money_income_or_loan(agent, renter, monkeypatch)
     sid = agent.create_session(renter)["session_id"]
     agent.interpreter.client = FakeClient([message("Đã hiểu nhu cầu.")])
     # Câu có tiền; nháp có budget_hint (trường *_vnd) — cả hai không được thấy.
-    agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu, thu nhập 20 triệu")
+    agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu gần trường, thu nhập 20 triệu")
     payload = fake_jev.requests[0]
     state = payload["state"]
     assert "4 triệu" not in json.dumps(payload, ensure_ascii=False)
@@ -258,7 +263,7 @@ def test_jev_payload_carries_no_money_income_or_loan(agent, renter, monkeypatch)
     draft_json = json.dumps(state["draft"], ensure_ascii=False)
     assert "_vnd" not in draft_json and "income" not in draft_json.lower()
     assert "loan" not in draft_json.lower()
-    assert set(payload["questions"]) == {"route", "clarity"}
+    assert set(payload["questions"]) == {"route", "clarity", "place_ref"}
     assert set(payload["questions"]["route"]["criteria"]) == set(input_analyst.ROUTES)
 
 
@@ -293,7 +298,7 @@ def test_jev_usage_cost_is_charged_to_the_session_cap(agent, renter, monkeypatch
     _fake_jev(monkeypatch, fake_jev)
     sid = agent.create_session(renter)["session_id"]
     agent.interpreter.client = FakeClient([message("Đã hiểu nhu cầu.")])
-    agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu")
+    agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu gần trường")
     assert agent.budget.spent_usd(sid) == pytest.approx(0.0007)
 
 
@@ -364,7 +369,8 @@ def test_explicit_loan_and_cost_sentences_run_finance_agent_with_results(agent, 
     reply = agent.message(sid, renter, text)
     # fixed_intent đã xác định route → không tốn lượt Jev, decided_by=rules.
     assert reply["agents"] == ["finance"]
-    assert reply["input_analysis"] == {"route": "finance", "clarity": "clear", "decided_by": "rules"}
+    assert reply["input_analysis"] == {"route": "finance", "clarity": "clear", "place_ref": "none",
+                                       "decided_by": "rules"}
     assert reply["status"] == "simulation"
     # HN-13 (sửa sau đo live): lượt agent qua explicit route vẫn ghi usage thật.
     assert reply["usage"]["logical_calls"] == 2
@@ -405,13 +411,16 @@ def test_rank_handover_runs_once_and_never_reorders_rooms(agent, renter, monkeyp
         "Căn đầu tổng tháng thấp nhất và gần điểm của bạn nhất.")
     sid = agent.create_session(renter)["session_id"]
     _seed_no_ambiguity(agent, renter, sid)
-    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7")
+    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7 gần chỗ làm")
     client = agent.interpreter.client
     # Hai lần gọi vòng lặp (tool + confirm) + đúng MỘT lần bàn giao, không tools.
     assert len(client.requests) == 3
     assert "tools" not in client.requests[2]
     assert "ranked_rooms" in client.requests[2]["messages"][1]["content"]
-    assert reply["message"] == "Căn đầu tổng tháng thấp nhất và gần điểm của bạn nhất."
+    # "gần chỗ làm" là chỗ riêng chưa nêu tên → câu báo tất định nối sau lời bàn giao.
+    assert reply["message"] == ("Căn đầu tổng tháng thấp nhất và gần điểm của bạn nhất. "
+                                "Mình chưa biết chính xác chỗ đó nên đang tìm trong Quận 7; "
+                                "gõ tên trường, công ty hoặc địa chỉ để mình tìm quanh đó.")
     assert any("handover" in step for step in reply["steps"])
     assert (reply["provenance"] or {}).get("handover_calls") == 1
     assert (reply["provenance"] or {}).get("llm_calls") == 2  # bàn giao không tính vào llm_calls
@@ -427,7 +436,7 @@ def test_handover_fabricated_number_is_replaced_by_template(agent, renter, monke
         "Căn đầu chỉ 9.999.999 ₫ một tháng, rẻ nhất khu này.")
     sid = agent.create_session(renter)["session_id"]
     _seed_no_ambiguity(agent, renter, sid)
-    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7")
+    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7 gần chỗ làm")
     # check_numbers đối chiếu đúng JSON top căn đã cấp; số bịa → câu template.
     assert "9.999.999" not in reply["message"]
     assert "9.999.999" not in agent.interpreter.client.requests[2]["messages"][1]["content"]
@@ -444,7 +453,7 @@ def test_handover_failure_keeps_confirm_template_and_loop_mode(agent, renter, mo
     agent.interpreter.client = client
     sid = agent.create_session(renter)["session_id"]
     _seed_no_ambiguity(agent, renter, sid)
-    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7")
+    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7 gần chỗ làm")
     # Lỗi bàn giao là phần phụ: giữ câu mẫu, không 429, không graph_fallback.
     assert reply["agent_mode"] == "loop"
     assert reply["message"].startswith(("Đã xác nhận nhu cầu", "Có ", "Chưa có căn nào"))  # D-12: "N căn khớp, đây là 5 căn xếp đầu"
@@ -485,7 +494,7 @@ def test_handover_fabrication_unit_level_check():
 # --- Không đi qua HTTP thì lỗi response_model không lộ ---
 
 @pytest.mark.parametrize("role,text", [
-    ("needs", "phòng Quận 7 dưới 4 triệu cho 2 người"),
+    ("needs", "phòng Quận 7 dưới 4 triệu cho 2 người gần trường"),
     ("finance", "nếu vay 12 tháng lãi 12% thì sao"),
     ("ranking", "phòng nào đáng tiền hơn"),
 ])
@@ -503,12 +512,12 @@ def test_message_endpoint_validates_message_result_for_each_agent(agent, renter,
         _fake_jev(monkeypatch, FakeJev(jev_response(route="needs", clarity="reason")))
     agent.interpreter.client = FakeClient([message("Đã xử lý theo vai trò.")])
     with TestClient(create_app(lambda: agent)) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         response = client.post(f"/sessions/{sid}/messages", headers=headers, json={"text": text})
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["agents"] == [role]
-    assert set(body["input_analysis"]) == {"route", "clarity", "decided_by"}
+    assert set(body["input_analysis"]) == {"route", "clarity", "place_ref", "decided_by"}
 
 
 def test_model_params_match_the_real_sdk_signature(agent, renter, monkeypatch):
@@ -551,7 +560,7 @@ def test_valid_turn_with_analyst_and_handover_never_hits_step_limit(agent, rente
     agent.interpreter.client = _confirm_turn_client("Căn đầu rẻ nhất.")
     sid = agent.create_session(renter)["session_id"]
     _seed_no_ambiguity(agent, renter, sid)
-    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7")
+    reply = agent.message(sid, renter, "phòng dưới 5 triệu Quận 7 gần chỗ làm")
     all_steps = json.dumps(reply.get("steps") or [], ensure_ascii=False)
     assert "agent_step_limit" not in all_steps
     assert reply["message"] != SAFE_REPLY
@@ -682,13 +691,15 @@ def test_rank_handover_json_carries_true_capacity(tmp_path, renter):
         def assert_truthful(sid: str, profile: Profile):
             service.confirm(sid, renter, profile, service.session(sid, renter)["draft_revision"])
             results = service.results(sid, renter)
-            top = {entry["Căn phòng"]: entry
-                   for entry in _handover_rooms_json(service, renter, sid)}
-            assert len(top) == len(results["results"][:3])
-            for item in results["results"][:3]:
+            # Lỗi 2b (15/11): JSON bàn giao mang Nhãn ngắn ("Căn 1 · phòng trọ · khu")
+            # theo đúng thứ hạng, không còn nguyên tiêu đề tin để model chép.
+            entries = _handover_rooms_json(service, renter, sid)
+            assert [entry["Nhãn"] for entry in entries] == [
+                f"Căn {index} · phòng trọ · {rooms_by_id[item['room_id']].area}"
+                for index, item in enumerate(results["results"][:3], start=1)]
+            for index, item in enumerate(results["results"][:3]):
                 room = rooms_by_id[item["room_id"]]
-                entry = top[_mask_title_for_model(item["title"].split(". ")[0],
-                                                  _street_of(service, item["room_id"]))]
+                entry = entries[index]
                 unknown = "capacity_unknown" in (item.get("verification") or [])
                 if room.capacity is None:
                     assert unknown and entry["Sức chứa"] == "chưa rõ"

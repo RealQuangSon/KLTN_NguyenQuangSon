@@ -69,7 +69,7 @@ def main() -> None:
     from backend.app.service import HomeMatchService
 
     service = HomeMatchService(os.environ["HOMEMATCH_DB_PATH"])
-    renter = Actor(id="renter-a", role="renter")
+    renter = Actor(id="renter", role="renter")
 
     # Đếm xem provider có báo usage.cost nào không — không báo thì chi phí
     # "không đo được" và trần phiên 0,05 USD mất tác dụng (báo người chạy).

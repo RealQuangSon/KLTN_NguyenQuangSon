@@ -20,7 +20,7 @@ from .models import DomainError, Room
 # CA-04: source_images (CDN Chợ Tốt URL), toilets và project_name là dữ liệu tin
 # gốc để hiển thị; poster_name KHÔNG vào danh sách này — nó chỉ trả qua khối
 # contact cho người đã đăng nhập (C1b).
-# crawl.md B-2/C-1: source_videos (Cloudflare Stream) và tầng/hướng/loại hình
+# source_videos (Cloudflare Stream) và tầng/hướng/loại hình
 # cũng chỉ để hiển thị, không vào ranking/LLM/embedding.
 PUBLIC_ROOM_FIELDS = (
     "id", "revision", "title", "city", "area", "room_type", "bedrooms", "capacity", "area_m2",
@@ -49,7 +49,7 @@ def public_room_projection(room: Room) -> dict:
     # Public coordinates must stay approximate even when the owner record is exact.
     if projection["location_accuracy"] == "exact":
         projection["location_accuracy"] = "approximate"
-    # crawl.md E-03: che địa chỉ chi tiết ở LÚC TRẢ RESPONSE (snapshot bất biến,
+    # Che địa chỉ chi tiết ở LÚC TRẢ RESPONSE (snapshot bất biến,
     # không đổi dữ liệu đã lưu). Model dùng title trực tiếp ở agent_loop/advisor
     # cũng đi qua projection-ish paths; trust/E-06 đọc Room gốc nên không ảnh hưởng.
     from .listings import mask_address

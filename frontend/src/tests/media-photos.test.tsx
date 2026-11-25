@@ -320,8 +320,8 @@ it("keeps RoomEditor managing landlord photos only, with no delete for crawl ima
 });
 const lease = {
   id: "l1",
-  landlord_id: "owner-a",
-  renter_id: "renter-a",
+  landlord_id: "owner2",
+  renter_id: "renter",
   room_id: "demo-01",
   start_date: "2026-10-01",
   end_date: "2027-04-01",
@@ -380,7 +380,7 @@ it("loads ticket photos with the token as object URLs and revokes them on unmoun
     {
       id: "tk1",
       room_id: "demo-01",
-      renter_id: "renter-a",
+      renter_id: "renter",
       title: "Vỡ kính cửa sổ",
       description: "Kính vỡ nguy hiểm",
       priority: "urgent",

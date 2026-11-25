@@ -132,7 +132,7 @@ def main() -> None:
     finish_sink: list[str] = []
     service.interpreter.client = FinishReasonProbe(service.interpreter.client, finish_sink)
     app = create_app(lambda: service)
-    renter = Actor(id="renter-a", role="renter")
+    renter = Actor(id="renter", role="renter")
 
     conversations = []
     counters: dict = {
@@ -153,7 +153,7 @@ def main() -> None:
     }
     started = time.monotonic()
     with TestClient(app) as client:
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         for conversation in fixture["conversations"]:
             sid = client.post("/sessions", headers=headers).json()["session_id"]
             pending_field = None

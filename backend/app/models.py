@@ -18,12 +18,10 @@ class DomainError(Exception):
         self.http_status = http_status
 
 
-# Four target roles (W-01). Renters are customers; owner is the landlord,
-# manager is a legacy staff role without business permissions, admin is
-# platform staff; all staff roles are scoped by organization membership. The
-# role always comes from the server-side account record, never from the client.
-Role = Literal["renter", "owner", "manager", "admin"]
-ORG_MEMBERSHIP_ROLES = ("owner", "manager", "admin")
+# Three target roles (W-01). Renters are customers; owner is the landlord,
+# admin is platform staff, scoped by organization membership. The role always
+# comes from the server-side account record, never from the client.
+Role = Literal["renter", "owner", "admin"]
 
 
 class Actor(Model):
@@ -46,6 +44,25 @@ class Destination(Model):
     longitude: float = Field(ge=-180, le=180)
     uncertainty_m: float = Field(ge=0)
     max_distance_m: float = Field(gt=0)
+    # điểm neo từ vị trí hiện tại của thiết bị khách ("device") là dữ liệu
+    # cá nhân — tọa độ chỉ gửi ra dịch vụ chỉ đường ngoài khi khách đồng ý, và
+    # không bao giờ vào LLM/Jev/embedding (redact_destination). Dữ liệu cũ không
+    # có trường này vẫn đọc được (mặc định "place").
+    source: Literal["place", "device"] = "place"
+
+
+def redact_destination(value):
+    """bỏ tọa độ của điểm neo từ thiết bị khỏi payload gửi ra ngoài
+    (prompt LLM, state Jev, embedding): với source="device" chỉ giữ
+    {label, source, max_distance_m}. Nhận dict/list đã dump (đi đệ quy); DTO trả
+    cho chính khách không đi qua hàm này — khách cần tọa độ của mình để vẽ bản đồ."""
+    if isinstance(value, dict):
+        if value.get("source") == "device" and ("latitude" in value or "longitude" in value):
+            return {key: value[key] for key in ("label", "source", "max_distance_m") if key in value}
+        return {key: redact_destination(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_destination(item) for item in value]
+    return value
 
 
 class Scenario(Model):
@@ -96,7 +113,7 @@ AMENITY_KEYS = (
     "flexible_hours", "no_shared_landlord", "water_heater", "fridge",
 )
 # Rooms without an explicit landlord in legacy/demo data belong to this seed landlord.
-DEFAULT_LANDLORD = "owner-a"
+DEFAULT_LANDLORD = "owner2"
 
 
 class Room(Model):
@@ -164,7 +181,7 @@ FieldStatus = Literal["unknown", "inferred", "confirmed"]
 DRAFT_TRACKED_FIELDS = ("city", "area", "people", "preferences", "room_type", "bedrooms",
                         "needs_destination", "accept_estimated_data", "soft_description", "budget_hint",
                         "destination", "budget_scope", "budget_min", "min_area", "prefer_cheapest",
-                        "budget_approx")
+                        "budget_approx", "needs_people", "destination_kind", "must_amenities")
 
 
 class DraftProfile(Model):
@@ -174,6 +191,9 @@ class DraftProfile(Model):
     budget_hint_vnd: int | None = Field(default=None, gt=0, strict=True)
     people: int | None = Field(default=None, ge=1, le=20, strict=True)
     preferences: list[str] = Field(default_factory=list)
+    # 19/11: tiện ích khách nói BẮT BUỘC ("bắt buộc có máy lạnh") — đọc tất định từ câu
+    # khách, thành Profile.must_amenities (lọc cứng); không trùng với preferences.
+    must_amenities: list[str] = Field(default_factory=list)
     # AG-01: điểm đến có tọa độ từ danh mục places.json (inferred từ chat hoặc
     # confirmed qua form); xếp hạng theo khoảng cách dùng đúng trường này.
     destination: Destination | None = None
@@ -190,6 +210,14 @@ class DraftProfile(Model):
     # 13/11: khách nói "tầm/khoảng X" → ưu tiên căn có giá gần mức X (mức X vẫn là trần).
     budget_approx: bool = False
     needs_destination: bool = False
+    # 18/11: khách nói ở chung ("mấy đứa bạn", "gia đình") mà chưa nêu số người →
+    # hỏi kèm nút trước khi tìm, không mặc định 1 người.
+    needs_people: bool = False
+    # 18/11: loại điểm đến khách nhắc mà chưa nêu tên ("gần trường" → school) để nút
+    # gợi ý "gần đâu?" là đúng loại đó. "current" (vị trí hiện tại của
+    # khách) và "personal" (chỗ riêng chưa nêu tên, "gần công ty tôi") — hỏi lại
+    # điểm neo thay vì bỏ ý khách.
+    destination_kind: Literal["school", "hospital", "transit", "current", "personal"] | None = None
     # Bật chấp nhận dữ liệu ước tính từ hội thoại ("chấp nhận phí/dữ liệu ước tính").
     accept_estimated_data: bool = False
     room_type: RoomType | None = None
@@ -395,6 +423,24 @@ class DraftPatch(Model):
     source: Literal["form", "clarify"] = "form"
 
 
+class DeviceDestinationRequest(Model):
+    """PUT /sessions/{id}/destination/device — trình duyệt lấy vị trí hiện
+    tại rồi gửi lên một endpoint riêng; server làm tròn 3 chữ số (~100 m) trước
+    khi kiểm tra hay lưu. `allow_routing` là đồng ý của khách gửi tọa độ đã làm
+    tròn ra dịch vụ chỉ đường ngoài (Goong/OSRM); không đồng ý thì chỉ chim bay."""
+    latitude: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    accuracy_m: float = Field(default=0, ge=0, allow_inf_nan=False)
+    allow_routing: bool
+    expected_draft_revision: int = Field(ge=0, strict=True)
+
+
+class RouteConsentRequest(Model):
+    """PUT /sessions/{id}/route-consent — đổi đồng ý gửi tọa độ (đã làm
+    tròn) ra dịch vụ chỉ đường ngoài; không đổi nháp/hồ sơ, không chạy lại tìm."""
+    allow: bool
+
+
 class CatalogStatus(Model):
     expected_revision: int = Field(ge=1, strict=True)
     published: bool | None = None
@@ -455,7 +501,7 @@ class OrganizationCreate(Model):
 
 class MembershipGrant(Model):
     user_id: str = Field(min_length=1, max_length=100)
-    role: Literal["owner", "manager", "admin"]
+    role: Literal["owner", "admin"]
 
 
 class RegisterRequest(Model):

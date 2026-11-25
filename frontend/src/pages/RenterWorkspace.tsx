@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Api, ApiError } from "../api";
-import { visibleStatuses } from "../types";
+import { addressLine, visibleStatuses } from "../types";
 import type {
   Actor,
   Candidate,
+  ChatHistory,
   ChatSimulation,
+  ChatTranscript,
   Draft,
   Profile,
   Results,
+  RouteTravel,
   Session,
   Viewing,
 } from "../types";
@@ -22,8 +25,15 @@ import {
   roomTitle,
 } from "../components/Shared";
 import { ProfileForm } from "../components/ProfileForm";
-import { MapView } from "../components/MapView";
-import { SimulationPanel, SimulationResults } from "../components/Simulation";
+import { coverPhotoSrc } from "../components/PhotoGallery";
+import { MapView, type MapAnchor } from "../components/MapView";
+import { ResizeHandle } from "../components/ResizeHandle";
+import {
+  RoutePanel,
+  useRoomRoute,
+  useSessionRoutes,
+} from "../components/RoutePanel";
+import { SimulationResults } from "../components/Simulation";
 import type { Advice } from "../components/Advice";
 import { openConversation } from "./Inbox";
 import { ViewingForm, ViewingList } from "../components/ViewingPanel";
@@ -53,6 +63,8 @@ type Message = {
     reason?: string | null;
     options: ClarificationOption[];
     decided_by: string;
+    // Nhãn lựa chọn khách đã bấm: câu hỏi coi như đã trả lời, không vẽ lại nút.
+    answered?: string | null;
   } | null;
   // HN-13.2: giả định engine tự áp, diễn đạt thành câu — hiển thị RIÊNG.
   assumptions?: string[] | null;
@@ -97,7 +109,7 @@ function SimulationMessage({ simulation }: { simulation: ChatSimulation }) {
     </div>
   );
 }
-// Khung đang xử lý kiểu workspace tham chiếu: bộ khung thẻ + mascot trạng thái
+// Khung đang xử lý: bộ khung thẻ + mascot trạng thái
 // giữa khung preview, thay màn trắng chờ.
 function PreviewSkeleton({ label }: { label: string }) {
   return (
@@ -161,7 +173,7 @@ const turnStepLabels: Record<string, string> = {
   confirm_and_search: "Đang xếp hạng",
 };
 const turnStepLabel = (name: string) => turnStepLabels[name] ?? "Đang xử lý";
-// "Đã xử lý qua N bước" kiểu workspace tham chiếu: bung được các bước pipeline
+// "Đã xử lý qua N bước": bung được các bước pipeline
 // deterministic đã chạy thật (số liệu do máy chủ tính, không bịa).
 // Dòng bước đã chạy: bỏ tên bước nội bộ, giữ phần mô tả tiếng Việt.
 const stepText = (step: string) => {
@@ -215,7 +227,7 @@ const rejectionLabels: Record<string, string> = {
   loan_principal: "kịch bản vay",
   loan_burden: "khả năng trả góp",
 };
-// Thông báo kho rỗng kiểu workspace tham chiếu: nói lại nhu cầu đã hiểu, nêu
+// Thông báo kho rỗng: nói lại nhu cầu đã hiểu, nêu
 // tiêu chí loại nhiều nhất, rồi đề nghị nới ĐÚNG MỘT tiêu chí do người dùng chọn.
 function noMatchAnnouncement(result: Results, profile: Profile | null): string {
   const summary = result.diagnostics_summary;
@@ -255,18 +267,53 @@ function noMatchAnnouncement(result: Results, profile: Profile | null): string {
   );
   return lines.join("\n\n");
 }
+const VN_ZONE = "Asia/Ho_Chi_Minh";
+function vnDay(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: VN_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+// "Hôm nay 14:05", "Hôm qua" hoặc "dd/mm", theo giờ Việt Nam.
+export function chatTimeLabel(iso: string, now = new Date()) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = vnDay(date);
+  if (day === vnDay(now))
+    return `Hôm nay ${date.toLocaleTimeString("vi-VN", {
+      timeZone: VN_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })}`;
+  if (day === vnDay(new Date(now.getTime() - 86_400_000))) return "Hôm qua";
+  return date.toLocaleDateString("vi-VN", {
+    timeZone: VN_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
 export function RenterWorkspace({
   api,
   actor,
   tab,
   initialNeed = null,
   onNeedHandled,
+  sideViewRequest = null,
+  viewingsFilter = null,
 }: {
   api: Api;
   actor: Actor;
   tab: string;
   initialNeed?: string | null;
   onNeedHandled?: () => void;
+  // Route "Nhu cầu của tôi" (/nguoi-thue/nhu-cau) yêu cầu mở sẵn khung hồ sơ;
+  // về /tro-ly-ai thì request về null và khung trả về danh sách đề xuất.
+  sideViewRequest?: "profile" | null;
+  // Route "Phòng xem trực tuyến" lọc lịch xem theo mode online.
+  viewingsFilter?: "online" | null;
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [result, setResult] = useState<Results | null>(null);
@@ -285,18 +332,72 @@ export function RenterWorkspace({
   const [comparison, setComparison] = useState<Candidate[] | null>(null);
   const [advice, setAdvice] = useState<Advice | null>(null);
   const [viewRoom, setViewRoom] = useState<Candidate | null>(null);
-  const [simRoom, setSimRoom] = useState<Candidate | null>(null);
   const [viewings, setViewings] = useState<Viewing[]>([]);
   const [editing, setEditing] = useState(false);
   const [restoring, setRestoring] = useState(() =>
     Boolean(sessionStorage.getItem(`homematch.session.${actor.id}`)),
   );
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<ChatHistory | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const historyMarker = useRef(0);
+  const [recentAll, setRecentAll] = useState(false);
   const [viewsLoading, setViewsLoading] = useState(false);
-  // Bố cục workspace kiểu tham chiếu: cột chat cố định, khung preview gồm
+  // Chưa tải xong lần đầu thì hiện "đang tải", không hiện trạng thái rỗng.
+  const [viewsLoaded, setViewsLoaded] = useState(false);
+  // Bố cục workspace: cột chat cố định, khung preview gồm
   // bản đồ + danh sách đề xuất; "Nhu cầu của tôi" đè lên cột đề xuất.
   const [showMap, setShowMap] = useState(true);
   const [previewFull, setPreviewFull] = useState(false);
-  const [sideView, setSideView] = useState<"rooms" | "profile">("rooms");
+  // Lọc lịch xem: "Tất cả" hoặc chỉ lịch trực tuyến (có phòng họp video). Mở
+  // từ /lich-xem/truc-tuyen thì khởi tạo là trực tuyến.
+  const [viewingsOnline, setViewingsOnline] = useState(
+    viewingsFilter === "online",
+  );
+  useEffect(() => {
+    setViewingsOnline(viewingsFilter === "online");
+  }, [viewingsFilter]);
+  // Chiều rộng do người dùng kéo (px); null = mặc định của CSS. Nhớ trong
+  // trình duyệt để lần sau mở lại giữ nguyên bố cục.
+  const [layout, setLayout] = useState<{
+    chat: number | null;
+    map: number | null;
+  }>(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("homematch.agentLayout") ?? "{}",
+      ) as { chat?: unknown; map?: unknown };
+      return {
+        chat: typeof saved.chat === "number" ? saved.chat : null,
+        map: typeof saved.map === "number" ? saved.map : null,
+      };
+    } catch {
+      return { chat: null, map: null };
+    }
+  });
+  const updateLayout = (patch: Partial<typeof layout>) =>
+    setLayout((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        localStorage.setItem("homematch.agentLayout", JSON.stringify(next));
+      } catch {
+        // Không lưu được (chế độ riêng tư): bố cục chỉ giữ trong phiên này.
+      }
+      return next;
+    });
+  const shellRef = useRef<HTMLDivElement>(null);
+  const chatPanelRef = useRef<HTMLElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const mapPanelRef = useRef<HTMLDivElement>(null);
+  const [sideView, setSideView] = useState<"rooms" | "profile">(
+    sideViewRequest ?? "rooms",
+  );
+  // Đổi route giữa /nguoi-thue/nhu-cau và /tro-ly-ai không dựng lại component
+  // (cùng key), nên phải theo dõi request để khung cạnh chuyển đúng lúc.
+  useEffect(() => {
+    setSideView(sideViewRequest ?? "rooms");
+  }, [sideViewRequest]);
   const [sort, setSort] = useState<"match" | "price_asc" | "price_desc">(
     "match",
   );
@@ -312,11 +413,24 @@ export function RenterWorkspace({
     string,
     unknown
   > | null>(null);
+  // Agent mở chi tiết/chi phí một căn: khung này nằm dưới bản đồ nên phải cuộn
+  // tới, nếu không câu "đã mở sẵn căn đó bên cạnh" không thấy gì đổi trên màn hình.
+  const focusViewRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (agentView === "detail" || agentView === "cost")
+      focusViewRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "nearest",
+      });
+  }, [agentView, viewPayload]);
   // Căn đã lưu của người thuê: nạp một lần khi vào workspace, tối ưu trên thẻ.
   const [savedIds, setSavedIds] = useState<string[]>([]);
   // Liên kết hai chiều thẻ ↔ marker: mapFocusId là lựa chọn bền (bấm marker
   // hoặc thẻ), cardHoverId chỉ nổi trong lúc hover thẻ — không cuộn trang.
   const [mapFocusId, setMapFocusId] = useState<string | null>(null);
+  // Căn đang vẽ đường đi tới điểm neo. Chỉ đặt khi khách bấm marker trên bản
+  // đồ (chủ động muốn xem đường); bấm thẻ trong danh sách chỉ mở chi tiết căn.
+  const [routeRoomId, setRouteRoomId] = useState<string | null>(null);
   const [cardHoverId, setCardHoverId] = useState<string | null>(null);
   // Căn đang mở ở khung chi tiết (bấm thẻ nhỏ); null = chưa mở từ thẻ.
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -367,7 +481,7 @@ export function RenterWorkspace({
     [actor.id],
   );
   // Lịch sử lượt chat lưu theo phiên trên trình duyệt này: reload/quay lại
-  // vẫn thấy hội thoại như workspace tham chiếu. Nội dung nhạy cảm vẫn do
+  // vẫn thấy hội thoại. Nội dung nhạy cảm vẫn do
   // máy chủ PII-mask khi lưu chính thức; đây chỉ là bản hiển thị tạm thời.
   const msgKey = useCallback(
     (sid: string) => `homematch.msgs.${actor.id}.${sid}`,
@@ -391,20 +505,58 @@ export function RenterWorkspace({
     },
     [msgKey],
   );
+  // Ưu tiên bản lưu trên trình duyệt (giữ nút chọn làm rõ); không có thì lấy
+  // nội dung đã che PII từ máy chủ để mở lại cuộc trò chuyện cũ.
+  const loadMessages = useCallback(
+    async (sid: string, stillCurrent: () => boolean) => {
+      try {
+        const saved = sessionStorage.getItem(msgKey(sid));
+        if (saved) {
+          setMessages(JSON.parse(saved) as Message[]);
+          return;
+        }
+      } catch {
+        /* dữ liệu lưu hỏng thì lấy từ máy chủ */
+      }
+      try {
+        const transcript = await api.get<ChatTranscript>(
+          `/sessions/${sid}/transcript`,
+        );
+        if (!stillCurrent() || !Array.isArray(transcript?.messages)) return;
+        const list: Message[] = transcript.messages.map((item) => ({
+          role: item.role,
+          text: item.text,
+        }));
+        setMessages(list);
+        try {
+          if (list.length)
+            sessionStorage.setItem(msgKey(sid), JSON.stringify(list));
+        } catch {
+          /* vượt hạn mức sessionStorage thì bỏ qua */
+        }
+      } catch {
+        /* không đọc được thì khung chat để trống, người thuê vẫn nhắn tiếp */
+      }
+    },
+    [api, msgKey],
+  );
   const loadViews = useCallback(async () => {
     const e = epoch.current;
     const marker = ++viewsMarker.current;
     setViewsLoading(true);
     try {
+      // Lịch xem thuộc tài khoản, không thuộc phiên chat: đổi phiên (epoch) giữa
+      // lúc tải KHÔNG được bỏ kết quả, nếu không trang hiện "chưa có lịch" sai.
       const rows = await api.get<Viewing[]>("/viewings");
-      if (live.current && e === epoch.current && marker === viewsMarker.current)
-        setViewings(rows);
+      if (live.current && marker === viewsMarker.current) setViewings(rows);
     } catch (err) {
       if (live.current && e === epoch.current && marker === viewsMarker.current)
         setError((err as Error).message);
     } finally {
-      if (live.current && marker === viewsMarker.current)
+      if (live.current && marker === viewsMarker.current) {
         setViewsLoading(false);
+        setViewsLoaded(true);
+      }
     }
   }, [api]);
   // background: đọc lại định kỳ, không báo "đang tải" để khung kết quả không nhấp nháy.
@@ -432,7 +584,6 @@ export function RenterWorkspace({
             setSelected([]);
             setComparison(null);
             setViewRoom(null);
-            setSimRoom(null);
           }
           setResult(next);
         }
@@ -460,13 +611,11 @@ export function RenterWorkspace({
       .then((s) => {
         if (!cancelled && live.current && version === epoch.current) {
           apply(s);
-          // Khôi phục lượt chat đã lưu cục bộ cho phiên này (nếu có).
-          try {
-            const saved = sessionStorage.getItem(msgKey(s.session_id));
-            if (saved) setMessages(JSON.parse(saved) as Message[]);
-          } catch {
-            /* dữ liệu lưu hỏng thì bắt đầu khung chat trống */
-          }
+          // Khôi phục lượt chat: bản lưu cục bộ, không có thì bản của máy chủ.
+          void loadMessages(
+            s.session_id,
+            () => live.current && version === epoch.current,
+          );
           // Run đang mở đã có mặt trong lịch sử lưu: không thông báo rỗng lại.
           announcedRun.current = s.active_run_id ?? null;
         }
@@ -484,7 +633,7 @@ export function RenterWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [api, actor.id, apply, msgKey]);
+  }, [api, actor.id, apply, loadMessages]);
   useEffect(() => {
     if (!session) return;
     void refresh();
@@ -551,7 +700,6 @@ export function RenterWorkspace({
       setSelected([]);
       setComparison(null);
       setViewRoom(null);
-      setSimRoom(null);
       setSideView("rooms");
       const s = await api.post<Session>("/sessions");
       if (live.current) {
@@ -567,8 +715,78 @@ export function RenterWorkspace({
               ],
         );
         setEditing(false);
+        setHistoryOpen(false);
       }
     });
+  const loadHistory = useCallback(async () => {
+    const marker = ++historyMarker.current;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const data = await api.get<ChatHistory>("/sessions");
+      if (
+        live.current &&
+        marker === historyMarker.current &&
+        Array.isArray(data?.items)
+      )
+        setHistory(data);
+    } catch (err) {
+      if (live.current && marker === historyMarker.current)
+        setHistoryError((err as Error).message);
+    } finally {
+      if (live.current && marker === historyMarker.current)
+        setHistoryLoading(false);
+    }
+  }, [api]);
+  useEffect(() => {
+    if (!historyOpen) return;
+    void loadHistory();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHistoryOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [historyOpen, loadHistory]);
+  // Màn chào: nạp danh sách một lần để người thuê quay lại thấy chat cũ.
+  const onWelcome = !session && !restoring;
+  useEffect(() => {
+    if (onWelcome) void loadHistory();
+  }, [onWelcome, loadHistory]);
+  const openSession = (sid: string) => {
+    if (sid === current.current) {
+      setHistoryOpen(false);
+      return Promise.resolve(false);
+    }
+    return mutate(async () => {
+      const before = epoch.current;
+      const s = await api.get<Session>(`/sessions/${sid}`);
+      if (!live.current || before !== epoch.current) return;
+      const e = ++epoch.current;
+      setRestoring(false);
+      current.current = null;
+      setResult(null);
+      setSelected([]);
+      setComparison(null);
+      setViewRoom(null);
+      setSideView("rooms");
+      setAgentView(null);
+      setViewPayload(null);
+      setStreamText(null);
+      setDetailId(null);
+      setMapFocusId(null);
+      setRouteRoomId(null);
+      setCardHoverId(null);
+      setEditing(false);
+      setFeedback(null);
+      setNotice(null);
+      setAdvice(null);
+      setMessages([]);
+      apply(s);
+      announcedRun.current = s.active_run_id ?? null;
+      setHistoryOpen(false);
+      await loadMessages(sid, () => live.current && e === epoch.current);
+    });
+  };
   const sendText = (content: string) =>
     mutate(async () => {
       const sid = current.current;
@@ -691,7 +909,10 @@ export function RenterWorkspace({
   // AG-11: bấm chip làm rõ → PATCH nháp với patch có cấu trúc (source=clarify,
   // server ghi confirmed kèm evidence clarify:rN); hiệu ứng tự xác nhận sẽ chạy
   // vòng tìm mới theo cách hiểu đã chọn. Không tự nới điều kiện cứng.
-  const applyClarification = async (option: ClarificationOption) => {
+  const applyClarification = async (
+    option: ClarificationOption,
+    index: number,
+  ) => {
     const sid = current.current;
     if (!sid || lock.current) return;
     if (option.source === "model" || option.action === "text") {
@@ -700,21 +921,75 @@ export function RenterWorkspace({
       await sendText(option.text || option.label);
       return;
     }
-    try {
-      await api.patch(`/sessions/${sid}/draft`, {
-        expected_draft_revision: session?.draft_revision ?? 0,
-        set: option.patch.set ?? {},
-        clear_fields: [],
-        remove_preferences: [],
-        source: "clarify",
-      });
-      // Backend đã tự xác nhận và xếp hạng trong cùng yêu cầu: đọc lại phiên + kết quả.
-      const updated = await api.get<Session>(`/sessions/${sid}`);
-      if (live.current && current.current === sid) apply(updated);
-      await refresh();
-    } catch (err) {
-      if (live.current) setError((err as Error).message);
-    }
+    // Phản hồi ngay: lựa chọn hiện như câu trả lời của khách, nút biến mất và có
+    // dòng "đang xử lý" — việc tìm lại có thể mất vài giây.
+    const markAnswered = (messagesNow: Message[]) =>
+      messagesNow.map((message, position) =>
+        position === index && message.clarification
+          ? {
+              ...message,
+              clarification: {
+                ...message.clarification,
+                answered: option.label,
+              },
+            }
+          : message,
+      );
+    await mutate(async () => {
+      putMessages((currentMessages) => [
+        ...markAnswered(currentMessages),
+        { role: "user", text: option.label },
+      ]);
+      setTurnStep("Đang tìm lại theo lựa chọn của bạn");
+      try {
+        const patched = await api.patch<{
+          message?: string | null;
+          clarification?: Message["clarification"];
+        }>(`/sessions/${sid}/draft`, {
+          expected_draft_revision: session?.draft_revision ?? 0,
+          set: option.patch.set ?? {},
+          clear_fields: [],
+          remove_preferences: [],
+          source: "clarify",
+        });
+        // Backend đã tự xác nhận và xếp hạng trong cùng yêu cầu: đọc lại phiên + kết quả.
+        const updated = await api.get<Session>(`/sessions/${sid}`);
+        if (live.current && current.current === sid) {
+          apply(updated);
+          // Câu trả lời THẬT của máy chủ: đã tìm (kèm số căn) hoặc câu hỏi tiếp
+          // theo kèm nút.
+          const reply =
+            patched?.message ||
+            "Mình đã tìm lại theo lựa chọn này — danh sách bên cạnh đã cập nhật.";
+          putMessages((currentMessages) => [
+            ...currentMessages,
+            {
+              role: "assistant",
+              text: reply,
+              clarification: patched?.clarification ?? null,
+            },
+          ]);
+        }
+        await refresh();
+      } catch (err) {
+        // Lỗi: trả nút về để bấm lại, bỏ câu trả lời tạm.
+        if (live.current && current.current === sid)
+          putMessages((currentMessages) =>
+            currentMessages.slice(0, -1).map((message, position) =>
+              position === index && message.clarification
+                ? {
+                    ...message,
+                    clarification: {
+                      ...message.clarification,
+                      answered: undefined,
+                    },
+                  }
+                : message,
+            ),
+          );
+        throw err;
+      }
+    });
   };
   const send = async () => {
     const content = text.trim();
@@ -763,7 +1038,6 @@ export function RenterWorkspace({
       setComparison(null);
       setSelected([]);
       setViewRoom(null);
-      setSimRoom(null);
       setSideView("rooms");
       const sid = session.session_id;
       const response = await api.post<Results>(`/sessions/${sid}/confirm`, {
@@ -908,6 +1182,88 @@ export function RenterWorkspace({
     });
     return { ...result, results: items };
   }, [result, sort]);
+  // MP-01: điểm neo = điểm đến của hồ sơ đã xác nhận (trường, công ty, địa
+  // điểm khách muốn ở gần). Chỉ vẽ khi kết quả đang hiện thuộc đúng phiên bản
+  // hồ sơ đó. Hook đặt trước mọi nhánh return để thứ tự hook không đổi.
+  const destination = session?.confirmed_profile?.destination ?? null;
+  const anchorMatchesResult =
+    result?.profile_version == null ||
+    result.profile_version === session?.profile_version;
+  const mapAnchor = useMemo<MapAnchor | null>(
+    () =>
+      destination && anchorMatchesResult
+        ? {
+            label: destination.label,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+            radius_m: destination.max_distance_m,
+          }
+        : null,
+    [destination, anchorMatchesResult],
+  );
+  const [routeTravel, setRouteTravel] = useState<RouteTravel>("ride");
+  // Đường đi chỉ theo căn khách bấm trên bản đồ, không theo hover hay thẻ.
+  const routeRoom =
+    mapAnchor && routeRoomId
+      ? (result?.results.find((item) => item.room_id === routeRoomId) ?? null)
+      : null;
+  // Địa chỉ căn đang chọn (đường, phường, quận) lấy từ tin đăng công khai; chưa
+  // có hoặc lỗi thì dùng quận/thành phố đã có trong kết quả xếp hạng.
+  const [roomAddresses, setRoomAddresses] = useState<Record<string, string>>(
+    {},
+  );
+  const routeRoomId_ = routeRoom?.room_id ?? null;
+  useEffect(() => {
+    if (!routeRoomId_ || roomAddresses[routeRoomId_] !== undefined) return;
+    let alive = true;
+    api
+      .get<Parameters<typeof addressLine>[0]>(
+        `/listings/${encodeURIComponent(routeRoomId_)}`,
+      )
+      .then((room) => {
+        if (alive)
+          setRoomAddresses((prev) => ({
+            ...prev,
+            [routeRoomId_]: addressLine(room),
+          }));
+      })
+      .catch(() => {
+        if (alive)
+          setRoomAddresses((prev) => ({ ...prev, [routeRoomId_]: "" }));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [api, routeRoomId_, roomAddresses]);
+  const routeState = useRoomRoute(
+    api,
+    session?.session_id ?? null,
+    routeRoom?.room_id ?? null,
+    result?.run_id ?? null,
+    routeTravel,
+  );
+  const mapRoute =
+    routeRoom && routeState.route?.room_id === routeRoom.room_id
+      ? {
+          coordinates: routeState.route.geometry.coordinates,
+          straight: routeState.route.provider === "straight_line",
+        }
+      : null;
+  // cả danh sách lấy quãng đường/thời gian tới điểm neo bằng MỘT
+  // request /routes cho mỗi cặp (lượt tìm, chế độ đi); số liệu hiện trên thẻ
+  // căn và bảng so sánh, dùng chung chế độ đi với bảng chỉ đường nên đổi ở đó
+  // thì thẻ đổi theo.
+  const sessionRoutesEnabled =
+    Boolean(mapAnchor) &&
+    result?.status === "published" &&
+    (result?.results.length ?? 0) > 0;
+  const sessionRoutes = useSessionRoutes(
+    api,
+    session?.session_id ?? null,
+    result?.run_id ?? null,
+    routeTravel,
+    sessionRoutesEnabled,
+  );
   const rate = (value: "up" | "down") => {
     const next = feedback === value ? null : value;
     setFeedback(next);
@@ -920,7 +1276,11 @@ export function RenterWorkspace({
       /* trình duyệt chặn localStorage thì chỉ giữ trạng thái phiên */
     }
   };
-  if (tab === "viewings")
+  if (tab === "viewings") {
+    // Lọc "Trực tuyến": chỉ hiện lịch có phòng họp video (mode online).
+    const shownViewings = viewingsOnline
+      ? viewings.filter((view) => view.mode === "online")
+      : viewings;
     return (
       <>
         <div className="page-heading">
@@ -936,6 +1296,24 @@ export function RenterWorkspace({
         <section className="panel">
           <div className="section-heading">
             <h2>Yêu cầu của bạn</h2>
+            <div className="segmented" role="group" aria-label="Lọc lịch xem">
+              <button
+                type="button"
+                className={viewingsOnline ? "choice" : "choice active"}
+                aria-pressed={!viewingsOnline}
+                onClick={() => setViewingsOnline(false)}
+              >
+                Tất cả
+              </button>
+              <button
+                type="button"
+                className={viewingsOnline ? "choice active" : "choice"}
+                aria-pressed={viewingsOnline}
+                onClick={() => setViewingsOnline(true)}
+              >
+                Trực tuyến
+              </button>
+            </div>
             <button
               className="button outline small"
               onClick={() => void loadViews()}
@@ -945,11 +1323,11 @@ export function RenterWorkspace({
               Đọc lại
             </button>
           </div>
-          {viewsLoading && !viewings.length ? (
+          {(viewsLoading || !viewsLoaded) && !shownViewings.length ? (
             <LoadingState label="Đang tải lịch xem phòng…" />
           ) : (
             <ViewingList
-              items={viewings}
+              items={shownViewings}
               onFeedback={(id, rating, note) => {
                 void mutate(async () => {
                   await api.post(`/viewings/${id}/feedback`, {
@@ -961,7 +1339,7 @@ export function RenterWorkspace({
               }}
               onAction={(id, action) => {
                 void mutate(async () => {
-                  // crawl.md sửa lỗi 4 (08/11): choose_time gửi giờ mới (ngày mai,
+                  // choose_time gửi giờ mới (ngày mai,
                   // khung sáng, +07:00) để máy chủ cập nhật requested_at thật.
                   const body =
                     action === "choose_time"
@@ -984,6 +1362,7 @@ export function RenterWorkspace({
         </section>
       </>
     );
+  }
   const resultVisible = Boolean(
     result && visibleStatuses.includes(result.status),
   );
@@ -1011,18 +1390,25 @@ export function RenterWorkspace({
     area_m2: item.area_m2,
     bedrooms: item.bedrooms ?? null,
     room_type: item.room_type ?? null,
+    // Ảnh bìa cho popup marker (Candidate chỉ có source_images — displayPhotos
+    // tự ghép; không có ảnh thì popup giữ hình minh họa).
+    photoUrl: coverPhotoSrc(item),
   }));
-  // Bấm marker: làm nổi thẻ tương ứng và cuộn tới thẻ trong danh sách.
+  // Bấm marker: làm nổi thẻ tương ứng, cuộn tới thẻ trong danh sách và vẽ
+  // đường đi từ căn đó tới điểm neo.
   const handleMapSelect = (id: string) => {
     setMapFocusId(id);
+    setRouteRoomId(id);
     const card = document.querySelector(`[data-room-id="${CSS.escape(id)}"]`);
     card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
   // Bấm thẻ nhỏ: mở khung chi tiết (đánh đổi, cần xác minh, bảng phí, chat,
-  // đặt lịch) và làm nổi marker tương ứng.
+  // đặt lịch) và làm nổi marker tương ứng; không tự vẽ đường đi. Đang có
+  // đường của căn khác thì gỡ, để bản đồ không chỉ đường cho căn không xem.
   const openDetail = (item: Candidate) => {
     setDetailId(item.room_id);
     setMapFocusId(item.room_id);
+    setRouteRoomId((current) => (current === item.room_id ? current : null));
     setAgentView("detail");
   };
   const mapSelectedId = cardHoverId ?? mapFocusId;
@@ -1032,7 +1418,7 @@ export function RenterWorkspace({
         <LoadingState label="Đang khôi phục phiên tư vấn…" />
       </div>
     );
-  // Màn chào kiểu workspace tham chiếu: mascot, câu hỏi mở và composer lớn —
+  // Màn chào: mascot, câu hỏi mở và composer lớn —
   // gõ câu đầu tiên là mở phiên và gửi luôn.
   if (!session)
     return (
@@ -1134,6 +1520,42 @@ export function RenterWorkspace({
             </button>
           ))}
         </div>
+        {!historyLoading && !historyError && history?.items.length ? (
+          <section
+            className="agent-recent"
+            aria-label="Cuộc trò chuyện gần đây"
+          >
+            <h2>Cuộc trò chuyện gần đây</h2>
+            <ul>
+              {(recentAll ? history.items : history.items.slice(0, 5)).map(
+                (item) => (
+                  <li key={item.session_id}>
+                    <button
+                      type="button"
+                      className="chat-history-row"
+                      disabled={busy}
+                      onClick={() => void openSession(item.session_id)}
+                    >
+                      <span className="chat-history-title">{item.title}</span>
+                      <small>
+                        {chatTimeLabel(item.last_at)} · {item.turns} lượt
+                      </small>
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
+            {!recentAll && history.items.length > 5 && (
+              <button
+                type="button"
+                className="button small outline"
+                onClick={() => setRecentAll(true)}
+              >
+                Xem tất cả ({history.items.length})
+              </button>
+            )}
+          </section>
+        ) : null}
         <p className="agent-welcome-foot">
           Tin đang công khai · Chi phí rõ trước khi xem · Đặt lịch xem nhanh
         </p>
@@ -1141,8 +1563,20 @@ export function RenterWorkspace({
     );
   return (
     <>
-      <div className={`agent-shell${previewFull ? " preview-full" : ""}`}>
-        <section className="agent-chat" aria-label="Trò chuyện với trợ lý">
+      <div
+        ref={shellRef}
+        className={`agent-shell${previewFull ? " preview-full" : ""}`}
+        style={
+          layout.chat != null
+            ? ({ "--chat-w": `${layout.chat}px` } as React.CSSProperties)
+            : undefined
+        }
+      >
+        <section
+          ref={chatPanelRef}
+          className={`agent-chat${historyOpen ? " history-open" : ""}`}
+          aria-label="Trò chuyện với trợ lý"
+        >
           <header className="agent-chat-head">
             <span className="agent-ava">
               <AgentMascot size={32} />
@@ -1168,18 +1602,28 @@ export function RenterWorkspace({
             <button
               type="button"
               className="rail-mini"
-              aria-label="Phiên mới"
+              aria-label="Lịch sử trò chuyện"
+              aria-expanded={historyOpen}
+              aria-pressed={historyOpen}
+              onClick={() => setHistoryOpen((open) => !open)}
+            >
+              <Icon name="clock" size={17} />
+            </button>
+            <button
+              type="button"
+              className="rail-mini"
+              aria-label="Cuộc trò chuyện mới"
               onClick={() => void create()}
               disabled={busy}
             >
-              <Icon name="refresh" size={16} />
+              <Icon name="plus" size={17} />
             </button>
           </header>
           <div className="agent-chat-body" aria-live="polite" ref={messageList}>
             {messages.length === 0 && !busy ? (
               <p className="subtle">
-                Bạn có thể tiếp tục chia sẻ nhu cầu. Nội dung hội thoại không
-                được lưu trên trình duyệt sau khi đăng xuất.
+                Bạn có thể tiếp tục chia sẻ nhu cầu. Các cuộc trò chuyện cũ nằm
+                trong Lịch sử trò chuyện.
               </p>
             ) : (
               <>
@@ -1200,26 +1644,42 @@ export function RenterWorkspace({
                             {m.clarification.reason}
                           </small>
                         )}
-                        <div className="relax-chips">
-                          {m.clarification.options.map((option) => (
-                            <button
-                              key={option.id}
-                              type="button"
-                              className="button small outline"
-                              onClick={() => void applyClarification(option)}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
+                        {/* Nút chỉ còn hiệu lực ở câu hỏi mới nhất và chưa trả lời;
+                            câu hỏi cũ giữ lại dòng chữ, không giữ nút bấm được. */}
+                        {m.clarification.answered ? (
+                          <small className="chat-clarify-reason chat-answered">
+                            Đã chọn: {m.clarification.answered}
+                          </small>
+                        ) : (
+                          i === messages.length - 1 && (
+                            <div className="relax-chips">
+                              {m.clarification.options.map((option) => (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  className="button small outline"
+                                  onClick={() =>
+                                    void applyClarification(option, i)
+                                  }
+                                >
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        )}
                       </div>
                     )}
                     {m.role === "assistant" ? (
-                      <RoomRefText
-                        text={m.text}
-                        rooms={resultList}
-                        onPick={(room) => setViewRoom(room)}
-                      />
+                      // Lời trả lời trùng nguyên câu hỏi của chip thì không in lần hai.
+                      m.clarification?.question.trim() ===
+                      m.text.trim() ? null : (
+                        <RoomRefText
+                          text={m.text}
+                          rooms={resultList}
+                          onPick={(room) => setViewRoom(room)}
+                        />
+                      )
                     ) : (
                       <p>{m.text}</p>
                     )}
@@ -1399,21 +1859,100 @@ export function RenterWorkspace({
               “Nhu cầu của tôi”.
             </p>
           </div>
+          {historyOpen && (
+            <div
+              className="chat-history"
+              role="region"
+              aria-label="Lịch sử trò chuyện"
+            >
+              <div className="chat-history-head">
+                <strong>Lịch sử trò chuyện</strong>
+                <button
+                  type="button"
+                  className="rail-mini"
+                  aria-label="Đóng lịch sử"
+                  onClick={() => setHistoryOpen(false)}
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+              <button
+                type="button"
+                className="button primary chat-history-new"
+                onClick={() => void create()}
+                disabled={busy}
+              >
+                <Icon name="plus" size={16} /> Cuộc trò chuyện mới
+              </button>
+              <div className="chat-history-list">
+                {historyLoading && !history ? (
+                  <LoadingState label="Đang tải lịch sử…" />
+                ) : historyError ? (
+                  <div className="chat-history-empty" role="alert">
+                    <p>{historyError}</p>
+                    <button
+                      type="button"
+                      className="button small outline"
+                      onClick={() => void loadHistory()}
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                ) : history && history.items.length === 0 ? (
+                  <p className="chat-history-empty">
+                    Chưa có cuộc trò chuyện nào được lưu.
+                  </p>
+                ) : (
+                  <ul>
+                    {(history?.items ?? []).map((item) => {
+                      const isCurrent = item.session_id === session?.session_id;
+                      return (
+                        <li key={item.session_id}>
+                          <button
+                            type="button"
+                            className="chat-history-row"
+                            aria-current={isCurrent ? "true" : undefined}
+                            disabled={busy}
+                            onClick={() => void openSession(item.session_id)}
+                          >
+                            <span className="chat-history-title">
+                              {item.title}
+                            </span>
+                            <small>
+                              {chatTimeLabel(item.last_at)} · {item.turns} lượt
+                            </small>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+              {history && (
+                <p className="chat-history-note">
+                  Hội thoại được lưu {history.retention_days} ngày; số điện
+                  thoại, email… đã được ẩn.
+                </p>
+              )}
+            </div>
+          )}
         </section>
+        {!previewFull && (
+          <ResizeHandle
+            label="Đổi chiều rộng khung trò chuyện"
+            getSize={() => chatPanelRef.current?.offsetWidth ?? 440}
+            min={320}
+            max={() => (shellRef.current?.offsetWidth ?? 1200) - 560}
+            onChange={(px) => updateLayout({ chat: px })}
+            onReset={() => updateLayout({ chat: null })}
+          />
+        )}
         <section className="agent-preview" aria-label="Preview kết quả">
           <header className="agent-preview-head">
             <span className="agent-preview-tag">
               <Icon name="layers" size={15} /> PREVIEW
             </span>
             <div className="agent-preview-tools">
-              <button
-                type="button"
-                aria-label="Danh sách đề xuất"
-                aria-pressed={sideView === "rooms"}
-                onClick={() => setSideView("rooms")}
-              >
-                <Icon name="grid" size={16} />
-              </button>
               <button
                 type="button"
                 aria-label="Bản đồ"
@@ -1466,8 +2005,11 @@ export function RenterWorkspace({
                   selected={selected}
                   onSelect={toggle}
                   onViewing={setViewRoom}
-                  onSimulate={setSimRoom}
                   onChat={(item) => void chat(item)}
+                  routes={sessionRoutes.byRoom}
+                  routeSkipped={sessionRoutes.skipped}
+                  anchorLabel={mapAnchor?.label}
+                  routeAttribution={sessionRoutes.attribution}
                   onAskFollowUp={(text) => {
                     // Điền câu nới vào ô chat; không tự gửi — người dùng đọc
                     // và quyết định, đúng nguyên tắc không tự nới điều kiện.
@@ -1477,9 +2019,17 @@ export function RenterWorkspace({
                 />
               </div>
             ) : (
-              <div className="agent-results">
+              <div
+                ref={resultsRef}
+                className="agent-results"
+                style={
+                  layout.map != null
+                    ? ({ "--map-w": `${layout.map}px` } as React.CSSProperties)
+                    : undefined
+                }
+              >
                 {mapVisible && (
-                  <div className="agent-map">
+                  <div ref={mapPanelRef} className="agent-map">
                     <span className="agent-map-chip">
                       {resultList.length} căn phù hợp
                     </span>
@@ -1489,11 +2039,31 @@ export function RenterWorkspace({
                       onSelect={handleMapSelect}
                       savedIds={savedIds}
                       onToggleSave={toggleSave}
+                      anchor={mapAnchor}
+                      route={mapRoute}
+                      overlay={
+                        mapAnchor ? (
+                          <RoutePanel
+                            anchor={mapAnchor}
+                            roomAddress={
+                              routeRoom
+                                ? roomAddresses[routeRoom.room_id] ||
+                                  `${routeRoom.area}, ${routeRoom.city}`
+                                : null
+                            }
+                            state={routeState}
+                            travel={routeTravel}
+                            onTravel={setRouteTravel}
+                            onClose={() => setRouteRoomId(null)}
+                          />
+                        ) : undefined
+                      }
                     />
                   </div>
                 )}
                 {(agentView === "detail" || agentView === "cost") && (
                   <div
+                    ref={focusViewRef}
                     className="agent-focus-view"
                     aria-label={
                       agentView === "detail"
@@ -1515,7 +2085,7 @@ export function RenterWorkspace({
                           setDetailId(null);
                         }}
                       >
-                        <Icon name="refresh" size={13} /> Bố cục thường
+                        <Icon name="back" size={13} /> Quay lại
                       </button>
                     </div>
                     {(() => {
@@ -1533,7 +2103,6 @@ export function RenterWorkspace({
                             item={focused}
                             selected
                             onViewing={() => setViewRoom(focused)}
-                            onSimulate={() => setSimRoom(focused)}
                             onChat={() => void chat(focused)}
                           />
                           <CostBreakdown cost={focused.cost} />
@@ -1541,6 +2110,16 @@ export function RenterWorkspace({
                       );
                     })()}
                   </div>
+                )}
+                {mapVisible && (
+                  <ResizeHandle
+                    label="Đổi chiều rộng bản đồ"
+                    getSize={() => mapPanelRef.current?.offsetWidth ?? 480}
+                    min={280}
+                    max={() => (resultsRef.current?.offsetWidth ?? 1000) - 330}
+                    onChange={(px) => updateLayout({ map: px })}
+                    onReset={() => updateLayout({ map: null })}
+                  />
                 )}
                 {/* Khung chi tiết (bấm thẻ) thay thế danh sách: bản đồ bên
                     trái giữ nguyên, chi tiết chiếm cột phải. View "list" do
@@ -1571,7 +2150,7 @@ export function RenterWorkspace({
                           className="text-button"
                           onClick={() => setAgentView(null)}
                         >
-                          Bố cục thường
+                          <Icon name="back" size={13} /> Quay lại
                         </button>
                       )}
                     </div>
@@ -1587,8 +2166,11 @@ export function RenterWorkspace({
                           selected={selected}
                           onSelect={toggle}
                           onViewing={setViewRoom}
-                          onSimulate={setSimRoom}
                           onChat={(item) => void chat(item)}
+                          routes={sessionRoutes.byRoom}
+                          routeSkipped={sessionRoutes.skipped}
+                          anchorLabel={mapAnchor?.label}
+                          routeAttribution={sessionRoutes.attribution}
                           onAskFollowUp={(text) => {
                             setText(text);
                             messageInput.current?.focus();
@@ -1629,22 +2211,13 @@ export function RenterWorkspace({
         <Comparison
           items={comparison}
           advice={advice}
+          routes={sessionRoutes.byRoom}
+          routeSkipped={sessionRoutes.skipped}
+          anchorLabel={mapAnchor?.label}
+          travel={routeTravel}
           onClose={() => setComparison(null)}
         />
       )}
-      {simRoom &&
-        !editing &&
-        visibleStatuses.includes(result?.status ?? "") &&
-        session.confirmed_profile && (
-          <SimulationPanel
-            key={simRoom.room_id}
-            room={simRoom}
-            sessionId={session.session_id}
-            profile={session.confirmed_profile}
-            api={api}
-            onClose={() => setSimRoom(null)}
-          />
-        )}
       {viewRoom &&
         session &&
         !editing &&

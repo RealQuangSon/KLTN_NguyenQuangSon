@@ -1,10 +1,9 @@
-// Bốn vai trò đích theo contract v1 (docs/api-san-pham-v1.md). Máy chủ hiện tại
-// 0.3.0 chỉ cấp renter/manager; owner/admin phải do server cấp, client không tự gán.
-export type Role = "renter" | "owner" | "manager" | "admin";
+// Ba vai trò đích theo contract v1 (docs/api-contract.md). Máy chủ cấp role,
+// client không tự gán; owner/admin phải do server cấp.
+export type Role = "renter" | "owner" | "admin";
 export const roleNames: Record<Role, string> = {
   renter: "Người thuê",
   owner: "Chủ nhà",
-  manager: "Nhân viên (cũ)",
   admin: "Quản trị viên",
 };
 // Statuses where recommended rooms are visible to the renter.
@@ -115,6 +114,8 @@ export interface Draft {
   area: string | null;
   people: number | null;
   preferences: string[];
+  // Tiện ích khách nói "bắt buộc" trong chat; thành must_amenities của hồ sơ (lọc cứng).
+  must_amenities?: string[];
   budget_hint_vnd: number | null;
   budget_scope?: "rent" | "total" | null;
   budget_min_vnd?: number | null;
@@ -124,6 +125,15 @@ export interface Draft {
   budget_approx?: boolean;
   destination?: Destination | null;
   needs_destination: boolean;
+  // Khách nói ở chung mà chưa nêu số người / loại điểm đến chưa nêu tên ("gần trường").
+  needs_people?: boolean;
+  destination_kind?:
+    | "school"
+    | "hospital"
+    | "transit"
+    | "current"
+    | "personal"
+    | null;
   accept_estimated_data?: boolean;
   room_type?: RoomType | null;
   bedrooms?: number | null;
@@ -241,6 +251,58 @@ export interface Candidate {
   // trong payload run đã xếp hạng); chỉ để hiển thị.
   source_images?: string[];
 }
+// MP-01: GET /sessions/{id}/rooms/{room_id}/route — đường đi từ căn tới điểm
+// neo (điểm đến của hồ sơ đã xác nhận). straight_line = chim bay, không có giờ.
+export type RouteTravel = "ride" | "walk";
+export interface RouteResult {
+  run_id: string;
+  room_id: string;
+  travel: RouteTravel;
+  provider: "goong" | "osrm" | "straight_line";
+  vehicle: "motorbike" | "car" | "foot" | null;
+  distance_m: number;
+  duration_s: number | null;
+  straight_line_m: number;
+  geometry: { type: "LineString"; coordinates: [number, number][] };
+  origin: {
+    latitude: number;
+    longitude: number;
+    location_accuracy: "exact" | "approximate";
+    uncertainty_m: number | null;
+  };
+  anchor: {
+    label: string;
+    latitude: number;
+    longitude: number;
+    max_distance_m: number;
+    uncertainty_m: number;
+  };
+  attribution: string | null;
+  fallback_reason: "no_provider" | "provider_error" | "rate_limited" | null;
+}
+// GET /sessions/{id}/routes — quãng đường/thời gian từ mọi căn trong
+// kết quả đang hiển thị tới điểm neo; một request cho cả danh sách nên mỗi
+// phần tử không có geometry/origin như endpoint một căn.
+export interface RouteSummary {
+  room_id: string;
+  travel: RouteTravel;
+  provider: RouteResult["provider"];
+  vehicle: RouteResult["vehicle"];
+  distance_m: number;
+  duration_s: number | null;
+  straight_line_m: number;
+  fallback_reason: RouteResult["fallback_reason"];
+}
+export interface SessionRoutesResult {
+  // Null khi hồ sơ đã có điểm neo nhưng chưa có lượt tìm (items rỗng khi đó).
+  run_id: string | null;
+  travel: RouteTravel;
+  anchor: RouteResult["anchor"];
+  items: RouteSummary[];
+  // Căn chỉ biết khu vực nên không tính được đường đi.
+  skipped: string[];
+  attribution: string | null;
+}
 export interface Results {
   session_id: string;
   run_id?: string;
@@ -345,7 +407,7 @@ export interface Room {
   ward_2025?: string | null;
   street?: string | null;
   available_from?: string | null;
-  // CA-04/crawl.md B-2,C-1: ảnh, video Cloudflare Stream, nhà vệ sinh, tên dự
+  // Ảnh, video Cloudflare Stream, nhà vệ sinh, tên dự
   // án, tầng, hướng, loại hình theo tin gốc; tin không ghi thì null/rỗng —
   // poster_name KHÔNG bao giờ có ở đây (chỉ trả qua contact khi đã đăng nhập).
   source_images?: string[];
@@ -356,7 +418,7 @@ export interface Room {
   direction?: string | null;
   balcony_direction?: string | null;
   property_subtype?: string | null;
-  // crawl.md E-04/E-06: kiểm chứng tin + chỗ ở tương tự (chỉ ở /listings/{id}).
+  // Kiểm chứng tin + chỗ ở tương tự (chỉ ở /listings/{id}).
   trust?: TrustPayload | null;
   similar_rooms?: SimilarRoom[];
   photos?: Photo[];
@@ -410,7 +472,7 @@ export interface Viewing {
   run_id: string | null;
   room_id: string;
   requested_at: string;
-  // crawl.md E-01: vòng đời mở rộng.
+  // Vòng đời mở rộng.
   status:
     | "requested"
     | "confirmed"
@@ -436,6 +498,10 @@ export interface Viewing {
   contact_name?: string | null;
   contact_phone?: string | null;
   contact_shared?: boolean;
+  // B1 (15/11): tên phòng (đã che địa chỉ) cho danh sách lịch cả ba vai.
+  room_title?: string | null;
+  // Chỉ hàng đợi điều phối admin trả (A1): URL tin gốc lấy từ `source` của phòng.
+  source_url?: string | null;
 }
 export const timeSlotLabels: Record<string, string> = {
   morning: "Sáng (8:00–12:00)",
@@ -478,7 +544,7 @@ export const amenities: Record<string, string> = {
   washing_machine: "Máy giặt",
   balcony: "Ban công",
   // AMENITY_KEYS chỉ có một khóa nội thất; tin ghi "nội thất đầy đủ" cũng map
-  // vào khóa này nên nhãn trung tính, không nói sai nội dung tin (crawl.md C-2).
+  // vào khóa này nên nhãn trung tính, không nói sai nội dung tin.
   furniture: "Có nội thất",
   pets_allowed: "Nuôi thú cưng",
   // LF-05: 10 tiện ích mới — nhãn phải khớp AMENITY_KEYS của backend (test đồng bộ).
@@ -601,4 +667,23 @@ export const statusLabels: Record<string, string> = {
   reschedule_proposed: "Có đề xuất giờ mới",
   completed: "Đã xem xong",
   no_show: "Không diễn ra",
+};
+
+export type ChatHistoryEntry = {
+  session_id: string;
+  title: string;
+  turns: number;
+  started_at: string;
+  last_at: string;
+};
+
+export type ChatHistory = {
+  retention_days: number;
+  items: ChatHistoryEntry[];
+};
+
+export type ChatTranscript = {
+  session_id: string;
+  retention_days: number;
+  messages: { role: "user" | "assistant"; text: string; created_at: string }[];
 };

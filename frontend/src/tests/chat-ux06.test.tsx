@@ -13,7 +13,7 @@ const base = session();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const setup = (turnImpl: (...args: any[]) => Promise<unknown>) => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -29,7 +29,7 @@ const setup = (turnImpl: (...args: any[]) => Promise<unknown>) => {
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,
@@ -94,7 +94,7 @@ it("marks a failed send and lets the user resend it", async () => {
 
 it("UX-02: the frontend never builds or posts a profile after a chat turn", async () => {
   const api = new Api("token");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(
     async (path) =>
       (path.endsWith("/results")
@@ -114,7 +114,7 @@ it("UX-02: the frontend never builds or posts a profile after a chat turn", asyn
     <RouterProvider>
       <RenterWorkspace
         api={api}
-        actor={{ id: "renter-a", role: "renter" }}
+        actor={{ id: "renter", role: "renter" }}
         tab="search"
       />
     </RouterProvider>,

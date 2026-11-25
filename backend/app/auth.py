@@ -18,9 +18,17 @@ from .organizations import DEFAULT_ORGANIZATION_ID, ensure_bootstrap, ensure_mem
 logger = logging.getLogger("homematch.api")
 
 
-SEED_USERS = (("renter-a", "renter"), ("renter-b", "renter"),
-              ("owner-a", "owner"), ("owner-b", "owner"), ("owner-c", "owner"), ("owner-d", "owner"),
-              ("manager-a", "manager"), ("manager-b", "manager"), ("admin-a", "admin"))
+# Four trial accounts across the three roles: one renter, one landlord per
+# city (owner1 = Hà Nội, owner2 = TP.HCM) and one platform admin.
+SEED_USERS = (("renter", "renter"), ("owner1", "owner"), ("owner2", "owner"), ("admin", "admin"))
+
+# Shared demo password for the seed accounts above; each can be overridden by
+# HOMEMATCH_PASSWORD_<USERNAME> (rotation still demands stronger secrets).
+SEED_PASSWORD = "123456"
+
+# Seed accounts the local "Trải nghiệm nhanh" chips may enter without a
+# password (POST /auth/demo-login). Admin is deliberately left out.
+DEMO_LOGIN_USERS = ("renter", "owner1", "owner2")
 
 USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{2,49}$")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -244,6 +252,7 @@ def account_profile(repo, user_id: str) -> dict:
                               if profile else None,
             "status": profile["status"] if profile else "active",
             "contact_phone": profile.get("contact_phone") if profile else None,
+            "created_at": profile["created_at"] if profile else None,
             "consents": consents,
             "organizations": [dict(row) for row in memberships]}
 
@@ -408,7 +417,7 @@ class SeedAuth:
         with self.lock, self.repo.db:
             for username, role in SEED_USERS:
                 variable = "HOMEMATCH_PASSWORD_" + username.upper().replace("-", "_")
-                password = os.getenv(variable) or f"local-{username}-password"
+                password = os.getenv(variable) or SEED_PASSWORD
                 self.repo.db.execute("INSERT INTO hm_users(id,role,password_hash) VALUES(?,?,?) "
                                      "ON CONFLICT(id) DO NOTHING", (username, role, password_hash(password)))
                 if public:
@@ -423,7 +432,7 @@ class SeedAuth:
             for username, _ in SEED_USERS:
                 variable = "HOMEMATCH_PASSWORD_" + username.upper().replace("-", "_")
                 value = os.getenv(variable)
-                if not value or len(value) < 16 or value == f"local-{username}-password":
+                if not value or len(value) < 16 or value == SEED_PASSWORD:
                     raise ValueError("Rotation requires explicit non-default passwords of at least 16 characters")
                 self.repo.db.execute("UPDATE hm_users SET password_hash=? WHERE id=?", (password_hash(value), username))
                 self.repo.db.execute("UPDATE hm_tokens SET revoked=1 WHERE user_id=?", (username,))
@@ -435,19 +444,36 @@ class SeedAuth:
         if not verify_password(password, encoded) or row is None:
             # Wrong credentials never reveal whether the account exists.
             raise DomainError("invalid_credentials", "Tên đăng nhập hoặc mật khẩu không đúng.", 401)
-        raw = secrets.token_urlsafe(32)
-        expires = time.time() + self.ttl
         with self.lock, self.repo.db:
             # A password rotation may have happened while scrypt ran outside the lock.
             current = self.repo.db.execute("SELECT role,password_hash FROM hm_users WHERE id=?", (username,)).fetchone()
             if current is None or current["password_hash"] != encoded:
                 raise DomainError("invalid_credentials", "Tên đăng nhập hoặc mật khẩu không đúng.", 401)
             self._require_active_account(username)
-            self.repo.db.execute("INSERT INTO hm_tokens(token_hash,user_id,expires_at,revoked) VALUES(?,?,?,0)",
-                                 (hashlib.sha256(raw.encode()).hexdigest(), username, expires))
+            return self._issue_token(username, current["role"])
+
+    def demo_login(self, username: str) -> dict:
+        """One-click login for the local "Trải nghiệm nhanh" chips, so the
+        frontend never holds a password. The route allows it only in seed,
+        non-public mode from a local peer; admin is never offered."""
+        if username not in DEMO_LOGIN_USERS:
+            raise DomainError("not_found", "Không có tài khoản dùng thử này.", 404)
+        with self.lock, self.repo.db:
+            current = self.repo.db.execute("SELECT role FROM hm_users WHERE id=?", (username,)).fetchone()
+            if current is None:
+                raise DomainError("not_found", "Không có tài khoản dùng thử này.", 404)
+            self._require_active_account(username)
+            return self._issue_token(username, current["role"])
+
+    def _issue_token(self, username: str, role: str) -> dict:
+        # Caller holds the lock and the transaction.
+        raw = secrets.token_urlsafe(32)
+        expires = time.time() + self.ttl
+        self.repo.db.execute("INSERT INTO hm_tokens(token_hash,user_id,expires_at,revoked) VALUES(?,?,?,0)",
+                             (hashlib.sha256(raw.encode()).hexdigest(), username, expires))
         return {"access_token": raw, "token_type": "bearer",
                 "expires_at": datetime.fromtimestamp(expires, timezone.utc).isoformat(),
-                "actor": Actor(id=username, role=current["role"]).model_dump()}
+                "actor": Actor(id=username, role=role).model_dump()}
 
     def _require_active_account(self, username: str):
         """Registered accounts must be verified and enabled; seed accounts

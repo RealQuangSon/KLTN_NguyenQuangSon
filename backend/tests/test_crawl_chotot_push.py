@@ -41,7 +41,7 @@ def snapshot_dir(tmp_path):
                                              "advance_months": None, "payment_cycle_months": None,
                                              "min_lease_months": None, "fees": [], "one_time_vnd": None},
             "source": "https://www.chotot.com/87761601.htm", "synthetic": False,
-            "features_text": None, "landlord_id": "owner-a", "description": "Phòng mới.",
+            "features_text": None, "landlord_id": "owner2", "description": "Phòng mới.",
             "posted_at": "2026-10-30T04:00:00+00:00", "poster_kind": "individual",
             "ward": None, "ward_2025": None, "street": None, "available_from": None}
     catalog = {"notice": "test fixture", "snapshot_id": SNAPSHOT_ID, "rooms": [room]}

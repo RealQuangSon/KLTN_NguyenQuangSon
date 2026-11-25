@@ -14,9 +14,9 @@ from backend.app.automation import similar_rooms
 from backend.app.main import create_app
 from backend.app.promotions import today_vn
 
-OWNER_A = {"Authorization": "Bearer demo-owner-a"}
-OWNER_B = {"Authorization": "Bearer demo-owner-b"}
-RENTER_A = {"Authorization": "Bearer demo-renter-a"}
+OWNER_2 = {"Authorization": "Bearer demo-owner2"}
+OWNER_B = {"Authorization": "Bearer demo-owner1"}
+RENTER = {"Authorization": "Bearer demo-renter"}
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def free_room(service):
     return next(room for room in service.catalog.rooms() if room.published and room.available)
 
 
-def put_promotion(client, room_id, text="Giảm giá tháng đầu", valid_until=None, headers=OWNER_A):
+def put_promotion(client, room_id, text="Giảm giá tháng đầu", valid_until=None, headers=OWNER_2):
     return client.put(f"/landlord/rooms/{room_id}/promotion", headers=headers,
                       json={"text": text, "valid_until": (valid_until or today_vn()).isoformat()})
 
@@ -85,20 +85,20 @@ def test_promotion_shows_on_listing_and_landlord_dtos_and_delete_clears_it(clien
     search = client.get("/listings", params={"city": room.city, "area": room.area}).json()
     target = next(item for item in search["items"] if item["id"] == room.id)
     assert target["promotion"]["text"] == "Giảm giá tháng đầu"
-    own = client.get(f"/landlord/rooms/{room.id}", headers=OWNER_A).json()["room"]
+    own = client.get(f"/landlord/rooms/{room.id}", headers=OWNER_2).json()["room"]
     assert own["promotion"]["valid_until"] == until.isoformat()
-    deleted = client.delete(f"/landlord/rooms/{room.id}/promotion", headers=OWNER_A)
+    deleted = client.delete(f"/landlord/rooms/{room.id}/promotion", headers=OWNER_2)
     assert deleted.status_code == 204
     assert client.get(f"/listings/{room.id}").json()["promotion"] is None
-    assert client.delete(f"/landlord/rooms/{room.id}/promotion", headers=OWNER_A).status_code == 404
+    assert client.delete(f"/landlord/rooms/{room.id}/promotion", headers=OWNER_2).status_code == 404
 
 
 def test_non_owners_get_404_and_renters_403(client):
     assert put_promotion(client, "demo-01", headers=OWNER_B).status_code == 404
     assert client.delete("/landlord/rooms/demo-01/promotion", headers=OWNER_B).status_code == 404
-    assert put_promotion(client, "room-0000000000", headers=OWNER_A).status_code == 404
-    assert put_promotion(client, "demo-01", headers=RENTER_A).status_code == 403
-    assert client.delete("/landlord/rooms/demo-01/promotion", headers=RENTER_A).status_code == 403
+    assert put_promotion(client, "room-0000000000", headers=OWNER_2).status_code == 404
+    assert put_promotion(client, "demo-01", headers=RENTER).status_code == 403
+    assert client.delete("/landlord/rooms/demo-01/promotion", headers=RENTER).status_code == 403
 
 
 def test_invalid_window_and_blank_text_are_rejected(client):
@@ -111,7 +111,7 @@ def test_invalid_window_and_blank_text_are_rejected(client):
     assert put_promotion(client, "demo-01", valid_until=today_vn() + timedelta(days=90)).status_code == 200
     blank = put_promotion(client, "demo-01", text="   ")
     assert blank.status_code == 422
-    missing = client.put("/landlord/rooms/demo-01/promotion", headers=OWNER_A,
+    missing = client.put("/landlord/rooms/demo-01/promotion", headers=OWNER_2,
                          json={"text": "Chỉ có text"})
     assert missing.status_code == 422
 

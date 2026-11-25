@@ -150,7 +150,7 @@ class Repository:
                        landlord_id: str, mode: str = "offline", *, contact: dict | None = None,
                        handler: str = "landlord", time_slot: str | None = None,
                        note: str | None = None) -> dict:
-        # crawl.md E-01/E-02: liên hệ KHÔNG vào payload_json (payload chỉ dùng để
+        # Liên hệ KHÔNG vào payload_json (payload chỉ dùng để
         # so idempotency); time_slot chỉ thêm vào khi có giá trị để so với dữ liệu cũ.
         payload = {"run_id": run_id, "room_id": room_id, "requested_at": requested_at, "mode": mode}
         if time_slot:
@@ -344,7 +344,7 @@ class Repository:
         return [row["room_id"] for row in rows]
 
     def viewing(self, viewing_id: str) -> dict:
-        # crawl.md E-08.4: LEFT JOIN hm_leases để lấy lease_status trong cùng truy vấn.
+        # LEFT JOIN hm_leases để lấy lease_status trong cùng truy vấn.
         row = self.db.execute(
             "SELECT v.*, l.status AS lease_status, l.status!='draft' AS lease_visible "
             "FROM hm_viewings v LEFT JOIN hm_leases l ON l.id=v.lease_id WHERE v.id=?",
@@ -362,7 +362,7 @@ class Repository:
         return self.viewing(viewing_id)
 
     def viewings(self, actor_id: str, role: str) -> list[dict]:
-        # crawl.md E-08.4: LEFT JOIN hm_leases lấy lease_status trong một truy vấn
+        # LEFT JOIN hm_leases lấy lease_status trong một truy vấn
         # (không truy vấn từng dòng); người thuê chỉ thấy hợp đồng không còn draft.
         if role == "renter":
             rows = self.db.execute(
@@ -393,12 +393,8 @@ class Repository:
         row = self.db.execute("SELECT * FROM hm_support WHERE id=?", (ticket_id,)).fetchone()
         return dict(row) if row else None
 
-    def support_tickets(self, manager_id: str | None = None,
-                        status: str | None = None) -> list[dict]:
+    def support_tickets(self, status: str | None = None) -> list[dict]:
         query, params = "SELECT * FROM hm_support WHERE 1=1", []
-        if manager_id is not None:
-            query += " AND manager_id=?"
-            params.append(manager_id)
         if status is not None:
             query += " AND status=?"
             params.append(status)

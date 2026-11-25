@@ -387,6 +387,43 @@ MIGRATIONS = (
         );
         CREATE INDEX IF NOT EXISTS hm_listing_reports_status ON hm_listing_reports(status);
     """),
+    (24, "retire_legacy_seed_accounts", """
+        -- Ba vai trò renter/owner/admin với bốn tài khoản dùng thử (renter,
+        -- owner1, owner2, admin) thay cho bộ seed chín tài khoản cũ gồm vai
+        -- manager đã bỏ. Xóa mọi tài khoản staff role 'manager' và các tài
+        -- khoản seed cũ cùng dòng định danh tham chiếu. Dữ liệu nghiệp vụ lịch
+        -- sử (session, viewing, lease) giữ nguyên và chỉ còn ý nghĩa sau khi
+        -- seed lại demo. Phòng đang gắn chủ nhà cũ trở về owner_id NULL như khi
+        -- chưa có tài khoản chủ nhà (khóa ngoại trên PostgreSQL chặn xóa nếu
+        -- còn tham chiếu). Lưu ý executescript tách câu lệnh theo dấu chấm phẩy
+        -- nên phần chú thích không được chứa ký tự đó.
+        DELETE FROM hm_tokens WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_verification_tokens WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_account_profiles WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_memberships WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_notifications WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_room_saves WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_room_views WHERE user_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        UPDATE hm_room_ownership SET owner_id=NULL WHERE owner_id IN
+            (SELECT id FROM hm_users WHERE role='manager'
+             OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a'));
+        DELETE FROM hm_users WHERE role='manager'
+            OR id IN ('renter-a','renter-b','owner-a','owner-b','owner-c','owner-d','admin-a');
+    """),
 )
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

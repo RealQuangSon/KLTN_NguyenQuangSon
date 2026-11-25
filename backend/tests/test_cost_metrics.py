@@ -20,7 +20,7 @@ FAKE_USAGE = {"logical_calls": 3, "reported_tokens": 3_500_000, "calls_without_t
 def test_missing_price_file_yields_null_cost_on_metrics(service, monkeypatch):
     monkeypatch.delenv("HOMEMATCH_PROVIDER_PRICES_PATH", raising=False)
     with TestClient(create_app(lambda: service)) as client:
-        admin = {"Authorization": "Bearer demo-admin-a"}
+        admin = {"Authorization": "Bearer demo-admin"}
         response = client.get("/admin/metrics", headers=admin)
         assert response.status_code == 200
         assert response.json()["cost"] is None
@@ -86,8 +86,8 @@ def test_metrics_exposes_cost_with_real_usage(service, tmp_path, monkeypatch):
                                     "input_tokens": 2_000_000, "output_tokens": 500_000})
     service.metrics.embedding_usage({"model": "text-embedding-3-small", "embedding_tokens": 1_000_000})
     with TestClient(create_app(lambda: service)) as client:
-        admin = {"Authorization": "Bearer demo-admin-a"}
-        renter = {"Authorization": "Bearer demo-renter-a"}
+        admin = {"Authorization": "Bearer demo-admin"}
+        renter = {"Authorization": "Bearer demo-renter"}
         assert client.get("/admin/metrics", headers=renter).status_code == 403
         payload = client.get("/admin/metrics", headers=admin).json()
         assert payload["cost"]["estimated_cost_vnd"] == 166_400

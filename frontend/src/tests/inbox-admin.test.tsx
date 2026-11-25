@@ -6,8 +6,8 @@ import { InboxPage, OPEN_CONVERSATION_KEY } from "../pages/Inbox";
 import { AdminWorkspace } from "../pages/AdminWorkspace";
 const conversation = {
   id: "c1",
-  renter_id: "renter-a",
-  landlord_id: "owner-a",
+  renter_id: "renter",
+  landlord_id: "owner2",
   room_id: "r1",
   last_message_at: "2026-10-05T10:00:00Z",
   unread: 1,
@@ -46,7 +46,7 @@ it("shows the landlord the handover context (band only) and sends a reply", asyn
             },
             {
               id: "m2",
-              sender_id: "renter-a",
+              sender_id: "renter",
               sender_role: "renter",
               body: "Còn phòng không?",
               created_at: "2026-10-05T10:01:00Z",
@@ -78,7 +78,7 @@ it("lets the admin open a masked transcript and see landlord response rates", as
       return [
         {
           session_id: "s1",
-          user_id: "renter-a",
+          user_id: "renter",
           turns: 2,
           started_at: "2026-10-05T10:00:00Z",
           last_at: "2026-10-05T10:00:00Z",
@@ -101,7 +101,7 @@ it("lets the admin open a masked transcript and see landlord response rates", as
     return {
       landlords: [
         {
-          landlord_id: "owner-a",
+          landlord_id: "owner2",
           conversations: 2,
           answered: 1,
           response_rate: 0.5,
@@ -112,7 +112,7 @@ it("lets the admin open a masked transcript and see landlord response rates", as
   });
   const user = userEvent.setup();
   const { unmount } = render(<AdminWorkspace api={api} section="hoi-thoai" />);
-  await user.click(await screen.findByRole("button", { name: /renter-a/ }));
+  await user.click(await screen.findByRole("button", { name: /renter/ }));
   expect(await screen.findByText("gọi [SĐT đã che]")).toBeInTheDocument();
   unmount();
   render(<AdminWorkspace api={api} section="chuyen-giao" />);

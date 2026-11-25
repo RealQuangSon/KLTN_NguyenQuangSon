@@ -37,7 +37,7 @@ def draft_room(index: int, total: int) -> Room:
     city = "TP.HCM" if index % 2 == 0 else "Hà Nội"
     apartment = index % 4 == 3
     area = AREAS[city][index % 5]
-    landlord = f"owner-{'abcd'[index % 4]}"
+    landlord = "owner1" if city == "Hà Nội" else "owner2"
     return Room.model_validate({
         "id": f"measure-{index:05d}", "revision": 1,
         "title": f"{TITLE_PARTS[index % 5]} {area} số {index}",
@@ -95,7 +95,7 @@ def measure(total: int) -> dict:
 
                 def get_landlord_rooms():
                     response = client.get("/landlord/rooms",
-                                          headers={"Authorization": "Bearer demo-owner-a"})
+                                          headers={"Authorization": "Bearer demo-owner2"})
                     assert response.status_code == 200
                     return response
 

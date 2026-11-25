@@ -67,7 +67,11 @@ def test_results_phase_after_confirm_has_result_tools(agent, renter):
     assert agent._agent_phase(sid) == "results"
     specs = spec_names("results")
     assert {"room_details", "estimate_cost"} <= specs
-    assert "prepare_viewing" not in specs and "open_landlord_chat" not in specs
+    # 18/11: prepare_viewing không tạo bản ghi nên có từ pha results (trước đó chỉ ở
+    # transaction — pha chỉ có khi đã có lịch xem, nên model không chuẩn bị được lịch
+    # đầu tiên). open_landlord_chat tạo hội thoại nên vẫn chỉ ở transaction.
+    assert "prepare_viewing" in specs
+    assert "open_landlord_chat" not in specs
 
 
 def test_transaction_phase_after_viewing_or_handover(agent, renter, landlord):

@@ -136,14 +136,17 @@ def _mentioned_room(question: str, own: list):
     return None
 
 
-def vacancy_report(repo, rooms, own) -> list[dict]:
-    # crawl.md E-03 (08/11): tiêu đề phòng trong báo cáo cho chủ nhà được che
+def vacancy_report(repo, rooms, own, limit: int | None = None) -> list[dict]:
+    # Tiêu đề phòng trong báo cáo cho chủ nhà được che
     # số nhà best-effort (phòng có thể là tin cào gán cho tài khoản demo).
     from .listings import mask_address
     result = []
     for room in own:
         if room.occupancy in ("rented", "deposited") or room.available is False:
             continue
+        # Mỗi phòng tốn 2 truy vấn + so giá; kho vài nghìn phòng thì phải chặn số phòng xét.
+        if limit is not None and len(result) >= limit:
+            break
         views = repo.db.execute("SELECT COUNT(*) AS n FROM hm_room_views WHERE room_id=?", (room.id,)).fetchone()["n"]
         viewings = repo.db.execute("SELECT COUNT(*) AS n FROM hm_viewings WHERE room_id=?", (room.id,)).fetchone()["n"]
         reasons = []
@@ -183,7 +186,7 @@ def assistant(repo, rooms, landlord_id: str, question: str, dashboard: dict) -> 
         return {"intent": "price_advice", "answer": "\n".join(f"{item['title']}: {item['message']}" for item in advice),
                 "data": advice}
     if any(word in text for word in ("trong lau", "phong trong", "chua thue", "it khach", "vi sao", "tai sao")):
-        report = vacancy_report(repo, rooms, [room] if room else own)
+        report = vacancy_report(repo, rooms, [room] if room else own, limit=10)
         if not report:
             return {"intent": "vacancy", "answer": "Hiện không có phòng trống.", "data": []}
         lines = [f"{item['title']}: " + "; ".join(item["reasons"]) + "." for item in report]

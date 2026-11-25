@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Api } from "../api";
 import type { Photo, Room } from "../types";
-import { EmptyState, ErrorNotice, Icon, money } from "../components/Shared";
+import {
+  EmptyState,
+  ErrorNotice,
+  Icon,
+  money,
+  roomTitle,
+} from "../components/Shared";
 import { DocumentViewer } from "../components/DocumentViewer";
-// Quản lý vận hành (PMS & CRM): hợp đồng, hóa đơn/công nợ, sửa chữa, khách
-// tiềm năng, tổng quan và báo cáo. Mọi con số do máy chủ tính; giao diện chỉ
-// hiển thị và gửi thao tác có kiểm tra quyền ở máy chủ.
+import { Pager, usePager } from "../components/Pager";
+// Quản lý vận hành (PMS): hợp đồng, hóa đơn/công nợ, sửa chữa, tổng quan và
+// báo cáo. Mọi con số do máy chủ tính; giao diện chỉ hiển thị và gửi thao tác
+// có kiểm tra quyền ở máy chủ.
 type Side = "landlord" | "renter";
 interface Lease {
   id: string;
   landlord_id: string;
   renter_id: string;
   room_id: string;
+  // B1 (15/11): tên phòng do máy chủ trả (đã che địa chỉ); thiếu thì dùng mã.
+  room_title?: string | null;
   start_date: string;
   end_date: string;
   rent_vnd: number;
@@ -43,6 +52,8 @@ interface Invoice {
   due_date: string;
   room_id: string;
   renter_id: string;
+  // B1 (15/11): tên phòng do máy chủ trả (đã che địa chỉ); thiếu thì dùng mã.
+  room_title?: string | null;
   lines: InvoiceLine[];
   payments?: { receipt_no: string; amount_vnd: number; recorded_at: string }[];
 }
@@ -69,16 +80,6 @@ interface Ticket {
   // FE-05: ảnh sự cố (tối đa 5), xem cần token nên tải dạng blob.
   photos?: Photo[];
 }
-interface Lead {
-  id: string;
-  renter_id: string;
-  room_id: string;
-  stage: string;
-  score: number;
-  interest: "hot" | "warm" | "cold";
-  sources: string[];
-  notes: string | null;
-}
 const leaseStatus: Record<string, string> = {
   draft: "Bản nháp",
   sent: "Đã gửi khách",
@@ -99,19 +100,6 @@ const ticketStatus: Record<string, string> = {
   resolved: "Đã xử lý, chờ xác nhận",
   closed: "Đã đóng",
   reopened: "Mở lại",
-};
-const stageLabels: Record<string, string> = {
-  new: "Mới quan tâm",
-  contacted: "Đã trao đổi",
-  viewing: "Hẹn xem",
-  negotiating: "Đang thương lượng",
-  won: "Đã thuê",
-  lost: "Không thành",
-};
-const interestLabels = {
-  hot: "Rất quan tâm",
-  warm: "Quan tâm",
-  cold: "Mới xem",
 };
 function useLoad<T>(load: () => Promise<T>, initial: T) {
   const [data, setData] = useState<T>(initial);
@@ -184,6 +172,7 @@ export function LandlordDashboard({ api }: { api: Api }) {
     null as null | Awaited<ReturnType<typeof load>>,
   );
   const d = data?.dashboard;
+  const pagedRooms = usePager(data?.analytics.rooms ?? []);
   const pct = (value: number | null | undefined) =>
     value == null ? "—" : `${Math.round(value * 100)}%`;
   return (
@@ -246,7 +235,7 @@ export function LandlordDashboard({ api }: { api: Api }) {
               </tr>
             </thead>
             <tbody>
-              {(data?.analytics.rooms ?? []).map((row) => (
+              {pagedRooms.items.map((row) => (
                 <tr key={row.room_id}>
                   <td>{row.title}</td>
                   <td>{row.views}</td>
@@ -260,6 +249,7 @@ export function LandlordDashboard({ api }: { api: Api }) {
             </tbody>
           </table>
         </div>
+        <Pager unit="phòng" {...pagedRooms.pagerProps} />
       </section>
     </>
   );
@@ -278,6 +268,7 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
     leases: [] as Lease[],
     rooms: [] as Room[],
   });
+  const pagedLeases = usePager(data.leases);
   const [doc, setDoc] = useState<{ title: string; html: string } | null>(null);
   // E-08: mở từ lịch xem đã hoàn tất (?viewing=…&room=…) → điền sẵn phòng, máy chủ
   // lấy người thuê từ lịch; chủ nhà không phải gõ mã tài khoản.
@@ -364,7 +355,7 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
               <option value="">Chọn phòng</option>
               {data.rooms.map((room) => (
                 <option key={room.id} value={room.id}>
-                  {room.title.split(". ")[0]}
+                  {roomTitle(room.title)}
                 </option>
               ))}
             </select>
@@ -429,10 +420,12 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
                 </tr>
               </thead>
               <tbody>
-                {data.leases.map((lease) => (
+                {pagedLeases.items.map((lease) => (
                   <tr key={lease.id}>
                     <td>
-                      {lease.room_id}
+                      {lease.room_title
+                        ? roomTitle(lease.room_title)
+                        : lease.room_id}
                       {lease.renewal_of && <small>Gia hạn</small>}
                     </td>
                     <td>
@@ -440,10 +433,10 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
                         ? lease.renter_id
                         : lease.landlord_id}
                     </td>
-                    <td>
+                    <td className="nowrap-cell">
                       {lease.start_date} → {lease.end_date}
                     </td>
-                    <td>
+                    <td className="nowrap-cell">
                       {money(lease.rent_vnd)} / {money(lease.deposit_vnd)}
                     </td>
                     <td>
@@ -540,6 +533,7 @@ export function LeasesPage({ api, side }: { api: Api; side: Side }) {
                 ))}
               </tbody>
             </table>
+            <Pager unit="hợp đồng" {...pagedLeases.pagerProps} />
           </div>
         )}
       </section>
@@ -594,6 +588,7 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
       }[];
     },
   });
+  const pagedInvoices = usePager(data.invoices);
   const [doc, setDoc] = useState<{ title: string; html: string } | null>(null);
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [reading, setReading] = useState<
@@ -638,7 +633,7 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
       {side === "landlord" && (
         <section className="panel">
           <h2>Chốt số & lập hóa đơn</h2>
-          <label className="inline-form">
+          <label className="period-field">
             Kỳ
             <input
               type="month"
@@ -683,7 +678,10 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
                 }}
               >
                 <strong>
-                  {lease.room_id} · {lease.renter_id}
+                  {lease.room_title
+                    ? roomTitle(lease.room_title)
+                    : lease.room_id}{" "}
+                  · {lease.renter_id}
                 </strong>
                 <label>
                   Điện đầu kỳ
@@ -808,10 +806,14 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
                 </tr>
               </thead>
               <tbody>
-                {data.invoices.map((invoice) => (
+                {pagedInvoices.items.map((invoice) => (
                   <tr key={invoice.id}>
                     <td>{invoice.period}</td>
-                    <td>{invoice.room_id}</td>
+                    <td>
+                      {invoice.room_title
+                        ? roomTitle(invoice.room_title)
+                        : invoice.room_id}
+                    </td>
                     <td>{money(invoice.total_vnd)}</td>
                     <td>{money(invoice.paid_vnd)}</td>
                     <td>{money(invoice.balance_vnd)}</td>
@@ -875,6 +877,7 @@ export function BillingPage({ api, side }: { api: Api; side: Side }) {
                 ))}
               </tbody>
             </table>
+            <Pager unit="hóa đơn" {...pagedInvoices.pagerProps} />
           </div>
         )}
       </section>
@@ -997,6 +1000,7 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
     tickets: [] as Ticket[],
     leases: [] as Lease[],
   });
+  const pagedTickets = usePager(data.tickets);
   const [form, setForm] = useState({
     room_id: "",
     title: "",
@@ -1137,161 +1141,141 @@ export function MaintenancePage({ api, side }: { api: Api; side: Side }) {
             icon="refresh"
           />
         ) : (
-          data.tickets.map((ticket) => (
-            <article key={ticket.id} className="lead-card">
-              <strong>
-                {ticket.priority === "urgent" ? "KHẨN · " : ""}
-                {ticket.title} · {ticket.room_id}
-              </strong>
-              <span>{ticket.description}</span>
-              <span>
-                {ticketStatus[ticket.status] || ticket.status}
-                {ticket.assignee ? ` · ${ticket.assignee}` : ""}
-                {ticket.cost_vnd != null
-                  ? ` · chi phí ${money(ticket.cost_vnd)}`
-                  : ""}
-              </span>
-              <details>
-                <summary>Lịch sử ({ticket.timeline.length})</summary>
-                {ticket.timeline.map((entry, index) => (
-                  <p key={index}>
-                    {entry.at.slice(0, 16).replace("T", " ")} · {entry.by} ·{" "}
-                    {ticketStatus[entry.status] || entry.status}
-                    {entry.note ? ` · ${entry.note}` : ""}
-                  </p>
-                ))}
-              </details>
-              <TicketPhotos
-                api={api}
-                photos={ticket.photos ?? []}
-                title={ticket.title}
-              />
-              <div className="inline-form">
-                <label>
-                  Ghi chú
-                  <input
-                    value={notes[ticket.id] || ""}
-                    onChange={(e) =>
-                      setNotes({ ...notes, [ticket.id]: e.target.value })
-                    }
-                  />
-                </label>
-                {side === "landlord" &&
-                  ["submitted", "reopened"].includes(ticket.status) && (
-                    <button
-                      className="button small"
-                      onClick={() =>
-                        void update(ticket, {
-                          status: "assigned",
-                          assignee: notes[ticket.id] || "Kỹ thuật",
-                        })
+          <>
+            {pagedTickets.items.map((ticket) => (
+              <article key={ticket.id} className="lead-card">
+                <strong>
+                  {ticket.priority === "urgent" ? "KHẨN · " : ""}
+                  {ticket.title} · {ticket.room_id}
+                </strong>
+                <span>{ticket.description}</span>
+                <span>
+                  {ticketStatus[ticket.status] || ticket.status}
+                  {ticket.assignee ? ` · ${ticket.assignee}` : ""}
+                  {ticket.cost_vnd != null
+                    ? ` · chi phí ${money(ticket.cost_vnd)}`
+                    : ""}
+                </span>
+                <details>
+                  <summary>Lịch sử ({ticket.timeline.length})</summary>
+                  {ticket.timeline.map((entry, index) => (
+                    <p key={index}>
+                      {entry.at.slice(0, 16).replace("T", " ")} · {entry.by} ·{" "}
+                      {ticketStatus[entry.status] || entry.status}
+                      {entry.note ? ` · ${entry.note}` : ""}
+                    </p>
+                  ))}
+                </details>
+                <TicketPhotos
+                  api={api}
+                  photos={ticket.photos ?? []}
+                  title={ticket.title}
+                />
+                <div className="inline-form">
+                  <label>
+                    Ghi chú
+                    <input
+                      value={notes[ticket.id] || ""}
+                      onChange={(e) =>
+                        setNotes({ ...notes, [ticket.id]: e.target.value })
                       }
-                    >
-                      Phân công
-                    </button>
+                    />
+                  </label>
+                  {side === "landlord" &&
+                    ["submitted", "reopened"].includes(ticket.status) && (
+                      <button
+                        className="button small"
+                        onClick={() =>
+                          void update(ticket, {
+                            status: "assigned",
+                            assignee: notes[ticket.id] || "Kỹ thuật",
+                          })
+                        }
+                      >
+                        Phân công
+                      </button>
+                    )}
+                  {side === "landlord" &&
+                    ["submitted", "assigned", "reopened"].includes(
+                      ticket.status,
+                    ) && (
+                      <button
+                        className="button small outline"
+                        onClick={() =>
+                          void update(ticket, { status: "in_progress" })
+                        }
+                      >
+                        Bắt đầu xử lý
+                      </button>
+                    )}
+                  {side === "landlord" &&
+                    [
+                      "submitted",
+                      "assigned",
+                      "in_progress",
+                      "reopened",
+                    ].includes(ticket.status) && (
+                      <button
+                        className="button small outline"
+                        onClick={() =>
+                          void update(ticket, { status: "resolved" })
+                        }
+                      >
+                        Đã xử lý
+                      </button>
+                    )}
+                  {side === "renter" && ticket.status === "resolved" && (
+                    <>
+                      <button
+                        className="button small"
+                        onClick={() =>
+                          void update(ticket, { status: "closed" })
+                        }
+                      >
+                        Xác nhận xong
+                      </button>
+                      <button
+                        className="button small outline"
+                        onClick={() =>
+                          void update(ticket, { status: "reopened" })
+                        }
+                      >
+                        Mở lại (cần ghi chú)
+                      </button>
+                    </>
                   )}
-                {side === "landlord" &&
-                  ["submitted", "assigned", "reopened"].includes(
-                    ticket.status,
-                  ) && (
-                    <button
-                      className="button small outline"
-                      onClick={() =>
-                        void update(ticket, { status: "in_progress" })
-                      }
-                    >
-                      Bắt đầu xử lý
-                    </button>
-                  )}
-                {side === "landlord" &&
-                  ["submitted", "assigned", "in_progress", "reopened"].includes(
-                    ticket.status,
-                  ) && (
-                    <button
-                      className="button small outline"
-                      onClick={() =>
-                        void update(ticket, { status: "resolved" })
-                      }
-                    >
-                      Đã xử lý
-                    </button>
-                  )}
-                {side === "renter" && ticket.status === "resolved" && (
-                  <>
-                    <button
-                      className="button small"
-                      onClick={() => void update(ticket, { status: "closed" })}
-                    >
-                      Xác nhận xong
-                    </button>
-                    <button
-                      className="button small outline"
-                      onClick={() =>
-                        void update(ticket, { status: "reopened" })
-                      }
-                    >
-                      Mở lại (cần ghi chú)
-                    </button>
-                  </>
-                )}
-              </div>
-            </article>
-          ))
+                </div>
+              </article>
+            ))}
+            <Pager unit="yêu cầu" {...pagedTickets.pagerProps} />
+          </>
         )}
       </section>
     </>
   );
 }
-// ------------------------------------------------------------ CRM leads
-export function LeadsPage({ api }: { api: Api }) {
-  const load = useCallback(() => api.get<Lead[]>("/landlord/leads"), [api]);
-  const { data, error, setError, act } = useLoad(load, [] as Lead[]);
+// ------------------------------------------------------------ chi phí sử dụng
+// Chưa có API v1 cho chỉ số điện nước/sử dụng theo hợp đồng, nên trang này là
+// khung trung thực: nói rõ chưa kích hoạt thay vì hiện số minh họa dễ gây hiểu
+// nhầm là dữ liệu thật.
+export function UsagePage({ side }: { side: Side }) {
   return (
     <>
       <Heading
-        eyebrow="CRM KHÁCH HÀNG"
-        title="Khách tiềm năng"
-        text="Tự cập nhật từ lượt xem tin, chat, yêu cầu xem và hợp đồng. Mức quan tâm theo điểm tương tác; bạn có thể chuyển giai đoạn và ghi chú."
+        eyebrow="PHÒNG ĐANG THUÊ"
+        title="Chi phí sử dụng"
+        text="Điện, nước và chi phí phát sinh theo hợp đồng — số ghi hai phía giữa bạn và chủ nhà."
       />
-      <ErrorNotice error={error} onClose={() => setError(null)} />
-      <div className="pipeline">
-        {Object.entries(stageLabels).map(([stage, label]) => (
-          <section key={stage} className="pipeline-column" aria-label={label}>
-            <strong>
-              {label} ({data.filter((lead) => lead.stage === stage).length})
-            </strong>
-            {data
-              .filter((lead) => lead.stage === stage)
-              .map((lead) => (
-                <article key={lead.id} className="lead-card">
-                  <strong>{lead.renter_id}</strong>
-                  <span>Phòng {lead.room_id}</span>
-                  <span className={`interest-${lead.interest}`}>
-                    {interestLabels[lead.interest]} · {lead.score} điểm
-                  </span>
-                  {lead.notes && <small>{lead.notes}</small>}
-                  <select
-                    aria-label={`Giai đoạn ${lead.renter_id}`}
-                    value={lead.stage}
-                    onChange={(e) =>
-                      void act(() =>
-                        api.patch(`/landlord/leads/${lead.id}`, {
-                          stage: e.target.value,
-                        }),
-                      )
-                    }
-                  >
-                    {Object.entries(stageLabels).map(([value, text]) => (
-                      <option key={value} value={value}>
-                        {text}
-                      </option>
-                    ))}
-                  </select>
-                </article>
-              ))}
-          </section>
-        ))}
-      </div>
+      <section className="panel">
+        <EmptyState
+          title="Chưa kích hoạt"
+          description="Chi phí sử dụng sẽ bật khi bạn thuê qua HomeMatch. Hiện chưa có dữ liệu thật nên trang này để trống thay vì hiện số minh họa."
+          icon="coin"
+        />
+        {side !== "renter" && (
+          <p className="subtle">Trang này dành cho không gian người thuê.</p>
+        )}
+      </section>
     </>
   );
 }

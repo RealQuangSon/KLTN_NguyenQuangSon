@@ -8,6 +8,8 @@ freshness tính theo thời điểm hiện tại nên KHÔNG cache mục đó.
 """
 from __future__ import annotations
 
+import re
+import unicodedata
 from datetime import datetime, timezone
 from statistics import median
 
@@ -22,6 +24,22 @@ TRUST_NOTICE = "Kiểm chứng tính tự động, không phải chứng nhận.
 TRUST_KEYS = ("completeness", "price_vs_area", "duplicate", "image_reuse",
               "prepay_request", "title_consistency", "freshness", "reports",
               "ownership")
+
+# B4 (15/11): mục kiểm chứng là câu tiếng Việt cho người dùng — tên phí phải
+# dịch sang nhãn tiếng Việt (không lộ khóa nội bộ electricity/water/...).
+FEE_LABELS_VI = {
+    "electricity": "điện",
+    "water": "nước",
+    "internet": "internet",
+    "parking": "giữ xe",
+    "service": "dịch vụ",
+    "deposit": "tiền cọc",
+    "first_rent": "tiền thuê trả trước",
+    "advance_rent": "thuê trả trước",
+    "one_time": "phí một lần",
+    "moving": "chuyển nhà",
+    "setup": "sắm sửa ban đầu",
+}
 
 
 def _entry(status: str, detail: str) -> dict:
@@ -65,7 +83,7 @@ def _completeness(room) -> dict:
         missing.append("tiền cọc")
     fee_names = {fee.name for fee in room.quote.fees}
     main = {"electricity", "water"} - fee_names
-    missing.extend(sorted(main))
+    missing.extend(FEE_LABELS_VI.get(name, name) for name in sorted(main))
     if not missing:
         return _entry("ok", "Tin có đủ ảnh, giá, diện tích, cọc và phí điện nước.")
     return _entry("warn", "Tin còn thiếu: " + ", ".join(missing) + ".")
@@ -124,23 +142,52 @@ def _prepay_request(room) -> dict:
     return _entry("ok", "Không thấy yêu cầu chuyển tiền trước khi xem.")
 
 
+TITLE_PRICE_TOLERANCE_VND = 500_000  # lệch quá mức này mới cảnh báo
+TITLE_AREA_TOLERANCE_M2 = 3
+
+# "3.5 triệu", "1,5tr", "3tr2" (= 3,2 triệu), "29trieu". Sau "tr" không được là
+# chữ cái, để "quận 5 trung tâm" không bị đọc thành 5 triệu.
+_TITLE_PRICE_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:trieu|tr)(\d)?(?![a-z])")
+_TITLE_AREA_RE = re.compile(r"(\d{2,3})\s*m2\b")
+
+
+def _plain(value: str) -> str:
+    """Chữ thường, bỏ dấu tiếng Việt nhưng GIỮ dấu chấm/phẩy thập phân.
+
+    `locations.fold` đổi "3.5" thành "3 5" nên không dùng được để đọc giá.
+    """
+    text = unicodedata.normalize("NFKD", (value or "").lower().replace("đ", "d"))
+    return "".join(char for char in text if not unicodedata.combining(char))
+
+
+def _title_prices_vnd(title: str) -> list[int]:
+    prices = []
+    for whole, tenth in _TITLE_PRICE_RE.findall(_plain(title)):
+        millions = float(whole.replace(",", "."))
+        if tenth:
+            millions += int(tenth) / 10
+        prices.append(round(millions * 1_000_000))
+    return prices
+
+
 def _title_consistency(room) -> dict:
-    import re
-    title = _fold(room.title)
-    prices = [int(value) for value in re.findall(r"(\d+(?:[.,]\d+)?)\s*(?:tr|trieu)", title)]
+    title = _plain(room.title)
+    prices = _title_prices_vnd(room.title)
     price_known = room.quote.rent_vnd
-    area_matches = re.findall(r"(\d{2,3})\s*m2\b", title)
+    area_matches = _TITLE_AREA_RE.findall(title)
     checks = []
-    if prices and price_known:
-        stated = prices[0].replace(",", ".") if isinstance(prices[0], str) else prices[0]
-        stated = float(str(stated).replace(",", "."))
-        if abs(stated * 1_000_000 - price_known) > 500_000:
-            checks.append("giá trong tiêu đề lệch với tin")
+    # Tiêu đề có thể nêu nhiều số tiền (giá, cọc): chỉ cảnh báo khi không số
+    # nào gần giá thuê của tin.
+    if prices and price_known and not any(
+        abs(stated - price_known) <= TITLE_PRICE_TOLERANCE_VND for stated in prices
+    ):
+        checks.append("giá trong tiêu đề lệch với tin")
     if area_matches and room.area_m2:
-        if abs(float(area_matches[0]) - room.area_m2) > 3:
+        if abs(float(area_matches[0]) - room.area_m2) > TITLE_AREA_TOLERANCE_M2:
             checks.append("diện tích trong tiêu đề lệch với tin")
     if checks:
-        return _entry("warn", "; ".join(checks) + ".")
+        detail = "; ".join(checks) + "."
+        return _entry("warn", detail[0].upper() + detail[1:])
     if prices or area_matches:
         return _entry("ok", "Số trong tiêu đề khớp với tin.")
     return _entry("unknown", "Tiêu đề không ghi giá hoặc diện tích để đối chiếu.")
@@ -166,7 +213,7 @@ def _ownership(room) -> dict:
     # Luôn unknown với tin cào: chưa đối chiếu giấy tờ (R4, E-04 bảng).
     if room.synthetic:
         return _entry("unknown", "Tin giả lập — không áp dụng kiểm chứng quyền sở hữu.")
-    return _entry("unknown", "Chưa đối chiếu giấy tờ ownership.")
+    return _entry("unknown", "Chưa đối chiếu giấy tờ quyền sở hữu.")
 
 
 class TrustChecker:

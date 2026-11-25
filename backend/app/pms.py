@@ -1,6 +1,7 @@
-"""Landlord property management (PMS) and CRM.
+"""Landlord property management (PMS).
 
-Leases, meter readings, invoices, payments, maintenance and the lead pipeline.
+Leases, meter readings, invoices, payments and maintenance. The lead pipeline
+(table `hm_leads`) was removed on 19/11/2026; the table stays only for old data.
 Money follows the same rules as the pre-rental cost engine: integer VND,
 Decimal unit prices, HALF_UP rounding per line, and no unknown rate is ever
 billed as 0 (issuing an invoice with a missing rate is refused). Issued
@@ -31,8 +32,6 @@ TICKET_TRANSITIONS = {
     "resolved": {"closed", "reopened"},
     "closed": set(),
 }
-LEAD_STAGES = ("new", "contacted", "viewing", "negotiating", "won", "lost")
-LEAD_POINTS = {"view": 1, "chat": 3, "viewing": 5, "lease": 8}
 
 
 def utc_now() -> str:
@@ -49,7 +48,7 @@ class LeaseInput(Model):
     # Để trống được khi có viewing_id: máy chủ lấy người thuê từ lịch xem.
     renter_id: str | None = Field(default=None, min_length=1, max_length=64)
     room_id: str = Field(min_length=1, max_length=100)
-    # crawl.md E-08: tạo hợp đồng từ lịch xem đã hoàn tất — renter_id lấy từ
+    # Tạo hợp đồng từ lịch xem đã hoàn tất — renter_id lấy từ
     # lịch; tùy chọn nên lời gọi cũ không vỡ.
     viewing_id: str | None = Field(default=None, min_length=1, max_length=100)
     start_date: date
@@ -110,11 +109,6 @@ class TicketUpdate(Model):
     note: str | None = Field(default=None, max_length=1000)
 
 
-class LeadUpdate(Model):
-    stage: Literal["new", "contacted", "viewing", "negotiating", "won", "lost"] | None = None
-    notes: str | None = Field(default=None, max_length=2000)
-
-
 # ---------------------------------------------------------------- leases
 
 DEFAULT_TERMS = ("1. Bên thuê thanh toán tiền thuê và các khoản phí theo hóa đơn hằng tháng trước ngày thanh toán.\n"
@@ -167,7 +161,7 @@ def create_lease(repo, room, landlord_id: str, data: LeaseInput, renewal_of: str
     renter = repo.db.execute("SELECT role FROM hm_users WHERE id=?", (renter_id,)).fetchone()
     if renter is None or renter["role"] != "renter":
         raise DomainError("invalid_renter", "Không tìm thấy tài khoản người thuê.", 422)
-    # crawl.md E-08.2: tạo từ lịch xem — lịch phải thuộc chủ nhà, đúng phòng và
+    # Tạo từ lịch xem — lịch phải thuộc chủ nhà, đúng phòng và
     # đã completed; renter_id lấy từ lịch (client không tự gõ mã tài khoản).
     if data.viewing_id:
         if viewing is None:
@@ -488,50 +482,6 @@ def update_ticket(repo, item: dict, actor, data: TicketUpdate) -> dict:
                         (status or item["status"], data.assignee, data.cost_vnd,
                          json.dumps(timeline, ensure_ascii=False), utc_now(), item["id"]))
     return ticket(repo, item["id"])
-
-
-# ---------------------------------------------------------------- CRM
-
-def touch_lead(repo, landlord_id: str, renter_id: str, room_id: str, source: str, stage_floor: str = "new"):
-    """Event-driven pipeline: interest points accumulate, the stage only moves forward (never past won/lost)."""
-    now = utc_now()
-    row = repo.db.execute("SELECT * FROM hm_leads WHERE landlord_id=? AND renter_id=? AND room_id=?",
-                          (landlord_id, renter_id, room_id)).fetchone()
-    with repo.db:
-        if row is None:
-            repo.db.execute("INSERT INTO hm_leads(id,landlord_id,renter_id,room_id,stage,score,sources_json,created_at,"
-                            "updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                            (str(uuid4()), landlord_id, renter_id, room_id, stage_floor, LEAD_POINTS.get(source, 0),
-                             json.dumps([source]), now, now))
-            return
-        stage = row["stage"]
-        if stage not in ("won", "lost") and LEAD_STAGES.index(stage_floor) > LEAD_STAGES.index(stage):
-            stage = stage_floor
-        sources = json.loads(row["sources_json"])
-        repo.db.execute("UPDATE hm_leads SET stage=?,score=score+?,sources_json=?,updated_at=? WHERE id=?",
-                        (stage, LEAD_POINTS.get(source, 0), json.dumps(sorted(set(sources) | {source})), now, row["id"]))
-
-
-def leads(repo, landlord_id: str) -> list[dict]:
-    rows = repo.db.execute("SELECT * FROM hm_leads WHERE landlord_id=? ORDER BY score DESC,updated_at DESC",
-                           (landlord_id,))
-    result = []
-    for row in rows:
-        item = dict(row)
-        item["sources"] = json.loads(item.pop("sources_json"))
-        item["interest"] = "hot" if item["score"] >= 8 else "warm" if item["score"] >= 3 else "cold"
-        result.append(item)
-    return result
-
-
-def update_lead(repo, landlord_id: str, lead_id: str, data: LeadUpdate) -> dict:
-    row = repo.db.execute("SELECT id FROM hm_leads WHERE id=? AND landlord_id=?", (lead_id, landlord_id)).fetchone()
-    if row is None:
-        raise DomainError("not_found", "Không tìm thấy khách tiềm năng.", 404)
-    with repo.db:
-        repo.db.execute("UPDATE hm_leads SET stage=COALESCE(?,stage),notes=COALESCE(?,notes),updated_at=? WHERE id=?",
-                        (data.stage, data.notes, utc_now(), lead_id))
-    return next(item for item in leads(repo, landlord_id) if item["id"] == lead_id)
 
 
 # ---------------------------------------------------------------- dashboard & analytics

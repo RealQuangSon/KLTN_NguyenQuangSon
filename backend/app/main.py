@@ -20,37 +20,36 @@ from .cost_metrics import estimate_cost_vnd, load_prices
 from .costs import estimate_cost
 from .locations import AREA_ALIASES, CITY_ALIASES
 from .listings import ListingQuery
-from .models import (Actor, CatalogStatus, ConfirmRequest, CostRequest, CostResult, DomainError,
-                     DraftPatch, LandlordRejectRequest, MediaOrderRequest, MeResult, MembershipGrant, Model,
-                     OrganizationCreate, ProfilePatch, PromotionInput, RegisterRequest, RoomInput,
-                     RoomUpdate, SimulationRequest, VerifyRequest, PasswordResetRequest, PasswordResetConfirm)
+from .models import (Actor, CatalogStatus, ConfirmRequest, CostRequest, CostResult, DeviceDestinationRequest,
+                     DomainError, DraftPatch, LandlordRejectRequest, MediaOrderRequest, MeResult, MembershipGrant,
+                     Model, OrganizationCreate, ProfilePatch, PromotionInput, RegisterRequest,
+                     RouteConsentRequest, RoomInput, RoomUpdate, SimulationRequest, VerifyRequest,
+                     PasswordResetRequest, PasswordResetConfirm)
 from . import media, memory, organizations, pms
-from .auth import (SEED_USERS, DevDeliveryStub, SeedAuth, account_profile, confirm_password_reset,
-                   landlord_status, list_sessions, normalize_phone, register_account,
-                   request_password_reset, revoke_session, update_account_profile, verify_account)
+from .auth import (SEED_PASSWORD, SEED_USERS, DevDeliveryStub, SeedAuth, account_profile,
+                   confirm_password_reset, landlord_status, list_sessions, normalize_phone,
+                   register_account, request_password_reset, revoke_session, update_account_profile,
+                   verify_account)
 from .service import HomeMatchService
-from .auth import SEED_USERS, DevDeliveryStub, SeedAuth
 from .migrations import SCHEMA_VERSION, schema_version
-from .schemas import (CatalogResult, CompareResult, DraftResult, ErrorResult, HealthResult,
+from .schemas import (CatalogResult, ChatHistoryResult, ChatTranscriptResult, CompareResult, DraftResult, ErrorResult, HealthResult,
                       ForgetResult, ListingSearchResult, LocationsResult, LoginResult, MediaResult, MemoryResult,
                       LogoutResult, MembershipResult, MessageResult, MetricsResult,
                       OrganizationResult, PasswordResetConfirmResult, PasswordResetRequestResult,
                       ProfileResult, PromotionResult, ReadyResult, RegisterResult,
-                      ResultsResult, RoomResult, SessionEntry, SessionRevokeResult, SessionResult,
-                      SimulationResult, SupportResult, SupportUpdate, VerifyResult, ViewingResult)
+                      ResultsResult, RoomResult, RouteConsentResult, RouteResult, SessionEntry, SessionRevokeResult,
+                      SessionResult, SessionRoutesResult, SimulationResult, SupportResult, SupportUpdate,
+                      VerifyResult, ViewingResult)
 
 logger = logging.getLogger("homematch.api")
 
 # Demo credentials, deliberately published for localhost Swagger walkthroughs.
 # Explicit localhost demonstration mode; normal mode uses seeded opaque-token auth.
 DEMO_TOKENS = {
-    "demo-renter-a": Actor(id="renter-a", role="renter"),
-    "demo-renter-b": Actor(id="renter-b", role="renter"),
-    "demo-owner-a": Actor(id="owner-a", role="owner"),
-    "demo-owner-b": Actor(id="owner-b", role="owner"),
-    "demo-manager-a": Actor(id="manager-a", role="manager"),
-    "demo-manager-b": Actor(id="manager-b", role="manager"),
-    "demo-admin-a": Actor(id="admin-a", role="admin"),
+    "demo-renter": Actor(id="renter", role="renter"),
+    "demo-owner1": Actor(id="owner1", role="owner"),
+    "demo-owner2": Actor(id="owner2", role="owner"),
+    "demo-admin": Actor(id="admin", role="admin"),
 }
 bearer = HTTPBearer(auto_error=False)
 
@@ -65,6 +64,10 @@ def require_delivery_available(request: Request):
 class LoginRequest(Model):
     username: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=200)
+
+
+class DemoLoginRequest(Model):
+    username: str = Field(min_length=1, max_length=100)
 
 
 class WorkspaceContext(Model):
@@ -92,7 +95,7 @@ class ViewingRequest(Model):
     requested_at: datetime
     idempotency_key: str = Field(min_length=1, max_length=100)
     mode: Literal["offline", "online"] = "offline"
-    # crawl.md E-01: liên hệ là tùy chọn ở đường phiên (service keyword); route
+    # Liên hệ là tùy chọn ở đường phiên (service keyword); route
     # đặt lịch từ tin đăng mới bắt buộc contact + consent.
     contact_name: str | None = Field(default=None, min_length=2, max_length=80)
     contact_phone: str | None = Field(default=None, min_length=8, max_length=20)
@@ -112,7 +115,7 @@ class ListingViewingRequest(Model):
     requested_at: datetime
     idempotency_key: str = Field(min_length=1, max_length=100)
     mode: Literal["offline", "online"] = "offline"
-    # crawl.md E-01/E-06: đặt lịch bắt buộc để lại liên hệ và đồng ý chia sẻ
+    # Đặt lịch bắt buộc để lại liên hệ và đồng ý chia sẻ
     # (route bắt buộc; tầng service vẫn cho phép lời gọi cũ không có contact).
     contact_name: str | None = Field(default=None, min_length=2, max_length=80)
     contact_phone: str | None = Field(default=None, min_length=8, max_length=20)
@@ -127,7 +130,7 @@ class ViewingActionRequest(Model):
     reason: str | None = Field(default=None, max_length=300)
     proposed_at: datetime | None = None
     time_slot: Literal["morning", "afternoon", "evening"] | None = None
-    # crawl.md sửa lỗi 4 (08/11): choose_time — khách chọn giờ mới thay giờ đề xuất.
+    # choose_time — khách chọn giờ mới thay giờ đề xuất.
     requested_at: datetime | None = None
 
 
@@ -152,6 +155,17 @@ class MarketingRequest(Model):
 
 class AssistantQuestion(Model):
     question: str = Field(min_length=1, max_length=1000)
+
+
+class AgentHistoryItem(Model):
+    role: Literal["user", "assistant"]
+    text: str = Field(max_length=2000)
+
+
+class LandlordAgentInput(Model):
+    message: str = Field(min_length=1, max_length=1000)
+    # Lịch sử gần nhất do trình duyệt giữ; máy chủ không lưu hội thoại chủ nhà.
+    history: list[AgentHistoryItem] = Field(default_factory=list, max_length=8)
 
 
 class LeaseAcceptance(Model):
@@ -189,7 +203,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
         storage = os.getenv("HOMEMATCH_DATABASE_URL") or os.getenv("HOMEMATCH_DB_PATH", ".local/homematch.sqlite")
         if public:
             configured = all(len(os.getenv("HOMEMATCH_PASSWORD_" + username.upper().replace("-", "_"), "")) >= 16
-                             and os.getenv("HOMEMATCH_PASSWORD_" + username.upper().replace("-", "_")) != f"local-{username}-password"
+                             and os.getenv("HOMEMATCH_PASSWORD_" + username.upper().replace("-", "_")) != SEED_PASSWORD
                              for username, _ in SEED_USERS)
             if app.state.auth_mode != "seed" or not storage.startswith(("postgresql://", "postgres://")) or not configured:
                 raise ValueError("Public mode requires PostgreSQL, seed auth and explicit seed credentials")
@@ -234,17 +248,23 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
                        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
                        allow_headers=["Authorization", "Content-Type"], expose_headers=["X-Request-ID"])
 
+    local_peers = {"127.0.0.1", "::1"}
+    if service_factory is not None:
+        local_peers.add("testclient")  # In-process fixtures, never trusted from HTTP headers.
+
+    def local_request(request: Request) -> bool:
+        peer = request.client.host if request.client else None
+        return peer in local_peers and request.url.hostname in {"127.0.0.1", "localhost", "testserver"}
+
+    def demo_login_allowed(request: Request) -> bool:
+        return (getattr(app.state, "auth_mode", None) == "seed" and not getattr(app.state, "public", False)
+                and local_request(request))
+
     @app.middleware("http")
     async def request_metadata(request: Request, call_next):
         request.state.request_id = str(uuid4())
         start = time.monotonic()
-        local_peers = {"127.0.0.1", "::1"}
-        if service_factory is not None:
-            local_peers.add("testclient")  # In-process fixtures, never trusted from HTTP headers.
-        peer = request.client.host if request.client else None
-        if getattr(app.state, "auth_mode", None) == "demo" and (
-            peer not in local_peers or request.url.hostname not in {"127.0.0.1", "localhost", "testserver"}
-        ):
+        if getattr(app.state, "auth_mode", None) == "demo" and not local_request(request):
             response = JSONResponse(status_code=403, content={"error": {"code": "demo_local_only", "message": "Demo token chỉ dùng localhost."},
                 "request_id": request.state.request_id})
         else:
@@ -318,7 +338,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     ServiceDep = Annotated[HomeMatchService, Depends(service)]
 
     @app.get("/health", response_model=HealthResult)
-    def health():
+    def health(request: Request):
         try:
             with app.state.service.lock:
                 app.state.service.repo.db.execute("SELECT 1").fetchone()
@@ -326,7 +346,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
             raise DomainError("storage_unavailable", "Kho dữ liệu tạm thời không khả dụng.", 503) from None
         return {"status": "ok", "prototype": True, "storage": "postgresql" if app.state.service.repo.db.postgres else "sqlite",
                 "auth_mode": app.state.auth_mode, "matching_method": app.state.service.matching_method, "workers": 1,
-                "public": bool(getattr(app.state, "public", False))}
+                "public": bool(getattr(app.state, "public", False)), "demo_login": demo_login_allowed(request)}
 
     @app.get("/ready", response_model=ReadyResult)
     def ready():
@@ -354,6 +374,15 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def login(body: LoginRequest):
         return app.state.auth.login(body.username, body.password)
 
+    @app.post("/auth/demo-login", response_model=LoginResult)
+    def demo_login(body: DemoLoginRequest, request: Request):
+        # Nút "Trải nghiệm nhanh": vào tài khoản dùng thử không cần mật khẩu, nên
+        # frontend không phải giữ mật khẩu nào. Chỉ seed, không public, gọi từ
+        # chính máy chạy API; ngoài điều kiện đó route coi như không tồn tại.
+        if not demo_login_allowed(request):
+            raise HTTPException(status_code=404)
+        return app.state.auth.demo_login(body.username)
+
     @app.get("/auth/me", response_model=MeResult)
     def me(actor: ActorDep, agent: ServiceDep):
         return MeResult(id=actor.id, role=actor.role,
@@ -369,6 +398,14 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def create_session(actor: ActorDep, agent: ServiceDep):
         return agent.create_session(actor)
 
+    @app.get("/sessions", response_model=ChatHistoryResult)
+    def chat_history(actor: ActorDep, agent: ServiceDep, limit: Annotated[int, Query(ge=1, le=100)] = 30):
+        return agent.chat_history(actor, limit)
+
+    @app.get("/sessions/{session_id}/transcript", response_model=ChatTranscriptResult)
+    def chat_transcript(session_id: str, actor: ActorDep, agent: ServiceDep):
+        return agent.chat_transcript(actor, session_id)
+
     @app.get("/sessions/{session_id}", response_model=SessionResult)
     def get_session(session_id: str, actor: ActorDep, agent: ServiceDep):
         return agent.session(session_id, actor)
@@ -376,6 +413,23 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.patch("/sessions/{session_id}/draft", response_model=DraftResult)
     def patch_draft(session_id: str, body: DraftPatch, actor: ActorDep, agent: ServiceDep):
         return agent.patch_draft(session_id, actor, body)
+
+    @app.put("/sessions/{session_id}/destination/device", response_model=DraftResult)
+    def set_device_destination(session_id: str, body: DeviceDestinationRequest,
+                               actor: ActorDep, agent: ServiceDep):
+        """đặt điểm neo từ vị trí hiện tại của thiết bị. Server làm tròn
+        3 chữ số, kiểm độ chính xác/vùng phục vụ, ghi đồng ý chỉ đường rồi chạy
+        đúng đường chip làm rõ (tự xác nhận và xếp hạng trong cùng yêu cầu)."""
+        return agent.set_device_destination(session_id, actor, body.latitude, body.longitude,
+                                            body.accuracy_m, body.allow_routing,
+                                            body.expected_draft_revision)
+
+    @app.put("/sessions/{session_id}/route-consent", response_model=RouteConsentResult)
+    def set_route_consent(session_id: str, body: RouteConsentRequest,
+                          actor: ActorDep, agent: ServiceDep):
+        """đổi đồng ý gửi tọa độ điểm neo (đã làm tròn) ra dịch vụ chỉ
+        đường ngoài; không đổi nháp/hồ sơ, không chạy lại tìm kiếm."""
+        return agent.set_route_consent(session_id, actor, body.allow)
 
     @app.post("/sessions/{session_id}/messages", response_model=MessageResult, response_model_exclude_unset=True)
     def message(session_id: str, body: MessageRequest, actor: ActorDep, agent: ServiceDep):
@@ -457,6 +511,19 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def compare(session_id: str, body: CompareRequest, actor: ActorDep, agent: ServiceDep):
         return agent.compare(session_id, actor, body.room_ids)
 
+    @app.get("/sessions/{session_id}/rooms/{room_id}/route", response_model=RouteResult)
+    def room_route(session_id: str, room_id: str, actor: ActorDep, agent: ServiceDep,
+                   travel: Literal["ride", "walk"] = "ride"):
+        """MP-01: đường đi từ một căn trong kết quả tới điểm neo của hồ sơ đã xác nhận."""
+        return agent.room_route(session_id, actor, room_id, travel)
+
+    @app.get("/sessions/{session_id}/routes", response_model=SessionRoutesResult)
+    def session_routes(session_id: str, actor: ActorDep, agent: ServiceDep,
+                       travel: Literal["ride", "walk"] = "ride"):
+        """quãng đường/thời gian từ mọi căn trong kết quả tới điểm neo,
+        bằng một lần gọi ma trận tới nguồn chỉ đường (không trả đường vẽ)."""
+        return agent.session_routes(session_id, actor, travel)
+
     @app.post("/costs/estimate", response_model=CostResult)
     def cost(body: CostRequest, actor: ActorDep):
         return estimate_cost(body)
@@ -486,7 +553,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
 
     @app.post("/listings/{room_id}/viewings", status_code=201, response_model=ViewingResult)
     def listing_viewing(room_id: str, body: ListingViewingRequest, actor: ActorDep, agent: ServiceDep):
-        # crawl.md E-01/E-06: route BẮT BUỘC contact_name, contact_phone (chuẩn
+        # Route BẮT BUỘC contact_name, contact_phone (chuẩn
         # hóa qua normalize_phone) và contact_consent=true.
         if not body.contact_name or not body.contact_phone:
             raise DomainError("contact_required", "Cần điền họ tên và số điện thoại để đặt lịch.", 422)
@@ -598,7 +665,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def respond_viewing(viewing_id: str, body: ViewingResponse, actor: ActorDep, agent: ServiceDep):
         return agent.respond_viewing(viewing_id, actor, body.status)
 
-    # --- crawl.md E-01/E-02: vòng đời lịch xem và điều phối ---
+    # --- Vòng đời lịch xem và điều phối ---
 
     @app.post("/viewings/{viewing_id}/actions", response_model=ViewingResult)
     def viewing_action(viewing_id: str, body: ViewingActionRequest, actor: ActorDep, agent: ServiceDep):
@@ -629,7 +696,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
         agent._role(actor, "admin")
         return agent.admin_viewing_contact(viewing_id, actor)
 
-    # --- crawl.md E-05: báo cáo tin đăng ---
+    # --- Báo cáo tin đăng ---
 
     @app.post("/listings/{room_id}/reports", status_code=201, response_model=dict)
     def report_listing(room_id: str, body: ListingReportRequest, actor: ActorDep, agent: ServiceDep):
@@ -664,7 +731,7 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def send_message(conversation_id: str, body: ConversationMessage, actor: ActorDep, agent: ServiceDep):
         return agent.send_conversation_message(actor, conversation_id, body.body)
 
-    # --- Landlord PMS & CRM (leases, billing, maintenance, leads, dashboard) ---
+    # --- Landlord PMS (leases, billing, maintenance, dashboard) ---
 
     @app.get("/landlord/dashboard", response_model=dict)
     def landlord_dashboard(actor: ActorDep, agent: ServiceDep):
@@ -718,14 +785,6 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     def decide_claim(claim_id: str, decision: Literal["confirm", "reject"], actor: ActorDep, agent: ServiceDep):
         return agent.decide_claim(actor, claim_id, decision == "confirm")
 
-    @app.get("/landlord/leads", response_model=list[dict])
-    def leads(actor: ActorDep, agent: ServiceDep):
-        return agent.leads(actor)
-
-    @app.patch("/landlord/leads/{lead_id}", response_model=dict)
-    def update_lead(lead_id: str, body: pms.LeadUpdate, actor: ActorDep, agent: ServiceDep):
-        return agent.update_lead(actor, lead_id, body)
-
     @app.post("/landlord/rooms/{room_id}/marketing", response_model=dict)
     def marketing_post(room_id: str, body: MarketingRequest, actor: ActorDep, agent: ServiceDep):
         return agent.marketing_post(actor, room_id, body.channel)
@@ -733,6 +792,10 @@ def create_app(service_factory: Callable[[], HomeMatchService] | None = None) ->
     @app.get("/landlord/rooms/{room_id}/price-advice", response_model=dict)
     def price_advice(room_id: str, actor: ActorDep, agent: ServiceDep):
         return agent.price_advice(actor, room_id)
+
+    @app.post("/landlord/agent", response_model=dict)
+    def landlord_agent(body: LandlordAgentInput, actor: ActorDep, agent: ServiceDep):
+        return agent.landlord_agent_turn(actor, body.message, [item.model_dump() for item in body.history])
 
     @app.post("/landlord/assistant", response_model=dict)
     def landlord_assistant(body: AssistantQuestion, actor: ActorDep, agent: ServiceDep):

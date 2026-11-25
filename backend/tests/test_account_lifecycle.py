@@ -21,7 +21,7 @@ def session_id_for(raw_token: str) -> str:
 
 def _login(client, username, password=None):
     response = client.post("/auth/login", json={"username": username,
-                                                "password": password or f"local-{username}-password"})
+                                                "password": password or "123456"})
     return response
 
 
@@ -101,7 +101,7 @@ def test_password_reset_flow_is_uniform_and_revokes_sessions(service, monkeypatc
         # Request looks identical for a known and an unknown account.
         known = client.post("/auth/password-reset/request", json={"username": "reset-renter"})
         unknown = client.post("/auth/password-reset/request", json={"username": "who-is-this"})
-        seed_account = client.post("/auth/password-reset/request", json={"username": "manager-a"})
+        seed_account = client.post("/auth/password-reset/request", json={"username": "admin"})
         assert known.json() == unknown.json() == seed_account.json() == {"status": "reset_requested"}
         reset_code = _stub_codes(caplog)[-1]
         assert client.post("/auth/password-reset/confirm", json={
@@ -120,10 +120,10 @@ def test_password_reset_flow_is_uniform_and_revokes_sessions(service, monkeypatc
         # Seed accounts cannot reset through this flow: no token is ever issued.
         caplog.clear()
         assert client.post("/auth/password-reset/confirm", json={
-            "username": "manager-a", "token": "no-token-was-issued",
+            "username": "admin", "token": "no-token-was-issued",
             "new_password": "not-issued-password"}).status_code == 409
         assert _stub_codes(caplog) == []
-        assert _login(client, "manager-a").status_code == 200
+        assert _login(client, "admin").status_code == 200
 
 
 
@@ -131,46 +131,46 @@ def test_profile_consent_update_rules(service, monkeypatch, caplog):
     caplog.set_level(logging.WARNING, logger="homematch.api")
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
     with TestClient(create_app(lambda: service)) as client:
-        headers = _headers(client, "manager-a")
+        headers = _headers(client, "admin")
         profile = client.get("/me/profile", headers=headers)
         assert profile.status_code == 200
         body = profile.json()
-        assert body["id"] == "manager-a" and body["role"] == "manager" and body["status"] == "active"
+        assert body["id"] == "admin" and body["role"] == "admin" and body["status"] == "active"
         assert body["consents"] == {"save_history": False, "remember_sessions": False}
         assert body["organizations"] == [{"organization_id": "org-demo", "name": "Đơn vị demo HomeMatch",
-                                          "role": "manager", "status": "active"}]
+                                          "role": "admin", "status": "active"}]
         # Consents update; unknown consent keys are rejected.
         patched = client.patch("/me/profile", headers=headers,
-                               json={"display_name": "Quản lý A", "consents": {"save_history": True}})
+                               json={"display_name": "Quản trị viên", "consents": {"save_history": True}})
         assert patched.status_code == 200
-        assert patched.json()["display_name"] == "Quản lý A"
+        assert patched.json()["display_name"] == "Quản trị viên"
         assert patched.json()["consents"]["save_history"] is True
         assert patched.json()["email"] is None and patched.json()["email_verified"] is None
         # A profile patch without an email never locks a provisioned account.
-        assert _login(client, "manager-a").status_code == 200
+        assert _login(client, "admin").status_code == 200
         assert client.patch("/me/profile", headers=headers,
                             json={"consents": {"weaponized_retention": True}}).status_code == 422
         # Role and organization are not patchable, structurally.
         assert client.patch("/me/profile", headers=headers,
-                            json={"role": "admin"}).status_code == 422
+                            json={"role": "renter"}).status_code == 422
         assert client.patch("/me/profile", headers=headers,
                             json={"organization_id": "org-demo"}).status_code == 422
         # Setting an email starts re-verification and locks login until verified.
         locked = client.patch("/me/profile", headers=headers,
-                              json={"email": "manager-a@example.com"})
+                              json={"email": "admin@example.com"})
         assert locked.status_code == 200 and locked.json()["status"] == "unverified"
         assert locked.json()["email_verified"] is False
-        assert _login(client, "manager-a").status_code == 403
+        assert _login(client, "admin").status_code == 403
         code = _stub_codes(caplog)[-1]
-        assert client.post("/auth/verify", json={"username": "manager-a", "token": code}).status_code == 200
-        assert _login(client, "manager-a").status_code == 200
+        assert client.post("/auth/verify", json={"username": "admin", "token": code}).status_code == 200
+        assert _login(client, "admin").status_code == 200
 
 
 def test_session_listing_and_revoke_by_public_token_id(service, monkeypatch):
     monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
     with TestClient(create_app(lambda: service)) as client:
-        first = _login(client, "renter-b")
-        second = _login(client, "renter-b")
+        first = _login(client, "renter")
+        second = _login(client, "renter")
         headers = {"Authorization": "Bearer " + first.json()["access_token"]}
         sessions = client.get("/me/sessions", headers=headers)
         assert sessions.status_code == 200 and len(sessions.json()) >= 2
@@ -191,8 +191,8 @@ def test_session_listing_and_revoke_by_public_token_id(service, monkeypatch):
         # The acting session stays valid; replayed revoke conflicts.
         assert client.get("/auth/me", headers=headers).status_code == 200
         assert client.delete(f"/me/sessions/{target}", headers=headers).status_code == 409
-        # Sessions are strictly per user: renter-a cannot see or revoke renter-b's.
-        other = {"Authorization": "Bearer " + _login(client, "renter-a").json()["access_token"]}
+        # Sessions are strictly per user: renter cannot see or revoke admin's.
+        other = {"Authorization": "Bearer " + _login(client, "admin").json()["access_token"]}
         listing = client.get("/me/sessions", headers=other).json()
         assert all(item["token_id"] != target for item in listing)
         assert client.delete(f"/me/sessions/{target}", headers=other).status_code == 404
@@ -227,3 +227,41 @@ def test_leftover_tokens_cannot_reactivate_a_disabled_account(service, monkeypat
                                          ("disabled-renter",)).fetchone()["status"]
         assert status == "disabled"
         assert _login(client, "disabled-renter", "very-safe-password-1").status_code == 403
+
+
+def test_demo_login_needs_no_password_but_only_works_locally_in_seed_mode(service, monkeypatch):
+    """Nút "Trải nghiệm nhanh" không gửi mật khẩu: backend cấp phiên theo tên
+    tài khoản dùng thử, chỉ khi auth seed, không public và gọi từ máy chạy API."""
+    monkeypatch.setenv("HOMEMATCH_AUTH_MODE", "seed")
+    # Mật khẩu seed bị đổi: đăng nhập bằng 123456 hỏng nhưng nút vẫn chạy.
+    monkeypatch.setenv("HOMEMATCH_PASSWORD_OWNER2", "another-local-password")
+    app = create_app(lambda: service)
+    with TestClient(app) as client:
+        assert client.get("/health").json()["demo_login"] is True
+        renter = client.post("/auth/demo-login", json={"username": "renter"})
+        assert renter.status_code == 200, renter.text
+        assert renter.json()["actor"] == {"id": "renter", "role": "renter"}
+        me = client.get("/auth/me", headers={"Authorization": f"Bearer {renter.json()['access_token']}"})
+        assert me.json()["id"] == "renter"
+        assert _login(client, "owner2").status_code == 401
+        owner = client.post("/auth/demo-login", json={"username": "owner2"})
+        assert owner.status_code == 200 and owner.json()["actor"]["role"] == "owner"
+        # Admin và tài khoản lạ không có lối vào không mật khẩu.
+        for username in ("admin", "nobody", "new-renter"):
+            assert client.post("/auth/demo-login", json={"username": username}).status_code == 404
+        assert client.post("/auth/demo-login", json={}).status_code == 422
+        # Bản public coi như không có route này.
+        app.state.public = True
+        assert client.get("/health").json()["demo_login"] is False
+        refused = client.post("/auth/demo-login", json={"username": "renter"})
+        assert refused.status_code == 404 and refused.json()["error"]["code"] == "not_found"
+        app.state.public = False
+        # Chế độ token demo không dùng route này.
+        app.state.auth_mode = "demo"
+        assert client.get("/health").json()["demo_login"] is False
+        assert client.post("/auth/demo-login", json={"username": "renter"}).status_code == 404
+        app.state.auth_mode = "seed"
+        # Gọi qua tên máy khác (mạng LAN) cũng bị từ chối.
+        client.base_url = "http://192.168.1.20:8000"
+        assert client.get("/health").json()["demo_login"] is False
+        assert client.post("/auth/demo-login", json={"username": "renter"}).status_code == 404

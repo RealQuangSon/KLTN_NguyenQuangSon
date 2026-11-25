@@ -7,10 +7,10 @@ from backend.app.service import HomeMatchService
 
 def test_postgres_published_results_survive_restart_and_stale(postgres_storage, profile):
     from backend.app.auth import SeedAuth
-    renter, landlord = Actor(id="renter-a", role="renter"), Actor(id="owner-a", role="owner")
+    renter, landlord = Actor(id="renter", role="renter"), Actor(id="owner2", role="owner")
     first = HomeMatchService(postgres_storage)
     auth = SeedAuth(first.repo, first.lock)
-    credentials = auth.login("renter-a", "local-renter-a-password")
+    credentials = auth.login("renter", "123456")
     sid = first.create_session(renter)["session_id"]
     published = first.confirm(sid, renter, profile, 0)
     assert published["status"] == "published" and published["results"]
@@ -29,7 +29,7 @@ def test_postgres_published_results_survive_restart_and_stale(postgres_storage, 
 
 
 def test_postgres_catalog_writer_during_generation_leaves_run_stale(postgres_storage, profile):
-    renter, landlord = Actor(id="renter-a", role="renter"), Actor(id="owner-a", role="owner")
+    renter, landlord = Actor(id="renter", role="renter"), Actor(id="owner2", role="owner")
     service = HomeMatchService(postgres_storage)
     writer = HomeMatchService(postgres_storage)
     try:

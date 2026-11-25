@@ -34,7 +34,7 @@ CAPABILITIES: dict[str, frozenset[str]] = {
     "viewing:request": frozenset({"renter"}),
     "viewing:read": frozenset({"renter", "owner", "admin"}),
     "viewing:respond": frozenset({"owner"}),
-    # crawl.md E-02/E-05: admin điều phối lịch tin cào và duyệt báo cáo tin.
+    # Admin điều phối lịch tin cào và duyệt báo cáo tin.
     "viewing:concierge": frozenset({"admin"}),
     "report:create": frozenset({"renter", "owner"}),
     "report:review": frozenset({"admin"}),
@@ -82,20 +82,18 @@ class Resource:
     """Ownership view of a protected resource (currently a chat session)."""
     kind: str
     owner_id: str | None = None
-    manager_id: str | None = None
 
     @classmethod
     def for_session(cls, session: dict) -> "Resource":
-        return cls("session", owner_id=session["owner_id"], manager_id=session["manager_id"])
+        return cls("session", owner_id=session["owner_id"])
 
 
 def require_session_role(session: dict, actor: Actor, role: str) -> None:
-    """Role + ownership/assignment check on one session. Message texts match the
+    """Role + ownership check on one session. Message texts match the
     long-standing service errors so existing contracts stay stable."""
     if actor.role != role:
         raise DomainError("forbidden", "Vai trò không được phép thực hiện thao tác này.", 403)
-    owner = session["owner_id"] if role == "renter" else session["manager_id"]
-    if owner != actor.id:
+    if session["owner_id"] != actor.id:
         raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
 
 
@@ -109,8 +107,7 @@ def require(action: str, actor: Actor, resource: Resource | None = None) -> None
         raise DomainError("forbidden", "Vai trò không được phép thực hiện thao tác này.", 403)
     if resource is None:
         return
-    owner = resource.owner_id if actor.role == "renter" else resource.manager_id
-    if owner != actor.id:
+    if resource.owner_id != actor.id:
         raise DomainError("forbidden", "Bạn không có quyền xem phiên này.", 403)
 
 

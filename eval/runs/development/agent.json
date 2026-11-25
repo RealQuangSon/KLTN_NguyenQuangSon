@@ -5,9 +5,9 @@
   "kind": "agent_scenarios",
   "mode": "demo",
   "model": null,
-  "p50_ms": 980.1,
-  "p95_ms": 11081.9,
-  "questions_before_first_result": 0.43,
+  "p50_ms": 54.4,
+  "p95_ms": 243.3,
+  "questions_before_first_result": 0.66,
   "results": [
     {
       "city": "Hà Nội",
@@ -24,7 +24,7 @@
             "questions_max"
           ],
           "clarification_field": "city",
-          "duration_ms": 2177.4,
+          "duration_ms": 27.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -50,14 +50,14 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 8847.9,
+          "clarification_field": "budget_scope",
+          "duration_ms": 63.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Cho thuê phòng trọ gần ĐH Quốc gia Hà Nội, giá dưới 3 triệu"
         }
@@ -78,7 +78,7 @@
             "questions_max"
           ],
           "clarification_field": "budget_cap",
-          "duration_ms": 246.7,
+          "duration_ms": 54.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -105,7 +105,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 272.6,
+          "duration_ms": 41.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -132,7 +132,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 8552.2,
+          "duration_ms": 162.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -159,7 +159,7 @@
             "questions_max"
           ],
           "clarification_field": "budget_cap",
-          "duration_ms": 1132.7,
+          "duration_ms": 27.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -186,7 +186,7 @@
             "questions_max"
           ],
           "clarification_field": "budget_cap",
-          "duration_ms": 387.3,
+          "duration_ms": 23.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -213,7 +213,7 @@
             "questions_max"
           ],
           "clarification_field": "city",
-          "duration_ms": 3478.0,
+          "duration_ms": 21.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -240,7 +240,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 3748.5,
+          "duration_ms": 152.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -266,8 +266,8 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": "people",
-          "duration_ms": 1400.3,
+          "clarification_field": "budget_scope",
+          "duration_ms": 31.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -293,14 +293,14 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 15944.1,
+          "clarification_field": "budget_scope",
+          "duration_ms": 32.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Studio Bình Thạnh 6 triệu, có ban công"
         }
@@ -321,7 +321,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 963.0,
+          "duration_ms": 141.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -348,7 +348,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 3685.0,
+          "duration_ms": 166.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -374,14 +374,14 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 1644.8,
+          "clarification_field": "budget_scope",
+          "duration_ms": 32.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Phòng trọ Đống Đa Hà Nội 3 triệu, wc riêng"
         }
@@ -402,7 +402,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 121.0,
+          "duration_ms": 29.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -428,14 +428,14 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 11081.9,
+          "clarification_field": "budget_scope",
+          "duration_ms": 35.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Phòng trọ có gác lưng Hà Nội dưới 3 triệu"
         }
@@ -456,7 +456,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 342.8,
+          "duration_ms": 29.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -483,7 +483,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 1904.0,
+          "duration_ms": 155.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -510,7 +510,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 417.1,
+          "duration_ms": 29.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -537,7 +537,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 5262.7,
+          "duration_ms": 30.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -564,7 +564,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 1906.7,
+          "duration_ms": 160.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -582,7 +582,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 980.1,
+          "duration_ms": 154.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -607,14 +607,14 @@
             "draft",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 9718.9,
+          "clarification_field": "budget_scope",
+          "duration_ms": 159.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Phòng trọ Bình Thạnh 5 triệu 2 người"
         },
@@ -626,7 +626,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 3961.1,
+          "duration_ms": 149.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -651,14 +651,14 @@
             "draft",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 12481.0,
+          "clarification_field": "budget_scope",
+          "duration_ms": 31.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Phòng trọ Cầu Giấy Hà Nội 3 triệu"
         },
@@ -670,7 +670,7 @@
             "questions_max"
           ],
           "clarification_field": "budget_scope",
-          "duration_ms": 923.9,
+          "duration_ms": 30.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -696,7 +696,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 1453.8,
+          "duration_ms": 139.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -714,7 +714,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 2289.1,
+          "duration_ms": 113.6,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -740,7 +740,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 132.2,
+          "duration_ms": 21.2,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -766,7 +766,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 1342.1,
+          "duration_ms": 21.1,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -792,7 +792,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 290.2,
+          "duration_ms": 20.7,
           "intent": "handbook",
           "passed": true,
           "problems": [],
@@ -818,7 +818,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 94.2,
+          "duration_ms": 13.7,
           "intent": "calculate_cost",
           "passed": true,
           "problems": [],
@@ -844,7 +844,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 114.4,
+          "duration_ms": 14.4,
           "intent": "human_support",
           "passed": true,
           "problems": [],
@@ -868,14 +868,14 @@
           "checked": [
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 1020.6,
+          "clarification_field": "budget_scope",
+          "duration_ms": 52.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Tìm phòng Cầu Giấy Hà Nội 4 triệu"
         },
@@ -886,13 +886,13 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 302.1,
+          "duration_ms": 38.8,
           "intent": "simulate_finance",
           "passed": true,
           "problems": [],
           "questions": 0,
           "skipped": [],
-          "status": "simulation",
+          "status": "needs_results",
           "turn_index": 1,
           "user": "nếu vay 12 tháng lãi 12% thì sao"
         }
@@ -912,8 +912,8 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": "people",
-          "duration_ms": 783.9,
+          "clarification_field": "budget_scope",
+          "duration_ms": 32.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -940,7 +940,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 984.5,
+          "duration_ms": 124.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -967,7 +967,7 @@
             "questions_max"
           ],
           "clarification_field": "people",
-          "duration_ms": 1121.3,
+          "duration_ms": 66.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -994,7 +994,7 @@
             "questions_max"
           ],
           "clarification_field": "city",
-          "duration_ms": 286.1,
+          "duration_ms": 21.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1021,7 +1021,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 452.5,
+          "duration_ms": 50.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1039,7 +1039,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 270.0,
+          "duration_ms": 77.2,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1065,7 +1065,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 531.2,
+          "duration_ms": 48.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1083,7 +1083,7 @@
             "questions_max"
           ],
           "clarification_field": "destination_radius",
-          "duration_ms": 252.8,
+          "duration_ms": 63.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1108,8 +1108,8 @@
             "draft",
             "questions_max"
           ],
-          "clarification_field": "people",
-          "duration_ms": 325.7,
+          "clarification_field": "budget_scope",
+          "duration_ms": 55.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1126,8 +1126,8 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": "people",
-          "duration_ms": 303.4,
+          "clarification_field": "budget_scope",
+          "duration_ms": 64.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1154,7 +1154,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 940.1,
+          "duration_ms": 241.7,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1180,14 +1180,14 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 4302.9,
+          "clarification_field": "budget_scope",
+          "duration_ms": 243.3,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Phòng trọ HN quận Thanh Xuân 3 triệu"
         }
@@ -1206,8 +1206,8 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": "people",
-          "duration_ms": 685.5,
+          "clarification_field": "budget_scope",
+          "duration_ms": 84.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1233,7 +1233,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 2300.6,
+          "duration_ms": 301.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1258,14 +1258,14 @@
             "draft",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 6553.5,
+          "clarification_field": "budget_scope",
+          "duration_ms": 57.8,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Tìm phòng trọ Quận 7 TP.HCM 4 triệu cho 2 người, máy lạnh"
         },
@@ -1276,7 +1276,7 @@
             "questions_max"
           ],
           "clarification_field": "budget_scope",
-          "duration_ms": 435.0,
+          "duration_ms": 52.1,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1301,14 +1301,14 @@
             "draft",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 555.7,
+          "clarification_field": "budget_scope",
+          "duration_ms": 64.5,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 0,
+          "questions": 1,
           "skipped": [],
-          "status": "published",
+          "status": "needs_clarification",
           "turn_index": 0,
           "user": "Studio Cầu Giấy Hà Nội 5 triệu cho 1 người"
         },
@@ -1318,12 +1318,12 @@
             "must_not_contain",
             "questions_max"
           ],
-          "clarification_field": null,
-          "duration_ms": 138.0,
+          "clarification_field": "budget_scope",
+          "duration_ms": 67.9,
           "intent": "find_room",
           "passed": true,
           "problems": [],
-          "questions": 2,
+          "questions": 1,
           "skipped": [],
           "status": "needs_clarification",
           "turn_index": 1,
@@ -1345,7 +1345,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 1111.7,
+          "duration_ms": 252.0,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1362,7 +1362,7 @@
             "questions_max"
           ],
           "clarification_field": null,
-          "duration_ms": 191.3,
+          "duration_ms": 54.4,
           "intent": "find_room",
           "passed": true,
           "problems": [],
@@ -1380,5 +1380,5 @@
   "turn_count": 55,
   "turn_pass_rate": 1.0,
   "version": 1,
-  "wall_seconds": 133.1
+  "wall_seconds": 4.5
 }

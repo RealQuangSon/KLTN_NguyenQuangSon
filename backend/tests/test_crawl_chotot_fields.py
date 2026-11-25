@@ -265,7 +265,7 @@ def test_source_videos_only_exact_host_and_valid_shape_capped_at_three():
 
 
 def test_stream_video_url_with_long_digits_survives_raw_masking():
-    # crawl.md B-A-1: URL video/thumbnail đúng dạng giữ nguyên khi lưu raw —
+    # URL video/thumbnail đúng dạng giữ nguyên khi lưu raw —
     # dãy số dài trong mã video không bị mask_pii che thành "[SĐT đã che]".
     uid = "97400dfa043909842d35f1280ee9e0a6"
     ad = base_ad(video={"url": _stream_url(uid),

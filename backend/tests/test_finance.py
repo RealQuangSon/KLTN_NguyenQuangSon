@@ -161,7 +161,7 @@ def test_locations_endpoint_and_cost_estimate_with_affordability(service):
         assert [city["name"] for city in cities] == ["TP.HCM", "Hà Nội"]
         hanoi = next(city for city in cities if city["name"] == "Hà Nội")
         assert "Quận Cầu Giấy" in [area["name"] for area in hanoi["areas"]]
-        headers = {"Authorization": "Bearer demo-renter-a"}
+        headers = {"Authorization": "Bearer demo-renter"}
         plain = client.post("/costs/estimate", headers=headers,
                             json={"quote": DEMO_01["quote"], "scenario": {}}).json()
         assert plain["affordability"] is None and plain["monthly_total_vnd"] == 3_250_000

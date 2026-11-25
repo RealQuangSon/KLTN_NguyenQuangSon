@@ -1,9 +1,10 @@
 """Phân tích đầu vào bằng Jev trước khi định tuyến sang agent chuyên trách.
 
-Một request Decisions API với hai câu choice: `route` (needs | finance |
-ranking | other) và `clarity` (clear = luật lọc trực tiếp được | reason = mơ
-hồ, nhu cầu ngầm, địa danh, cần suy luận). Jev chỉ trả đáp án có kiểu kèm xác
-suất, không viết câu chữ.
+Một request Decisions API với ba câu choice: `route` (needs | finance |
+ranking | other), `clarity` (clear = luật lọc trực tiếp được | reason = mơ
+hồ, nhu cầu ngầm, địa danh, cần suy luận) và `place_ref` (none | named |
+current | personal — khách nhắc chỗ muốn ở gần theo cách nào). Jev
+chỉ trả đáp án có kiểu kèm xác suất, không viết câu chữ.
 
 State gửi đi chỉ gồm tin nhắn và nháp đã qua `decision_context`/`_decision_text`
 kèm pha phiên và việc đã có kết quả hay chưa — tuyệt đối không tiền, thu nhập,
@@ -22,12 +23,15 @@ import os
 import re
 
 from .decisions import DECISION_MODEL, decision_context, jev_post
-from .interpreter import fixed_intent, folded
+from .interpreter import fixed_intent, folded, near_place_text, place_ref_hint
 
 ANALYST_TIMEOUT_S = 3.0  # chip làm rõ giữ 2 s (decisions.py); một lần đo Jev 1,31 s
 CONFIDENCE = 0.6
 ROUTES = ("needs", "finance", "ranking", "other")
 CLARITY_STATES = ("clear", "reason")
+# khách nhắc chỗ muốn ở gần là gì — none (không nhắc), named (có tên/loại
+# chung), current (vị trí hiện tại của khách), personal (chỗ riêng chưa nêu tên).
+PLACE_REFS = ("none", "named", "current", "personal")
 
 # Luật dự phòng cho route: câu hỏi so sánh/xếp hạng các căn đã gợi ý (đối chiếu
 # trên văn bản bỏ dấu); chỉ áp khi phiên đã có kết quả để xếp hạng.
@@ -65,6 +69,15 @@ def rules_route(text: str, has_results: bool) -> str:
     return "needs"
 
 
+def rules_place_ref(text: str) -> str:
+    """Luật dự phòng cho place_ref: place_ref_hint bắt được chỗ của
+    chính khách (current/personal); còn lại có tên điểm mốc → named, không → none."""
+    ref = place_ref_hint(text)
+    if ref is not None:
+        return ref
+    return "named" if near_place_text(text) else "none"
+
+
 def _state(service, session: dict, text: str, *, has_results: bool, phase: str) -> dict:
     """State gửi Jev: tin nhắn + nháp qua decision_context (bỏ *_vnd/income/loan,
     che tiền trong chuỗi), kèm pha, cờ đã có kết quả và CÂU HỎI ĐANG CHỜ (HN-13.2)
@@ -94,7 +107,18 @@ def _payload(state: dict) -> dict:
                     "instructions": "Tin nhắn đã đủ rõ để luật lọc trực tiếp chưa?",
                     "criteria": {
                         "clear": "Rõ thành phố/khu, mức tiền, loại phòng — luật lọc trực tiếp được",
-                        "reason": "Mơ hồ, nhu cầu ngầm, nhắc địa danh (gần trường), cần suy luận"}}}}
+                        "reason": "Mơ hồ, nhu cầu ngầm, nhắc địa danh (gần trường), cần suy luận"}},
+        "place_ref": {"type": "choice",
+                      "instructions": "Khách nhắc chỗ muốn ở gần theo cách nào? "
+                                      "Từ chỉ chỗ của chính khách (tôi, đây, công ty tôi) "
+                                      "không phải tên địa danh.",
+                      "criteria": {
+                          "none": "Không nhắc chỗ muốn ở gần",
+                          "named": "Nêu tên hoặc địa chỉ cụ thể (gần ĐH Bách Khoa, gần chợ Bến Thành) "
+                                   "hoặc chỉ nêu loại chung (gần trường đại học)",
+                          "current": "Vị trí hiện tại của khách (gần tôi, gần đây, chỗ tôi đang ở)",
+                          "personal": "Chỗ riêng của khách chưa có tên (gần công ty tôi, "
+                                      "gần trường con tôi)"}}}}
 
 
 def _answer(response: dict, question: str, options: tuple[str, ...]) -> dict:
@@ -125,13 +149,13 @@ def _budget_exhausted(service, session_id: str) -> bool:
 
 def analyze(service, session: dict, text: str, *, has_results: bool, phase: str,
             mode: str | None = None, client=None, emit=None) -> dict:
-    """Trả {"route", "clarity", "decided_by"} — không văn bản thô, không tiền.
+    """Trả {"route", "clarity", "place_ref", "decided_by"} — không văn bản thô, không tiền.
 
     - mode `rules`: luật ngay, `decided_by="rules"`, clarity luôn "clear"
       (không phát sinh lượt gọi LLM khi không phân tích được).
     - mode `jev`: Jev trả lời được → xác suất quyết định; route dưới 0,6 → luật;
-      p(clear) dưới 0,6 → "reason". Jev lỗi/breaker mở/hết ngân sách phiên → luật,
-      `decided_by="fallback"`, clarity "clear".
+      p(clear) dưới 0,6 → "reason"; place_ref dưới 0,6 → luật. Jev lỗi/
+      breaker mở/hết ngân sách phiên → luật, `decided_by="fallback"`, clarity "clear".
     Chi phí `usage.cost` của Jev được cộng vào trần chi phí phiên."""
     session_id = session["id"]
     mode = mode or analyst_mode()
@@ -141,6 +165,7 @@ def analyze(service, session: dict, text: str, *, has_results: bool, phase: str,
     error_name: str | None = None
     route = rules_route(text, has_results)
     clarity = "clear"
+    place_ref = rules_place_ref(text)
     if mode == "jev" and not _budget_exhausted(service, session_id):
         state = _state(service, session, text, has_results=has_results, phase=phase)
         try:
@@ -167,19 +192,27 @@ def analyze(service, session: dict, text: str, *, has_results: bool, phase: str,
             service.budget.record_cost(session_id, (response.get("usage") or {}).get("cost"))
             route_answer = _answer(response, "route", ROUTES)
             clarity_answer = _answer(response, "clarity", CLARITY_STATES)
+            place_ref_answer = _answer(response, "place_ref", PLACE_REFS)
             decided_by = "jev"
             route = route_answer["choice"]
             if route_answer["probabilities"][route] < CONFIDENCE:
                 route = rules_route(text, has_results)
                 decided_by = "fallback"
             clarity = "clear" if clarity_answer["probabilities"]["clear"] >= CONFIDENCE else "reason"
+            place_ref = place_ref_answer["choice"]
+            if place_ref_answer["probabilities"][place_ref] < CONFIDENCE:
+                # Vòng 2 (QA lỗi 4): xác suất thấp chỉ lấy luật cho riêng place_ref;
+                # nhãn decided_by mô tả quyết định ROUTE nên giữ nguyên "jev".
+                place_ref = rules_place_ref(text)
         except Exception as error:  # mọi lỗi → luật dự phòng, không chặn lượt chat
             route = rules_route(text, has_results)
             clarity = "clear"
+            place_ref = rules_place_ref(text)
             decided_by = "fallback"
             error_name = type(error).__name__
-    analysis = {"route": route, "clarity": clarity, "decided_by": decided_by}
-    summary = (f"route={route}; clarity={clarity}; decided_by={decided_by}"
+    analysis = {"route": route, "clarity": clarity, "place_ref": place_ref,
+                "decided_by": decided_by}
+    summary = (f"route={route}; clarity={clarity}; place_ref={place_ref}; decided_by={decided_by}"
                + (f"; lỗi provider={error_name}" if error_name else ""))
     service._record_step("decision", "input_analyst", True, summary)
     if emit is not None:

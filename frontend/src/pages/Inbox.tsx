@@ -3,6 +3,7 @@ import type { Api } from "../api";
 import type { Role } from "../types";
 import { amenities, bandLabels, roomTypeLabels } from "../types";
 import { EmptyState, ErrorNotice, Icon, money } from "../components/Shared";
+import { Pager, usePager } from "../components/Pager";
 // Hộp thư hợp nhất (Unified Inbox) cho khách và chủ nhà. Tin nhắn được đọc
 // lại định kỳ (polling); cuộc trò chuyện mở từ trợ lý mang theo ngữ cảnh
 // chuyển giao đã che thông tin liên hệ, không có thu nhập của khách.
@@ -80,6 +81,7 @@ export function InboxPage({ api, role }: { api: Api; role: Role }) {
     return () => window.clearInterval(timer);
   }, [refresh]);
   const active = items.find((item) => item.id === activeId) || null;
+  const pagedItems = usePager(items);
   const send = async () => {
     if (!active || !text.trim()) return;
     setBusy(true);
@@ -130,7 +132,7 @@ export function InboxPage({ api, role }: { api: Api; role: Role }) {
             className="panel inbox-list"
             aria-label="Danh sách trò chuyện"
           >
-            {items.map((item) => (
+            {pagedItems.items.map((item) => (
               <button
                 key={item.id}
                 className={`queue-item ${item.id === activeId ? "active" : ""}`}
@@ -149,6 +151,7 @@ export function InboxPage({ api, role }: { api: Api; role: Role }) {
                 <span>{item.context.room?.title || "Trao đổi chung"}</span>
               </button>
             ))}
+            <Pager unit="cuộc" {...pagedItems.pagerProps} />
           </section>
           <section className="panel inbox-thread" aria-label="Cuộc trò chuyện">
             {active && (

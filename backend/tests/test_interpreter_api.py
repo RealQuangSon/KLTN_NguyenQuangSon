@@ -105,7 +105,7 @@ def test_unknown_llm_api_value_is_rejected(monkeypatch):
 
 def test_api_authorization_end_to_end(tmp_path, profile):
     app = create_app(lambda: HomeMatchService(tmp_path / "api.sqlite"))
-    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    renter_headers = {"Authorization": "Bearer demo-renter"}
     with TestClient(app) as client:
         assert client.post("/sessions").status_code == 401
         sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
@@ -115,5 +115,5 @@ def test_api_authorization_end_to_end(tmp_path, profile):
         assert confirmed.json()["status"] == "published" and confirmed.json()["results"]
         # Endpoint duyệt gợi ý đã bị xóa: không còn đường duyệt nào cho mọi vai trò.
         assert client.get("/landlord/recommendations", headers=renter_headers).status_code == 404
-        assert client.get(f"/sessions/{sid}/results", headers={"Authorization":"Bearer demo-renter-b"}).status_code == 403
+        assert client.get(f"/sessions/{sid}/results", headers={"Authorization":"Bearer demo-owner1"}).status_code == 403
         assert client.get(f"/sessions/{sid}/results", headers=renter_headers).json()["results"]

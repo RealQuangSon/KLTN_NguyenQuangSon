@@ -42,7 +42,7 @@ def make_room(ad_id, city="TP.HCM", room_type="room", poster="individual",
         "quote": {"rent_vnd": price, "deposit_vnd": None, "advance_months": None,
                   "payment_cycle_months": None, "min_lease_months": None, "fees": [], "one_time_vnd": None},
         "source": f"https://www.chotot.com/{ad_id}.htm", "synthetic": False, "features_text": None,
-        "landlord_id": "owner-a", "description": description, "posted_at": posted,
+        "landlord_id": "owner2", "description": description, "posted_at": posted,
         "poster_kind": poster, "ward": None, "ward_2025": None, "street": None, "available_from": None,
     }
 
@@ -512,7 +512,7 @@ def test_scale_fraction_caps_each_group_for_trial_run(tmp_path):
 
 
 def test_selection_counts_per_city_with_null_area_rooms():
-    # crawl.md F: tin thiếu diện tích vẫn qua pipeline; chọn đúng số mỗi thành phố.
+    # Tin thiếu diện tích vẫn qua pipeline; chọn đúng số mỗi thành phố.
     rooms = [make_room(index, coords=(10.7 + index * 0.001, 106.7), size=None)
              for index in range(6)]
     rooms += [make_room(100 + index, city="Hà Nội", coords=(21.0 + index * 0.001, 105.8), size=None)

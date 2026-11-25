@@ -11,9 +11,8 @@ from .models import DomainError, Role
 
 RENTER = "renter"
 OWNER = "owner"
-MANAGER = "manager"
 ADMIN = "admin"
-ROLES: tuple[Role, ...] = (RENTER, OWNER, MANAGER, ADMIN)
+ROLES: tuple[Role, ...] = (RENTER, OWNER, ADMIN)
 
 # Renter capabilities cover the renter-owned resources of the 0.3.0 flow.
 RENTER_CAPABILITIES = frozenset({
@@ -33,18 +32,6 @@ OWNER_CAPABILITIES = frozenset({
     "org.members.manage",
 })
 
-# Manager capabilities enforced by the current 0.3.0 endpoints.
-MANAGER_CAPABILITIES = frozenset({
-    "org.read",
-    "org.members.read",
-    "recommendation.retry.assigned",
-    "catalog.read.private",
-    "catalog.status.update",
-    "viewing.respond.assigned",
-    "support.read.assigned",
-    "metrics.read",
-})
-
 # Admin capabilities are administrative only; they never replace
 # resource ownership checks for renter data.
 ADMIN_CAPABILITIES = frozenset({
@@ -53,7 +40,7 @@ ADMIN_CAPABILITIES = frozenset({
     "org.members.read",
     "org.members.manage",
     "audit.read",
-    # crawl.md E-02/E-05: điều phối lịch xem tin cào và duyệt báo cáo tin.
+    # Điều phối lịch xem tin cào và duyệt báo cáo tin.
     "viewing.concierge.manage",
     "listing.report.review",
 })
@@ -61,7 +48,6 @@ ADMIN_CAPABILITIES = frozenset({
 ROLE_CAPABILITIES: dict[Role, frozenset[str]] = {
     RENTER: RENTER_CAPABILITIES,
     OWNER: OWNER_CAPABILITIES,
-    MANAGER: MANAGER_CAPABILITIES,
     ADMIN: ADMIN_CAPABILITIES,
 }
 

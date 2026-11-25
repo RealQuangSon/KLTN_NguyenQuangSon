@@ -412,6 +412,114 @@
         }
       }
     },
+    "/auth/demo-login": {
+      "post": {
+        "summary": "Demo Login",
+        "operationId": "demo_login_auth_demo_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/me": {
       "get": {
         "summary": "Me",
@@ -622,6 +730,11 @@
       "post": {
         "summary": "Create Session",
         "operationId": "create_session_sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -634,91 +747,315 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Forbidden"
           },
           "404": {
-            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Not Found"
           },
           "405": {
-            "description": "Method Not Allowed",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Method Not Allowed"
           },
           "409": {
-            "description": "Conflict",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Conflict"
           },
           "422": {
-            "description": "Unprocessable Content",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Unprocessable Content"
           },
           "500": {
-            "description": "Internal Server Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Internal Server Error"
           },
           "503": {
-            "description": "Service Unavailable",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResult"
                 }
               }
-            }
+            },
+            "description": "Service Unavailable"
           }
-        },
+        }
+      },
+      "get": {
+        "summary": "Chat History",
+        "operationId": "chat_history_sessions_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/transcript": {
+      "get": {
+        "summary": "Chat Transcript",
+        "operationId": "chat_transcript_sessions__session_id__transcript_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatTranscriptResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
       }
     },
     "/sessions/{session_id}": {
@@ -872,6 +1209,256 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DraftResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/destination/device": {
+      "put": {
+        "summary": "Set Device Destination",
+        "description": "đặt điểm neo từ vị trí hiện tại của thiết bị. Server làm tròn\n3 chữ số, kiểm độ chính xác/vùng phục vụ, ghi đồng ý chỉ đường rồi chạy\nđúng đường chip làm rõ (tự xác nhận và xếp hạng trong cùng yêu cầu).",
+        "operationId": "set_device_destination_sessions__session_id__destination_device_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceDestinationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/route-consent": {
+      "put": {
+        "summary": "Set Route Consent",
+        "description": "đổi đồng ý gửi tọa độ điểm neo (đã làm tròn) ra dịch vụ chỉ\nđường ngoài; không đổi nháp/hồ sơ, không chạy lại tìm kiếm.",
+        "operationId": "set_route_consent_sessions__session_id__route_consent_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteConsentResult"
                 }
               }
             }
@@ -1598,6 +2185,273 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CompareResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/rooms/{room_id}/route": {
+      "get": {
+        "summary": "Room Route",
+        "description": "MP-01: đường đi từ một căn trong kết quả tới điểm neo của hồ sơ đã xác nhận.",
+        "operationId": "room_route_sessions__session_id__rooms__room_id__route_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "room_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "travel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "ride",
+                "walk"
+              ],
+              "type": "string",
+              "default": "ride",
+              "title": "Travel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/routes": {
+      "get": {
+        "summary": "Session Routes",
+        "description": "quãng đường/thời gian từ mọi căn trong kết quả tới điểm neo,\nbằng một lần gọi ma trận tới nguồn chỉ đường (không trả đường vẽ).",
+        "operationId": "session_routes_sessions__session_id__routes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "travel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "ride",
+                "walk"
+              ],
+              "type": "string",
+              "default": "ride",
+              "title": "Travel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionRoutesResult"
                 }
               }
             }
@@ -7838,240 +8692,6 @@
         }
       }
     },
-    "/landlord/leads": {
-      "get": {
-        "summary": "Leads",
-        "operationId": "leads_landlord_leads_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "additionalProperties": true,
-                    "type": "object"
-                  },
-                  "type": "array",
-                  "title": "Response Leads Landlord Leads Get"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "405": {
-            "description": "Method Not Allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Content",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service Unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/landlord/leads/{lead_id}": {
-      "patch": {
-        "summary": "Update Lead",
-        "operationId": "update_lead_landlord_leads__lead_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "lead_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Lead Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LeadUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Update Lead Landlord Leads  Lead Id  Patch"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "405": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Method Not Allowed"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResult"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        }
-      }
-    },
     "/landlord/rooms/{room_id}/marketing": {
       "post": {
         "summary": "Marketing Post",
@@ -8312,6 +8932,121 @@
             "description": "Service Unavailable"
           }
         }
+      }
+    },
+    "/landlord/agent": {
+      "post": {
+        "summary": "Landlord Agent",
+        "operationId": "landlord_agent_landlord_agent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LandlordAgentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Landlord Agent Landlord Agent Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/landlord/assistant": {
@@ -14467,7 +15202,6 @@
             "enum": [
               "renter",
               "owner",
-              "manager",
               "admin"
             ],
             "title": "Role"
@@ -14620,6 +15354,30 @@
         "type": "object",
         "title": "AffordabilityInput"
       },
+      "AgentHistoryItem": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "text"
+        ],
+        "title": "AgentHistoryItem"
+      },
       "AssistantQuestion": {
         "properties": {
           "question": {
@@ -14743,6 +15501,117 @@
           "expected_revision"
         ],
         "title": "CatalogStatus"
+      },
+      "ChatHistoryEntry": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "turns": {
+            "type": "integer",
+            "title": "Turns"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "last_at": {
+            "type": "string",
+            "title": "Last At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "title",
+          "turns",
+          "started_at",
+          "last_at"
+        ],
+        "title": "ChatHistoryEntry"
+      },
+      "ChatHistoryResult": {
+        "properties": {
+          "retention_days": {
+            "type": "integer",
+            "title": "Retention Days"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "retention_days",
+          "items"
+        ],
+        "title": "ChatHistoryResult"
+      },
+      "ChatTranscriptMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "text",
+          "created_at"
+        ],
+        "title": "ChatTranscriptMessage"
+      },
+      "ChatTranscriptResult": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "retention_days": {
+            "type": "integer",
+            "title": "Retention Days"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatTranscriptMessage"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "retention_days",
+          "messages"
+        ],
+        "title": "ChatTranscriptResult"
       },
       "ClaimInput": {
         "properties": {
@@ -15103,6 +15972,22 @@
         ],
         "title": "CostResult"
       },
+      "DemoLoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Username"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "DemoLoginRequest"
+      },
       "Destination": {
         "properties": {
           "label": {
@@ -15132,6 +16017,15 @@
             "type": "number",
             "exclusiveMinimum": 0.0,
             "title": "Max Distance M"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "place",
+              "device"
+            ],
+            "title": "Source",
+            "default": "place"
           }
         },
         "additionalProperties": false,
@@ -15144,6 +16038,47 @@
           "max_distance_m"
         ],
         "title": "Destination"
+      },
+      "DeviceDestinationRequest": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "accuracy_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Accuracy M",
+            "default": 0
+          },
+          "allow_routing": {
+            "type": "boolean",
+            "title": "Allow Routing"
+          },
+          "expected_draft_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Draft Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "allow_routing",
+          "expected_draft_revision"
+        ],
+        "title": "DeviceDestinationRequest",
+        "description": "PUT /sessions/{id}/destination/device — trình duyệt lấy vị trí hiện\ntại rồi gửi lên một endpoint riêng; server làm tròn 3 chữ số (~100 m) trước\nkhi kiểm tra hay lưu. `allow_routing` là đồng ý của khách gửi tọa độ đã làm\ntròn ra dịch vụ chỉ đường ngoài (Goong/OSRM); không đồng ý thì chỉ chim bay."
       },
       "DraftPatch": {
         "properties": {
@@ -15256,6 +16191,13 @@
             "type": "array",
             "title": "Preferences"
           },
+          "must_amenities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Must Amenities"
+          },
           "destination": {
             "anyOf": [
               {
@@ -15281,10 +16223,73 @@
             ],
             "title": "Budget Scope"
           },
+          "budget_min_vnd": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Min Vnd"
+          },
+          "min_area_m2": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Area M2"
+          },
+          "min_area_hard": {
+            "type": "boolean",
+            "title": "Min Area Hard",
+            "default": false
+          },
+          "prefer_cheapest": {
+            "type": "boolean",
+            "title": "Prefer Cheapest",
+            "default": false
+          },
+          "budget_approx": {
+            "type": "boolean",
+            "title": "Budget Approx",
+            "default": false
+          },
           "needs_destination": {
             "type": "boolean",
             "title": "Needs Destination",
             "default": false
+          },
+          "needs_people": {
+            "type": "boolean",
+            "title": "Needs People",
+            "default": false
+          },
+          "destination_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "school",
+                  "hospital",
+                  "transit",
+                  "current",
+                  "personal"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination Kind"
           },
           "accept_estimated_data": {
             "type": "boolean",
@@ -15396,7 +16401,15 @@
           },
           "status": {
             "type": "string",
-            "const": "needs_clarification",
+            "enum": [
+              "needs_clarification",
+              "generating",
+              "generation_failed",
+              "published",
+              "invalidated",
+              "no_match",
+              "needs_verification"
+            ],
             "title": "Status"
           },
           "questions": {
@@ -15405,6 +16418,29 @@
             },
             "type": "array",
             "title": "Questions"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "clarification": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clarification"
           }
         },
         "additionalProperties": false,
@@ -15733,6 +16769,10 @@
           "public": {
             "type": "boolean",
             "title": "Public"
+          },
+          "demo_login": {
+            "type": "boolean",
+            "title": "Demo Login"
           }
         },
         "additionalProperties": false,
@@ -15744,7 +16784,8 @@
           "auth_mode",
           "matching_method",
           "workers",
-          "public"
+          "public",
+          "demo_login"
         ],
         "title": "HealthResult"
       },
@@ -15775,6 +16816,30 @@
         ],
         "title": "InvoiceInput"
       },
+      "LandlordAgentInput": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AgentHistoryItem"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "History"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "LandlordAgentInput"
+      },
       "LandlordRejectRequest": {
         "properties": {
           "reason": {
@@ -15790,44 +16855,6 @@
           "reason"
         ],
         "title": "LandlordRejectRequest"
-      },
-      "LeadUpdate": {
-        "properties": {
-          "stage": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "new",
-                  "contacted",
-                  "viewing",
-                  "negotiating",
-                  "won",
-                  "lost"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stage"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "LeadUpdate"
       },
       "LeaseAcceptance": {
         "properties": {
@@ -15847,9 +16874,16 @@
       "LeaseInput": {
         "properties": {
           "renter_id": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Renter Id"
           },
           "room_id": {
@@ -15942,7 +16976,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "renter_id",
           "room_id",
           "start_date",
           "end_date"
@@ -16516,7 +17549,6 @@
             "enum": [
               "renter",
               "owner",
-              "manager",
               "admin"
             ],
             "title": "Role"
@@ -16613,7 +17645,6 @@
             "type": "string",
             "enum": [
               "owner",
-              "manager",
               "admin"
             ],
             "title": "Role"
@@ -16645,7 +17676,6 @@
             "type": "string",
             "enum": [
               "owner",
-              "manager",
               "admin"
             ],
             "title": "Role"
@@ -17263,7 +18293,6 @@
             "type": "string",
             "enum": [
               "owner",
-              "manager",
               "admin"
             ],
             "title": "Role"
@@ -17516,8 +18545,15 @@
             "title": "Min Bedrooms"
           },
           "max_monthly_cost_vnd": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Max Monthly Cost Vnd"
           },
           "max_rent_vnd": {
@@ -17531,6 +18567,46 @@
               }
             ],
             "title": "Max Rent Vnd"
+          },
+          "min_rent_vnd": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Rent Vnd"
+          },
+          "min_area_m2": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Area M2"
+          },
+          "min_area_hard": {
+            "type": "boolean",
+            "title": "Min Area Hard",
+            "default": false
+          },
+          "prefer_cheapest": {
+            "type": "boolean",
+            "title": "Prefer Cheapest",
+            "default": false
+          },
+          "budget_approx": {
+            "type": "boolean",
+            "title": "Budget Approx",
+            "default": false
           },
           "max_initial_cash_vnd": {
             "anyOf": [
@@ -17624,7 +18700,6 @@
         "type": "object",
         "required": [
           "city",
-          "max_monthly_cost_vnd",
           "scenario"
         ],
         "title": "Profile"
@@ -17673,8 +18748,15 @@
             "title": "Min Bedrooms"
           },
           "max_monthly_cost_vnd": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Max Monthly Cost Vnd"
           },
           "max_rent_vnd": {
@@ -17688,6 +18770,46 @@
               }
             ],
             "title": "Max Rent Vnd"
+          },
+          "min_rent_vnd": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Rent Vnd"
+          },
+          "min_area_m2": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Area M2"
+          },
+          "min_area_hard": {
+            "type": "boolean",
+            "title": "Min Area Hard",
+            "default": false
+          },
+          "prefer_cheapest": {
+            "type": "boolean",
+            "title": "Prefer Cheapest",
+            "default": false
+          },
+          "budget_approx": {
+            "type": "boolean",
+            "title": "Budget Approx",
+            "default": false
           },
           "max_initial_cash_vnd": {
             "anyOf": [
@@ -17781,7 +18903,6 @@
         "type": "object",
         "required": [
           "city",
-          "max_monthly_cost_vnd",
           "scenario"
         ],
         "title": "Profile"
@@ -17907,6 +19028,17 @@
               }
             ],
             "title": "Contact Phone"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
           },
           "consents": {
             "additionalProperties": {
@@ -19529,6 +20661,348 @@
         "title": "RoomWithMedia",
         "description": "Room DTO extended with the media fields the service attaches on read\npaths (BE-06/BE-07). Never accepted as catalog input, never stored:\nRoomInput/CatalogStatus payloads keep the canonical Room schema."
       },
+      "RouteAnchor": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "max_distance_m": {
+            "type": "number",
+            "title": "Max Distance M"
+          },
+          "uncertainty_m": {
+            "type": "number",
+            "title": "Uncertainty M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "latitude",
+          "longitude",
+          "max_distance_m",
+          "uncertainty_m"
+        ],
+        "title": "RouteAnchor",
+        "description": "Điểm neo: nơi khách muốn ở gần, lấy từ hồ sơ đã xác nhận."
+      },
+      "RouteConsentRequest": {
+        "properties": {
+          "allow": {
+            "type": "boolean",
+            "title": "Allow"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "allow"
+        ],
+        "title": "RouteConsentRequest",
+        "description": "PUT /sessions/{id}/route-consent — đổi đồng ý gửi tọa độ (đã làm\ntròn) ra dịch vụ chỉ đường ngoài; không đổi nháp/hồ sơ, không chạy lại tìm."
+      },
+      "RouteConsentResult": {
+        "properties": {
+          "allow": {
+            "type": "boolean",
+            "title": "Allow"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "allow"
+        ],
+        "title": "RouteConsentResult",
+        "description": "PUT /sessions/{id}/route-consent — trả lại trạng thái đồng ý vừa lưu\n(bộ nhớ tiến trình; khởi động lại thì về không đồng ý)."
+      },
+      "RouteGeometry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "LineString",
+            "title": "Type"
+          },
+          "coordinates": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "minItems": 2,
+            "title": "Coordinates"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "RouteGeometry"
+      },
+      "RouteOrigin": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "location_accuracy": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "approximate"
+            ],
+            "title": "Location Accuracy"
+          },
+          "uncertainty_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "location_accuracy"
+        ],
+        "title": "RouteOrigin"
+      },
+      "RouteResult": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "room_id": {
+            "type": "string",
+            "title": "Room Id"
+          },
+          "travel": {
+            "type": "string",
+            "enum": [
+              "ride",
+              "walk"
+            ],
+            "title": "Travel"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "goong",
+              "osrm",
+              "straight_line"
+            ],
+            "title": "Provider"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "motorbike",
+                  "car",
+                  "foot"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle"
+          },
+          "distance_m": {
+            "type": "integer",
+            "title": "Distance M"
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S"
+          },
+          "straight_line_m": {
+            "type": "integer",
+            "title": "Straight Line M"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/RouteGeometry"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/RouteOrigin"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/RouteAnchor"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_provider",
+                  "provider_error",
+                  "rate_limited",
+                  "no_consent"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "room_id",
+          "travel",
+          "provider",
+          "vehicle",
+          "distance_m",
+          "duration_s",
+          "straight_line_m",
+          "geometry",
+          "origin",
+          "anchor",
+          "attribution",
+          "fallback_reason"
+        ],
+        "title": "RouteResult",
+        "description": "MP-01: đường đi từ căn tới điểm neo. `straight_line` = đường chim bay,\n`duration_s` null; `fallback_reason` nói vì sao không có đường thực tế."
+      },
+      "RouteSummary": {
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "title": "Room Id"
+          },
+          "travel": {
+            "type": "string",
+            "enum": [
+              "ride",
+              "walk"
+            ],
+            "title": "Travel"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "goong",
+              "osrm",
+              "straight_line"
+            ],
+            "title": "Provider"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "motorbike",
+                  "car",
+                  "foot"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle"
+          },
+          "distance_m": {
+            "type": "integer",
+            "title": "Distance M"
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S"
+          },
+          "straight_line_m": {
+            "type": "integer",
+            "title": "Straight Line M"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_provider",
+                  "provider_error",
+                  "rate_limited",
+                  "no_consent"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "room_id",
+          "travel",
+          "provider",
+          "vehicle",
+          "distance_m",
+          "duration_s",
+          "straight_line_m",
+          "fallback_reason"
+        ],
+        "title": "RouteSummary",
+        "description": "quãng đường/thời gian từ một căn tới điểm neo, không có đường vẽ.\nCùng nghĩa các trường với `RouteResult`; attribution nằm ở mức session vì\ncả danh sách lấy bằng một lần gọi nguồn ngoài."
+      },
       "Scenario-Input": {
         "properties": {
           "people": {
@@ -19726,6 +21200,69 @@
         ],
         "title": "SessionRevokeResult"
       },
+      "SessionRoutesResult": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "travel": {
+            "type": "string",
+            "enum": [
+              "ride",
+              "walk"
+            ],
+            "title": "Travel"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/RouteAnchor"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RouteSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "travel",
+          "anchor",
+          "items",
+          "skipped",
+          "attribution"
+        ],
+        "title": "SessionRoutesResult",
+        "description": "quãng đường/thời gian từ mọi căn trong kết quả đang hiển thị tới\nđiểm neo; `skipped` là các căn chỉ biết khu vực/chưa có tọa độ. `run_id`\nnull khi hồ sơ đã có điểm neo nhưng chưa có lượt tìm."
+      },
       "SimulationItem": {
         "properties": {
           "label": {
@@ -19900,10 +21437,6 @@
             "type": "string",
             "title": "Session Id"
           },
-          "manager_id": {
-            "type": "string",
-            "title": "Manager Id"
-          },
           "status": {
             "type": "string",
             "enum": [
@@ -19970,7 +21503,6 @@
         "required": [
           "id",
           "session_id",
-          "manager_id",
           "status",
           "created_at"
         ],
@@ -20280,6 +21812,18 @@
               }
             ],
             "title": "Time Slot"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At"
           }
         },
         "additionalProperties": false,
@@ -20670,6 +22214,17 @@
             "type": "boolean",
             "title": "Contact Shared",
             "default": false
+          },
+          "room_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room Title"
           }
         },
         "additionalProperties": false,

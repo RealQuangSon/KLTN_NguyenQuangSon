@@ -1,6 +1,6 @@
 # Tiêu chí nghiệm thu HomeMatch AI Agent
 
-**Cập nhật:** 08/10/2026 (AC-20, AC-24 và cổng hoàn thành sau đợt 08/10). Mỗi AC ứng với yêu cầu trong [danh mục](yeu-cau-san-pham.md). Một AC chỉ tính là đạt khi có bằng chứng chạy thật (test, lệnh, ảnh, log) kèm ngày và cấu hình. Test file nêu bên phải là nơi kiểm tự động hiện có.
+Mỗi AC ứng với yêu cầu trong [danh mục](yeu-cau-san-pham.md). Một AC chỉ tính là đạt khi có bằng chứng chạy thật (test, lệnh, ảnh, log) kèm ngày và cấu hình. Test file nêu bên phải là nơi kiểm tự động hiện có.
 
 ## Trợ lý AI
 
@@ -15,7 +15,7 @@
 | AC-07 | FR-12 | Mọi khẳng định có bằng chứng | `eval grounding` |
 | AC-08 | FR-13 | Phản thực tế hoa hồng và thời gian tồn; `override_reason`; chủ nhà chỉ đổi thứ tự trong phần phòng của mình | `test_workflow.py`, `test_landlord.py` |
 | AC-09 | FR-15–17 | Chủ nhà chỉ thấy phòng mình; khách thấy kết quả ngay sau xếp hạng; hết hiệu lực khi hồ sơ đổi hoặc kho đổi làm kết quả khác đi, phòng không liên quan đổi thì giữ nguyên; khởi động lại không mất kết quả | `test_landlord.py`, `test_backend_durability.py`, `test_catalog_freshness.py` |
-| AC-10 | FR-18–20 | Chỉ căn đã duyệt; so sánh có tư vấn; lịch xem gửi đúng chủ nhà | `test_workflow.py`, `test_tenant_portal.py` |
+| AC-10 | FR-18–20 | Chỉ căn trong kết quả đã công bố; so sánh có tư vấn; lịch xem gửi đúng chủ nhà | `test_workflow.py`, `test_tenant_portal.py` |
 | AC-11 | FR-21 | Tool ngoài danh sách bị chặn; giới hạn bước; provenance ghi agent | `test_agents_memory.py` |
 | AC-12 | FR-22 | Không đồng ý thì không ghi nhớ; không lưu tiền; rút đồng ý thì xóa; sở thích tích lũy qua các phiên, khách bỏ hoặc xóa thì không tự quay lại | `test_agents_memory.py` |
 | AC-13 | FR-24 | Kho v2 hợp lệ, có căn hộ, có Hà Nội | `eval validate`, `eval/tests` |
@@ -33,17 +33,7 @@
 | AC-20 | FR-32–34 | Nhắc lịch, thanh toán, gia hạn chạy lặp không trùng; chăm sóc khách chỉ gửi khi chưa đặt lịch, kèm ưu đãi còn hạn khi có và giữ nguyên dedup key; đổi trạng thái hoặc giá báo cho khách đã quan tâm | `test_automation.py`, `test_pms.py`, `test_promotions.py` (08/10) |
 | AC-21 | FR-35, 41 | Hợp đồng theo phiên bản: sửa thì phải chấp thuận lại; kích hoạt → phòng đã thuê; trùng kỳ → 409; thanh lý → phòng trống; văn bản in được | `test_pms.py` |
 | AC-22 | FR-36–38, 49 | Transcript che PII, có audit khi mở; số liệu phản hồi của chủ nhà; người không phải admin → 403. Chủ nhà tự đăng ký: pending tạo được tin nháp nhưng publish → 403 `landlord_not_approved`; admin duyệt → công khai được, có membership, audit và thông báo; reject thiếu lý do → 422; owner/renter gọi duyệt → 403; `account_type` lạ → 422. Ticket hỗ trợ: chat tạo ticket; in_progress → resolved cần ghi chú (422 `note_required` khi thiếu); sai chuyển → 409 `ticket_state`; PATCH lặp lại không thêm thông báo; owner → 403 | `test_conversations_admin.py`, `test_landlord_signup.py`, `test_support_tickets.py` (08/10) |
-| AC-23 | FR-39–40, 44–45 | Dashboard, báo cáo và khách tiềm năng tính từ dữ liệu; CRUD tin có CAS, không sửa được tin người khác. Ảnh tin: chủ nhà khác → 404; sai loại → 422 `invalid_media`; quá 5 MB → `media_too_large`; ảnh thứ 11 → `media_limit`; ảnh trùng trả lại bản cũ; tin ẩn chỉ chủ nhà xem được ảnh | `test_landlord.py`, `test_pms.py`, `test_media.py`, `pms.test.tsx` (08/10) |
+| AC-23 | FR-39–40, 44–45 | Dashboard và báo cáo tính từ dữ liệu; CRUD tin có CAS, không sửa được tin người khác. Ảnh tin: chủ nhà khác → 404; sai loại → 422 `invalid_media`; quá 5 MB → `media_too_large`; ảnh thứ 11 → `media_limit`; ảnh trùng trả lại bản cũ; tin ẩn chỉ chủ nhà xem được ảnh | `test_landlord.py`, `test_pms.py`, `test_media.py`, `pms.test.tsx` (08/10) |
 | AC-24 | FR-42 | Hóa đơn khớp số tính tay; thiếu chỉ số hoặc đơn giá → từ chối lập; không lập trùng kỳ; báo chuyển chưa phải đã thu; không thu vượt số còn nợ; biên lai | `test_pms.py`, `eval invoices` (12 ca oracle tính tay, 08/10) |
 | AC-25 | FR-43 | Chỉ người đang thuê báo hỏng được; chuyển trạng thái hợp lệ; mở lại phải có lý do. Ảnh sự cố: người ngoài → 404, chỉ hai bên xem được; tối đa 5 ảnh | `test_pms.py`, `test_media.py` (08/10) |
 | AC-26 | FR-46–48 | Bài đăng chỉ dùng dữ liệu tin, có link trang tin công khai; đề xuất giá cần ít nhất 3 căn tương đương; cố vấn định tuyến đúng câu hỏi | `test_copilot.py`, `copilot.test.tsx` |
-
-## Cổng hoàn thành
-
-| Cổng | Điều kiện | Trạng thái 05/10 |
-|---|---|---|
-| G1 Cơ bản | AC-01–AC-10, 13, 14 có test pass; demo đầu-cuối trên trình duyệt | Test pass; demo đầu-cuối: kịch bản đã soạn (docs/kich-ban-demo.md, 08/10) nhưng video **chưa quay**; kiểm viewport trên trình duyệt tự động **chưa chạy** (môi trường agent không có trình duyệt) |
-| G2 Nâng cao | AC-11, 12; FR-08, 19 | Test pass; chưa demo trên trình duyệt |
-| G-NT Nền tảng | AC-15–AC-26 | Test pass; ảnh và ưu đãi đã có (08/10), còn mục "Một phần" duy nhất là tự đăng đa kênh (chỉ chia sẻ, không tự đăng) |
-| G3 Chạy live (local) | NFR-06 với GPT-4o và pgvector trên PostgreSQL local; NFR-09 chạy localhost. Deploy Railway ngoài phạm vi (D-09, 28/10) | NFR-09 đạt (localhost); NFR-06 live chưa chạy (cần API key) |
-| G4 Nghiên cứu | Freeze, nhãn người chấm, khảo sát, báo cáo RQ1–RQ5 | Chưa |

@@ -7,7 +7,7 @@ import { RenterWorkspace } from "../pages/RenterWorkspace";
 import { RouterProvider } from "../router";
 import { room as fixtureRoom, session } from "./fixtures";
 import type { Viewing } from "../types";
-// crawl.md E-07: form đặt lịch dùng chung (ngày + 3 khung giờ + liên hệ + đồng
+// Form đặt lịch dùng chung (ngày + 3 khung giờ + liên hệ + đồng
 // ý) và danh sách lịch xem hai phía với thao tác vòng đời mới.
 const room = () => ({
   room_id: "demo-01",
@@ -199,7 +199,7 @@ it("sửa luồng UX: đặt lịch từ khung trợ lý xong hiện thông báo
   // Trước đây form "Yêu cầu xem" ở /tro-ly-ai xong hộp thoại chỉ đóng lại.
   // Nay phải có dòng thông báo cùng câu chữ trang tìm kiếm, kèm đường dẫn tới
   // /nguoi-thue/lich-xem.
-  const actor = { id: "renter-a", role: "renter" as const };
+  const actor = { id: "renter", role: "renter" as const };
   const current = session("session-1");
   const published = {
     session_id: "session-1",
@@ -207,7 +207,7 @@ it("sửa luồng UX: đặt lịch từ khung trợ lý xong hiện thông báo
     results: [fixtureRoom("demo-01"), fixtureRoom("demo-02")],
   };
   const api = new Api("t");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path.endsWith("/results")
       ? (published as never)
@@ -234,8 +234,22 @@ it("sửa luồng UX: đặt lịch từ khung trợ lý xong hiện thông báo
   await user.type(screen.getByLabelText("Họ tên"), "Trần Thị B");
   await user.type(screen.getByLabelText("Số điện thoại"), "0987654321");
   await user.click(screen.getByRole("checkbox"));
-  await user.click(screen.getByText("Chiều (12:00–17:00)"));
+  // Ô chọn lấy tên trợ năng từ nhãn bao quanh (không phải giá trị "on").
+  await user.click(screen.getByRole("radio", { name: "Chiều (12:00–17:00)" }));
+  expect(
+    screen.getByRole("checkbox", { name: /Tôi đồng ý để HomeMatch chia sẻ/ }),
+  ).toBeChecked();
+  // Ghi chú tùy chọn đi kèm yêu cầu; phần lưu ý nhắc không chuyển tiền trước.
+  await user.type(
+    screen.getByLabelText(/Ghi chú cho bên phụ trách tin/),
+    "Đi cùng một người bạn",
+  );
+  expect(screen.getByText("Lưu ý khi đi xem")).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Gửi yêu cầu xem" }));
+  expect(vi.mocked(api.post).mock.calls[0][1]).toMatchObject({
+    note: "Đi cùng một người bạn",
+    time_slot: "afternoon",
+  });
   const notice = await screen.findByRole("status");
   expect(notice).toHaveTextContent("Đã gửi lịch xem mong muốn");
   expect(notice).toHaveTextContent(

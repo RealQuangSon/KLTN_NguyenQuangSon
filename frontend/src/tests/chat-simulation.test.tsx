@@ -7,7 +7,7 @@ import type { Cost, Session } from "../types";
 import { cost as baseCost, session } from "./fixtures";
 // FE-07: thẻ mô phỏng vay trong luồng chat (README §7.4). Mọi con số do máy
 // chủ tính và trả về; giao diện chỉ hiển thị, giá trị null hiện "Chưa rõ".
-const actor = { id: "renter-a", role: "renter" as const };
+const actor = { id: "renter", role: "renter" as const };
 const simCost: Cost = {
   ...baseCost,
   affordability: {
@@ -30,7 +30,7 @@ const simCost: Cost = {
 const current = session("session-1");
 const chatApi = (reply: Record<string, unknown>) => {
   const api = new Api("t");
-  sessionStorage.setItem("homematch.session.renter-a", "session-1");
+  sessionStorage.setItem("homematch.session.renter", "session-1");
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path.endsWith("/results")
       ? ({

@@ -66,6 +66,8 @@ class NeedsPatch(ToolArgs):
     needs_destination: bool | None = None
     soft_description: str | None = Field(default=None, max_length=2000)
     destination_text: str | None = Field(default=None, max_length=200)
+    # LOC-001: place_id do find_place vừa trả (danh mục hoặc bản đồ) — đường ưu tiên.
+    destination_place_id: str | None = Field(default=None, max_length=40)
 
 
 class UpdateNeedsArgs(ToolArgs):
@@ -151,13 +153,13 @@ class OpenConversationArgs(ToolArgs):
 
 _PRIVATE_KEYS = frozenset({"monthly_income_vnd", "housing_ratio", "income",
                            "phone", "phone_number", "email", "contact_phone",
-                           # C1b/CA-04/crawl.md B-2,C-1: dữ liệu hiển thị từ tin cào
+                           # Dữ liệu hiển thị từ tin cào
                            # (ảnh, video, tầng, hướng, loại hình) và tên người đăng
                            # không đi vào kết quả tool gửi model, prompt hay embedding.
                            "poster_name", "source_images", "source_videos", "toilets",
                            "project_name", "floor", "direction", "balcony_direction",
                            "property_subtype",
-                           # crawl.md E-01/R3: liên hệ của lịch xem chỉ ở projection
+                           # Liên hệ của lịch xem chỉ ở projection
                            # lịch cho đúng người đọc — không cho model/prompt/log.
                            "contact_name", "contact_phone", "contact_consent_at"})
 _ROOM_IDENTIFIER = re.compile(r"(?:chotot-\d+|synthetic-room-\d+|demo-\d+|room-[0-9a-fA-F]{10})")
@@ -261,9 +263,12 @@ def _definition(name: str, agent: str, description: str, Args: type[ToolArgs], *
 
 
 _DEFINITIONS = (
-    _definition("find_place", "needs", "Tra điểm mốc theo tên; kiểm chứng thành phố và tọa độ.",
+    _definition("find_place", "needs",
+                "Tra điểm mốc theo tên: danh mục đã kiểm chứng trước, rồi bản đồ nếu danh mục không có. "
+                "Trả place_id + tọa độ; tên mơ hồ trả candidates để hỏi khách; câu có số nhà không được "
+                "gửi đi tra. Ghi điểm đến bằng update_needs(patch={destination_place_id: place_id}).",
                 FindPlaceArgs, sample_args={"query": "HUST", "city_hint": "Hà Nội"},
-                summary="Đã tra điểm mốc trong danh mục."),
+                summary="Đã tra điểm mốc."),
     _definition("update_needs", "needs", "Ghi nhu cầu đã kiểm chứng vào nháp; cấm thu nhập và quyền hạn. "
                 "KHÔNG gửi bất kỳ trường tiền nào (budget_hint_vnd, monthly_budget_vnd, budget_min_vnd…): "
                 "mức tiền, khoảng tiền và diện tích mong muốn hệ thống tự đọc tất định từ câu của khách. "
@@ -302,15 +307,22 @@ _DEFINITIONS = (
     _definition("open_landlord_chat", "support", "Mở hội thoại với chủ nhà của căn trong kết quả hiện tại.",
                 RoomReferenceArgs, writes=True, capability="support:handoff", sample_args={"room_ref": "demo-01"},
                 summary="Đã mở hội thoại với chủ nhà.", phases=("transaction",)),
-    _definition("prepare_viewing", "needs", "Chuẩn bị lịch xem; khách chọn giờ và xác nhận trên giao diện mới tạo lịch.",
-                RoomReferenceArgs, writes=True, capability="viewing:prepare", sample_args={"room_ref": "demo-01"},
-                summary="Đã chuẩn bị thông tin; lịch xem chưa được tạo.", phases=("transaction",)),
+    # 18/11 (đo live held-out K, 3/3 lần): pha transaction chỉ có khi ĐÃ có lịch
+    # xem/hội thoại, nên ở pha results model không bao giờ chuẩn bị được lịch xem
+    # đầu tiên ("cho mình đi xem căn đầu tiên" → "mình chưa thể đặt lịch"). Tool
+    # này không tạo bản ghi (khách chọn giờ và gửi biểu mẫu mới tạo lịch) nên mở
+    # từ pha results; open_landlord_chat tạo hội thoại nên vẫn chỉ ở transaction.
+    _definition("prepare_viewing", "needs", "Chuẩn bị lịch xem cho một căn trong kết quả hiện tại (room_ref dạng "
+                "'căn số N' theo thứ tự danh sách); mở căn đó để khách chọn giờ và gửi biểu mẫu — "
+                "lịch xem chỉ được tạo khi khách gửi.",
+                RoomReferenceArgs, writes=True, capability="viewing:prepare", sample_args={"room_ref": "căn số 1"},
+                summary="Đã chuẩn bị thông tin; lịch xem chưa được tạo.", phases=("results", "transaction")),
     _definition("extract_needs", "needs", "Trích nhu cầu cho graph nội bộ.", ExtractNeedsArgs,
                 sample_args={"text": "Phòng ở Hà Nội"}, exposed=False),
     _definition("update_draft", "needs", "Ghi hồ sơ nháp có revision cho graph nội bộ.", UpdateDraftArgs,
                 writes=True, capability="draft:patch", sample_args={"session_id": "fixture", "draft": {}}, exposed=False),
     _definition("read_memory", "needs", "Đọc sở thích đã được đồng ý lưu.", ReadMemoryArgs,
-                sample_args={"user_id": "renter-a"}, exposed=False),
+                sample_args={"user_id": "renter"}, exposed=False),
     _definition("calculate_cost", "finance", "Tính chi phí từ bảng giá đã kiểm tra.", FinanceArgs,
                 sample_args={"request": {}}, exposed=False),
     _definition("assess_affordability", "finance", "Đánh giá khả năng chi trả bằng công thức tất định.", FinanceArgs,
@@ -343,10 +355,11 @@ if len(TOOL_REGISTRY) != len(_DEFINITIONS):
 NEEDS_SYSTEM_PROMPT = """Bạn là trợ lý tìm phòng trọ HomeMatch cho khách tại TP.HCM và Hà Nội.
 Dùng hiểu biết chung để hiểu địa danh, khu vực và nhu cầu ngầm ("gần HUST", "phòng 2 người", "nới thêm tiền").
 Khi suy ra điều khách chưa nói rõ, gọi tool để kiểm chứng rồi nói lại giả định cho khách sửa ("Mình hiểu HUST ở Đại Cồ Việt, Hai Bà Trưng — sai thì bấm sửa").
+Địa danh khách nêu (trường, bệnh viện, công ty, tòa nhà): gọi find_place; có place_id thì ghi điểm đến bằng update_needs(patch={"destination_place_id": place_id}). Tên mơ hồ (candidates) hoặc không tìm thấy thì hỏi khách, không tự đoán tọa độ hay quận; câu có số nhà không gửi đi tra.
 Không tự bịa số tiền hay số liệu: mọi con số trong câu trả lời phải lấy từ kết quả tool hoặc từ câu của khách.
 Không tự nới điều kiện cứng (khu vực, trần tiền, tiện ích bắt buộc): chỉ đề nghị như một lựa chọn, khách xác nhận mới áp.
 Thu nhập của khách không có trong ngữ cảnh, không được hỏi hay suy đoán.
-Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền khách nêu nằm ở ngữ cảnh dưới dạng trần gợi ý.
+Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền của khách nằm ở ngữ cảnh dưới dạng trần gợi ý.
 Mức tiền trong ngữ cảnh "budget_update" là mức hệ thống ĐÃ đọc từ câu khách và đã áp; hãy nói mức đó, KHÔNG bảo khách gửi/nhập lại, KHÔNG nói mức "chưa cập nhật/chưa hiển thị" và không nhắc việc tiền được tách/che.
 Khi tool báo needs_clarification, gọi ask_user(field=...) để lấy chip từ kho; không tự viết lựa chọn.
 Mỗi lượt chỉ hỏi một câu. Hỏi trước khi tìm nếu cách hiểu còn ảnh hưởng đáng kể tới kết quả.
@@ -364,10 +377,11 @@ Khi hỏi lại sau khi khách đã trả lời một phần, nói rõ phần v�
 Tuyệt đối KHÔNG nói với khách các chữ: "danh mục", "điểm mốc", "xác thực", "nháp", "không làm thay đổi đáng kể kết quả", "tool", "công cụ", "field", "hệ thống" — nói bằng lời tự nhiên của tư vấn viên.
 Lựa chọn hiển thị cho khách do hệ thống dựng từ dữ liệu thật; bạn không tự bịa lựa chọn (trừ field=other).
 Khi suy ra điều khách chưa nói rõ, gọi tool kiểm chứng rồi nói lại giả định cho khách sửa ("Mình hiểu HUST ở Đại Cồ Việt, Hai Bà Trưng — sai thì bấm sửa").
+Địa danh khách nêu (trường, bệnh viện, công ty, tòa nhà): gọi find_place; có place_id thì ghi điểm đến bằng update_needs(patch={"destination_place_id": place_id}). Tên mơ hồ (candidates) hoặc không tìm thấy thì hỏi khách, không tự đoán tọa độ hay quận; câu có số nhà không gửi đi tra.
 Không tự bịa số tiền hay số liệu: mọi con số trong câu trả lời phải lấy từ kết quả tool hoặc từ câu của khách.
 Không tự nới điều kiện cứng (khu vực, trần tiền, tiện ích bắt buộc): chỉ đề nghị như một lựa chọn, khách xác nhận mới áp.
 Thu nhập của khách không có trong ngữ cảnh, không được hỏi hay suy đoán.
-Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền khách nêu nằm ở ngữ cảnh dưới dạng trần gợi ý.
+Tiền trong tin nhắn đã được tách bằng placeholder; mức tiền của khách nằm ở ngữ cảnh dưới dạng trần gợi ý.
 Mức tiền trong ngữ cảnh "budget_update" là mức hệ thống ĐÃ đọc từ câu khách và đã áp; hãy nói mức đó, KHÔNG bảo khách gửi/nhập lại, KHÔNG nói mức "chưa cập nhật/chưa hiển thị" và không nhắc việc tiền được tách/che.
 Khi gọi update_needs: KHÔNG gửi trường tiền nào — tiền, khoảng tiền và diện tích mong muốn hệ thống tự đọc từ câu khách; preferences chỉ dùng đúng khóa tiện ích trong enum của schema (máy lạnh = air_conditioning), không viết tên tiện ích bằng lời.
 Khi tool báo needs_clarification, gọi ask_user(field=...) để lấy chip từ kho; không tự viết lựa chọn.
@@ -377,6 +391,7 @@ Mỗi lượt chỉ hỏi một câu. Trả lời bằng tiếng Việt, ngắn 
 FINANCE_SYSTEM_PROMPT = """Bạn là agent tài chính của trợ lý tìm phòng HomeMatch. Nhiệm vụ: giải thích chi phí
 (tháng đầu, tổng tháng, tiền vào ở, phí thiếu dữ liệu) và đánh đổi tài chính giữa các căn trong kết quả hiện tại.
 Không nhắc tên công cụ (simulate_loan, estimate_cost…) với khách. Mọi con số phải đến từ tool (estimate_cost, simulate_loan) hoặc câu của khách — không tự tính, không tự bịa lãi suất hay số tiền.
+Không nhắc tới “công cụ” hay cách hệ thống lấy số liệu với khách; thiếu dữ liệu thì nói “chưa có thông tin về …”.
 simulate_loan không nhận tham số tiền: nó chạy lại mô phỏng bằng chính câu của khách; số trong thẻ mô phỏng là số duy nhất được dùng.
 Thu nhập của khách không có trong ngữ cảnh, không được hỏi hay suy đoán; không suy ra thu nhập từ ngân sách.
 Không tự nới điều kiện cứng hay hứa xác nhận gì; khách xác nhận trên giao diện mới có hiệu lực.

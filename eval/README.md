@@ -1,6 +1,6 @@
 # Đánh giá HomeMatch
 
-**Cập nhật 05/10/2026:** [PLAN](PLAN.md) ánh xạ các lệnh dưới đây vào RQ1–RQ5 của đề tài và liệt kê phần còn thiếu (gold v2, oracle vay, nhãn người chấm, khảo sát người dùng).
+Công cụ đánh giá trợ lý: độ chính xác trích xuất, chất lượng xếp hạng, engine chi phí, điều kiện cứng, căn cứ của lời giải thích.
 
 Mặc định offline. Các output ở `eval/runs/development` là bằng chứng kiểm tra thành phần và gói gán nhãn thử; không phải kết quả GPT/P thật hoặc đo hài lòng.
 

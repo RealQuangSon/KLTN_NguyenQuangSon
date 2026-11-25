@@ -18,13 +18,13 @@ def test_seed_auth_password_hash_expiry_logout_and_safe_errors(tmp_path, monkeyp
     service = HomeMatchService(tmp_path / "auth.sqlite")
     app = create_app(lambda: service)
     with TestClient(app) as client:
-        assert client.post("/auth/login", json={"username": "renter-a", "password": "bad"}).status_code == 401
-        login = client.post("/auth/login", json={"username": "renter-a", "password": "local-renter-a-password"}).json()
+        assert client.post("/auth/login", json={"username": "renter", "password": "bad"}).status_code == 401
+        login = client.post("/auth/login", json={"username": "renter", "password": "123456"}).json()
         token = login["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
-        assert client.get("/auth/me", headers=headers).json() == {"id": "renter-a", "role": "renter",
+        assert client.get("/auth/me", headers=headers).json() == {"id": "renter", "role": "renter",
                                                                  "landlord_status": None}
-        user = service.repo.db.execute("SELECT password_hash FROM hm_users WHERE id='renter-a'").fetchone()
+        user = service.repo.db.execute("SELECT password_hash FROM hm_users WHERE id='renter'").fetchone()
         assert user["password_hash"].startswith("scrypt$") and "local-renter" not in user["password_hash"]
         assert token not in str([dict(row) for row in service.repo.db.execute("SELECT * FROM hm_tokens")])
         assert client.get("/landlord/rooms", headers=headers).status_code == 403
@@ -33,7 +33,7 @@ def test_seed_auth_password_hash_expiry_logout_and_safe_errors(tmp_path, monkeyp
         assert invalid.headers["X-Request-ID"] == invalid.json()["request_id"]
         client.post("/auth/logout", headers=headers)
         assert client.get("/auth/me", headers=headers).status_code == 401
-        new = client.post("/auth/login", json={"username": "renter-a", "password": "local-renter-a-password"}).json()
+        new = client.post("/auth/login", json={"username": "renter", "password": "123456"}).json()
         service.repo.db.execute("UPDATE hm_tokens SET expires_at=?", (time.time() - 1,))
         assert client.get("/auth/me", headers={"Authorization": f"Bearer {new['access_token']}"}).status_code == 401
 

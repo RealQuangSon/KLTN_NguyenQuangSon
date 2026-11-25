@@ -15,7 +15,7 @@ import { deferred, profile, room, session } from "./fixtures";
 it("limits comparison to 3 visible rooms and sends the current selected IDs to the server", async () => {
   const api = new Api("test");
   const current = session();
-  sessionStorage.setItem("homematch.session.renter-a", current.session_id);
+  sessionStorage.setItem("homematch.session.renter", current.session_id);
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path.endsWith("/results")
       ? {
@@ -36,7 +36,7 @@ it("limits comparison to 3 visible rooms and sends the current selected IDs to t
   render(
     <RenterWorkspace
       api={api}
-      actor={{ id: "renter-a", role: "renter" }}
+      actor={{ id: "renter", role: "renter" }}
       tab="search"
     />,
   );
@@ -62,7 +62,7 @@ it("limits comparison to 3 visible rooms and sends the current selected IDs to t
 it("keeps the verification panel on screen while results are re-read in the background", async () => {
   const api = new Api("test");
   const current = session();
-  sessionStorage.setItem("homematch.session.renter-a", current.session_id);
+  sessionStorage.setItem("homematch.session.renter", current.session_id);
   const held = {
     session_id: current.session_id,
     run_id: "run-1",
@@ -88,7 +88,7 @@ it("keeps the verification panel on screen while results are re-read in the back
   render(
     <RenterWorkspace
       api={api}
-      actor={{ id: "renter-a", role: "renter" }}
+      actor={{ id: "renter", role: "renter" }}
       tab="search"
     />,
   );
@@ -108,7 +108,7 @@ it("ignores a delayed published result after a new session has replaced its scop
   const api = new Api("test");
   const delayed = deferred<Results>();
   const previous = session();
-  sessionStorage.setItem("homematch.session.renter-a", previous.session_id);
+  sessionStorage.setItem("homematch.session.renter", previous.session_id);
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path === "/sessions/session-1"
       ? previous
@@ -128,14 +128,16 @@ it("ignores a delayed published result after a new session has replaced its scop
   render(
     <RenterWorkspace
       api={api}
-      actor={{ id: "renter-a", role: "renter" }}
+      actor={{ id: "renter", role: "renter" }}
       tab="search"
     />,
   );
-  await screen.findByRole("button", { name: "Phiên mới" });
-  await userEvent.click(screen.getByRole("button", { name: "Phiên mới" }));
+  await screen.findByRole("button", { name: "Cuộc trò chuyện mới" });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Cuộc trò chuyện mới" }),
+  );
   await waitFor(() =>
-    expect(sessionStorage.getItem("homematch.session.renter-a")).toBe(
+    expect(sessionStorage.getItem("homematch.session.renter")).toBe(
       "session-2",
     ),
   );
@@ -242,7 +244,7 @@ it("offers the newer conversation draft after prior confirmation even without a 
 it("shows the reply chips the server chose and sends one when clicked", async () => {
   const api = new Api("test");
   const current = session();
-  sessionStorage.setItem("homematch.session.renter-a", current.session_id);
+  sessionStorage.setItem("homematch.session.renter", current.session_id);
   vi.spyOn(api, "get").mockImplementation(async (path) =>
     path.endsWith("/results")
       ? {
@@ -263,7 +265,7 @@ it("shows the reply chips the server chose and sends one when clicked", async ()
   render(
     <RenterWorkspace
       api={api}
-      actor={{ id: "renter-a", role: "renter" }}
+      actor={{ id: "renter", role: "renter" }}
       tab="search"
     />,
   );

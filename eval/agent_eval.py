@@ -136,7 +136,7 @@ def run_agent_scenarios(scenarios_path: Path = SCENARIOS_PATH, mode: str = "demo
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="agent-eval-") as tmp:
         service = _make_service(mode, model, Path(tmp))
-        renter = Actor(id="renter-a", role="renter")
+        renter = Actor(id="renter", role="renter")
         rows: list[dict] = []
         durations: list[float] = []
         try:
@@ -251,7 +251,7 @@ def run_clarify_suite(gold_path: Path = GOLD_CLARIFY_PATH, output: Path | None =
     with tempfile.TemporaryDirectory(prefix="clarify-eval-") as tmp:
         os.environ.setdefault("HOMEMATCH_MATCHING_METHOD", "B1")
         service = _make_service("demo", model, Path(tmp))
-        renter = Actor(id="renter-a", role="renter")
+        renter = Actor(id="renter", role="renter")
         rows: list[dict] = []
         try:
             for case in gold:

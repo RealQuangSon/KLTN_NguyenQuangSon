@@ -5,7 +5,7 @@ from backend.app.conversations import mask_pii
 from backend.app.main import create_app
 from backend.app.models import Actor, DomainError
 
-ADMIN = Actor(id="admin-a", role="admin")
+ADMIN = Actor(id="admin", role="admin")
 
 
 def published_session(service, renter, landlord, profile):
@@ -50,7 +50,7 @@ def test_live_chat_scoped_to_participants_with_unread_and_first_response(service
             service.conversation_messages(outsider, conversation_id)
     report = service.admin_handovers(ADMIN)
     stats = {item["landlord_id"]: item for item in report["landlords"]}
-    assert stats["owner-a"]["response_rate"] == 1.0 and stats["owner-a"]["median_response_minutes"] is not None
+    assert stats["owner2"]["response_rate"] == 1.0 and stats["owner2"]["median_response_minutes"] is not None
 
 
 def test_admin_audits_masked_transcripts_and_reads_are_logged(service, renter, landlord, profile):
@@ -70,14 +70,14 @@ def test_admin_audits_masked_transcripts_and_reads_are_logged(service, renter, l
 def test_conversation_and_admin_routes(service, renter, landlord, profile):
     sid, room_id = published_session(service, renter, landlord, profile)
     with TestClient(create_app(lambda: service)) as client:
-        renter_headers = {"Authorization": "Bearer demo-renter-a"}
+        renter_headers = {"Authorization": "Bearer demo-renter"}
         started = client.post("/conversations", headers=renter_headers, json={"room_id": room_id, "session_id": sid})
         assert started.status_code == 201
         conversation_id = started.json()["id"]
-        sent = client.post(f"/conversations/{conversation_id}/messages", headers={"Authorization": "Bearer demo-owner-a"},
+        sent = client.post(f"/conversations/{conversation_id}/messages", headers={"Authorization": "Bearer demo-owner2"},
                            json={"body": "Chào bạn"})
         assert sent.status_code == 201
-        admin = {"Authorization": "Bearer demo-admin-a"}
+        admin = {"Authorization": "Bearer demo-admin"}
         assert client.get("/admin/handovers", headers=admin).json()["landlords"][0]["answered"] == 1
         assert client.get("/admin/users", headers=admin).status_code == 200
         assert client.get("/admin/transcripts", headers=renter_headers).status_code == 403

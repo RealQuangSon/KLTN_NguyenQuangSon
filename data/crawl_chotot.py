@@ -29,7 +29,7 @@ Tốt, tối đa 30 — chỉ lưu URL, không tải file), `toilets`, `project_
 `poster_name` (tên hiển thị người đăng; chỉ trả qua khối contact cho người đã
 đăng nhập — C1b). Không thu thập SĐT, avatar, mã/tên tài khoản hay gọi endpoint
 chi tiết. Phí chỉ lấy khi đọc được con số hợp lý trong tin; không đọc được thì
-để null (không bao giờ là 0). `landlord_id` là tài khoản demo owner-a..d, không
+để null (không bao giờ là 0). `landlord_id` là tài khoản demo owner2..d, không
 phải người đăng thật.
 """
 from __future__ import annotations
@@ -419,10 +419,8 @@ def source_of(ad: dict) -> str:
 
 
 def landlord_for(city: str, ad_id: int) -> str:
-    # Tài khoản demo để chạy luồng chủ nhà duyệt; không phải người đăng tin thật.
-    if city == "Hà Nội":
-        return "owner-c" if ad_id % 2 else "owner-d"
-    return "owner-a" if ad_id % 2 else "owner-b"
+    # Tài khoản demo chủ nhà theo thành phố; không phải người đăng tin thật.
+    return "owner1" if city == "Hà Nội" else "owner2"
 
 
 def features_from(amenities: dict[str, bool | None]) -> str | None:
@@ -488,7 +486,7 @@ def source_images_of(ad: dict) -> list[str]:
 
 # Cloudflare Stream (videodelivery.net) — chỉ nhận URL https, không khoảng
 # trắng, hostname ĐÚNG bằng videodelivery.net (không subdomain) và path đúng
-# dạng manifest/thumbnail với mã video 32 ký tự hex (crawl.md B-A: chặn lỗi
+# dạng manifest/thumbnail với mã video 32 ký tự hex (chặn lỗi
 # che nhầm dãy số trong mã video khi lưu raw).
 VIDEO_HOST = "videodelivery.net"
 STREAM_MANIFEST_PATH = re.compile(r"/[0-9a-f]{32}/manifest/video\.m3u8")
@@ -551,7 +549,7 @@ def videos_dropped_bad_shape(ad: dict) -> int:
     return dropped
 
 
-# --- Diện tích đọc từ nội dung tin (crawl.md A-2) -----------------------------
+# --- Diện tích đọc từ nội dung tin -----------------------------
 # Chỉ nhận khi có "rộng"/"diện tích"/"dt" đứng trước số, hoặc số đi liền
 # m2/m²/met vuông. "cách 45m", "hẻm 3m" không phải diện tích. Dùng bản bỏ dấu.
 AREA_MIN, AREA_MAX = 5, 300
@@ -577,7 +575,7 @@ def area_from_text_of(*texts: str) -> float | None:
     return None
 
 
-# --- Trường mới từ params/khóa đã biết (crawl.md C-1) -------------------------
+# --- Trường mới từ params/khóa đã biết -------------------------
 # Chỉ nhận NHÃN chữ khớp từ khóa (params có cặp label/value); chỉ có mã số chưa
 # xác minh nghĩa thì null, không tự đoán.
 
@@ -1675,7 +1673,7 @@ def main() -> None:
 
     catalog = {
         "notice": ("Tin cho thuê công khai cào từ API Chợ Tốt phục vụ demo KLTN. "
-                   "Giá/phí/tiện ích theo nội dung tin, chưa kiểm chứng thực địa. Chủ nhà owner-a..d là tài khoản "
+                   "Giá/phí/tiện ích theo nội dung tin, chưa kiểm chứng thực địa. Chủ nhà owner2..d là tài khoản "
                    "demo, không phải người đăng tin. Không phân phối lại."),
         "snapshot_id": arguments.snapshot_id,
         "rooms": rooms,

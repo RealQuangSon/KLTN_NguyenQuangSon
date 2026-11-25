@@ -40,7 +40,7 @@ def test_stream_emits_steps_then_done(tmp_path):
         message(tool_calls=[call("c1", "find_place", query="HUST", city_hint="Hà Nội")]),
         message(content="Mình hiểu HUST là Đại học Bách Khoa Hà Nội."),
     ])
-    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    renter_headers = {"Authorization": "Bearer demo-renter"}
     with TestClient(app) as client:
         sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
         with client.stream("POST", f"/sessions/{sid}/messages/stream", headers=renter_headers,
@@ -65,7 +65,7 @@ def test_stream_step_lines_never_carry_pii_or_money_or_income(tmp_path):
         message(tool_calls=[call("c1", "find_place", query="HUST")]),
         message(content="Đã ghi nhận nhu cầu."),
     ])
-    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    renter_headers = {"Authorization": "Bearer demo-renter"}
     with TestClient(create_app(lambda: service)) as client:
         sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
         with client.stream("POST", f"/sessions/{sid}/messages/stream", headers=renter_headers,
@@ -82,7 +82,7 @@ def test_stream_replaces_answer_when_post_check_fails(tmp_path):
     service, app = stream_app(tmp_path, [
         message(content="Có đúng 99 căn giá 1 triệu gần đây."),
     ])
-    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    renter_headers = {"Authorization": "Bearer demo-renter"}
     with TestClient(app) as client:
         sid = client.post("/sessions", headers=renter_headers).json()["session_id"]
         with client.stream("POST", f"/sessions/{sid}/messages/stream", headers=renter_headers,
@@ -100,7 +100,7 @@ def test_stream_replaces_answer_when_post_check_fails(tmp_path):
 
 def test_stream_error_line_on_domain_error(tmp_path):
     service = HomeMatchService(tmp_path / "e.sqlite")
-    renter_headers = {"Authorization": "Bearer demo-renter-a"}
+    renter_headers = {"Authorization": "Bearer demo-renter"}
     with TestClient(create_app(lambda: service)) as client:
         with client.stream("POST", "/sessions/sid-không-tồn-tại/messages/stream",
                            headers=renter_headers, json={"text": "xin chào"}) as response:

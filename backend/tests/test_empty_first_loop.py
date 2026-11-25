@@ -20,7 +20,7 @@ def catalog_missing_capacity(tmp_path, count=4):
                                {"name": "water", "amount_vnd": 80000, "mode": "person",
                                 "source": "synthetic", "included_in_rent": False}]},
             "house_rules": "Cổng khóa 23:00.", "source": "synthetic://missing-capacity",
-            "synthetic": True, "landlord_id": "owner-a"}
+            "synthetic": True, "landlord_id": "owner2"}
     rooms = []
     for index in range(count):
         room = {**base, "id": f"missing-cap-{index:02d}"}

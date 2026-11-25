@@ -1,11 +1,11 @@
 # Danh mục yêu cầu HomeMatch AI Agent
 
-**Cập nhật:** 31/10/2026 (LF: trường tin đăng mở rộng — cập nhật FR-24, 26, 27); trước đó 08/10/2026 (thêm FR-49, cập nhật FR-08, 33, 38, 40, 43, NFR-04, 05); mở rộng 5 phân hệ ngày 05/10. Yêu cầu được suy ra từ [đề cương](ke-hoach-kltn-homematch.md).
+Yêu cầu của đề tài và của nền tảng, kèm hiện trạng trong code.
 
 - **Mức:**
   - **CB**: yêu cầu cơ bản của đề tài;
   - **NC**: phần nâng cao của đề tài;
-  - **NT**: phân hệ nền tảng người dùng yêu cầu ngày 05/10.
+  - **NT**: phân hệ nền tảng.
 - **Hiện trạng:** đối chiếu code ngày 09/10/2026.
   - **Đã có**: có code và test tự động.
   - **Một phần**: có nền nhưng thiếu hành vi nêu trong yêu cầu.
@@ -29,15 +29,15 @@
 | FR-12 | Lý do, đánh đổi, cờ xác minh có bằng chứng | CB | Đã có | AC-07 |
 | FR-13 | Không thiên vị căn tồn (ranking không đọc hoa hồng/thời gian đăng); phần duyệt có lý do thay đổi đã bị bỏ theo D-10 | CB | Đã có (phần ghi lý do duyệt bỏ 05/11) | AC-08 |
 | FR-14 | `no_match` có gợi ý nới lỏng mềm; thiếu dữ liệu hiện ngay kèm nhãn (D-12, `needs_verification` chỉ còn ở run cũ) | CB | Đã có | AC-05 |
-| FR-15 | **Mỗi chủ nhà chỉ thấy phòng của mình** trong lead/CRM; kết quả tới khách ngay sau xếp hạng (D-10 bỏ bước duyệt 05/11) | CB | Đã có (đã đổi thiết kế 05/11) | AC-09 |
-| FR-16 | (Đã bỏ theo D-10, 05/11/2026) Chủ nhà duyệt từng phần phòng — thay bằng lead `recommended` top 5 và thông báo `rooms_ready` cho khách | CB | Bỏ | AC-09 |
+| FR-15 | **Mỗi chủ nhà chỉ thấy phòng, lịch xem, hội thoại và hợp đồng của mình**; kết quả tới khách ngay sau xếp hạng (D-10 bỏ bước duyệt 05/11) | CB | Đã có (đã đổi thiết kế 05/11) | AC-09 |
+| FR-16 | (Đã bỏ theo D-10, 05/11/2026) Chủ nhà duyệt từng phần phòng — thay bằng thông báo `rooms_ready` cho khách (lead `recommended` dùng thay tạm cũng bỏ 19/11/2026, D-13) | CB | Bỏ | AC-09 |
 | FR-17 | Hồ sơ đổi, hoặc kho đổi làm kết quả xếp hạng khác đi (D-11), thì kết quả cũ hết hiệu lực | CB | Đã có | AC-09 |
 | FR-18 | Khách xem top căn kèm giải thích, chi phí, băng tài chính, khoản vay | CB | Đã có | AC-10 |
 | FR-19 | So sánh trực quan 2–3 căn: bảng, nhãn "Tốt nhất", biểu đồ chi phí | NC | Đã có | AC-10 |
 | FR-20 | Gửi yêu cầu xem căn; chủ nhà của căn xác nhận | CB | Đã có | AC-10 |
 | FR-21 | Multi-agent: supervisor và các agent nhu cầu, tài chính, xếp hạng, cẩm nang, hỗ trợ; danh sách tool riêng | NC | Đã có; HN-03 (06/11): registry sinh schema/quyền/view, hợp đồng tool và khóa retry bền (kiểm offline; chưa PG/live) | AC-11 |
 | FR-22 | Memory sở thích tích lũy xuyên phiên khi khách đồng ý: gộp qua các phiên, khách bỏ thì quên, gợi ý từ phòng đã lưu | NC | Đã có | AC-12 |
-| FR-23 | Đánh giá độ chính xác và độ hài lòng | NC | Một phần (CLI eval có; chưa có nhãn người chấm và khảo sát) | [eval](../eval/PLAN.md) |
+| FR-23 | Đánh giá độ chính xác và độ hài lòng | NC | Một phần (CLI eval có; chưa có nhãn người chấm và khảo sát) | [eval](../eval/README.md) |
 | FR-24 | Kho phòng, studio, căn hộ tại TP.HCM và Hà Nội | CB | Đã có (31/10: tin đăng có thêm nội dung tin đã che SĐT/email, ngày đăng, loại người đăng, phường cũ/mới, tên đường, ngày trống, kỳ thanh toán, thời hạn tối thiểu và 19 khóa tiện ích; trường mới đều `null` khi tin không ghi; áp cho catalog demo Chợ Tốt crawler 2.2. FC-01 31/10: mô tả, nội quy và features_text do chủ nhà nhập cũng được server che SĐT/email lúc tạo/sửa tin, trang tin công khai không hiện số liên hệ nào) | AC-13 |
 | FR-25 | Đăng nhập theo vai trò khách, chủ nhà, quản trị; kiểm quyền theo bản ghi | CB | Đã có | AC-14 |
 
@@ -46,7 +46,7 @@
 | ID | Yêu cầu | Mức | Hiện trạng | AC |
 |---|---|---|---|---|
 | FR-26 | Tìm theo bộ lọc (thành phố, khu vực, loại, khoảng giá, tổng tháng, diện tích, phòng ngủ, số người, tiện nghi, sắp xếp, phân trang) trên tin đã công khai | NT | Đã có (`GET /listings`; 31/10: thêm sắp xếp "Mới đăng" chỉ do người dùng chọn ở tìm theo bộ lọc, xếp hạng AI không dùng ngày đăng/loại người đăng — kiểm bằng `eval invariants`) | AC-15 |
-| FR-27 | Khung xem nhanh bên cạnh; chuyển giữa danh sách và bản đồ; vị trí gần đúng có vòng sai số | NT | Đã có (Leaflet + OSM; 31/10: xem nhanh và trang tin công khai có địa chỉ chi tiết phường cũ/mới, "Đăng N ngày trước", nhãn môi giới/chính chủ chỉ khi tin ghi rõ, khối "Điều khoản thuê" với mục chưa rõ hiện "Chưa rõ", nội dung tin thu gọn, chip tiện ích true/false/null) | AC-15 |
+| FR-27 | Khung xem nhanh bên cạnh; chuyển giữa danh sách và bản đồ; vị trí gần đúng có vòng sai số | NT | Đã có (MapLibre GL, tile Goong hoặc OSM; 31/10: xem nhanh và trang tin công khai có địa chỉ chi tiết phường cũ/mới, "Đăng N ngày trước", nhãn môi giới/chính chủ chỉ khi tin ghi rõ, khối "Điều khoản thuê" với mục chưa rõ hiện "Chưa rõ", nội dung tin thu gọn, chip tiện ích true/false/null) | AC-15 |
 | FR-28 | AI phân tích ưu/nhược điểm của các căn được chọn và đề xuất căn tối ưu theo ngân sách | NT | Đã có (tư vấn tất định từ engine chi phí) | AC-16 |
 | FR-29 | Live chat 1-1 với chủ nhà; chuyển ngữ cảnh từ AI: nhu cầu, phòng, băng tài chính, chat gần nhất đã che PII | NT | Đã có (cập nhật định kỳ 5 giây, chưa realtime) | AC-17 |
 | FR-30 | Lịch xem trực tiếp hoặc trực tuyến (link phòng họp); đặt từ danh sách AI hoặc từ tin đăng | NT | Đã có (Jitsi) | AC-18 |
@@ -70,7 +70,7 @@
 | FR-38 | Người dùng, kiểm duyệt tin (ẩn/hiện), vận hành (job, số liệu, khởi tạo lại bản lỗi), vòng đời ticket hỗ trợ (duyệt/tiếp nhận/giải quyết có ghi chú, thông báo khách) | NT | Đã có (ticket chỉ admin thao tác, 08/10) | AC-22 |
 | FR-49 | Chủ nhà tự đăng ký (xác minh email); admin duyệt trước khi chủ nhà được công khai tin; owner seed luôn đã duyệt | NT | Đã có (08/10) | AC-22 |
 
-## 5. Cổng chủ nhà (PMS & CRM)
+## 5. Cổng chủ nhà (PMS)
 
 | ID | Yêu cầu | Mức | Hiện trạng | AC |
 |---|---|---|---|---|
@@ -79,7 +79,7 @@
 | FR-41 | Hợp đồng và khách thuê: soạn, gửi, khách chấp thuận đúng phiên bản, kích hoạt, gia hạn, thanh lý; chống trùng kỳ | NT | Đã có | AC-21 |
 | FR-42 | Tài chính: chốt chỉ số điện nước, lập hóa đơn (không sửa sau phát hành), ghi thu, khách báo chuyển và chủ xác nhận, biên lai, đối soát theo kỳ | NT | Đã có (không cổng thanh toán) | AC-24 |
 | FR-43 | Bảo trì: khách đang thuê báo hỏng, chủ phân công, cập nhật tiến độ và chi phí, khách xác nhận hoặc mở lại, đính ảnh sự cố | NT | Đã có (ảnh 08/10: tối đa 5 ảnh, chỉ hai bên xem được) | AC-25 |
-| FR-44 | CRM: khách tiềm năng theo giai đoạn và mức quan tâm, hộp thư hợp nhất, phòng xem trực tuyến, lịch hẹn | NT | Đã có | AC-23 |
+| FR-44 | Hộp thư hợp nhất, phòng xem trực tuyến, lịch hẹn. Phần khách tiềm năng theo giai đoạn đã bỏ 19/11/2026 (D-13): người thuê là bên chủ động tìm, chủ nhà chỉ cần trả lời khách đã nhắn tin hoặc đặt lịch | NT | Đã có (bỏ khách tiềm năng 19/11) | AC-23 |
 | FR-45 | Báo cáo: lượt xem, yêu cầu xem, tỷ lệ chuyển đổi, doanh thu từng phòng | NT | Đã có | AC-23 |
 
 ## 6. Trợ lý AI cho chủ nhà

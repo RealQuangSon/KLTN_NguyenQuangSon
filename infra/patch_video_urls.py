@@ -1,5 +1,5 @@
 """Công cụ vá một lần: sửa `source_videos` bị che nhầm trong snapshot
-chotot-2026-11-07-5k-r2 (crawl.md B).
+chotot-2026-11-07-5k-r2.
 
 Nguyên nhân: `_clean_raw_string` cũ chỉ miễn che URL chotot.com nên dãy số
 trong mã video videodelivery.net bị mask_pii coi là SĐT; `rebuild_catalog` đọc
@@ -76,7 +76,7 @@ def _patch_catalog_file(r2_path: Path, patches: dict[str, list[dict]]) -> dict:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["catalog_sha256"] = hashlib.sha256(catalog_path.read_bytes()).hexdigest()
     manifest["videos_restored_from"] = SOURCE_SNAPSHOT
-    # crawl.md sửa-lỗi-2: chạy lại tool không được ghi đè videos_restored bằng 0 —
+    # Chạy lại tool không được ghi đè videos_restored bằng 0 —
     # giữ giá trị đã ghi (đúng là 114 của snapshot r2) khi lần chạy này không vá gì.
     if changed or "videos_restored" not in manifest:
         manifest["videos_restored"] = changed

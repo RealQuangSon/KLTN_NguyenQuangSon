@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Api, mutationKey } from "../api";
 import type { Candidate, Viewing } from "../types";
+import { Pager, usePager } from "./Pager";
 export type ViewingAction =
   | "cancel"
   | "accept"
@@ -24,7 +25,9 @@ const SLOT_LABELS: Record<TimeSlot, string> = {
   evening: "Tối (17:00–20:00)",
 };
 // Ngày theo giờ Việt Nam dạng YYYY-MM-DD, lệch `offsetDays` so với hôm nay.
-function vnDate(offsetDays: number) {
+// Cộng 7 giờ trước khi lấy phần ngày của ISO nên KHÔNG lệch UTC như
+// `new Date().toISOString()` (A3: 02:00 sáng giờ VN vẫn là hôm nay, không phải hôm qua).
+export function vnDate(offsetDays: number) {
   const base = new Date(Date.now() + 7 * 3600000 + offsetDays * 86400000);
   return base.toISOString().slice(0, 10);
 }
@@ -43,7 +46,7 @@ export function ViewingForm({
   api: Api;
   onDone: () => void;
   onCancel: () => void;
-  // crawl.md E-07: điền sẵn từ tài khoản khi có.
+  // Điền sẵn từ tài khoản khi có.
   defaultName?: string;
   defaultPhone?: string;
 }) {
@@ -53,6 +56,7 @@ export function ViewingForm({
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState(defaultPhone);
   const [consent, setConsent] = useState(false);
+  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<{ time: string; key: string } | null>(
@@ -76,6 +80,26 @@ export function ViewingForm({
           setPhone((value) => value || profile.contact_phone || "");
       } catch {
         /* không lấy được hồ sơ thì để người dùng tự điền */
+      }
+      // B5 (15/11): tài khoản chưa có hồ sơ (tài khoản seed) thì điền từ lần
+      // đặt lịch gần nhất của CHÍNH người thuê — dữ liệu của họ qua GET
+      // /viewings, không mở quyền hay dữ liệu mới nào.
+      try {
+        const items =
+          await api.get<
+            { contact_name?: string | null; contact_phone?: string | null }[]
+          >("/viewings");
+        if (!active) return;
+        const previous = [...items]
+          .reverse()
+          .find((item) => item.contact_name || item.contact_phone);
+        if (!previous) return;
+        if (!touched.current.name)
+          setName((value) => value || previous.contact_name || "");
+        if (!touched.current.phone)
+          setPhone((value) => value || previous.contact_phone || "");
+      } catch {
+        /* chưa có lịch cũ thì để trống */
       }
     })();
     return () => {
@@ -160,7 +184,7 @@ export function ViewingForm({
           onSubmit={async (e) => {
             e.preventDefault();
             if (busy) return;
-            // crawl.md E-07: ghép ngày + khung giờ thành requested_at múi giờ +07:00.
+            // Ghép ngày + khung giờ thành requested_at múi giờ +07:00.
             if (!date) {
               setError("Chọn ngày muốn xem.");
               return;
@@ -202,6 +226,8 @@ export function ViewingForm({
                 contact_phone: phone.trim(),
                 contact_consent: true,
                 time_slot: slot,
+                // Ghi chú là tùy chọn; để trống thì không gửi trường này.
+                ...(note.trim() ? { note: note.trim() } : {}),
               };
               await (sessionId
                 ? api.post(`/sessions/${sessionId}/viewings`, {
@@ -306,6 +332,30 @@ export function ViewingForm({
               Xem trực tuyến (gọi video, có link phòng họp)
             </label>
           </fieldset>
+          <label>
+            Ghi chú cho bên phụ trách tin (không bắt buộc)
+            <textarea
+              rows={2}
+              maxLength={300}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="VD: mình đi cùng một người bạn, muốn hỏi thêm về chỗ để xe"
+              disabled={busy}
+            />
+          </label>
+          <div className="viewing-tips">
+            <strong>Lưu ý khi đi xem</strong>
+            <ul>
+              <li>Đến đúng khung giờ sau khi lịch được xác nhận.</li>
+              <li>
+                Bận đột xuất thì bấm "Hủy lịch" trong mục Lịch xem của tôi để
+                bên phụ trách tin biết sớm.
+              </li>
+              <li>
+                Chưa chuyển tiền hay đặt cọc trước khi trực tiếp xem phòng.
+              </li>
+            </ul>
+          </div>
           <div className="form-actions">
             <button
               type="button"
@@ -327,6 +377,103 @@ export function ViewingForm({
         </form>
       </section>
     </div>
+  );
+}
+// A3 (15/11): form đề xuất giờ khác của bên xử lý (chủ nhà/điều phối), dùng
+// chung quy ước ngày + khung giờ với form đặt lịch của khách. Bấm nút "Đề xuất
+// giờ khác" chỉ MỞ form này; gọi API xảy ra khi bấm "Gửi đề xuất".
+export function ProposeTimeForm({
+  busy,
+  onSubmit,
+  onCancel,
+}: {
+  busy: boolean;
+  // proposed_at là ISO UTC dựng từ ngày + khung giờ theo múi giờ +07:00.
+  onSubmit: (proposed_at: string, reason: string) => void;
+  onCancel: () => void;
+}) {
+  // Ngày mặc định: ngày mai tính theo giờ Việt Nam, không dùng ngày UTC.
+  const [date, setDate] = useState(() => vnDate(1));
+  const [slot, setSlot] = useState<TimeSlot>("morning");
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <form
+      className="propose-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (busy) return;
+        if (!date) {
+          setError("Chọn ngày đề xuất.");
+          return;
+        }
+        const proposedAt = new Date(`${date}T${SLOT_TIMES[slot]}:00+07:00`);
+        if (
+          !Number.isFinite(proposedAt.getTime()) ||
+          proposedAt <= new Date()
+        ) {
+          setError("Chọn thời điểm trong tương lai.");
+          return;
+        }
+        setError(null);
+        onSubmit(proposedAt.toISOString(), reason.trim());
+      }}
+    >
+      <label>
+        Ngày đề xuất
+        <input
+          type="date"
+          required
+          value={date}
+          min={vnDate(0)}
+          onChange={(e) => setDate(e.target.value)}
+          disabled={busy}
+        />
+      </label>
+      <fieldset>
+        <legend>Khung giờ đề xuất (giờ Việt Nam)</legend>
+        {(Object.keys(SLOT_LABELS) as TimeSlot[]).map((key) => (
+          <label className="checkbox-line" key={key}>
+            <input
+              type="radio"
+              name="propose-slot"
+              checked={slot === key}
+              onChange={() => setSlot(key)}
+              disabled={busy}
+            />
+            {SLOT_LABELS[key]}
+          </label>
+        ))}
+      </fieldset>
+      <label>
+        Lý do (không bắt buộc)
+        <input
+          value={reason}
+          maxLength={200}
+          placeholder="VD: Phòng đang dọn dẹp, mong gặp bạn buổi khác"
+          onChange={(e) => setReason(e.target.value)}
+          disabled={busy}
+        />
+      </label>
+      {error && (
+        <p className="notice warning" role="status">
+          {error}
+        </p>
+      )}
+      <div className="viewing-actions">
+        <button
+          type="button"
+          className="button small outline"
+          onClick={onCancel}
+          disabled={busy}
+        >
+          Hủy
+        </button>
+        <button type="submit" className="button small" disabled={busy}>
+          Gửi đề xuất
+        </button>
+      </div>
+    </form>
   );
 }
 function FeedbackForm({
@@ -407,16 +554,32 @@ export function ViewingList({
   onRespond,
   onAction,
   onFeedback,
+  onPropose,
 }: {
   items: Viewing[];
   manager?: boolean;
   busy?: boolean;
   onRespond?: (id: string, status: "confirmed" | "declined") => void;
-  // crawl.md E-01/E-07: thao tác vòng đời mới cho hai phía.
+  // Thao tác vòng đời mới cho hai phía.
   onAction?: (id: string, action: ViewingAction) => void;
   // Phản hồi sau khi xem: khách tự chọn điểm 1–5 và ghi chú (không gửi mặc định).
   onFeedback?: (id: string, rating: number, note: string) => void;
+  // A3 (15/11): đề xuất giờ khác CHỈ mở form; API gọi khi bấm "Gửi đề xuất".
+  onPropose?: (id: string, proposed_at: string, reason: string) => void;
 }) {
+  // Lịch đang mở form đề xuất giờ (mỗi lần một lịch).
+  const [proposeFor, setProposeFor] = useState<string | null>(null);
+  // Lịch rời trạng thái "đã xác nhận" (đã gửi đề xuất, hủy…) thì bỏ chọn, để
+  // form không tự bật lại khi khách đồng ý và lịch quay về "đã xác nhận".
+  const proposeStillOpen = items.some(
+    (item) =>
+      item.id === proposeFor &&
+      (item.status === "requested" || item.status === "confirmed"),
+  );
+  useEffect(() => {
+    if (proposeFor && !proposeStillOpen) setProposeFor(null);
+  }, [proposeFor, proposeStillOpen]);
+  const paged = usePager(items);
   if (!items.length)
     return (
       <EmptyState
@@ -431,13 +594,16 @@ export function ViewingList({
     );
   return (
     <div className="viewing-list">
-      {items.map((v) => (
+      {paged.items.map((v) => (
         <article className="viewing-row" key={v.id}>
           <div className="date-icon">
             <Icon name="calendar" size={22} />
           </div>
           <div>
-            <h3>Phòng {v.room_id}</h3>
+            {/* B1 (15/11): hiện tên phòng; chỉ dùng mã khi máy chủ không trả tên. */}
+            <h3>
+              {v.room_title ? roomTitle(v.room_title) : `Phòng ${v.room_id}`}
+            </h3>
             <p>
               {new Intl.DateTimeFormat("vi-VN", {
                 dateStyle: "medium",
@@ -470,6 +636,12 @@ export function ViewingList({
                 }).format(new Date(v.proposed_at))}
               </small>
             )}
+            {/* Ghi chú của khách hiện cho cả hai bên (máy chủ trả theo quyền). */}
+            {v.note && (
+              <small>
+                {manager ? "Khách ghi" : "Ghi chú của bạn"}: {v.note}
+              </small>
+            )}
             {!manager && v.contact_shared && v.status !== "requested" && (
               <small>
                 Liên hệ đã chia sẻ: {v.contact_name} · {v.contact_phone}
@@ -483,8 +655,22 @@ export function ViewingList({
                   lịch đã chốt.
                 </small>
               )}
+            {!manager &&
+              v.handler === "concierge" &&
+              v.status === "completed" && (
+                <small>
+                  Tin lấy từ tin đăng gốc: hợp đồng ký trực tiếp với người đăng,
+                  ngoài hệ thống HomeMatch.
+                </small>
+              )}
             {!manager && v.lease_id && v.lease_visible && (
-              <a href="/nguoi-thue/hop-dong">Xem hợp đồng</a>
+              // B2 (15/11): dùng kiểu nút/link của hệ thống thay vì link trần
+              // dính liền dòng "Liên hệ đã chia sẻ".
+              <div className="viewing-actions">
+                <a className="button small outline" href="/nguoi-thue/hop-dong">
+                  Xem hợp đồng
+                </a>
+              </div>
             )}
           </div>
           <Badge status={v.status} />
@@ -504,6 +690,20 @@ export function ViewingList({
               >
                 Từ chối
               </button>
+              {/* Máy chủ cho bên xử lý đề xuất giờ khác ngay từ yêu cầu mới
+                  (requested → reschedule_proposed), không buộc xác nhận trước. */}
+              {onPropose && (
+                <button
+                  className="button small outline"
+                  aria-expanded={proposeFor === v.id}
+                  onClick={() =>
+                    setProposeFor(proposeFor === v.id ? null : v.id)
+                  }
+                  disabled={busy}
+                >
+                  Đề xuất giờ khác
+                </button>
+              )}
             </div>
           )}
           {/* Chủ nhà thấy liên hệ khách từ lúc lịch đã xác nhận (máy chủ chỉ trả khi được phép). */}
@@ -533,12 +733,16 @@ export function ViewingList({
                 </a>
               </div>
             ))}
-          {/* crawl.md E-01.4: bên xử lý — đề xuất giờ khác, hoàn tất, vắng mặt. */}
+          {/* Bên xử lý — đề xuất giờ khác, hoàn tất, vắng mặt. */}
           {manager && onAction && v.status === "confirmed" && (
             <div className="viewing-actions">
               <button
                 className="button small outline"
-                onClick={() => onAction?.(v.id, "propose")}
+                aria-expanded={proposeFor === v.id}
+                onClick={() =>
+                  // A3: bấm chỉ mở form chọn ngày + khung giờ, chưa gọi API.
+                  setProposeFor(proposeFor === v.id ? null : v.id)
+                }
                 disabled={busy}
               >
                 Đề xuất giờ khác
@@ -559,10 +763,25 @@ export function ViewingList({
               </button>
             </div>
           )}
-          {/* crawl.md E-01.3: người thuê — hủy, chấp nhận giờ mới, phản hồi. */}
+          {/* A3: form đề xuất giờ nằm dưới thẻ lịch, rộng hết chiều ngang. */}
+          {manager &&
+            onPropose &&
+            proposeFor === v.id &&
+            (v.status === "requested" || v.status === "confirmed") && (
+              <ProposeTimeForm
+                busy={busy}
+                onCancel={() => setProposeFor(null)}
+                onSubmit={(proposedAt, reason) =>
+                  onPropose(v.id, proposedAt, reason)
+                }
+              />
+            )}
+          {/* Người thuê — hủy, chấp nhận giờ mới, phản hồi. */}
           {!manager && (onAction || onFeedback) && (
             <>
-              {v.status === "requested" && (
+              {/* Máy chủ cho người thuê hủy cả lịch đã xác nhận (confirmed →
+                  cancelled); thiếu nút thì khách bận đột xuất không có lối ra. */}
+              {(v.status === "requested" || v.status === "confirmed") && (
                 <div className="viewing-actions">
                   <button
                     className="button small outline"
@@ -618,6 +837,7 @@ export function ViewingList({
           )}
         </article>
       ))}
+      <Pager unit="lịch" {...paged.pagerProps} />
     </div>
   );
 }

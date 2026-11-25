@@ -9,8 +9,8 @@ from backend.app.listings import ListingQuery
 from backend.app.main import create_app
 from backend.app.models import Actor, DomainError
 
-RENTER = {"Authorization": "Bearer demo-renter-a"}
-LANDLORD = {"Authorization": "Bearer demo-owner-a"}
+RENTER = {"Authorization": "Bearer demo-renter"}
+LANDLORD = {"Authorization": "Bearer demo-owner2"}
 
 
 def test_filter_search_shows_only_published_matching_rooms_without_login(service):
@@ -36,11 +36,11 @@ def test_listing_detail_records_views_and_hides_unpublished(service):
     hidden = next(room for room in service.catalog.rooms() if not room.published)
     with TestClient(create_app(lambda: service)) as client:
         detail = client.get(f"/listings/{room.id}", headers=RENTER).json()
-        assert detail["id"] == room.id and detail["landlord_id"] == "owner-a" and "cost" in detail
+        assert detail["id"] == room.id and detail["landlord_id"] == "owner2" and "cost" in detail
         client.get(f"/listings/{room.id}")  # anonymous view
         assert client.get(f"/listings/{hidden.id}").status_code == 404
         views = service.repo.db.execute("SELECT user_id FROM hm_room_views WHERE room_id=?", (room.id,)).fetchall()
-        assert sorted(str(row["user_id"]) for row in views) == ["None", "renter-a"]
+        assert sorted(str(row["user_id"]) for row in views) == ["None", "renter"]
 
 
 def test_advisor_explains_and_never_recommends_over_budget_or_unknown():
@@ -75,7 +75,7 @@ def test_direct_listing_viewing_goes_to_landlord_and_requires_a_free_room(servic
     room = next(room for room in service.catalog.rooms() if room.published and room.available)
     when = datetime.now(timezone.utc) + timedelta(days=1)
     viewing = service.request_listing_viewing(renter, room.id, when, "direct-1", "online")
-    assert viewing["session_id"] is None and viewing["landlord_id"] == "owner-a" and viewing["meeting_url"]
+    assert viewing["session_id"] is None and viewing["landlord_id"] == "owner2" and viewing["meeting_url"]
     assert service.request_listing_viewing(renter, room.id, when, "direct-1", "online")["id"] == viewing["id"]
     assert viewing["id"] in {item["id"] for item in service.viewings(renter)}
     assert service.viewing(viewing["id"], renter)["id"] == viewing["id"]
@@ -107,8 +107,8 @@ def test_handbook_is_reachable_from_chat_without_a_model_call(service, renter):
 
 def test_saved_and_viewed_room_lists_are_renter_scoped(service):
     room = next(room for room in service.catalog.rooms() if room.published)
-    renter = Actor(id="renter-a", role="renter")
-    owner = Actor(id="owner-a", role="owner")
+    renter = Actor(id="renter", role="renter")
+    owner = Actor(id="owner2", role="owner")
     assert service.set_room_saved(renter, room.id, True)["saved"] is True
     saved = service.saved_rooms(renter)
     assert [item["id"] for item in saved] == [room.id] and saved[0]["cost"]

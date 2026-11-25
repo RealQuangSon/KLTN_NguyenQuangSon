@@ -34,7 +34,7 @@ def viewing_reminders(service, now: datetime) -> int:
         when = datetime.fromisoformat(row["requested_at"]).astimezone(timezone(timedelta(hours=7)))
         body = (f"Lịch xem phòng {row['room_id']} lúc {when:%H:%M %d/%m} (giờ Việt Nam), "
                 + ("trực tuyến qua link phòng họp." if row["mode"] == "online" else "xem trực tiếp."))
-        # crawl.md E-02: lịch điều phối có landlord_id NULL — chỉ nhắc người thuê.
+        # Lịch điều phối có landlord_id NULL — chỉ nhắc người thuê.
         recipients = [(row["owner_id"], "/nguoi-thue/lich-xem")]
         if row["landlord_id"]:
             recipients.append((row["landlord_id"], "/chu-nha/lich-xem"))

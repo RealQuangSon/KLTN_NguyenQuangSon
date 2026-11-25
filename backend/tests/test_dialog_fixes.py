@@ -131,7 +131,9 @@ def test_question_without_chip_is_traced(agent, renter, monkeypatch):
     sid = agent.create_session(renter)["session_id"]
     agent.interpreter.client = FakeClient([message(
         "Mình có thể giúp gì thêm về khu vực bạn muốn?")])
-    reply = agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu")
+    # Lỗi 5 (15/11): câu luật hiểu trọn vẹn đi fast path; để model trả lời (và
+    # trace question_without_chip) dùng câu có điểm đến → vòng lặp.
+    reply = agent.message(sid, renter, "phòng Quận 7 dưới 4 triệu gần trường")
     assert reply["agent_mode"] == "loop"
     assert not reply.get("clarification")
     rows = agent.repo.db.execute(
@@ -184,14 +186,14 @@ def test_unknown_landmark_guides_area_and_validates_it(agent, renter, monkeypatc
     monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "rules")
     sid = agent.create_session(renter)["session_id"]
     agent.interpreter.client = FakeClient([
-        message(tool_calls=[call("c1", "find_place", query="Hồ Gươm", city_hint="Hà Nội")]),
-        message(tool_calls=[call("c2", "update_needs", patch={"city": "Hà Nội", "area": "Hoàn Kiếm"})]),
-        message("Mình hiểu Hồ Gươm thuộc Hoàn Kiếm — sai thì bấm sửa."),
+        message(tool_calls=[call("c1", "find_place", query="Công viên Thống Nhất", city_hint="Hà Nội")]),
+        message(tool_calls=[call("c2", "update_needs", patch={"city": "Hà Nội", "area": "Hai Bà Trưng"})]),
+        message("Mình hiểu Công viên Thống Nhất thuộc Hai Bà Trưng — sai thì bấm sửa."),
     ])
-    reply = agent.message(sid, renter, "phòng gần Hồ Gươm Hà Nội 4 triệu")
+    reply = agent.message(sid, renter, "phòng gần Công viên Thống Nhất Hà Nội 4 triệu")
     assert reply["agent_mode"] == "loop"
     draft = agent.session(sid, renter)["draft"]
-    assert draft["area"] == "Quận Hoàn Kiếm"  # chuẩn hóa theo locations.py
+    assert draft["area"] == "Quận Hai Bà Trưng"  # chuẩn hóa theo locations.py
     # Trạng thái inferred — khách sửa được, không phải confirmed.
     assert draft["field_status"]["area"] == "inferred"
     assert draft.get("destination") is None  # không đặt destination không tọa độ
@@ -483,7 +485,9 @@ def test_search_rooms_reports_held_when_no_eligible(ct_agent, renter, monkeypatc
         message(tool_calls=[call("c2", "search_rooms")]),
         message("Trả lời theo số của tool."),
     ])
-    reply = ct_agent.message(sid, renter, "phòng trọ Quận 7 dưới 5 triệu cho 1 người")
+    # Lỗi 5 (15/11): câu luật hiểu trọn vẹn đi fast path — thêm điểm đến để vào
+    # vòng lặp như ý test (model tự gọi search_rooms).
+    reply = ct_agent.message(sid, renter, "phòng trọ Quận 7 dưới 5 triệu cho 1 người, gần trường đi làm")
     tool_payload = next(item["content"] for item in ct_agent.interpreter.client.requests[1]["messages"]
                         if item.get("role") == "tool" and '"count"' in item["content"])
     payload = json.loads(tool_payload.split("\n")[1])["data"]
@@ -615,11 +619,12 @@ def test_budget_cap_chips_on_crawl_catalog(ct_agent, renter):
     assert dto and dto["field"] == "budget_cap" and dto["options"]
     rendered = to_dto(dto, "rules")
     labels = [option["label"] for option in rendered["options"]]
-    assert any("Tổng tháng dưới" in label for label in labels), labels
-    # D-12: không còn tin bị giữ nên nhãn không cần "kèm nhãn ước tính".
+    # Việc nhỏ 15/11: kho crawl thiếu phí (tổng tháng là ước tính) → nhãn phải là
+    # "Tiền thuê dưới X" khớp cách đếm — không gọi giá thuê là tổng chi phí.
+    assert any("Tiền thuê dưới" in label for label in labels), labels
     for option in rendered["options"]:
         assert option["action"] == "text"
-        assert option["text"].startswith("Tổng tháng dưới ")  # không gọi là tổng chi phí
+        assert option["text"].startswith("Tiền thuê dưới ")
 
 
 @requires_ct
@@ -978,7 +983,7 @@ def test_turn_that_only_writes_needs_still_searches_in_the_same_turn(agent, rent
                                  patch={"city": "TP.HCM", "area": "Quận 7", "room_type": "room"})]),
         message("Mình đã ghi nhận nhu cầu và tiến hành tìm nhé."),
     ])
-    reply = agent.message(sid, renter, "phòng trọ Quận 7 giá thuê tầm 5 triệu cho 1 người")
+    reply = agent.message(sid, renter, "phòng trọ Quận 7 giá thuê tầm 5 triệu cho 1 người, gần chỗ làm")
     assert reply["status"] in {"published", "no_match"}, reply
     session = agent.session(sid, renter)
     assert session["confirmed_profile"] is not None and session["active_run_id"]
@@ -996,8 +1001,214 @@ def test_non_blocking_model_question_does_not_stop_the_search(agent, renter, mon
         message(tool_calls=[call("c2", "ask_user", field="other",
                                  question="Bạn có muốn giữ đúng khu vực này không?")]),
     ])
-    reply = agent.message(sid, renter, "phòng trọ Quận 7 giá thuê tầm 5 triệu cho 1 người")
+    reply = agent.message(sid, renter, "phòng trọ Quận 7 giá thuê tầm 5 triệu cho 1 người, gần chỗ làm")
     assert reply["status"] in {"published", "no_match"}, reply
     assert agent.session(sid, renter)["active_run_id"]
     assert (reply.get("clarification") or {}).get("question") == "Bạn có muốn giữ đúng khu vực này không?"
     assert reply["message"] != reply["clarification"]["question"]
+
+
+# --- Lỗi 1–5 (đo live 15/11 lần C) ---
+
+def test_published_turn_has_no_stale_clarification(agent, renter, monkeypatch):
+    """Lỗi 1: lượt vừa công bố run mới không được dính chip cũ
+    (landmark-in-catalog#3: status=published mà vẫn kèm chip destination_radius +
+    questions). Giả định bán kính phải nằm trong assumptions, không lặp."""
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "rules")
+    sid = agent.create_session(renter)["session_id"]
+    _seed_no_ambiguity(agent, renter, sid)
+    agent.interpreter.client = FakeClient([
+        message(tool_calls=[call("c1", "update_needs",
+                                 patch={"city": "Hà Nội", "destination_text": "Đại học Bách Khoa Hà Nội"})]),
+        message(tool_calls=[call("c2", "confirm_and_search")]),
+        message("Các căn gần điểm đến của bạn đã hiện bên cạnh."),
+    ])
+    reply = agent.message(sid, renter, "phòng gần HUST, tổng tháng dưới 5 triệu")
+    assert reply["agent_mode"] == "loop"
+    assert reply["status"] == "published", reply["status"]
+    draft = agent._draft(sid)
+    assert draft.destination and draft.field_status.get("destination") == "inferred"
+    assert not draft.evidence_ref.get("destination", "").startswith("clarify:")
+    assert not reply.get("clarification"), reply.get("clarification")
+    assert not reply.get("questions")
+    radius_assumptions = [item for item in (reply.get("assumptions") or []) if "bán kính" in item]
+    assert radius_assumptions and len(radius_assumptions) == 1
+
+
+def test_ask_user_without_city_redirects_budget_or_destination_to_city(agent, renter, monkeypatch):
+    """Lỗi 2: chưa có thành phố thì chip budget_cap/destination không dựng được
+    lựa chọn (vague-no-city#1, answer-free-text#2) → hỏi thành phố trước bằng
+    câu mẫu của kho, KHÔNG dùng câu model đang hỏi về tiền/điểm đến."""
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "rules")
+    for field in ("budget_cap", "destination"):
+        sid = agent.create_session(renter)["session_id"]
+        _seed_no_ambiguity(agent, renter, sid)
+        agent.interpreter.client = FakeClient([
+            message(tool_calls=[call("c1", "ask_user", field=field,
+                                     question="Bạn muốn giới hạn tiền thuê bao nhiêu?")]),
+            message("Đã hỏi lại."),
+        ])
+        reply = agent.message(sid, renter, "cho mình xin phòng ở rẻ thôi gần Đại học Bách Khoa")
+        assert reply["agent_mode"] == "loop"
+        dto = reply.get("clarification") or {}
+        assert dto.get("field") == "city", (field, dto)
+        assert len(dto.get("options") or []) >= 2, (field, dto)
+        assert dto.get("question") == "Bạn muốn thuê tại thành phố nào?", (field, dto)
+        assert dto.get("question_source") != "model", dto
+
+
+def test_ask_user_keeps_budget_cap_when_city_known(agent, renter, monkeypatch):
+    """Lỗi 2 (phần giữ nguyên): nháp đã có thành phố → ask_user(budget_cap) vẫn
+    trả chip mức tiền với câu hỏi của model như trước."""
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "rules")
+    sid = agent.create_session(renter)["session_id"]
+    _seed_no_ambiguity(agent, renter, sid)
+    agent.patch_draft(sid, renter, DraftPatch(
+        expected_draft_revision=agent.session(sid, renter)["draft_revision"], set={"city": "TP.HCM"}))
+    agent.interpreter.client = FakeClient([
+        message(tool_calls=[call("c1", "ask_user", field="budget_cap",
+                                 question="Bạn muốn giới hạn tiền thuê bao nhiêu?")]),
+        message("Đã hỏi lại."),
+    ])
+    reply = agent.message(sid, renter, "phòng TP.HCM gần Đại học Bách Khoa")
+    dto = reply.get("clarification") or {}
+    assert dto.get("field") == "budget_cap", dto
+    assert len(dto.get("options") or []) >= 2, dto
+    assert dto.get("question_source") == "model", dto
+
+
+def test_budget_cap_chips_have_distinct_levels_and_vietnamese_labels(agent, renter, monkeypatch):
+    """Lỗi 3: hai phân vị làm tròn xuống cùng một mức → bỏ trùng (value/label đều
+    khác nhau, vague-no-city#2, landmark-ben-thanh#1); còn < 2 mức thì bổ sung
+    mức kế tiếp +500 nghìn; nhãn kiểu Việt "4,5 triệu"; count là số căn thật."""
+    from backend.app import clarify
+    sid = agent.create_session(renter)["session_id"]
+    _seed_no_ambiguity(agent, renter, sid)
+    agent.patch_draft(sid, renter, DraftPatch(
+        expected_draft_revision=agent.session(sid, renter)["draft_revision"],
+        set={"city": "TP.HCM", "area": "Quận 7"}))
+    draft = agent._draft(sid)
+    pool = [2_900_000, 3_000_000, 3_100_000, 3_200_000, 3_300_000, 3_400_000, 4_500_000, 4_600_000]
+
+    def fake_rank(profile, method, _pool=pool):
+        items = [SimpleNamespace(room_id=f"r{index}", cost=SimpleNamespace(monthly_total_vnd=value),
+                                 verification=[]) for index, value in enumerate(_pool)]
+        return items, {}
+
+    real_rank = agent.catalog.rank
+    agent.catalog.rank = fake_rank
+    try:
+        options = clarify._budget_cap_interpretations(agent, draft, None, None)
+    finally:
+        agent.catalog.rank = real_rank
+    values = [option["value"] for option in options]
+    labels = [option["label"] for option in options]
+    assert len(options) >= 2, options
+    assert len(values) == len(set(values)), values
+    assert len(labels) == len(set(labels)), labels
+    # Phân vị 0,4 và 0,7 cùng rơi vào mức 3,0 triệu → chỉ MỘT chip 3 triệu.
+    assert values.count(3_000_000) == 1, values
+    assert "Tổng tháng dưới 4,5 triệu" in labels, labels  # dấu phẩy kiểu Việt
+    for option in options:
+        assert option["label"] == option["text"]
+        assert option["count"] == sum(1 for value in pool if value <= option["value"])
+
+    # Cả ba phân vị trùng một mức → bổ sung mức kế tiếp cho tới khi đủ lựa chọn.
+    tight_pool = [3_000_000] * 5 + [3_200_000] * 2 + [3_400_000]
+
+    def fake_rank_tight(profile, method):
+        return fake_rank(profile, method, _pool=tight_pool)
+
+    agent.catalog.rank = fake_rank_tight
+    try:
+        options = clarify._budget_cap_interpretations(agent, draft, None, None)
+    finally:
+        agent.catalog.rank = real_rank
+    values = [option["value"] for option in options]
+    assert values[0] == 3_000_000 and 3_500_000 in values, values
+    assert len(values) == len(set(values)), values
+    for option in options:
+        assert option["count"] == sum(1 for value in tight_pool if value <= option["value"])
+
+
+def test_chip_sentence_with_vietnamese_decimal_reads_exact_money():
+    """Lỗi 3: chip là chip chữ — câu "Tổng tháng dưới 4,5 triệu" khách bấm gửi
+    phải được đường đọc tiền tất định đọc ra đúng 4.500.000, scope total."""
+    assert chat_budget_hint("Tổng tháng dưới 4,5 triệu", None) == 4_500_000
+    assert budget_scope_hint("Tổng tháng dưới 4,5 triệu") == "total"
+    assert chat_budget_hint("Tiền thuê dưới 3,5 triệu", None) == 3_500_000
+
+
+def test_relax_money_chips_round_up_to_100k_and_recount(agent, renter, monkeypatch):
+    """Lỗi 4: chip nới tiền lấy mức phân vị nguyên trạng ("4,865 triệu" —
+    answer-free-text#3, no-match#1) → làm tròn LÊN bội 100.000 gần nhất, ĐẾM LẠI
+    số căn theo mức đã tròn, bỏ mức trùng và mức ≤ trần; nhãn không còn ba chữ
+    số sau dấu phẩy."""
+    from backend.app import agent_loop as loop
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "rules")
+    sid = agent.create_session(renter)["session_id"]
+    _seed_no_ambiguity(agent, renter, sid)
+    profile = Profile(city="TP.HCM", area="Quận 1", max_monthly_cost_vnd=500_000,
+                      max_initial_cash_vnd=8_000_000, scenario=Scenario(people=2))
+    payload = loop._relaxation_clarification(agent, sid, profile)
+    assert payload and payload["field"] == "relax", payload
+    money_options = [option for option in payload["options"] if option["action"] == "text"]
+    assert money_options, payload
+    unlocked = profile.model_copy(update={"max_monthly_cost_vnd": None, "max_rent_vnd": None,
+                                          "min_rent_vnd": None})
+    pool_items, _ = agent.catalog.rank(unlocked, agent.matching_method)
+    monthly = [item.cost.monthly_total_vnd for item in pool_items
+               if item.cost.monthly_total_vnd is not None]
+    seen_levels: set[int] = set()
+    for option in money_options:
+        level = chat_budget_hint(option["text"], None)
+        assert level is not None and level % 100_000 == 0, option["text"]
+        assert level > 500_000, option["text"]  # bỏ mức ≤ trần hiện tại
+        assert level not in seen_levels, option["text"]
+        seen_levels.add(level)
+        assert not re.search(r"\d,\d{3}", option["label"]), option["label"]
+        expected = sum(1 for value in monthly if value <= level)
+        assert option["label"] == (
+            f"Tổng tháng dưới {loop.applied_budget_label(level)} — có {expected} căn"), option["label"]
+        assert option["text"] == f"Tổng tháng dưới {loop.applied_budget_label(level)}"
+        # Số căn khớp khi xếp hạng lại với trần đã làm tròn.
+        capped = unlocked.model_copy(update={"max_monthly_cost_vnd": level, "max_rent_vnd": None,
+                                             "min_rent_vnd": None})
+        items, _ = agent.catalog.rank(capped, agent.matching_method)
+        assert len(items) == expected, (option["label"], len(items))
+
+
+def test_internal_tooling_clause_stripped_but_numbers_kept():
+    """Lỗi 5: vế chứa "công cụ" bị bỏ khỏi câu trả lời (self-publish-handover#3)
+    nhưng số trả góp ở vế khác được giữ; câu chỉ gồm vế "công cụ" → câu an toàn."""
+    from backend.app.agent_loop import SAFE_OUTPUT_REPLY, strip_internal_tooling_sentences
+    cleaned = strip_internal_tooling_sentences(
+        "Trả góp 879.159 ₫/tháng; công cụ không cho biết phí nào còn thiếu.")
+    assert "879.159 ₫" in cleaned
+    assert "công cụ" not in cleaned.lower()
+    assert strip_internal_tooling_sentences(
+        "Công cụ không cho biết phí nào còn thiếu.") == SAFE_OUTPUT_REPLY
+    # Dấu chấm ngăn cách nghìn không bị coi là kết thúc câu.
+    cleaned = strip_internal_tooling_sentences(
+        "Tổng trả 10.549.908 ₫.\nDòng dưới: công cụ không cho biết thêm.")
+    assert "10.549.908 ₫" in cleaned and "công cụ" not in cleaned.lower()
+    assert strip_internal_tooling_sentences("Tổng tháng 3.250.000 ₫ gồm phí.") == \
+        "Tổng tháng 3.250.000 ₫ gồm phí."
+
+
+def test_finance_reply_keeps_loan_numbers_without_tooling_clause(agent, renter, monkeypatch):
+    """Lỗi 5 trên lượt agent tài chính thật: câu "…; công cụ không cho biết phí
+    nào còn thiếu." mất vế "công cụ" nhưng giữ số trả góp đúng của engine."""
+    from backend.tests.test_multi_agent import _confirm_published, _fake_jev, jev_response
+    monkeypatch.setenv("HOMEMATCH_INPUT_ANALYST", "jev")
+    _fake_jev(monkeypatch, FakeJev(jev_response(route="finance", route_p=0.92, clarity="clear")))
+    sid = _confirm_published(agent, renter)
+    agent.interpreter.client = FakeClient([
+        message(tool_calls=[call("c1", "simulate_loan")]),
+        message("Trả góp 879.159 ₫/tháng; công cụ không cho biết phí nào còn thiếu."),
+    ])
+    reply = agent.message(sid, renter, "nếu vay 10 triệu lãi 10% trong 12 tháng thì sao")
+    assert reply["agents"] == ["finance"], reply.get("agents")
+    assert reply["status"] == "simulation", reply.get("status")
+    assert "879.159 ₫" in reply["message"], reply["message"]
+    assert "công cụ" not in (reply["message"] or "").lower(), reply["message"]

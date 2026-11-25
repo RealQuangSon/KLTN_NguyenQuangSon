@@ -2,16 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { Api } from "../api";
-import {
-  BillingPage,
-  LandlordDashboard,
-  LeadsPage,
-  LeasesPage,
-} from "../pages/Pms";
+import { BillingPage, LandlordDashboard, LeasesPage } from "../pages/Pms";
 const lease = (status: string) => ({
   id: "l1",
-  landlord_id: "owner-a",
-  renter_id: "renter-a",
+  landlord_id: "owner2",
+  renter_id: "renter",
   room_id: "demo-01",
   start_date: "2026-10-01",
   end_date: "2027-04-01",
@@ -57,7 +52,7 @@ it("shows the landlord unpaid invoices and confirms a renter's transfer claim", 
           overdue: true,
           due_date: "2026-10-05",
           room_id: "demo-01",
-          renter_id: "renter-a",
+          renter_id: "renter",
           lines: [],
         },
       ] as never;
@@ -114,7 +109,7 @@ it("lets the renter report a transfer instead of marking the invoice paid", asyn
             overdue: false,
             due_date: "2026-10-05",
             room_id: "demo-01",
-            renter_id: "renter-a",
+            renter_id: "renter",
             lines: [],
           },
         ] as never)
@@ -133,7 +128,7 @@ it("lets the renter report a transfer instead of marking the invoice paid", asyn
   );
   expect(screen.getByText("Chưa thanh toán")).toBeInTheDocument();
 });
-it("renders the dashboard and the lead pipeline by stage and interest", async () => {
+it("renders the landlord dashboard and per-room analytics", async () => {
   const api = new Api("t");
   vi.spyOn(api, "get").mockImplementation(async (path) => {
     if (path === "/landlord/dashboard")
@@ -165,33 +160,9 @@ it("renders the dashboard and the lead pipeline by stage and interest", async ()
           },
         ],
       } as never;
-    return [
-      {
-        id: "lead1",
-        renter_id: "renter-a",
-        room_id: "demo-01",
-        stage: "contacted",
-        score: 4,
-        interest: "warm",
-        sources: ["view", "chat"],
-        notes: null,
-      },
-    ] as never;
+    throw new Error(`unexpected GET ${String(path)}`);
   });
-  const patch = vi.spyOn(api, "patch").mockResolvedValue({} as never);
-  const { unmount } = render(<LandlordDashboard api={api} />);
+  render(<LandlordDashboard api={api} />);
   expect((await screen.findAllByText("50%")).length).toBe(2); // occupancy + viewing→lease
   expect(screen.getByText("20%")).toBeInTheDocument();
-  unmount();
-  render(<LeadsPage api={api} />);
-  expect(await screen.findByText(/Quan tâm · 4 điểm/)).toBeInTheDocument();
-  await userEvent.selectOptions(
-    screen.getByLabelText("Giai đoạn renter-a"),
-    "viewing",
-  );
-  await waitFor(() =>
-    expect(patch).toHaveBeenCalledWith("/landlord/leads/lead1", {
-      stage: "viewing",
-    }),
-  );
 });

@@ -1,6 +1,6 @@
 # Runbook HomeMatch local
 
-Runbook này mô tả bản local (schema v13). Đồ án chỉ chạy trên localhost (D-09); cấu hình Docker/Railway đã xóa khỏi repo ngày 28/10/2026. Chạy GPT-4o/pgvector live trên máy local ở [PLAN](PLAN.md) và [live-run](live-run.md).
+Runbook này mô tả bản local (schema v24). Đồ án chỉ chạy trên localhost (D-09). Chạy GPT-4o/pgvector live trên máy local ở [live-run](live-run.md).
 
 Đường chạy mặc định là SQLite/rule/B1. Đọc README để cài, seed và mở hai workspace. Backend không tự nạp `.env`; kiểm tra biến process mà không in secret.
 
@@ -15,7 +15,7 @@ bash infra/check-local.sh
 .venv/bin/python -m infra.smoke_api --in-process
 ```
 
-Setup/startup chạy migration có phiên bản và tạo checkpointer nếu chưa có, không reset dữ liệu. `migrate` chỉ cập nhật ledger, không nạp kho/provider. Schema hiện tại là 2; DB MVP cũ được tiếp nhận và backfill lịch sử hồ sơ. Seed không tự đổi mật khẩu đã tồn tại. Import validate/merge theo revision, conflict rollback cả lô; không xóa ID vắng mặt. Initial file chỉ dùng lúc kho trống.
+Setup/startup chạy migration có phiên bản và tạo checkpointer nếu chưa có, không reset dữ liệu. `migrate` chỉ cập nhật ledger, không nạp kho/provider. Schema hiện tại là 24; DB MVP cũ được tiếp nhận và backfill lịch sử hồ sơ. Seed không tự đổi mật khẩu đã tồn tại. Import validate/merge theo revision, conflict rollback cả lô; không xóa ID vắng mặt. Initial file chỉ dùng lúc kho trống.
 
 ## Lỗi thường gặp
 
@@ -40,6 +40,6 @@ Setup/startup chạy migration có phiên bản và tạo checkpointer nếu ch�
 
 ## Kiểm chứng vận hành
 
-Backend 0.3.0 đã chạy 121 Python tests, PG checkpoint/restart và real HTTP smoke trên SQLite/PostgreSQL; xem [báo cáo backend](../docs/kiem-chung-backend.md). `/ready` kiểm schema/catalog/checkpoint, `/manager/metrics` yêu cầu manager. Chạy API với `--no-access-log --log-config backend/logging.json` để log dùng route mẫu và không ghi URL/query/body. Browser desktop/mobile và backup/restore còn cần kiểm chứng; các kết quả này không tự đóng G4/nghiên cứu live.
+`/ready` kiểm schema/catalog/checkpoint, `/admin/metrics` yêu cầu admin. Chạy API với `--no-access-log --log-config backend/logging.json` để log dùng route mẫu và không ghi URL/query/body. Browser desktop/mobile và backup/restore còn cần kiểm chứng; các kết quả này không tự đóng G4/nghiên cứu live.
 
 PG local trust cluster và FE dev server là tiến trình tạm. PG dừng bằng `bash infra/local-pg.sh stop`; FE dùng Ctrl+C. DB/checkpoint ở `.local` không đưa vào Git hoặc gói công khai.
